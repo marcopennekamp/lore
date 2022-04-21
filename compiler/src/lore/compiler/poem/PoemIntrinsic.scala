@@ -11,7 +11,7 @@ object PoemIntrinsic {
   private def intr(name: String, arity: Int, isVirtual: Boolean = false) = PoemIntrinsic(name, arity)
 
   // This should be kept in sync with `pyramid.nim`. (Except for virtual intrinsics.)
-  val intrinsics = Vector(
+  val intrinsics: Vector[PoemIntrinsic] = Vector(
     intr("lore.core.equal?", 3),
     intr("lore.core.less_than?", 3),
     intr("lore.core.to_string", 2),

@@ -1,6 +1,6 @@
 package lore.compiler.assembly.values
 
-import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames}
+import lore.compiler.assembly.{Chunk, AsmRuntimeNames}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
 import lore.compiler.semantics.expressions.Expression
@@ -177,10 +177,10 @@ object ValueAssembler {
     * Generates a chunked `Const` instruction from the given expression if a constant poem value can be generated from
     * it.
     */
-  def generateConst(expression: Expression, regResult: Poem.Register): Option[AsmChunk] = {
+  def generateConst(expression: Expression, regResult: Poem.Register): Option[Chunk] = {
     generate(expression).map { constant =>
       val instruction = PoemInstruction.Const(regResult, constant)
-      AsmChunk(regResult, instruction)
+      Chunk(regResult, instruction)
     }
   }
 
@@ -188,7 +188,7 @@ object ValueAssembler {
     * The forced cousin of [[generateConst]]. Use this if it's certain that the given expression always results in a
     * PoemValue.
     */
-  def generateConstForced(expression: Expression, regResult: Poem.Register): AsmChunk = generateConst(expression, regResult).get
+  def generateConstForced(expression: Expression, regResult: Poem.Register): Chunk = generateConst(expression, regResult).get
 
   private def evaluateArithmeticOperation(
     left: PoemValue,

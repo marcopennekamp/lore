@@ -171,7 +171,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
     * A call node represents calling any sort of value, which can be an anonymous function, a multi-function typed as a
-    * function, or a struct constructor. Full multi-function calls are always represented via [[SimpleCall]].
+    * function, or a struct constructor. Full multi-function calls are always represented via [[SimpleCallNode]].
     */
   case class CallNode(
     target: ExprNode,

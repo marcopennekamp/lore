@@ -3,8 +3,6 @@ package lore.compiler.assembly
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.{Poem, PoemInstruction}
 
-// TODO (assembly): Rename this to Chunk once we've deleted the `transpilation` stuff.
-
 /**
   * A Chunk bundles a sequence of instructions together with an optional result register. This result can be used by
   * subsequent chunks.
@@ -12,15 +10,13 @@ import lore.compiler.poem.{Poem, PoemInstruction}
   * `postLabels` are labels which point to the next instruction <i>after</i> this chunk. When this chunk is
   * concatenated with other chunks, its post labels are resolved.
   */
-case class AsmChunk(
+case class Chunk(
   result: Option[Poem.Register],
   instructions: Vector[PoemInstruction],
   postLabels: Set[Poem.Label],
 ) {
   /**
     * Gets `result` or throws a CompilationException. This should be used when a result has to exist.
-    *
-    * TODO (assembly): Can we work this into the type system, e.g. having a ResultAsmChunk and an AsmChunk?
     */
   def forceResult(position: Position): Poem.Register = result match {
     case Some(value) => value
@@ -38,20 +34,20 @@ case class AsmChunk(
     * All post labels of this chunk are added to the first instruction of `other`, or become post labels of the
     * resulting chunk if `other` has no instructions. Post labels of `other` are preserved.
     */
-  def ++(other: AsmChunk): AsmChunk = {
+  def ++(other: Chunk): Chunk = {
     if (other.instructions.isEmpty) {
-      AsmChunk(other.result, instructions, postLabels ++ other.postLabels)
+      Chunk(other.result, instructions, postLabels ++ other.postLabels)
     } else {
       other.instructions.head.addLabels(postLabels)
-      AsmChunk(other.result, instructions ++ other.instructions, other.postLabels)
+      Chunk(other.result, instructions ++ other.instructions, other.postLabels)
     }
   }
 
   /**
     * Attaches the given label as a post label to this chunk, returning a new chunk.
     */
-  def withPostLabel(label: Poem.Label): AsmChunk = {
-    AsmChunk(result, instructions, postLabels + label)
+  def withPostLabel(label: Poem.Label): Chunk = {
+    Chunk(result, instructions, postLabels + label)
   }
 
   /**
@@ -65,18 +61,18 @@ case class AsmChunk(
   }
 }
 
-object AsmChunk {
-  val empty: AsmChunk = AsmChunk()
+object Chunk {
+  val empty: Chunk = Chunk()
 
-  def apply(result: Poem.Register, instructions: Vector[PoemInstruction]): AsmChunk = AsmChunk(Some(result), instructions, Set.empty[Poem.Label])
-  def apply(result: Poem.Register, instructions: PoemInstruction*): AsmChunk = AsmChunk(result, instructions.toVector)
+  def apply(result: Poem.Register, instructions: Vector[PoemInstruction]): Chunk = Chunk(Some(result), instructions, Set.empty[Poem.Label])
+  def apply(result: Poem.Register, instructions: PoemInstruction*): Chunk = Chunk(result, instructions.toVector)
 
   /**
     * Creates a new Chunk without a result register.
     */
-  def apply(instructions: Vector[PoemInstruction]): AsmChunk = AsmChunk(None, instructions, Set.empty[Poem.Label])
-  def apply(instructions: PoemInstruction*): AsmChunk = AsmChunk(instructions.toVector)
-  def apply(instructions: Vector[PoemInstruction], instructions2: PoemInstruction*): AsmChunk = AsmChunk(instructions ++ instructions2)
+  def apply(instructions: Vector[PoemInstruction]): Chunk = Chunk(None, instructions, Set.empty[Poem.Label])
+  def apply(instructions: PoemInstruction*): Chunk = Chunk(instructions.toVector)
+  def apply(instructions: Vector[PoemInstruction], instructions2: PoemInstruction*): Chunk = Chunk(instructions ++ instructions2)
 
-  def concat(chunks: Vector[AsmChunk]): AsmChunk = chunks.foldLeft(AsmChunk.empty)(_ ++ _)
+  def concat(chunks: Vector[Chunk]): Chunk = chunks.foldLeft(Chunk.empty)(_ ++ _)
 }

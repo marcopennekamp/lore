@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, RegisterProvider}
+import lore.compiler.assembly.{Chunk, AsmRuntimeNames, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.StructPropertyDefinition
@@ -13,7 +13,7 @@ object ConstructorAssembler {
   def generateCall(
     structType: StructType,
     valueArgumentRegs: Vector[Poem.Register],
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     generateCall(structType, registerProvider.fresh(), valueArgumentRegs)
   }
 
@@ -21,7 +21,7 @@ object ConstructorAssembler {
     structType: StructType,
     regResult: Poem.Register,
     valueArgumentRegs: Vector[Poem.Register],
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     val constructorName = AsmRuntimeNames.struct.constructor(structType.schema)
 
     // If the call has polymorphic type arguments, i.e. a type argument contains type variables, we have to use the
@@ -29,7 +29,7 @@ object ConstructorAssembler {
     if (!structType.hasPolymorphicTypeArguments) {
       val poemTypeArguments = structType.typeArguments.map(TypeAssembler.generate)
       val poemFunctionInstance = PoemFunctionInstance(constructorName, poemTypeArguments)
-      AsmChunk(regResult, PoemInstruction.Call(regResult, poemFunctionInstance, valueArgumentRegs))
+      Chunk(regResult, PoemInstruction.Call(regResult, poemFunctionInstance, valueArgumentRegs))
     } else {
       val typeArgumentChunks = structType.typeArguments.map(TypeAssembler.generateTypeConst)
       val callInstruction = PoemInstruction.CallPoly(
@@ -38,25 +38,25 @@ object ConstructorAssembler {
         typeArgumentChunks.map(_.forceResult),
         valueArgumentRegs,
       )
-      AsmChunk.concat(typeArgumentChunks) ++ AsmChunk(regResult, callInstruction)
+      Chunk.concat(typeArgumentChunks) ++ Chunk(regResult, callInstruction)
     }
   }
 
-  def generateValue(expression: Expression.ConstructorValue)(implicit registerProvider: RegisterProvider): AsmChunk = {
+  def generateValue(expression: Expression.ConstructorValue)(implicit registerProvider: RegisterProvider): Chunk = {
     val regResult = registerProvider.fresh()
     ValueAssembler.generateConst(expression, regResult).getOrElse {
       val constructorName = AsmRuntimeNames.struct.constructor(expression.structType.schema)
       val typeArgumentChunks = expression.structType.typeArguments.map(TypeAssembler.generateTypeConst)
       val instruction = PoemInstruction.FunctionSingle(regResult, constructorName, typeArgumentChunks.map(_.forceResult))
-      AsmChunk.concat(typeArgumentChunks) ++ AsmChunk(regResult, instruction)
+      Chunk.concat(typeArgumentChunks) ++ Chunk(regResult, instruction)
     }
   }
 
-  def generatePropertyDefault(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): AsmChunk = {
+  def generatePropertyDefault(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): Chunk = {
     val functionName = AsmRuntimeNames.struct.defaultPropertyValue(property)
     val regResult = registerProvider.fresh()
     val functionInstance = PoemFunctionInstance(functionName, Vector.empty)
-    AsmChunk(regResult, PoemInstruction.Call(regResult, functionInstance, Vector.empty))
+    Chunk(regResult, PoemInstruction.Call(regResult, functionInstance, Vector.empty))
   }
 
 }

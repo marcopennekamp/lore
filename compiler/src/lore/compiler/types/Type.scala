@@ -184,29 +184,4 @@ object Type {
     }
   }
 
-  /**
-    * Creates a practically unique, stable identifier of the given type.
-    */
-  def stableIdentifier(tpe: Type): String = stableIdentifier(Vector(tpe))
-
-  /**
-    * Creates a practically unique, stable identifier of the given list of types.
-    *
-    * The identifier is first generated as a compact binary representation of the given types individually,
-    * concatenated to a single byte array, and then encoded using a SHA-256 hash truncated to 128 bits.
-    *
-    * The collision probability of the hash is so low that there will likely not be any collisions between ANY types
-    * in the system. In practice, this identifier is used to differentiate function implementations. The collision
-    * danger is thus local to every multi-function, which further increases confidence in the approach.
-    *
-    * TODO: Now that we're using a hash, we could probably just digest the string representation of the types.
-    */
-  def stableIdentifier(types: Vector[Type]): String = {
-    val stream = new ByteArrayOutputStream()
-    types.foreach(t => stream.write(TypeEncoder.encode(t).toArray))
-
-    val hash = MessageDigest.getInstance("SHA-256").digest(stream.toByteArray)
-    String.format("%064x", new BigInteger(1, hash)).take(32)
-  }
-
 }

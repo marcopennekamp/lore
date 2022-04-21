@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.semantics.expressions.Expression
@@ -10,8 +10,8 @@ object CondAssembler {
 
   def generate(
     cond: Expression.Cond,
-    caseChunks: Vector[(AsmChunk, AsmChunk)],
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+    caseChunks: Vector[(Chunk, Chunk)],
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     if (caseChunks.isEmpty) {
       throw CompilationException("`cond` expressions must always have a total case.")
     }
@@ -34,20 +34,20 @@ object CondAssembler {
 
       // If a case is total, we can omit the condition check. Total cases are thus always executed.
       val checkChunk = if (!condCase.isTotalCase) {
-        conditionChunk ++ AsmChunk(
+        conditionChunk ++ Chunk(
           PoemInstruction.JumpIfFalse(Poem.LabelLocation(nextLabel), conditionChunk.forceResult(condCase.condition.position)),
         )
-      } else AsmChunk.empty
+      } else Chunk.empty
 
       val assignResultChunk = bodyChunk.result match {
-        case Some(result) => AsmChunk(PoemInstruction.Assign(regResult, result))
+        case Some(result) => Chunk(PoemInstruction.Assign(regResult, result))
         case None =>
           // If the body doesn't have a result register, we either have a Unit or a Nothing expression. Unit means that
           // we have to assign `unit` to the target register. Nothing means that the execution already stopped, so we
           // don't need to assign anything to `target`.
           condCase.body.tpe match {
-            case TupleType.UnitType => AsmChunk(PoemInstruction.unit(regResult))
-            case BasicType.Nothing => AsmChunk.empty
+            case TupleType.UnitType => Chunk(PoemInstruction.unit(regResult))
+            case BasicType.Nothing => Chunk.empty
             case t => throw CompilationException(
               s"The body of the cond case at ${condCase.body.position} has no result register. We expected either a" +
                 s" result type of Unit or Nothing, but got $t."
@@ -55,7 +55,7 @@ object CondAssembler {
           }
       }
 
-      val endBodyChunk = AsmChunk(
+      val endBodyChunk = Chunk(
         PoemInstruction.Jump(Poem.LabelLocation(endLabel)),
       )
 
@@ -64,7 +64,7 @@ object CondAssembler {
       caseChunk
     }
 
-    (AsmChunk.concat(fullCaseChunks) ++ AsmChunk(regResult)).withPostLabel(endLabel)
+    (Chunk.concat(fullCaseChunks) ++ Chunk(regResult)).withPostLabel(endLabel)
   }
 
 }

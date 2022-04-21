@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
 import lore.compiler.poem.PoemOperation.PoemOperation
@@ -15,22 +15,22 @@ object PrimitiveOperationAssembler {
 
   def generateUnaryOperation(
     operation: Expression.UnaryOperation,
-    valueChunk: AsmChunk,
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+    valueChunk: Chunk,
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     val domainType = getDomainType(operation.value.tpe)
     val c1 = if (domainType == BasicType.Real) convertToReal(operation.value, valueChunk) else valueChunk
     val poemOperation = getPoemOperation(domainType, operation.operator)
     val target = registerProvider.fresh()
     val instruction = PoemInstruction.UnaryOperation(poemOperation, target, c1.forceResult(operation.position))
 
-    c1 ++ AsmChunk(target, instruction)
+    c1 ++ Chunk(target, instruction)
   }
 
   def generateBinaryOperation(
     operation: Expression.BinaryOperation,
-    leftChunk: AsmChunk,
-    rightChunk: AsmChunk,
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+    leftChunk: Chunk,
+    rightChunk: Chunk,
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     val domainType = getDomainType(operation.left.tpe, operation.right.tpe)
     val (c1, c2) = if (domainType == BasicType.Real) {
       (convertToReal(operation.left, leftChunk), convertToReal(operation.right, rightChunk))
@@ -43,8 +43,8 @@ object PrimitiveOperationAssembler {
 
   def generateXaryOperation(
     operation: Expression.XaryOperation,
-    operandChunks: Vector[AsmChunk],
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+    operandChunks: Vector[Chunk],
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     val domainType = getDomainType(operation.expressions.map(_.tpe): _*)
     val cs = if (domainType == BasicType.Real) {
       operation.expressions.zip(operandChunks).map((convertToReal _).tupled)
@@ -78,28 +78,28 @@ object PrimitiveOperationAssembler {
   /**
     * Converts the given arithmetic operand to Real if it is an Int.
     */
-  private def convertToReal(operand: Expression, operandChunk: AsmChunk)(implicit registerProvider: RegisterProvider): AsmChunk = {
+  private def convertToReal(operand: Expression, operandChunk: Chunk)(implicit registerProvider: RegisterProvider): Chunk = {
     if (operand.tpe == BasicType.Int) {
       val target = registerProvider.fresh()
       val instruction = PoemInstruction.IntToReal(target, operandChunk.forceResult(operand.position))
-      operandChunk ++ AsmChunk(target, instruction)
+      operandChunk ++ Chunk(target, instruction)
     } else operandChunk
   }
 
   private def buildBinaryInstruction(
     poemOperation: PoemOperation,
     target: Poem.Register,
-    c1: AsmChunk,
-    c2: AsmChunk,
+    c1: Chunk,
+    c2: Chunk,
     position: Position,
-  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+  )(implicit registerProvider: RegisterProvider): Chunk = {
     val instruction = PoemInstruction.BinaryOperation(
       poemOperation,
       target,
       c1.forceResult(position),
       c2.forceResult(position),
     )
-    c1 ++ c2 ++ AsmChunk(target, instruction)
+    c1 ++ c2 ++ Chunk(target, instruction)
   }
 
   private def getPoemOperation(domainType: BasicType, operator: UnaryOperator): PoemOperation = {

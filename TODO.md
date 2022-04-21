@@ -10,6 +10,7 @@
     - This framework should be used to test Pyramid. The tests would be placed in `*.test.lore` files directly in the Pyramid directory and be part of the generated binary.
     - We should leverage the test suite to also support benchmarks to be able to record performance changes when we optimize the VM. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
   - Isn't the default `less_than_equal?` definition incorrect for some of the more complex structures? For example, a query `%{ status: #ok } <= %{ status: #ok, result: 'abc' }` returns `false` because the shapes are neither equal (the right shape has an additional property), nor is the left shape less than the right one. However, when following the lexicographic definition of a "less than equal?", `left.status <= right.status` would be a valid interpretation, which would return `true`.
+  - Fix compiler tests.
   - Clear all `TODO (assembly)` entries.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.

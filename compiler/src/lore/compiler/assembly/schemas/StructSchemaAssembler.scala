@@ -3,7 +3,7 @@ package lore.compiler.assembly.schemas
 import lore.compiler.assembly.functions.{ConstructorAssembler, FunctionAssembler}
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.types.{TypeAssembler, TypePathAssembler}
-import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{Chunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
@@ -59,14 +59,14 @@ object StructSchemaAssembler {
     val valueArguments = orderedProperties.map(property => propertyArgumentRegisters(property))
     val bodyChunk = if (schema.isConstant) {
       val structType = TypeAssembler.generate(schema.constantType)
-      AsmChunk(regInstance, PoemInstruction.Struct(regInstance, structType, valueArguments))
+      Chunk(regInstance, PoemInstruction.Struct(regInstance, structType, valueArguments))
     } else {
       // For each type parameter, we either have to load the constructor function's argument type, or if the type
       // parameter is open, get its type via a type path from the actual value type.
       val typeArgumentChunks = schema.parameters.map { typeParameter =>
         if (!typeParameter.isOpen) {
           val regType = registerProvider.fresh()
-          AsmChunk(regType, PoemInstruction.TypeArg(regType, typeParameter.index))
+          Chunk(regType, PoemInstruction.TypeArg(regType, typeParameter.index))
         } else {
           val regType = registerProvider.fresh()
           val property = schema.openParameterDerivations(typeParameter)
@@ -75,12 +75,12 @@ object StructSchemaAssembler {
             case Vector(path) => path
             case _ => throw CompilationException(s"The type path to the open type parameter $typeParameter must exist and be unique. Schema: $schema.")
           }
-          AsmChunk(PoemInstruction.TypeOf(regType, regProperty)) ++ TypePathAssembler.generate(regType, typePath)
+          Chunk(PoemInstruction.TypeOf(regType, regProperty)) ++ TypePathAssembler.generate(regType, typePath)
         }
       }
       val typeArguments = typeArgumentChunks.map(_.forceResult(schema.definition.position))
-      val instanceChunk = AsmChunk(regInstance, PoemInstruction.StructPoly(regInstance, schema, typeArguments, valueArguments))
-      AsmChunk.concat(typeArgumentChunks) ++ instanceChunk
+      val instanceChunk = Chunk(regInstance, PoemInstruction.StructPoly(regInstance, schema, typeArguments, valueArguments))
+      Chunk.concat(typeArgumentChunks) ++ instanceChunk
     }
 
     val signature = schema.constructorSignature.copy(name = AsmRuntimeNames.struct.constructor(schema))
@@ -108,7 +108,7 @@ object StructSchemaAssembler {
       // Remember that all properties of an object must have a default value.
       val propertyChunks = schema.definition.properties.map(ConstructorAssembler.generatePropertyDefault)
       val constructorCallChunk = ConstructorAssembler.generateCall(schema.constantType, propertyChunks.map(_.forceResult))
-      val bodyChunk = AsmChunk.concat(propertyChunks) ++ constructorCallChunk
+      val bodyChunk = Chunk.concat(propertyChunks) ++ constructorCallChunk
       GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.definition.position)
     }
   }

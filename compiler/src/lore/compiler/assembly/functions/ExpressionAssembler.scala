@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{Chunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem._
@@ -67,7 +67,7 @@ class ExpressionAssembler(
     }
   }
 
-  def generate(expression: Expression): AsmChunk = {
+  def generate(expression: Expression): Chunk = {
     expression match {
       case _: Hole => throw CompilationException("Expression.Hole cannot be assembled.")
       case node: Return => handle(node)
@@ -100,23 +100,23 @@ class ExpressionAssembler(
     }
   }
 
-  def generate(expressions: Vector[Expression]): Vector[AsmChunk] = expressions.map(generate)
+  def generate(expressions: Vector[Expression]): Vector[Chunk] = expressions.map(generate)
 
-  private def handle(expression: Return): AsmChunk = {
+  private def handle(expression: Return): Chunk = {
     val valueChunk = generate(expression.value)
     val instruction = PoemInstruction.Return(valueChunk.forceResult(expression.position))
-    valueChunk ++ AsmChunk(instruction)
+    valueChunk ++ Chunk(instruction)
   }
 
-  private def handle(expression: VariableDeclaration): AsmChunk = {
+  private def handle(expression: VariableDeclaration): Chunk = {
     val valueChunk = generate(expression.value)
     val regVariable = declare(expression.variable, expression.position)
     val regValue = valueChunk.forceResult(expression.position)
     val assignment = PoemInstruction.Assign(regVariable, regValue)
-    valueChunk ++ AsmChunk(assignment)
+    valueChunk ++ Chunk(assignment)
   }
 
-  private def handle(expression: Assignment): AsmChunk = {
+  private def handle(expression: Assignment): Chunk = {
     val valueChunk = generate(expression.value)
     val regValue = valueChunk.forceResult(expression.value.position)
     expression.target match {
@@ -125,7 +125,7 @@ class ExpressionAssembler(
           case variable: LocalVariable => variableRegisterMap(variable.uniqueKey)
           case _ => throw CompilationException(s"Binding $binding cannot be mutable. Position: $position.")
         }
-        valueChunk ++ AsmChunk(PoemInstruction.Assign(regVariable, regValue))
+        valueChunk ++ Chunk(PoemInstruction.Assign(regVariable, regValue))
 
       case Expression.MemberAccess(instance, member, position) =>
         if (!instance.tpe.isInstanceOf[StructType]) {
@@ -135,7 +135,7 @@ class ExpressionAssembler(
         val instanceKind = InstanceKind.of(instance.tpe)
         val instanceChunk = generate(instance)
         val regInstance = instanceChunk.forceResult(position)
-        valueChunk ++ instanceChunk ++ AsmChunk(
+        valueChunk ++ instanceChunk ++ Chunk(
           PoemInstruction.PropertySet(instanceKind, regInstance, member.name, regValue),
         )
 
@@ -143,75 +143,75 @@ class ExpressionAssembler(
     }
   }
 
-  private def handle(expression: Block): AsmChunk = AsmChunk.concat(generate(expression.expressions))
+  private def handle(expression: Block): Chunk = Chunk.concat(generate(expression.expressions))
 
-  private def handle(expression: BindingAccess): AsmChunk = TypedBindingAssembler.generate(expression.binding)
+  private def handle(expression: BindingAccess): Chunk = TypedBindingAssembler.generate(expression.binding)
 
-  private def handle(expression: MemberAccess): AsmChunk = {
+  private def handle(expression: MemberAccess): Chunk = {
     val target = registerProvider.fresh()
     val instanceKind = InstanceKind.of(expression.instance.tpe)
     val instanceChunk = generate(expression.instance)
     val regInstance = instanceChunk.forceResult(expression.position)
     val instruction = PoemInstruction.PropertyGet(target, instanceKind, regInstance, expression.member.name)
-    instanceChunk ++ AsmChunk(target, instruction)
+    instanceChunk ++ Chunk(target, instruction)
   }
 
-  private def handle(literal: Literal): AsmChunk = {
+  private def handle(literal: Literal): Chunk = {
     val regResult = registerProvider.fresh()
     ValueAssembler.generateConstForced(literal, regResult)
   }
 
-  private def handle(expression: Tuple): AsmChunk = {
+  private def handle(expression: Tuple): Chunk = {
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
       val valueChunks = generate(expression.values)
       val instruction = PoemInstruction.Tuple(target, valueChunks.map(_.forceResult(expression.position)))
-      AsmChunk.concat(valueChunks) ++ AsmChunk(target, instruction)
+      Chunk.concat(valueChunks) ++ Chunk(target, instruction)
     }
   }
 
-  private def handle(expression: AnonymousFunction): AsmChunk = {
+  private def handle(expression: AnonymousFunction): Chunk = {
     val (chunk, poemFunctions) = LambdaAssembler.generate(expression, signature)
     generatedPoemFunctions ++= poemFunctions
     chunk
   }
 
-  private def handle(expression: MultiFunctionValue): AsmChunk = {
+  private def handle(expression: MultiFunctionValue): Chunk = {
     ValueAssembler.generateConstForced(expression, registerProvider.fresh())
   }
 
-  private def handle(expression: FixedFunctionValue): AsmChunk = {
+  private def handle(expression: FixedFunctionValue): Chunk = {
     ValueAssembler.generateConstForced(expression, registerProvider.fresh())
   }
 
-  private def handle(expression: ConstructorValue): AsmChunk = ConstructorAssembler.generateValue(expression)
+  private def handle(expression: ConstructorValue): Chunk = ConstructorAssembler.generateValue(expression)
 
-  private def handle(expression: ListConstruction): AsmChunk = {
+  private def handle(expression: ListConstruction): Chunk = {
     val regResult = registerProvider.fresh()
     ValueAssembler.generateConst(expression, regResult).getOrElse {
       val valueChunks = generate(expression.values)
       val tpe = TypeAssembler.generate(expression.tpe)
       val instruction = PoemInstruction.List(regResult, tpe, valueChunks.map(_.forceResult(expression.position)))
-      AsmChunk.concat(valueChunks) ++ AsmChunk(regResult, instruction)
+      Chunk.concat(valueChunks) ++ Chunk(regResult, instruction)
     }
   }
 
-  private def handle(expression: MapConstruction): AsmChunk = {
+  private def handle(expression: MapConstruction): Chunk = {
     val entryChunks = expression.entries.map(entry => (generate(entry.key), generate(entry.value)))
 //    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
 //    val entries = entryChunks.map { case (key, value) =>
-//      AsmChunk.combine(key, value)(elements => AsmChunk.expression(Target.List(elements)))
+//      Chunk.combine(key, value)(elements => Chunk.expression(Target.List(elements)))
 //    }
 //
-//    AsmChunk.combine(entries) { entries =>
+//    Chunk.combine(entries) { entries =>
 //      val hash = RuntimeNames.multiFunction(registry.core.hash.name)
 //      val equal = RuntimeNames.multiFunction(registry.core.equal.name)
-//      AsmChunk.expression(RuntimeApi.maps.value(entries, tpe, hash, equal))
+//      Chunk.expression(RuntimeApi.maps.value(entries, tpe, hash, equal))
 //    }
     ???
   }
 
-  private def handle(expression: ShapeValue): AsmChunk = {
+  private def handle(expression: ShapeValue): Chunk = {
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
       val propertyChunks = expression.properties.map(property => property.name -> generate(property.value))
@@ -219,24 +219,24 @@ class ExpressionAssembler(
       val metaShape = PoemMetaShape.build(sortedNames)
       val propertyRegisters = sortedChunks.map(_.forceResult(expression.position))
       val instruction = PoemInstruction.Shape(target, metaShape, propertyRegisters)
-      AsmChunk.concat(sortedChunks) ++ AsmChunk(target, instruction)
+      Chunk.concat(sortedChunks) ++ Chunk(target, instruction)
     }
   }
 
-  private def handle(symbol: Symbol): AsmChunk = {
+  private def handle(symbol: Symbol): Chunk = {
     ValueAssembler.generateConstForced(symbol, registerProvider.fresh())
   }
 
-  private def handle(expression: PropertyDefaultValue): AsmChunk = {
+  private def handle(expression: PropertyDefaultValue): Chunk = {
     ConstructorAssembler.generatePropertyDefault(expression.property)
   }
 
-  private def handle(expression: UnaryOperation): AsmChunk = {
+  private def handle(expression: UnaryOperation): Chunk = {
     val valueChunk = generate(expression.value)
     PrimitiveOperationAssembler.generateUnaryOperation(expression, valueChunk)
   }
 
-  private def handle(expression: BinaryOperation): AsmChunk = {
+  private def handle(expression: BinaryOperation): Chunk = {
     val leftChunk = generate(expression.left)
     val rightChunk = generate(expression.right)
 
@@ -248,7 +248,7 @@ class ExpressionAssembler(
     }
   }
 
-  private def transpileListAppends(expression: BinaryOperation, listChunk: AsmChunk, elementChunk: AsmChunk): AsmChunk = {
+  private def transpileListAppends(expression: BinaryOperation, listChunk: Chunk, elementChunk: Chunk): Chunk = {
     // We might be tempted to use `ListAppendUntyped` if `expression.element.tpe` is a subtype of
     // `expression.list.tpe`, but that would be incorrect. Though we can be sure that the given list has at most some
     // type `[t1]` at run time, it might also be typed as a subtype `[t2]` of `[t1]`. If at run time the list is of
@@ -259,22 +259,22 @@ class ExpressionAssembler(
     val element = elementChunk.forceResult(expression.position)
     val tpe = TypeAssembler.generate(expression.tpe)
     val instruction = PoemInstruction.ListAppend(PoemOperation.ListAppend, target, list, element, tpe)
-    listChunk ++ elementChunk ++ AsmChunk(target, instruction)
+    listChunk ++ elementChunk ++ Chunk(target, instruction)
   }
 
-  private def handle(expression: XaryOperation): AsmChunk = {
+  private def handle(expression: XaryOperation): Chunk = {
     val operandChunks = generate(expression.expressions)
     PrimitiveOperationAssembler.generateXaryOperation(expression, operandChunks)
   }
 
-  private def handle(expression: Call): AsmChunk = {
+  private def handle(expression: Call): Chunk = {
     val argumentChunks = generate(expression.arguments)
 
     val regResult = registerProvider.fresh()
     val valueArgumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
     val callChunk = expression.target match {
-      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, valueArgumentRegs))
+      case CallTarget.MultiFunction(mf) => Chunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, valueArgumentRegs))
 
       case CallTarget.Value(ConstructorValue(_, structType, _)) =>
         // Optimization: We can treat a direct constructor value call as a constructor call.
@@ -283,7 +283,7 @@ class ExpressionAssembler(
       case CallTarget.Value(function) =>
         val functionChunk = generate(function)
         val regFunction = functionChunk.forceResult(function.position)
-        functionChunk ++ AsmChunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, valueArgumentRegs))
+        functionChunk ++ Chunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, valueArgumentRegs))
 
       case CallTarget.Constructor(_) =>
         val structType = expression.tpe.asInstanceOf[StructType]
@@ -292,21 +292,21 @@ class ExpressionAssembler(
       case CallTarget.Intrinsic(intrinsic) => IntrinsicAssembler.generate(expression, intrinsic, regResult, valueArgumentRegs)
     }
 
-    AsmChunk.concat(argumentChunks) ++ callChunk
+    Chunk.concat(argumentChunks) ++ callChunk
   }
 
-  private def handle(cond: Cond): AsmChunk = {
+  private def handle(cond: Cond): Chunk = {
     val caseChunks = cond.cases.map(condCase => (generate(condCase.condition), generate(condCase.body)))
     CondAssembler.generate(cond, caseChunks)
   }
 
-  private def handle(loop: WhileLoop): AsmChunk = {
+  private def handle(loop: WhileLoop): Chunk = {
     val conditionChunk = generate(loop.condition)
     val bodyChunk = generate(loop.body)
     LoopAssembler.generate(loop, conditionChunk, bodyChunk)
   }
 
-  private def handle(loop: ForLoop): AsmChunk = {
+  private def handle(loop: ForLoop): Chunk = {
     // We have to assign registers to all extractor element variables so that the loop's body can access them.
     loop.extractors.foreach { extractor =>
       variableRegisterMap += (extractor.variable.uniqueKey -> registerProvider.fresh())
@@ -317,5 +317,5 @@ class ExpressionAssembler(
     LoopAssembler.generate(loop, collectionChunks, bodyChunk)
   }
 
-  private def handle(expression: Ascription): AsmChunk = generate(expression.value)
+  private def handle(expression: Ascription): Chunk = generate(expression.value)
 }

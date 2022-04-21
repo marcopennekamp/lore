@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.AsmChunk
+import lore.compiler.assembly.Chunk
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemInstruction, PoemIntValue, PoemIntrinsic}
@@ -17,7 +17,7 @@ object IntrinsicAssembler {
     intrinsic: PoemIntrinsic,
     regResult: Poem.Register,
     valueArgumentRegs: Vector[Poem.Register],
-  ): AsmChunk = {
+  ): Chunk = {
     val instruction = intrinsic.name match {
       case "lore.tuple.get!" =>
         val index = ValueAssembler.generate(expression.arguments(1)) match {
@@ -35,7 +35,7 @@ object IntrinsicAssembler {
         }
         PoemInstruction.Intrinsic(regResult, intrinsic, valueArgumentRegs)
     }
-    AsmChunk(regResult, instruction)
+    Chunk(regResult, instruction)
   }
 
 }

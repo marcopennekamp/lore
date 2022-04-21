@@ -1,6 +1,6 @@
 package lore.compiler.assembly.types
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.types.TypePath
 
@@ -11,9 +11,9 @@ object TypePathAssembler {
     * <i>type</i>. The result of these instructions will be the subterm of the type that was sought through the type
     * path.
     */
-  def generate(origin: Poem.Register, typePath: TypePath)(implicit registerProvider: RegisterProvider): AsmChunk = {
+  def generate(origin: Poem.Register, typePath: TypePath)(implicit registerProvider: RegisterProvider): Chunk = {
     val target = registerProvider.fresh()
-    typePath.steps.foldLeft(AsmChunk(origin)) {
+    typePath.steps.foldLeft(Chunk(origin)) {
       case (chunk, step) =>
         val source = chunk.forceResult
         val instruction = step match {
@@ -26,7 +26,7 @@ object TypePathAssembler {
           case TypePath.ShapeProperty(name) => PoemInstruction.TypePathProperty(target, source, name)
           case TypePath.TypeArgument(schema, index) => PoemInstruction.TypePathTypeArgument(target, source, schema, index)
         }
-        chunk ++ AsmChunk(target, instruction)
+        chunk ++ Chunk(target, instruction)
     }
   }
 

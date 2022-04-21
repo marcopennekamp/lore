@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemSingleFunctionValue}
 import lore.compiler.semantics.Registry
@@ -19,7 +19,7 @@ object LambdaAssembler {
     registerProvider: RegisterProvider,
     variableRegisterMap: VariableRegisterMap,
     parentCapturedVariableMap: CapturedVariableMap,
-  ): (AsmChunk, Vector[PoemFunction]) = {
+  ): (Chunk, Vector[PoemFunction]) = {
     // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
     // single-function multi-function, and finally generate the appropriate `Lambda` instruction.
     val capturedVariables = expression.capturedVariables
@@ -58,7 +58,7 @@ object LambdaAssembler {
     } else {
       PoemInstruction.Lambda(regResult, name, poemType, capturedVariableChunks.map(_.forceResult))
     }
-    val resultChunk = AsmChunk.concat(capturedVariableChunks) ++ AsmChunk(regResult, instruction)
+    val resultChunk = Chunk.concat(capturedVariableChunks) ++ Chunk(regResult, instruction)
     (resultChunk, generatedPoemFunctions)
   }
 

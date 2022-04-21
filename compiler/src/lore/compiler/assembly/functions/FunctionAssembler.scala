@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.AsmChunk
+import lore.compiler.assembly.Chunk
 import lore.compiler.assembly.optimization.{ConstSmasher, NoopOptimizer, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
@@ -26,7 +26,7 @@ object FunctionAssembler {
     */
   def generate(
     signature: FunctionSignature,
-    body: Either[Expression, AsmChunk],
+    body: Either[Expression, Chunk],
     capturedVariables: CapturedVariableMap = Map.empty,
   )(implicit registry: Registry): Vector[PoemFunction] = {
     body match {
@@ -60,7 +60,7 @@ object FunctionAssembler {
     * Generate a PoemFunction from the given function signature and body chunk. This can be used in cases where a body
     * [[Expression]] is not available, such as with constructor functions.
     */
-  def generate(signature: FunctionSignature, bodyChunk: Option[AsmChunk])(implicit registry: Registry): PoemFunction = {
+  def generate(signature: FunctionSignature, bodyChunk: Option[Chunk])(implicit registry: Registry): PoemFunction = {
     val instructions = bodyChunk match {
       case Some(bodyChunk) => finalizeBody(signature, bodyChunk)
       case None => Vector.empty
@@ -79,13 +79,13 @@ object FunctionAssembler {
     )
   }
 
-  private def finalizeBody(signature: FunctionSignature, bodyChunk: AsmChunk): Vector[PoemInstruction] = {
+  private def finalizeBody(signature: FunctionSignature, bodyChunk: Chunk): Vector[PoemInstruction] = {
     // We have to either return the result of `bodyChunk` from the function, or return the unit value if `bodyChunk`
     // has no result. If the last instruction of the body is already a return instruction, we don't need to add any
     // additional instructions.
     val returnChunk = bodyChunk.result match {
-      case Some(regValue) => AsmChunk(PoemInstruction.Return(regValue))
-      case None if bodyChunk.instructions.lastOption.exists(PoemInstruction.isReturn) => AsmChunk.empty
+      case Some(regValue) => Chunk(PoemInstruction.Return(regValue))
+      case None if bodyChunk.instructions.lastOption.exists(PoemInstruction.isReturn) => Chunk.empty
       case None =>
         if (TupleType.UnitType </= signature.outputType) {
           throw CompilationException("A block with a unit result can only be returned from a function that has a Unit" +
@@ -95,14 +95,14 @@ object FunctionAssembler {
         // We can always use register 0, because we're at the end of the function and we have no meaningful live
         // variables.
         val regResult = Poem.Register(0)
-        AsmChunk(
+        Chunk(
           PoemInstruction.Tuple(regResult, Vector.empty),
           PoemInstruction.Return(regResult),
         )
     }
 
     // We have to take care that all post labels of `bodyChunk` are resolved. A body ending in a `Return` instruction
-    // should not generate a post label, so in the case that `returnChunk` is `AsmChunk.empty`, `bodyChunk` will likely
+    // should not generate a post label, so in the case that `returnChunk` is `Chunk.empty`, `bodyChunk` will likely
     // not have any post labels. Using chunk concatenation assures that the post labels of `bodyChunk` are properly
     // attached to the correct instruction.
     val fullChunk = bodyChunk ++ returnChunk
