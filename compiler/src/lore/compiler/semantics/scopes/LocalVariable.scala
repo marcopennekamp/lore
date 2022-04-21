@@ -1,8 +1,6 @@
 package lore.compiler.semantics.scopes
 
 import lore.compiler.core.UniqueKey
-import lore.compiler.target.Target
-import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.Type
 
 /**
@@ -33,8 +31,6 @@ case class LocalVariable(
   tpe: Type,
   override val isMutable: Boolean,
 ) extends TypedBinding {
-  lazy val targetVariable: Target.Variable = RuntimeNames.localVariable(name)
-
   override def equals(obj: Any): Boolean = obj match {
     case other: LocalVariable => this.uniqueKey == other.uniqueKey
     case _ => false

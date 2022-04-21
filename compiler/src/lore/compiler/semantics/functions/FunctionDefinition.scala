@@ -2,14 +2,12 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.semantics.scopes.{BindingScope, FunctionBindingScope, ImmutableTypeScope, TypeScope}
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.ExprNode
-import lore.compiler.target.TargetRepresentable
-import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
@@ -24,7 +22,7 @@ class FunctionDefinition(
   val signature: FunctionSignature,
   val bodyNode: Option[ExprNode],
   val localModule: LocalModule,
-) extends Positioned with TargetRepresentable {
+) extends Positioned {
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
@@ -71,19 +69,6 @@ class FunctionDefinition(
       throw CompilationException(s"The function instance $signature cannot be instantiated monomorphically, because it is not monomorphic.")
     }
     FunctionInstance(this, signature)
-  }
-
-  /**
-    * The run-time name of a function incorporates a hash of the function's input type, which makes it practically
-    * unique for each function definition. This is similar to C++'s name mangling, though with an element of highly
-    * unlikely collision. This approach is preferable to just giving the function an index or a UUID, because a stable
-    * identifier allows us to reconstruct the function's name, which will be especially useful between compilation
-    * passes.
-    */
-  lazy val runtimeName: String = {
-    val runtimeName = RuntimeNames.namePath(name)
-    val id = Type.stableIdentifier(signature.inputType.elements)
-    s"$runtimeName$$$id"
   }
 }
 

@@ -4,8 +4,8 @@ package lore.compiler.feedback
   * A reporter handles feedback raised during compilation. The different phases and subcomponents of the compiler are
   * usually invoked with a [[MemoReporter]], which collects all feedback. At crucial boundaries the compiler checks
   * that no errors have been produced, and only then can compilation continue. One such boundary is between the
-  * transformation phase and the transpilation phase: transpilation can only be performed if analysis produced no
-  * errors.
+  * transformation phase and the assembly phase: assembly can only be performed if no errors were found in previous
+  * phases.
   *
   * Once compilation is complete, other reporters can be used to print out feedback, write it to a file, or do
   * something else entirely.
