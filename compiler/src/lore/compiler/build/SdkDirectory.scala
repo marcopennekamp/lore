@@ -15,10 +15,6 @@ object SdkDirectory {
     override def message: String = s"The SDK at `$path` does not contain the Pyramid standard library in a sub-directory `pyramid`."
   }
 
-  case class RuntimeNotFound(path: Path) extends Feedback.Error(Position.unknown) {
-    override def message: String = s"The SDK at `$path` does not contain the runtime in a sub-directory `runtime`."
-  }
-
   def verify(sdkDirectory: Path)(implicit reporter: Reporter): Unit = {
     if (!Files.isDirectory(sdkDirectory)) {
       reporter.error(SdkNotFound(sdkDirectory))
@@ -30,7 +26,6 @@ object SdkDirectory {
       }
 
       ensureDirectoryExists("pyramid", PyramidNotFound)
-      ensureDirectoryExists("runtime", RuntimeNotFound)
     }
   }
 
