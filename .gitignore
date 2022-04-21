@@ -21,7 +21,6 @@ project/project/target
 
 # Lore
 lore_target
-lore-program.js
 test/lore.jar
 
 # Deno

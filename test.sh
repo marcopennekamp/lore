@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO (assembly): Update this for the new VM runtime.
+
 # If you pass a folder name as the first parameter, Deno will only execute tests contained in the folder. For example,
 # running `./test.sh features/dispatch` will only execute dispatch tests.
 
