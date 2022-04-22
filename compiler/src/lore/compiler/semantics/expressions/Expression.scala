@@ -307,19 +307,7 @@ object Expression {
 
   sealed trait Loop extends Expression {
     def body: Expression
-
-    /**
-      * A loop with element type Unit is treated as a special loop with type Unit.
-      *
-      * TODO (assembly): We don't need any of this special handling if we separate the "unused expression" analysis and
-      *                  the expression's types. See the corresponding to-do at the top of ExpressionAssemblyVisitor.
-      *                  By the way, the current treatment is actually semantically incorrect in cases where a loop
-      *                  should produce a list of Unit values for counting.
-      */
-    def tpe: Type = body.tpe match {
-      case TupleType.UnitType => TupleType.UnitType
-      case elementType => ListType(elementType)
-    }
+    def tpe: Type = ListType(body.tpe)
   }
 
   case class WhileLoop(condition: Expression, body: Expression, position: Position) extends Loop

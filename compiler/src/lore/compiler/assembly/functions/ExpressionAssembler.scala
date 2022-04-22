@@ -15,14 +15,6 @@ import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
 
-// TODO (assembly): There is a difference between an expression returning Unit and an expression's result not being
-//                  used. In the case of a loop, Unit incidentally also expresses that the result is not being used,
-//                  but only due to a "hack" inside Expression.Loop. In other cases, e.g. for Cond, without an "unused
-//                  expression" analysis, we have to assume that the Cond should always result in a target, so we at
-//                  least have to assign Unit to a target register if its result type is Unit. So, introducing a
-//                  separate "unused expression" analysis would improve our ability to generate more optimal code
-//                  without resorting to result type hacks.
-
 /**
   * The expression assembler is not an ExpressionVisitor because select expressions either don't need their child
   * chunks in certain situations (e.g. when a list can be turned into a [[PoemListValue]]), or generating a child chunk

@@ -4,7 +4,6 @@ import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.TupleType
 
 object LoopAssembler {
 
@@ -13,8 +12,7 @@ object LoopAssembler {
     conditionChunk: Chunk,
     bodyChunk: Chunk,
   )(implicit registerProvider: RegisterProvider): Chunk = {
-    val regResult = registerProvider.fresh()
-    val initializationChunk = generateResultInitialization(loop, regResult)
+    val (regResult, initializationChunk) = generateResultInitialization(loop)
 
     // We need two labels. One label for jumping from the body back to the condition for the next iteration, and one
     // label to skip past the body.
@@ -37,7 +35,7 @@ object LoopAssembler {
       )
     ).withPostLabel(postBodyLabel)
 
-    initializationChunk ++ checkConditionChunk ++ fullBodyChunk ++ Chunk(regResult)
+    initializationChunk ++ checkConditionChunk ++ fullBodyChunk ++ generateResultGet(regResult)
   }
 
   /**
@@ -90,8 +88,7 @@ object LoopAssembler {
     collectionChunks: Vector[Chunk],
     bodyChunk: Chunk,
   )(implicit registerProvider: RegisterProvider, variableRegisterMap: VariableRegisterMap): Chunk = {
-    val regResult = registerProvider.fresh()
-    val initializationChunk = generateResultInitialization(loop, regResult)
+    val (regResult, initializationChunk) = generateResultInitialization(loop)
 
     // We have to support multiple extractors. This requires us to build nested loops recursively. Each extractor part
     // has a "pre-body" and a "post-body". The pre-body part initializes the registers for the index `i` and list
@@ -158,22 +155,33 @@ object LoopAssembler {
     val fullLoopChunk = extractorParts.foldRight(fullBodyChunk) { case (extractorPart, innerChunk) =>
       extractorPart.preBodyChunk ++ innerChunk ++ extractorPart.postBodyChunk
     }
-    (initializationChunk ++ fullLoopChunk ++ Chunk(regResult)).withPostLabel(postExpressionLabel)
+    (initializationChunk ++ fullLoopChunk ++ generateResultGet(regResult)).withPostLabel(postExpressionLabel)
   }
 
-  private def shouldIgnoreResult(loop: Expression.Loop): Boolean = loop.tpe == TupleType.UnitType
-
-  private def generateResultInitialization(loop: Expression.Loop, regResult: Poem.Register): Chunk = {
-    Chunk(
-      if (!shouldIgnoreResult(loop)) PoemInstruction.List(regResult, TypeAssembler.generate(loop.tpe), Vector.empty)
-      else PoemInstruction.unit(regResult)
-    )
+  private def generateResultInitialization(loop: Expression.Loop)(implicit registerProvider: RegisterProvider): (Option[Poem.Register], Chunk) = {
+    // We only need to build a result list if `loop` is used.
+    if (loop.isUsed) {
+      val regResult = registerProvider.fresh()
+      val chunk = Chunk(PoemInstruction.List(regResult, TypeAssembler.generate(loop.tpe), Vector.empty))
+      (Some(regResult), chunk)
+    } else {
+      println(s"Loop unused at ${loop.position}.")
+      (None, Chunk.empty)
+    }
   }
 
-  private def generateResultAppend(loop: Expression.Loop, regResult: Poem.Register, bodyChunk: Chunk): Chunk = {
-    if (!shouldIgnoreResult(loop)) Chunk(
-      PoemInstruction.ListAppendUntyped(regResult, regResult, bodyChunk.forceResult(loop.body.position)),
-    ) else Chunk.empty
+  private def generateResultAppend(loop: Expression.Loop, regResult: Option[Poem.Register], bodyChunk: Chunk): Chunk = {
+    regResult match {
+      case Some(regResult) => Chunk(
+        PoemInstruction.ListAppendUntyped(regResult, regResult, bodyChunk.forceResult(loop.body.position)),
+      )
+      case None => Chunk.empty
+    }
+  }
+
+  private def generateResultGet(regResult: Option[Poem.Register]): Chunk = regResult match {
+    case Some(regResult) => Chunk(regResult)
+    case None => Chunk.empty
   }
 
 }
