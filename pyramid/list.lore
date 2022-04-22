@@ -87,13 +87,11 @@ module List do
     */
   @where A
   func repeat(element: A, n: Int): [A] = do
-    let mut result: [A] = []
     let mut i = 0
     while i < n
-      result = result :+ element
       i += 1
+      element
     end
-    result
   end
 end
 
