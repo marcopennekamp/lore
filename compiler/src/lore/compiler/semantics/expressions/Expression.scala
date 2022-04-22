@@ -12,6 +12,20 @@ import lore.compiler.typing.InferenceVariable
 
 sealed trait Expression extends Positioned {
   def tpe: Type
+
+  /**
+    * Whether the result of this expression is used by its parent expression. If the expression is unused, certain
+    * instructions may be omitted during assembly.
+    *
+    * `isUsed` is set by [[lore.compiler.transformation.UsageAnalyzer]] during the transformation stage.
+    */
+  var isUsed: Boolean = true
+
+  def isUnused: Boolean = !isUsed
+
+  def setUnused(): Unit = {
+    isUsed = false
+  }
 }
 
 object Expression {

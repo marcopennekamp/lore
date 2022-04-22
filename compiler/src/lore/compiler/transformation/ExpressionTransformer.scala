@@ -12,8 +12,8 @@ import lore.compiler.typing.Typing
 object ExpressionTransformer {
 
   /**
-    * Builds a semantic expression tree from the given AST expression node, performing type inference in the process.
-    * Ensures that all other expression constraints hold.
+    * Builds a semantic expression tree from the given AST expression node, performing type inference and usage
+    * analysis in the process. Ensures that all other expression constraints hold.
     *
     * @param label An identifier string that is used during inference logging to make a specific function's inference
     *              logs more accessible.
@@ -41,7 +41,10 @@ object ExpressionTransformer {
           ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
 
           val builtinsVisitor = new BuiltinsVisitor
-          ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
+          val builtinsExpression = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
+
+          UsageAnalyzer.analyzeUsage(builtinsExpression)
+          builtinsExpression
         }.getOrElse(hole)
       } else hole
     }
