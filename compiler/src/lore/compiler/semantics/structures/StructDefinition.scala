@@ -19,12 +19,4 @@ class StructDefinition(
 
   lazy val openProperties: Vector[StructPropertyDefinition] = properties.filter(_.isOpen)
 
-  /**
-    * Whether the default values of this struct's properties are all localized. If not, and if the struct is an object,
-    * the object's instance must be initialized lazily.
-    */
-  lazy val allDefaultsLocalized: Boolean = {
-    properties.forall(_.defaultValue.forall(_.isLocalized))
-  }
-
 }
