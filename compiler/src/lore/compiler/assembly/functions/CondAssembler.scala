@@ -16,9 +16,8 @@ object CondAssembler {
       throw CompilationException("`cond` expressions must always have a total case.")
     }
 
-    // TODO (assembly): We can omit the result (and all assignResultChunks) completely if the expression is unused,
-    //                  which is still a pending to-do because the analysis has to be implemented first.
-    val regResult = registerProvider.fresh()
+    // We only need a result register if the cond expression is used.
+    val regResult = if (cond.isUsed) Some(registerProvider.fresh()) else None
 
     // If a condition is false, we need to skip that case's body and jump to the next case. The last case has to skip
     // to the `endLabel` instead. If a case body has been executed, we also need to jump to `endLabel` to finish the
@@ -39,20 +38,25 @@ object CondAssembler {
         )
       } else Chunk.empty
 
-      val assignResultChunk = bodyChunk.result match {
-        case Some(result) => Chunk(PoemInstruction.Assign(regResult, result))
-        case None =>
-          // If the body doesn't have a result register, we either have a Unit or a Nothing expression. Unit means that
-          // we have to assign `unit` to the target register. Nothing means that the execution already stopped, so we
-          // don't need to assign anything to `target`.
-          condCase.body.tpe match {
-            case TupleType.UnitType => Chunk(PoemInstruction.unit(regResult))
-            case BasicType.Nothing => Chunk.empty
-            case t => throw CompilationException(
-              s"The body of the cond case at ${condCase.body.position} has no result register. We expected either a" +
-                s" result type of Unit or Nothing, but got $t."
-            )
+      val assignResultChunk = regResult match {
+        case Some(regResult) =>
+          bodyChunk.result match {
+            case Some(result) => Chunk(PoemInstruction.Assign(regResult, result))
+            case None =>
+              // If the body doesn't have a result register, we either have a Unit or a Nothing expression. Unit means
+              // that we have to assign `unit` to the target register. Nothing means that the execution already
+              // stopped, so we don't need to assign anything to `target`.
+              condCase.body.tpe match {
+                case TupleType.UnitType => Chunk(PoemInstruction.unit(regResult))
+                case BasicType.Nothing => Chunk.empty
+                case t => throw CompilationException(
+                  s"The body of the cond case at ${condCase.body.position} has no result register. We expected either a" +
+                    s" result type of Unit or Nothing, but got $t."
+                )
+              }
           }
+
+        case None => Chunk.empty
       }
 
       val endBodyChunk = Chunk(
@@ -64,7 +68,8 @@ object CondAssembler {
       caseChunk
     }
 
-    (Chunk.concat(fullCaseChunks) ++ Chunk(regResult)).withPostLabel(endLabel)
+    val resultChunk = regResult.map(Chunk(_)).getOrElse(Chunk.empty)
+    (Chunk.concat(fullCaseChunks) ++ resultChunk).withPostLabel(endLabel)
   }
 
 }

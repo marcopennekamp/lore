@@ -162,6 +162,12 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: Tuple): Chunk = {
+    // A unit value that is unused can be safely ignored. This is an important optimization for unused `if` expressions
+    // whose `else` part is unspecified and thus `()`.
+    if (expression.isUnused && expression.values.isEmpty) {
+      return Chunk.empty
+    }
+
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
       val valueChunks = generate(expression.values)
