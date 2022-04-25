@@ -125,12 +125,10 @@ object LoopAssembler {
         // We have to add the collection chunk to the initialization of its corresponding loop. Say we have a loop
         // with two extractors, where the inner collection depends on the outer collection, for example:
         //
-        //    for xs <- xss, x <- map(xs, foo) yield x
+        //    for xs <- xss, x <- append3(xs) yield x
         //
-        // Every time the `x <- map(xs, foo)` loop is initialized, we have to apply `map(foo)` to `xs`. This requires
+        // Every time the `x <- append3(xs)` loop is initialized, we have to apply `append3` to `xs`. This requires
         // the inner loop's initializer to include the collection chunk.
-        // TODO (assembly): Write a test that checks that `for xs <- xss, x <- map(xs, foo) yield x` indeed works as a
-        //                  flatten with a map on each `xs`.
         val preBodyChunk = collectionChunk ++ Chunk(
           PoemInstruction.IntConst(regIndex, 0),
           PoemInstruction.ListLength(regListLength, regList),
