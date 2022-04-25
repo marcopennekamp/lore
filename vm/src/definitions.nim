@@ -124,6 +124,14 @@ type
     ## contain no type variables and can be used as is. A polymorphic type contains at least one type variable. Such
     ## types must be used with instructions containing the word `Poly`. All type variables are substituted using the
     ## current function instance's type arguments.
+    # TODO (assembly): All kinds of entries in the constants table are 8 bytes wide (we should be careful with strings,
+    # though). To remove a layer of pointer indirection, we could remove the individual sequences and turn `Constants`
+    # into a single `ImSeq`. This would require a new limit to be introduced for the maximum number of constants, or
+    # alternatively constant IDs within a function would become "global" across all kinds of constants, which is likely
+    # the preferred way. This would play well with having one `Constants` instance per `Function`, which is another
+    # outstanding issue. If an entry isn't 8 bytes wide, we can always put it in a `ref object`, which will add pointer
+    # indirection for that specific kind of entry, but this is still preferable to having pointer indirection for ALL
+    # kinds of entries.
     types*: seq[Type]
     values*: seq[TaggedValue]
     names*: seq[string]
