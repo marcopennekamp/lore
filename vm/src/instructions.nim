@@ -169,20 +169,20 @@ type
       ## `FunctionSingle` will be used rarely. It's only needed when the type arguments contain type variables (a value
       ## constant can be used in other cases), so there are no optimized instructions such as `FunctionSingle1`.
 
-    Lambda
+    FunctionLambda
       ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `tpe(arg2)`
       ##
       ## Creates a new lambda function value with `targ` as type arguments and the given registers as captured values.
       ## The multi-function the lambda is derived from must be a single function. The function must have the same
       ## number of type parameters, which must be unbounded.
 
-    Lambda0
+    FunctionLambda0
       ## reg(arg0) <- lambda(mf(arg1), targ), with type `tpe(arg2)`
 
-    LambdaPoly
+    FunctionLambdaPoly
       ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `substitute(tpe(arg2))`
 
-    LambdaPoly0
+    FunctionLambdaPoly0
       ## reg(arg0) <- lambda(mf(arg1), targ), with type `substitute(tpe(arg2))`
 
     LambdaLocal

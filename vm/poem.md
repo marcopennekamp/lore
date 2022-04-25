@@ -105,7 +105,7 @@ A **Function** represents a single function definition. Its structure is as foll
     - **Instruction count** (uint16)
     - **Instructions** (Instruction*)
 
-Note that functions backing lambdas (used with the `Lambda` instruction) may not have type parameter *bounds*. The VM expects all type parameters to have the bounds `Nothing` and `Any`.
+Note that functions backing lambdas (used with the `FunctionLambda` instruction) may not have type parameter *bounds*. The VM expects all type parameters to have the bounds `Nothing` and `Any`.
 
 ### Instructions
 

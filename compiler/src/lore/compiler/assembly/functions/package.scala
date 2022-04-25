@@ -12,7 +12,7 @@ package object functions {
 
   /**
     * Assigns a unique index to the unique key of each captured variable. The index must correspond to the position of
-    * the register in the `Lambda` instruction and will be used by `LambdaLocal` to load the value.
+    * the register in the `FunctionLambda` instruction and will be used by `LambdaLocal` to load the value.
     */
   type CapturedVariableMap = Map[UniqueKey, Int]
 }

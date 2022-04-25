@@ -449,16 +449,16 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionSingle, cont
     poem_instruction.type_argument_regs,
   )
 
-method resolve_instruction(poem_instruction: PoemInstructionLambda, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+method resolve_instruction(poem_instruction: PoemInstructionFunctionLambda, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   if poem_instruction.captured_regs.len > operand_list_limit:
-    quit(fmt"The `Lambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
+    quit(fmt"The `FunctionLambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
 
   let tpe = context.get_constants.types[poem_instruction.tpe]
   let prefix = [poem_instruction.target_reg, poem_instruction.mf, poem_instruction.tpe]
   if tpe.is_monomorphic:
-    generate_xary_application(Operation.Lambda, [Operation.Lambda0], prefix, poem_instruction.captured_regs)
+    generate_xary_application(Operation.FunctionLambda, [Operation.FunctionLambda0], prefix, poem_instruction.captured_regs)
   else:
-    generate_xary_application(Operation.LambdaPoly, [Operation.LambdaPoly0], prefix, poem_instruction.captured_regs)
+    generate_xary_application(Operation.FunctionLambdaPoly, [Operation.FunctionLambdaPoly0], prefix, poem_instruction.captured_regs)
 
 method resolve_instruction(poem_instruction: PoemInstructionList, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   if poem_instruction.element_regs.len > operand_list_limit:
@@ -757,10 +757,10 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypePathTypeArgument: Operation.TypePathTypeArgument
 
   of PoemOperation.IntConst, PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.FunctionSingle,
-     PoemOperation.Lambda, PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct,
-     PoemOperation.StructPoly, PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic,
-     PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return,
-     PoemOperation.TypeConst:
+     PoemOperation.FunctionLambda, PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape,
+     PoemOperation.Struct, PoemOperation.StructPoly, PoemOperation.PropertyGet, PoemOperation.PropertySet,
+     PoemOperation.Intrinsic, PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call,
+     PoemOperation.CallPoly, PoemOperation.Return, PoemOperation.TypeConst:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

@@ -468,10 +468,10 @@ proc evaluate(frame: FramePtr) =
       let value = new_single_function_value(cast[pointer](function_instance), tpe)
       regv_set_arg(0, value)
 
-    of Operation.Lambda: generate_lambda(false, true)
-    of Operation.Lambda0: generate_lambda(false, false)
-    of Operation.LambdaPoly: generate_lambda(true, true)
-    of Operation.LambdaPoly0: generate_lambda(true, false)
+    of Operation.FunctionLambda: generate_lambda(false, true)
+    of Operation.FunctionLambda0: generate_lambda(false, false)
+    of Operation.FunctionLambdaPoly: generate_lambda(true, true)
+    of Operation.FunctionLambdaPoly0: generate_lambda(true, false)
 
     of Operation.LambdaLocal:
       if ImSeq[TaggedValue](frame.lambda_context) == nil:

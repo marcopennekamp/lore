@@ -21,7 +21,7 @@ object LambdaAssembler {
     parentCapturedVariableMap: CapturedVariableMap,
   ): (Chunk, Vector[PoemFunction]) = {
     // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
-    // single-function multi-function, and finally generate the appropriate `Lambda` instruction.
+    // single-function multi-function, and finally generate the appropriate `FunctionLambda` instruction.
     val capturedVariables = expression.capturedVariables
     val capturedVariableMap = capturedVariables.zipWithIndex.map { case (variable, index) => variable.uniqueKey -> index }.toMap
 
@@ -34,8 +34,9 @@ object LambdaAssembler {
     // be global to the VM's universe. For example, we can't simply call these functions `lambda0`, `lambda1`, etc.,
     // because if there are two functions of the same name, their lambda names will clash. As the names are local to
     // the current function, there is no need to have names stable across compilation runs, so a UUID suffices.
-    // The `Lambda` instruction passes type arguments to the lambda implicitly, so we have to declare the lambda with
-    // the same type parameters. However, we can and should remove the bounds, as these bounds will never be checked.
+    // The `FunctionLambda` instruction passes type arguments to the lambda implicitly, so we have to declare the
+    // lambda with the same type parameters. However, we can and should remove the bounds, as these bounds will never
+    // be checked.
     val name = parentSignature.name.appendToLastSegment("/lambda-" + UUID.randomUUID().toString)
     val parameters = expression.parameters.map {
       parameter => ParameterDefinition(parameter.uniqueKey, Some(parameter.name), parameter.tpe, parameter.position)
@@ -56,7 +57,7 @@ object LambdaAssembler {
     val instruction = if (signature.isMonomorphic && capturedVariables.isEmpty) {
       PoemInstruction.Const(regResult, PoemSingleFunctionValue(name, Vector.empty, poemType))
     } else {
-      PoemInstruction.Lambda(regResult, name, poemType, capturedVariableChunks.map(_.forceResult))
+      PoemInstruction.FunctionLambda(regResult, name, poemType, capturedVariableChunks.map(_.forceResult))
     }
     val resultChunk = Chunk.concat(capturedVariableChunks) ++ Chunk(regResult, instruction)
     (resultChunk, generatedPoemFunctions)
