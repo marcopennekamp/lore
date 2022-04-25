@@ -611,7 +611,7 @@ for e1 <- col1, e2 <- col2
 end
 ```
 
-In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the `for` comprehension into **nested iteration**.
+In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the `for` comprehension into **nested iteration**. Each extractor opens its own scope, so `for xs <- xs, xs <- xs` is technically possible. The first collection `xs` refers to the outer scope, while the second collection `xs` refers to the variable of the first extractor.
 
 For now, the only collections allowed are lists and maps, but we want to extend `for` comprehensions to arbitrary iterables.
 

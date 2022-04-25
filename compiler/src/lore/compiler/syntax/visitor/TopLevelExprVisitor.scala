@@ -60,10 +60,10 @@ trait TopLevelExprVisitor[A, M[_]] {
   /**
     * Visits an iteration node with its extractors and the body.
     *
-    * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
-    * iteration visitor to process the extractors before the body is visited.
+    * We don't pass the evaluated extractors and body but rather a function that visits these AST nodes. This allows
+    * the iteration visitor to properly implement scoping and process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => M[A]): M[A]
+  def visitIteration(node: ExprNode.ForNode)(visitExtractors: Vector[() => M[A]], visitBody: () => M[A]): M[A]
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up variable declarations and more.
@@ -112,10 +112,10 @@ object TopLevelExprVisitor {
           visitor.visitCond(node)(visitedCases)
 
         case node@ForNode(extractors, body, _) =>
-          val visitedExtractors = extractors.map {
-            case ExtractorNode(nameNode, collection, _) => (nameNode.value, visit(collection, props))
+          val visitExtractors = extractors.map {
+            case ExtractorNode(_, collection, _) => () => visit(collection, props)
           }
-          visitor.visitIteration(node)(visitedExtractors, () => visit(body, props))
+          visitor.visitIteration(node)(visitExtractors, () => visit(body, props))
       }
     }
   }

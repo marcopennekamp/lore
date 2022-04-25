@@ -44,7 +44,7 @@ object ReturnConstraints {
 /**
   * Ensures that expressions cannot follow a `return` expression. Reports errors for any violating expressions.
   */
-private class ReturnDeadCodeVisitor(implicit reporter: Reporter) extends CombiningTopLevelExprVisitor.Identity[DefinitelyReturns] {
+private class ReturnDeadCodeVisitor(implicit reporter: Reporter) extends CombiningTopLevelExprVisitor[DefinitelyReturns] {
   override def combine(returns: Vector[DefinitelyReturns]): DefinitelyReturns = {
     if (returns.isEmpty) false
     else returns.forall(identity)

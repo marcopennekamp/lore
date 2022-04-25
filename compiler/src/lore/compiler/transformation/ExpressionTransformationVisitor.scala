@@ -278,27 +278,33 @@ class ExpressionTransformationVisitor(
   }
 
   override def visitIteration(node: ForNode)(
-    extractorTuples: Vector[(String, Expression)],
+    visitExtractors: Vector[() => Expression],
     visitBody: () => Expression,
   ): Expression = {
-    // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
-    // a new loop context.
     scopeContext.openScope()
 
-    def transformExtractor(variableName: String, collection: Expression, position: Position) = {
+    def transformExtractor(variableName: String, visitExtractor: () => Expression, position: Position) = {
+      val collection = visitExtractor()
+
+      // Each extractor declares a new scope, as extractor variables may be redefined from left to right. The
+      // extractor's collection must be resolved outside this new scope so that it can use a previous extractor
+      // variable or a variable from the outer scope. This enables loops such as `for xs <- xs, xs <- foo(xs)`.
+      scopeContext.openScope()
       val elementType = new InferenceVariable
       val variable = LocalVariable(variableName, elementType, isMutable = false)
       scopeContext.currentScope.register(variable, position)
       Expression.Extractor(variable, collection)
     }
 
-    val extractors = extractorTuples.zip(node.extractors.map(_.nameNode.position)).map {
-      case ((variableName, collection), position) => transformExtractor(variableName, collection, position)
+    val extractors = visitExtractors.zip(node.extractors).map {
+      case (visitExtractor, extractorNode) => transformExtractor(extractorNode.name, visitExtractor, extractorNode.nameNode.position)
     }
     val body = visitBody()
 
-    // We have to close the scope that we opened for the extractors.
-    scopeContext.closeScope()
+    // We have to close the scopes that were opened for the extractors.
+    for (_ <- visitExtractors.indices) {
+      scopeContext.closeScope()
+    }
 
     Expression.ForLoop(extractors, body, node.position)
   }
