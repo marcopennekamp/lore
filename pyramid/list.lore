@@ -1,13 +1,24 @@
 module lore
 
 module List do
+  use core.panic
   use Enum._
   use Option._
 
-  // TODO (assembly): `get!` should panic if the index is out of bounds.
+  /**
+    * Returns the element at the given index. If `index` is out of range, `get!` panics.
+    */
   @where A
-  func get!(list: [A], index: Int): A = intrinsic[A]('lore.list.get!', list, index)
+  func get!(list: [A], index: Int): A = do
+    if index < 0 || index >= length(list)
+      panic('Index out of bounds for `List.get!`: $index.')
+    end
+    intrinsic[A]('lore.list.get!', list, index)
+  end
 
+  /**
+    * Returns the element at the given index. If `index` is out of range, the result is `None`.
+    */
   @where A
   func get(list: [A], index: Int): Option[A] = do
     if index >= 0 && index < length(list) then Some(list |> get!(index)) else None
