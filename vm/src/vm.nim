@@ -14,6 +14,8 @@ when is_main_module:
   from universes import nil
   from utils import with_frame_mem, benchmark
 
+  const runs = 1
+
   let help = "Please run `vm.nim` with a `.poem` file as the first and the entry function's name as the second argument." &
     " The entry function should be a single function."
   if param_count() >= 2:
@@ -22,8 +24,11 @@ when is_main_module:
     set_active_universe(universe)
     let target = addr universe.multi_functions[param_str(2)].functions[0].monomorphic_instance
     with_frame_mem(proc (frame_mem: pointer) =
-      benchmark("Execution time", 1):
+      when runs == 1:
         run_and_print(target, frame_mem)
+      else:
+        benchmark("Execution time", runs):
+          discard evaluator.evaluate(target, frame_mem)
     )
   else:
     echo help
