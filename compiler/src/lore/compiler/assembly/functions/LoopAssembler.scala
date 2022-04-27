@@ -163,7 +163,6 @@ object LoopAssembler {
       val chunk = Chunk(PoemInstruction.List(regResult, TypeAssembler.generate(loop.tpe), Vector.empty))
       (Some(regResult), chunk)
     } else {
-      println(s"Loop unused at ${loop.position}.")
       (None, Chunk.empty)
     }
   }
