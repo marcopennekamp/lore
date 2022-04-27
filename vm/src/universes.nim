@@ -28,6 +28,8 @@ template resolve_many(universe, sequence): untyped = sequence.map(o => universe.
 
 proc resolve_instructions(poem_function: PoemFunction, universe: Universe): seq[Instruction]
 
+proc attach_constants(universe: Universe, poem: Poem)
+
 proc finalize(mf: MultiFunction)
 
 proc initialize_introspection(universe: Universe)
@@ -38,8 +40,6 @@ proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParam
 ########################################################################################################################
 # Top-level resolution.                                                                                                #
 ########################################################################################################################
-
-proc attach_constants(universe: Universe, poem: Poem)
 
 proc resolve*(poems: seq[Poem]): Universe =
   ## Resolves a Universe from the given set of Poem definitions.
@@ -87,6 +87,10 @@ proc resolve*(poems: seq[Poem]): Universe =
   universe.initialize_introspection()
   universe
 
+########################################################################################################################
+# Constants.                                                                                                           #
+########################################################################################################################
+
 proc attach_constants(universe: Universe, poem: Poem) =
   let constants = universe.resolve(poem.constants)
   for poem_function in poem.functions:
@@ -94,43 +98,38 @@ proc attach_constants(universe: Universe, poem: Poem) =
     poem_function.resolved_function.instructions = poem_function.resolve_instructions(universe)
 
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
-  let constants = new_constants()
-
-  for poem_type in poem_constants.types:
-    constants.types.add(universe.resolve(poem_type))
-
-  for poem_value in poem_constants.values:
-    constants.values.add(universe.resolve(poem_value))
-
-  constants.names = poem_constants.names
-
-  for name in poem_constants.intrinsics:
-    if name notin universe.intrinsics:
-      quit(fmt"The intrinsic `{name}` doesn't exist.")
-    constants.intrinsics.add(universe.intrinsics[name])
-
-  for name in poem_constants.schemas:
-    if name notin universe.schemas:
-      quit(fmt"The schema `{name}` doesn't exist.")
-    constants.schemas.add(universe.schemas[name])
-
-  for name in poem_constants.global_variables:
-    if name notin universe.global_variables:
-      quit(fmt"The global variable `{name}` doesn't exist.")
-    constants.global_variables.add(universe.global_variables[name])
-
-  for name in poem_constants.multi_functions:
-    if name notin universe.multi_functions:
-      quit(fmt"The multi-function `{name}` doesn't exist.")
-    constants.multi_functions.add(universe.multi_functions[name])
-
-  for poem_function_instance in poem_constants.function_instances:
-    constants.function_instances.add(universe.resolve(poem_function_instance))
-
-  for poem_meta_shape in poem_constants.meta_shapes:
-    constants.meta_shapes.add(get_meta_shape(poem_meta_shape.property_names))
-
-  constants
+  var entries = new_immutable_seq[ConstantsEntry](poem_constants.entries.len)
+  for i in 0 ..< poem_constants.entries.len:
+    let poem_entry = poem_constants.entries[i]
+    entries[i] =
+      case poem_entry.variant
+      of PoemConstantsEntryVariant.Type:
+        cast[ConstantsEntry](universe.resolve(poem_entry.tpe))
+      of PoemConstantsEntryVariant.Value:
+        cast[ConstantsEntry](universe.resolve(poem_entry.value))
+      of PoemConstantsEntryVariant.Name:
+        cast[ConstantsEntry](ConstantsEntryName(name: poem_entry.name))
+      of PoemConstantsEntryVariant.Intrinsic:
+        if poem_entry.name notin universe.intrinsics:
+          quit(fmt"The intrinsic `{poem_entry.name}` doesn't exist.")
+        cast[ConstantsEntry](universe.intrinsics[poem_entry.name])
+      of PoemConstantsEntryVariant.Schema:
+        if poem_entry.name notin universe.schemas:
+          quit(fmt"The schema `{poem_entry.name}` doesn't exist.")
+        cast[ConstantsEntry](universe.schemas[poem_entry.name])
+      of PoemConstantsEntryVariant.GlobalVariable:
+        if poem_entry.name notin universe.global_variables:
+          quit(fmt"The global variable `{poem_entry.name}` doesn't exist.")
+        cast[ConstantsEntry](universe.global_variables[poem_entry.name])
+      of PoemConstantsEntryVariant.MultiFunction:
+        if poem_entry.name notin universe.multi_functions:
+          quit(fmt"The multi-function `{poem_entry.name}` doesn't exist.")
+        cast[ConstantsEntry](universe.multi_functions[poem_entry.name])
+      of PoemConstantsEntryVariant.FunctionInstance:
+        cast[ConstantsEntry](universe.resolve(poem_entry.function_instance))
+      of PoemConstantsEntryVariant.MetaShape:
+        cast[ConstantsEntry](get_meta_shape(poem_entry.meta_shape.property_names))
+  Constants(entries)
 
 ########################################################################################################################
 # Schema resolution.                                                                                                   #
@@ -453,7 +452,7 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionLambda, cont
   if poem_instruction.captured_regs.len > operand_list_limit:
     quit(fmt"The `FunctionLambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
 
-  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let tpe = context.get_constants.const_type(poem_instruction.tpe)
   let prefix = [poem_instruction.target_reg, poem_instruction.mf, poem_instruction.tpe]
   if tpe.is_monomorphic:
     generate_xary_application(Operation.FunctionLambda, [Operation.FunctionLambda0], prefix, poem_instruction.captured_regs)
@@ -464,7 +463,7 @@ method resolve_instruction(poem_instruction: PoemInstructionList, context: Instr
   if poem_instruction.element_regs.len > operand_list_limit:
     quit(fmt"The `List` operation cannot yet handle more than {operand_list_limit} elements.")
 
-  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let tpe = context.get_constants.const_type(poem_instruction.tpe)
   let prefix = [poem_instruction.target_reg, poem_instruction.tpe]
   if tpe.is_monomorphic:
     generate_xary_application(Operation.List, [Operation.List0, Operation.List1], prefix, poem_instruction.element_regs)
@@ -472,7 +471,7 @@ method resolve_instruction(poem_instruction: PoemInstructionList, context: Instr
     generate_xary_application(Operation.ListPoly, [Operation.ListPoly0, Operation.ListPoly1], prefix, poem_instruction.element_regs)
 
 method resolve_instruction(poem_instruction: PoemInstructionListAppend, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let tpe = context.get_constants.const_type(poem_instruction.tpe)
   let operation = if tpe.is_monomorphic: Operation.ListAppend else: Operation.ListAppendPoly
   @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.list_reg, poem_instruction.element_reg, poem_instruction.tpe)]
 
@@ -526,15 +525,15 @@ method resolve_instruction(poem_instruction: PoemInstructionPropertySet, context
 
 proc get_struct_property_offset(instance_schema: uint16, name: uint16, context: InstructionResolutionContext): uint16 =
   let constants = context.get_constants
-  let schema = cast[StructSchema](constants.schemas[instance_schema])
-  let name = constants.names[name]
+  let schema = cast[StructSchema](constants.const_schema(instance_schema))
+  let name = constants.const_name(name)
   let offset = schema.property_index.find_offset_if_exists(name)
   if offset < 0:
     quit(fmt"Cannot access property `{name}` of schema {schema.name}: the property doesn't exist.")
   cast[uint16](offset)
 
 method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
+  let intrinsic = context.get_constants.const_intrinsic(poem_instruction.intrinsic)
   let argument_count = poem_instruction.argument_regs.len
   if intrinsic.arity != argument_count:
     quit(fmt"The intrinsic `{intrinsic.name}` with arity {intrinsic.arity} cannot be called with {argument_count} arguments.")
@@ -547,7 +546,7 @@ method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: 
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let global = context.get_constants.global_variables[poem_instruction.global]
+  let global = context.get_constants.const_global_variable(poem_instruction.global)
   let operation = if global.is_initialized: Operation.GlobalGetEager else: Operation.GlobalGetLazy
   @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.global)]
 
@@ -566,7 +565,7 @@ proc check_call_function_arity(function: Function, argument_count: int) =
     quit(fmt"The function `{function.name}` with arity {function.arity} cannot be called with {argument_count} arguments.")
 
 method resolve_instruction(poem_instruction: PoemInstructionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let function_instance = context.get_constants.function_instances[poem_instruction.fin]
+  let function_instance = context.get_constants.const_function_instance(poem_instruction.fin)
   check_call_function_arity(function_instance.function, poem_instruction.value_argument_regs.len)
   generate_opl_or_direct(
     Operation.Call,
@@ -576,7 +575,7 @@ method resolve_instruction(poem_instruction: PoemInstructionCall, context: Instr
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionCallPoly, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let mf = context.get_constants.multi_functions[poem_instruction.mf]
+  let mf = context.get_constants.const_multi_function(poem_instruction.mf)
   check_call_function_arity(mf.get_single_function, poem_instruction.value_argument_regs.len)
   generate_opl_or_direct2(
     Operation.CallPoly,
@@ -593,7 +592,7 @@ method resolve_instruction(poem_instruction: PoemInstructionReturn, context: Ins
     @[new_instruction(Operation.Return, poem_instruction.value_reg)]
 
 method resolve_instruction(poem_instruction: PoemInstructionTypeConst, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let tpe = context.get_constants.const_type(poem_instruction.tpe)
   let operation = if tpe.is_monomorphic: Operation.TypeConst else: Operation.TypeConstPoly
   @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.tpe)]
 

@@ -54,12 +54,10 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    values: @[
-      poem_real_value(3.3),
-      poem_real_value(2.5),
-      poem_multi_function_value("handle", poem_function_type(handle_input, handle_output)),
-    ],
+  constants: poem_constants(
+    poem_const_value(poem_real_value(3.3)),
+    poem_const_value(poem_real_value(2.5)),
+    poem_const_value(poem_multi_function_value("handle", poem_function_type(handle_input, handle_output))),
   ),
   functions: @[handle0, handle1, handle2, test],
 )

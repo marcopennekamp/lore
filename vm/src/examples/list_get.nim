@@ -18,10 +18,8 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    types: @[
-      poem_list_type(poem_int_type),
-    ],
+  constants: poem_constants(
+    poem_const_type(poem_list_type(poem_int_type)),
   ),
   functions: @[test],
 )

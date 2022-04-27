@@ -4,12 +4,12 @@ This document describes the structure of the `.poem` bytecode format. Poem files
 
 ### Poems
 
-A **Poem** is a single bytecode unit. It contains exactly one *Constants* table, any number of *TypeDeclarations*, and any number of *Function* definitions. All Functions in a Poem have the same Constants table.
+A **Poem** is a single bytecode unit. It contains exactly one *Constants* table, any number of *Schemas*, any number of *GlobalVariables*, and any number of *Function* definitions. All Functions in a Poem have the same constants table.
 
 Concretely, a Poem file has the following structure:
 
   - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
-  - **Constants** (Constants)
+  - **ConstantsTable** (ConstantsTable)
   - **Schema count** (uint16)
   - **Schemas** (Schema*)
   - **Global variable count** (uint16)
@@ -19,28 +19,38 @@ Concretely, a Poem file has the following structure:
 
 ### Constants
 
-The **Constants** table holds Poem-wide constant types and values, as well as references to meta shapes, intrinsics, global variables, and multi-functions. Each kind of constant is indexed separately by a 16-bit unsigned integer.
+The **Constants** table holds Poem-wide constant types, values, and names, as well as references to intrinsics, schemas, global variables, multi-functions, function instances, and meta shapes. Constants are indexed by a 16-bit unsigned integer ID global to the constants table. For example, if the constants table has two types and two values, the ID of the second value would be 3. Constants do not need to be ordered by their variant. For example, a constants table may consist of a value, schema, type, function instance, and another type, in this order.
 
-The Constants table has the following structure:
+The constants table has the following structure:
 
-  - **Types count** (uint16)
-  - **Types** (Type*)
-  - **Values count** (uint16)
-  - **Values** (Value*)
-  - **Names count** (uint16)
-  - **Names** (String*)
-  - **Intrinsics count** (uint16)
-  - **Intrinsics** (String*): The full names of the intrinsic references.
-  - **Schemas count** (uint16)
-  - **Schemas** (String*): The full names of the schema references.
-  - **Global variables count** (uint16)
-  - **Global variables** (String*): The full names of the global variable references.
-  - **Multi-functions count** (uint16)
-  - **Multi-functions** (String*): The full names of the multi-function references.
-  - **Function instances count** (uint16)
-  - **Function instances** (FunctionInstance*): Function instance constants are used by `Call` instructions to directly call a function instance, without the need to create a function instance or a constant function value.
-  - **Meta shape count** (uint16)
-  - **Meta shapes** (MetaShape*): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
+  - **Entry count** (uint16)
+  - **Entries** (ConstantsEntry*)
+
+### ConstantsEntry
+
+A **ConstantsEntry** has the following structure:
+
+  - **Variant** (uint8):
+    - 0: Type
+    - 1: Value
+    - 2: Name
+    - 3: Intrinsic
+    - 4: Schema
+    - 5: GlobalVariable
+    - 6: MultiFunction
+    - 7: FunctionInstance
+    - 8: MetaShape
+  - The representation depends on *Variant*:
+    - Type:
+      - **Type** (Type)
+    - Value:
+      - **Value** (Value)
+    - Name, Intrinsic, Schema, GlobalVariable, MultiFunction:
+      - **Name** (String): The name of the intrinsic/schema/global variable/multi-function.
+    - FunctionInstance:
+      - **FunctionInstance** (FunctionInstance): Function instance constants are used by `Call` instructions to directly call a function instance, without the need to create a function instance or a constant function value.
+    - MetaShape:
+      - **MetaShape** (MetaShape): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
 
 ### Schemas
 

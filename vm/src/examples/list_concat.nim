@@ -36,32 +36,33 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    # input: list1 in register 0, list2 in register 1
-    poem_inst(PoemOperation.Const, 0, 0),
-    poem_inst(PoemOperation.Const, 1, 1),
-    poem_inst_dispatch(0, 0, 0, 1),        # list1 = concat(list1, list2)
+    poem_inst(PoemOperation.Const, 0, 1),
+    poem_inst(PoemOperation.Const, 1, 2),
+    poem_inst_dispatch(0, 3, 0, 1),        # list1 = concat(list1, list2)
     poem_inst_return(0),
   ],
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    types: @[
+  constants: poem_constants(
+    poem_const_type(
       poem_list_type(
-        poem_sum_type(@[poem_type_variable(0), poem_type_variable(1)]),
-      ),
-    ],
-    values: @[
+        poem_sum_type(@[poem_type_variable(0), poem_type_variable(1)])
+      )
+    ),
+    poem_const_value(
       poem_list_value(
         @[poem_int_value(1)],
         poem_list_type(poem_int_type),
       ),
+    ),
+    poem_const_value(
       poem_list_value(
         @[poem_string_value("hello"), poem_string_value("world")],
         poem_list_type(poem_string_type),
       ),
-    ],
-    multi_functions: @["concat"],
+    ),
+    poem_const_multi_function("concat"),
   ),
   functions: @[concat, test],
 )

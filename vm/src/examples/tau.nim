@@ -38,8 +38,9 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    global_variables: @["pi", "tau"],
+  constants: poem_constants(
+    poem_const_global_variable("pi"),
+    poem_const_global_variable("tau"),
   ),
   global_variables: @[pi, tau],
   functions: @[tau_initialize, test],

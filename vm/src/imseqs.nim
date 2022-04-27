@@ -58,9 +58,9 @@ proc new_immutable_seq*[T](source: ImSeq[T]): ImSeq[T] =
   ## guaranteed to be fresh and may thus be mutated for initialization.
   new_immutable_seq[T](addr source.elements, source.len)
 
-proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
-proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
-proc `[]`*[T](seq: ImSeq[T], index: uint): T = seq.elements[index]
+proc `[]`*[T](seq: ImSeq[T], index: int): T {.inline.} = seq.elements[index]
+proc `[]`*[T](seq: ImSeq[T], index: int64): T {.inline.} = seq.elements[index]
+proc `[]`*[T](seq: ImSeq[T], index: uint): T {.inline.} = seq.elements[index]
 
 proc `[]=`*[T](seq: var ImSeq[T], index: int, value: T) =
   ## Replaces the sequence's element at the given index. This is an unsafe operation, as ImSeqs should be immutable,

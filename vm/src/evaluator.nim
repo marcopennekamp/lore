@@ -88,22 +88,22 @@ template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(tar
 # TODO (vm): Using `constants` directly becomes awkward when procs are involved. The macros should instead access
 #            `frame.function.constants`, but we have to make sure that this doesn't adversely affect performance.
 
-template const_types(index): untyped = constants.types[index]
+template const_types(index): untyped = constants.const_type(index)
 template const_types_arg(index): untyped = const_types(instruction.arg(index))
 
-template const_value(index): untyped = constants.values[index]
+template const_value(index): untyped = constants.const_value(index)
 template const_value_arg(index): untyped = const_value(instruction.arg(index))
 
 template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
 template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
 
-template const_name_arg(index): untyped = constants.names[instruction.arg(index)]
-template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.arg(index)]
-template const_schema_arg(index): untyped = constants.schemas[instruction.arg(index)]
-template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
-template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
-template const_function_instance_arg(index): untyped = constants.function_instances[instruction.arg(index)]
-template const_meta_shape_arg(index): untyped = constants.meta_shapes[instruction.arg(1)]
+template const_name_arg(index): untyped = constants.const_name(instruction.arg(index))
+template const_intrinsic_arg(index): untyped = constants.const_intrinsic(instruction.arg(index))
+template const_schema_arg(index): untyped = constants.const_schema(instruction.arg(index))
+template const_global_variable_arg(index): untyped = constants.const_global_variable(instruction.arg(index))
+template const_multi_function_arg(index): untyped = constants.const_multi_function(instruction.arg(index))
+template const_function_instance_arg(index): untyped = constants.const_function_instance(instruction.arg(index))
+template const_meta_shape_arg(index): untyped = constants.const_meta_shape(instruction.arg(1))
 
 ########################################################################################################################
 # Operand list support.                                                                                                #

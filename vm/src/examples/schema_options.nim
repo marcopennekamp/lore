@@ -80,7 +80,7 @@ let get1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst_struct_property_get(0, 0, 1, 0),
+    poem_inst_struct_property_get(0, 0, 8, 6),
     poem_inst_return(0),
   ],
 )
@@ -92,8 +92,8 @@ let get2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst(PoemOperation.Const, 0, 4),
-    poem_inst_intrinsic(0, 0, 0),  # lore.core.panic('Cannot `get!` a `None` value.')
+    poem_inst(PoemOperation.Const, 0, 5),
+    poem_inst_intrinsic(0, 7, 0),  # lore.core.panic('Cannot `get!` a `None` value.')
   ],
 )
 
@@ -113,7 +113,7 @@ let flatten1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst_struct_property_get(0, 0, 1, 0),
+    poem_inst_struct_property_get(0, 0, 8, 6),
     poem_inst_return(0),
   ],
 )
@@ -137,49 +137,69 @@ let test = PoemFunction(
   register_count: 3,
   instructions: @[
     # Assure that None is flattened to None. The VM panics if it isn't.
-    poem_inst(PoemOperation.Const, 0, 0),
-    poem_inst_dispatch(0, 1, 0),                 # r0 = flatten(None)
-    poem_inst(PoemOperation.Const, 1, 0),
+    poem_inst(PoemOperation.Const, 0, 1),
+    poem_inst_dispatch(0, 10, 0),                # r0 = flatten(None)
+    poem_inst(PoemOperation.Const, 1, 1),
     poem_inst(PoemOperation.StructEq, 0, 0, 1),  # r0 == None
     poem_inst(PoemOperation.JumpIfTrue, 7, 0),
-    poem_inst(PoemOperation.Const, 0, 3),        # r0 = '`None` must be flattened to `None`.'
-    poem_inst_intrinsic(0, 0, 0),                # lore.core.panic(r0)
+    poem_inst(PoemOperation.Const, 0, 4),        # r0 = '`None` must be flattened to `None`.'
+    poem_inst_intrinsic(0, 7, 0),                # lore.core.panic(r0)
 
     # Get `12` from the first Some constant.
-    poem_inst(PoemOperation.Const, 0, 1),        # r0 = Some(12)
-    poem_inst_dispatch(1, 0, 0),                 # r1 = get!(r0)
+    poem_inst(PoemOperation.Const, 0, 2),        # r0 = Some(12)
+    poem_inst_dispatch(1, 9, 0),                 # r1 = get!(r0)
 
     # Get `"42"` from the second nested Some constant.
-    poem_inst(PoemOperation.Const, 0, 2),        # r0 = Some(Some("42"))
-    poem_inst_dispatch(0, 1, 0),                 # r0 = flatten(r0)
-    poem_inst_dispatch(2, 0, 0),                 # r2 = get!(r0)
+    poem_inst(PoemOperation.Const, 0, 3),        # r0 = Some(Some("42"))
+    poem_inst_dispatch(0, 10, 0),                # r0 = flatten(r0)
+    poem_inst_dispatch(2, 9, 0),                 # r2 = get!(r0)
 
     # Build an ExampleResult from `12` and `"42"`.
-    poem_inst_call(0, 0, 1, 2),                  # r0 = ExampleResult$new(r1, r2)
+    poem_inst_call(0, 11, 1, 2),                 # r0 = ExampleResult$new(r1, r2)
     poem_inst_return(0),
   ],
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    types: @[
-      poem_named_type("ExampleResult"),
-    ],
-    values: @[
+  constants: poem_constants(
+    # ID: 0
+    poem_const_type(poem_named_type("ExampleResult")),
+
+    # ID: 1..5
+    poem_const_value(
       poem_struct_value("lore.option.None", @[], @[]),
+    ),
+    poem_const_value(
       new_some_value(poem_int_type, poem_int_value(12)),
+    ),
+    poem_const_value(
       new_some_value(
         new_some_type(poem_string_type),
         new_some_value(poem_string_type, poem_string_value("42")),
       ),
+    ),
+    poem_const_value(
       poem_string_value("`None` must be flattened to `None`."),
+    ),
+    poem_const_value(
       poem_string_value("Cannot `get!` a `None` value."),
-    ],
-    names: @["value"],
-    intrinsics: @["lore.core.panic"],
-    schemas: @["ExampleResult", "lore.option.Some"],
-    multi_functions: @["lore.option.get!", "lore.option.flatten"],
-    function_instances: @[poem_function_instance("ExampleResult$new")],
+    ),
+
+    # ID: 6
+    poem_const_name("value"),
+
+    # ID: 7
+    poem_const_intrinsic("lore.core.panic"),
+
+    # ID: 8
+    poem_const_schema("lore.option.Some"),
+
+    # ID: 9..10
+    poem_const_multi_function("lore.option.get!"),
+    poem_const_multi_function("lore.option.flatten"),
+
+    # ID: 11
+    poem_const_function_instance(poem_function_instance("ExampleResult$new")),
   ),
   schemas: @[Option, Some, None, ExampleResult],
   functions: @[ExampleResult_construct, get0, get1, get2, flatten0, flatten1, flatten2, test],

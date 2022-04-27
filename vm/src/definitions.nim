@@ -109,41 +109,36 @@ type
   LambdaContext* = distinct ImSeq[TaggedValue]
     ## A LambdaContext bundles the values of captured variables for a lambda function.
 
-  # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
-  #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
-  #            For example, if we have a constants table with 1 type, 2 values, and 1 global variable, 0 would access
-  #            the type, 1 and 2 the values, and 3 the global variable. The evaluator would have to cast the resulting
-  #            constant accordingly, but this is basically a no-op once optimized.
-
-  Constants* = ref object
-    ## A Constants object provides quick access to predefined types, values, names, intrinsics, global variables,
-    ## multi-functions, and meta shapes. It may be shared across multiple function definitions. All entries are
-    ## separately accessed by a uint16 index.
+  Constants* = ImSeq[ConstantsEntry]
+    ## A Constants object provides quick access to predefined types, values, names, intrinsics, schemas,
+    ## global variables, multi-functions, function instances, and meta shapes. It may be shared across multiple
+    ## function definitions.
+    ##
+    ## Constants table entries are heterogenous and accessed by a uint16 index. For example, the constants table may
+    ## contain a type, a value, and another type, in this order. This lessens the burden on the compiler, as entries of
+    ## different variants don't have to be separated, and also removes a layer of pointer indirection, as the table
+    ## would otherwise consist of multiple sequences. Entries being 8 bytes wide enables the heterogenity of the
+    ## constants table. The single `ImSeq` structure of the constants table saves memory for smaller tables compared to
+    ## having a sequence per entry variant.
     ##
     ## Types are implicitly separated into monomorphic and polymorphic entities. A monomorphic type is guaranteed to
     ## contain no type variables and can be used as is. A polymorphic type contains at least one type variable. Such
     ## types must be used with instructions containing the word `Poly`. All type variables are substituted using the
     ## current function instance's type arguments.
-    # TODO (assembly): All kinds of entries in the constants table are 8 bytes wide (we should be careful with strings,
-    # though). To remove a layer of pointer indirection, we could remove the individual sequences and turn `Constants`
-    # into a single `ImSeq`. This would require a new limit to be introduced for the maximum number of constants, or
-    # alternatively constant IDs within a function would become "global" across all kinds of constants, which is likely
-    # the preferred way. This would play well with having one `Constants` instance per `Function`, which is another
-    # outstanding issue. If an entry isn't 8 bytes wide, we can always put it in a `ref object`, which will add pointer
-    # indirection for that specific kind of entry, but this is still preferable to having pointer indirection for ALL
-    # kinds of entries.
-    types*: seq[Type]
-    values*: seq[TaggedValue]
-    names*: seq[string]
-      ## Constant names are used for accessing properties.
-    intrinsics*: seq[Intrinsic]
-    schemas*: seq[Schema]
-    global_variables*: seq[GlobalVariable]
-    multi_functions*: seq[MultiFunction]
-    function_instances*: seq[ptr FunctionInstance]
-    meta_shapes*: seq[MetaShape]
-      ## A constant table's meta shapes are used to allocate new shape instances via the requisite instructions. They
-      ## are not referenced by constant table types or values, nor by any other type declarations.
+    ##
+    ## Constant names have the Nim type `ConstantsEntryName` and are used for accessing properties. The constants table
+    ## may also contain meta shapes, which are used to allocate new shape instances via the requisite instructions.
+    ## They are not referenced by constant table types or values, nor by any other type declarations.
+  ConstantsEntry* = pointer
+  ConstantsEntryName* = ref object
+    ## This is a defensive reference that ensures that a `string` can be placed in the constants table safely and can
+    ## always be casted to and from `pointer`.
+    name*: string
+
+when sizeof(Type) != 8 or sizeof(TaggedValue) != 8 or sizeof(ConstantsEntryName) != 8 or sizeof(Intrinsic) != 8 or
+     sizeof(Schema) != 8 or sizeof(GlobalVariable) != 8 or sizeof(MultiFunction) != 8 or
+     sizeof(ptr FunctionInstance) != 8 or sizeof(MetaShape) != 8:
+  {.error: "All kinds of entries of the constants table must be exactly 8 bytes wide.".}
 
 const operand_list_limit*: int = 256
 
@@ -325,4 +320,14 @@ proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 # Constants.                                                                                                           #
 ########################################################################################################################
 
-proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])
+proc `[]`*(constants: Constants, index: int): ConstantsEntry {.inline.} = cast[ImSeq[ConstantsEntry]](constants)[index]
+
+proc const_type*(constants: Constants, index: uint16): Type {.inline.} = cast[Type](constants[index])
+proc const_value*(constants: Constants, index: uint16): TaggedValue {.inline.} = cast[TaggedValue](constants[index])
+proc const_name*(constants: Constants, index: uint16): string {.inline.} = cast[ConstantsEntryName](constants[index]).name
+proc const_intrinsic*(constants: Constants, index: uint16): Intrinsic {.inline.} = cast[Intrinsic](constants[index])
+proc const_schema*(constants: Constants, index: uint16): Schema {.inline.} = cast[Schema](constants[index])
+proc const_global_variable*(constants: Constants, index: uint16): GlobalVariable {.inline.} = cast[GlobalVariable](constants[index])
+proc const_multi_function*(constants: Constants, index: uint16): MultiFunction {.inline.} = cast[MultiFunction](constants[index])
+proc const_function_instance*(constants: Constants, index: uint16): ptr FunctionInstance {.inline.} = cast[ptr FunctionInstance](constants[index])
+proc const_meta_shape*(constants: Constants, index: uint16): MetaShape {.inline.} = cast[MetaShape](constants[index])

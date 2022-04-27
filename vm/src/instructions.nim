@@ -5,15 +5,15 @@ type
     ##  - `argx`: The xth uint16 argument of the instruction (starting with 0).
     ##  - `reg(x)`: Register x.
     ##  - `opl(x)`: The xth entry in the operand list.
-    ##  - `tpe(x)`: The xth entry in the types constants table.
-    ##  - `val(x)`: The xth entry in the values constants table.
-    ##  - `nam(x)`: The xth entry in the names constants table.
-    ##  - `intr(x)`: The xth entry in the intrinsics constants table.
-    ##  - `sch(x)`: The xth entry in the schemas constants table.
-    ##  - `glb(x)`: The xth entry in the global variables constants table.
-    ##  - `mf(x)`: The xth entry in the multi functions constants table.
-    ##  - `fin(x)`: The xth entry in the function instances constants table.
-    ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
+    ##  - `tpe(x)`: The xth entry in the constants table as a type.
+    ##  - `val(x)`: The xth entry in the constants table as a value.
+    ##  - `nam(x)`: The xth entry in the constants table as a name.
+    ##  - `intr(x)`: The xth entry in the constants table as an intrinsic.
+    ##  - `sch(x)`: The xth entry in the constants table as a schema.
+    ##  - `glb(x)`: The xth entry in the constants table as a global variable.
+    ##  - `mf(x)`: The xth entry in the constants table as a multi-function.
+    ##  - `fin(x)`: The xth entry in the constants table as a function instance.
+    ##  - `mtsh(x)`: The xth entry in the constants table as a meta shape.
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `lctx(x)`: The xth value in the lambda context.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.

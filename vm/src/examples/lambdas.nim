@@ -28,8 +28,8 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    values: @[
+  constants: poem_constants(
+    poem_const_value(
       poem_single_function_value(
         "increment",
         @[],
@@ -38,7 +38,7 @@ let poem* = Poem(
           poem_int_type,
         ),
       ),
-    ],
+    ),
   ),
   functions: @[increment, test],
 )

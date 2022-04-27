@@ -21,6 +21,6 @@ let nine = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(),
+  constants: poem_constants(),
   functions: @[nine],
 )

@@ -11,25 +11,26 @@ let test = PoemFunction(
   register_count: 3,
   instructions: @[
     poem_inst(PoemOperation.Const, 1, 0),                # Get the constant shape value.
-    poem_inst_shape_property_get(2, 1, 0),               # Get property zoo from the shape value.
-    poem_inst_intrinsic(0, 0, 2),                        # Put zoo's length (lore.strings.length) into register 0.
-    poem_inst_shape_property_get(2, 1, 1),               # Get property foo from the shape value.
+    poem_inst_shape_property_get(2, 1, 1),               # Get property zoo from the shape value.
+    poem_inst_intrinsic(0, 3, 2),                        # Put zoo's length (lore.strings.length) into register 0.
+    poem_inst_shape_property_get(2, 1, 2),               # Get property foo from the shape value.
     poem_inst(PoemOperation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
     poem_inst_return(0),
   ],
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    values: @[
+  constants: poem_constants(
+    poem_const_value(
       poem_shape_value(
         @["bar", "foo", "zoo"],
         @[poem_real_type, poem_int_type, poem_string_type],
         @[poem_real_value(2.7), poem_int_value(7), poem_string_value("smith")],
       ),
-    ],
-    names: @["zoo", "foo"],
-    intrinsics: @["lore.string.length"],
+    ),
+    poem_const_name("zoo"),
+    poem_const_name("foo"),
+    poem_const_intrinsic("lore.string.length")
   ),
   functions: @[test],
 )

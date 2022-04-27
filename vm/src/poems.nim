@@ -25,15 +25,32 @@ type
     functions*: seq[PoemFunction]
 
   PoemConstants* = ref object
-    types*: seq[PoemType]
-    values*: seq[PoemValue]
-    names*: seq[string]
-    intrinsics*: seq[string]
-    schemas*: seq[string]
-    global_variables*: seq[string]
-    multi_functions*: seq[string]
-    function_instances*: seq[PoemFunctionInstance]
-    meta_shapes*: seq[PoemMetaShape]
+    entries*: seq[PoemConstantsEntry]
+
+  PoemConstantsEntryVariant* {.pure.} = enum
+    Type
+    Value
+    Name
+    Intrinsic
+    Schema
+    GlobalVariable
+    MultiFunction
+    FunctionInstance
+    MetaShape
+
+  PoemConstantsEntry* = ref object of RootObj
+    case variant*: PoemConstantsEntryVariant
+    of PoemConstantsEntryVariant.Type:
+      tpe*: PoemType
+    of PoemConstantsEntryVariant.Value:
+      value*: PoemValue
+    of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+       PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+      name*: string
+    of PoemConstantsEntryVariant.FunctionInstance:
+      function_instance*: PoemFunctionInstance
+    of PoemConstantsEntryVariant.MetaShape:
+      meta_shape*: PoemMetaShape
 
   PoemSchema* = ref object of RootObj
     kind*: Kind
@@ -458,6 +475,23 @@ type
     tpe*: PoemNamedType
     property_values*: seq[PoemValue]
 
+proc poem_constants*(entries: varargs[PoemConstantsEntry]): PoemConstants = PoemConstants(entries: @entries)
+proc poem_const_type*(tpe: PoemType): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.Type, tpe: tpe)
+proc poem_const_value*(value: PoemValue): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.Value, value: value)
+proc poem_const_name*(name: string): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.Name, name: name)
+proc poem_const_intrinsic*(name: string): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.Intrinsic, name: name)
+proc poem_const_schema*(name: string): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.Schema, name: name)
+proc poem_const_global_variable*(name: string): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.GlobalVariable, name: name)
+proc poem_const_multi_function*(name: string): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.MultiFunction, name: name)
+proc poem_const_function_instance*(function_instance: PoemFunctionInstance): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.FunctionInstance, function_instance: function_instance)
+proc poem_const_meta_shape*(meta_shape: PoemMetaShape): PoemConstantsEntry = PoemConstantsEntry(variant: PoemConstantsEntryVariant.MetaShape, meta_shape: meta_shape)
+
+proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool, declaration_index: uint16): PoemStructProperty =
+  PoemStructProperty(name: name, tpe: tpe, is_open: is_open, declaration_index: declaration_index)
+
+proc poem_function_instance*(name: string): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: @[])
+proc poem_function_instance*(name: string, type_arguments: seq[PoemType]): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: type_arguments)
+
 let poem_any_type*: PoemType = PoemBasicType(tpe: any_type)
 let poem_nothing_type*: PoemType = PoemBasicType(tpe: nothing_type)
 let poem_int_type*: PoemType = PoemBasicType(tpe: int_type)
@@ -465,12 +499,6 @@ let poem_real_type*: PoemType = PoemBasicType(tpe: real_type)
 let poem_boolean_type*: PoemType = PoemBasicType(tpe: boolean_type)
 let poem_string_type*: PoemType = PoemBasicType(tpe: string_type)
 let poem_unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
-
-proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool, declaration_index: uint16): PoemStructProperty =
-  PoemStructProperty(name: name, tpe: tpe, is_open: is_open, declaration_index: declaration_index)
-
-proc poem_function_instance*(name: string): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: @[])
-proc poem_function_instance*(name: string, type_arguments: seq[PoemType]): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: type_arguments)
 
 proc poem_type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
   PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
@@ -656,6 +684,7 @@ proc write_uint16(stream: FileStream, value: uint16) = stream.write(value)
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants
+proc read_constants_entry(stream: FileStream): PoemConstantsEntry
 proc read_schema(stream: FileStream): PoemSchema
 proc read_struct_property(stream: FileStream): PoemStructProperty
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
@@ -669,6 +698,7 @@ proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry)
 proc write_schema(stream: FileStream, schema: PoemSchema)
 proc write_struct_property(stream: FileStream, property: PoemStructProperty)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
@@ -726,38 +756,44 @@ proc write_poem*(path: string, poem: Poem) =
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants =
-  let types = stream.read_many_with_count(PoemType, uint16, read_type)
-  let values = stream.read_many_with_count(PoemValue, uint16, read_value)
-  let names = stream.read_many_with_count(string, uint16, read_string_with_length)
-  let intrinsics = stream.read_many_with_count(string, uint16, read_string_with_length)
-  let schemas = stream.read_many_with_count(string, uint16, read_string_with_length)
-  let global_variables = stream.read_many_with_count(string, uint16, read_string_with_length)
-  let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
-  let function_instances = stream.read_many_with_count(PoemFunctionInstance, uint16, read_function_instance)
-  let meta_shapes = stream.read_many_with_count(PoemMetaShape, uint16, read_meta_shape)
+  PoemConstants(entries: stream.read_many_with_count(PoemConstantsEntry, uint16, read_constants_entry))
 
-  PoemConstants(
-    types: types,
-    values: values,
-    names: names,
-    intrinsics: intrinsics,
-    schemas: schemas,
-    global_variables: global_variables,
-    multi_functions: multi_functions,
-    function_instances: function_instances,
-    meta_shapes: meta_shapes,
-  )
+proc read_constants_entry(stream: FileStream): PoemConstantsEntry =
+  let variant_code = stream.read(uint8)
+  if variant_code < ord(low(PoemConstantsEntryVariant)) or variant_code > ord(high(PoemConstantsEntryVariant)):
+    raise new_exception(IOError, fmt"Unknown constants entry variant {variant_code}.")
+
+  let variant = PoemConstantsEntryVariant(variant_code)
+  case variant
+  of PoemConstantsEntryVariant.Type:
+    PoemConstantsEntry(variant: variant, tpe: stream.read_type())
+  of PoemConstantsEntryVariant.Value:
+    PoemConstantsEntry(variant: variant, value: stream.read_value())
+  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+    PoemConstantsEntry(variant: variant, name: stream.read_string_with_length())
+  of PoemConstantsEntryVariant.FunctionInstance:
+    PoemConstantsEntry(variant: variant, function_instance: stream.read_function_instance())
+  of PoemConstantsEntryVariant.MetaShape:
+    PoemConstantsEntry(variant: variant, meta_shape: stream.read_meta_shape())
 
 proc write_constants(stream: FileStream, constants: PoemConstants) =
-  stream.write_many_with_count(constants.types, uint16, write_type)
-  stream.write_many_with_count(constants.values, uint16, write_value)
-  stream.write_many_with_count(constants.names, uint16, write_string_with_length)
-  stream.write_many_with_count(constants.intrinsics, uint16, write_string_with_length)
-  stream.write_many_with_count(constants.schemas, uint16, write_string_with_length)
-  stream.write_many_with_count(constants.global_variables, uint16, write_string_with_length)
-  stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
-  stream.write_many_with_count(constants.function_instances, uint16, write_function_instance)
-  stream.write_many_with_count(constants.meta_shapes, uint16, write_meta_shape)
+  stream.write_many_with_count(constants.entries, uint16, write_constants_entry)
+
+proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry) =
+  stream.write(cast[uint8](entry.variant))
+  case entry.variant
+  of PoemConstantsEntryVariant.Type:
+    stream.write_type(entry.tpe)
+  of PoemConstantsEntryVariant.Value:
+    stream.write_value(entry.value)
+  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+    stream.write_string_with_length(entry.name)
+  of PoemConstantsEntryVariant.FunctionInstance:
+    stream.write_function_instance(entry.function_instance)
+  of PoemConstantsEntryVariant.MetaShape:
+    stream.write_meta_shape(entry.meta_shape)
 
 ########################################################################################################################
 # Schemas.                                                                                                             #
@@ -1011,7 +1047,7 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       value_reg: value_reg,
     )
 
-  of Intrinsic:
+  of PoemOperation.Intrinsic:
     PoemInstructionIntrinsic(
       target_reg: stream.read(uint16),
       intrinsic: stream.read(uint16),
@@ -1207,8 +1243,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      ListGet, SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
   of IntConst, PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.FunctionLambda, PoemOperation.Shape,
-     PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, GlobalGet,
-     Dispatch, Call, CallPoly, Return, TypeConst:
+     PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet,
+     PoemOperation.Intrinsic, GlobalGet, Dispatch, Call, CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

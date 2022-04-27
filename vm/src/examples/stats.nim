@@ -59,9 +59,9 @@ let test = PoemFunction(
     poem_inst(PoemOperation.Const, 0, 0),
     poem_inst(PoemOperation.Const, 1, 1),
     poem_inst(PoemOperation.Const, 2, 2),
-    poem_inst_dispatch(0, 0, 0),
-    poem_inst_dispatch(1, 0, 1),
-    poem_inst_dispatch(2, 0, 2),
+    poem_inst_dispatch(0, 3, 0),
+    poem_inst_dispatch(1, 3, 1),
+    poem_inst_dispatch(2, 3, 2),
     poem_inst(PoemOperation.IntAdd, 0, 0, 1),
     poem_inst(PoemOperation.IntAdd, 0, 0, 2),
     poem_inst_return(0),
@@ -69,13 +69,11 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    values: @[
-      poem_symbol_value("attack"),
-      poem_symbol_value("defense"),
-      poem_symbol_value("speed"),
-    ],
-    multi_functions: @["stat"],
+  constants: poem_constants(
+    poem_const_value(poem_symbol_value("attack")),
+    poem_const_value(poem_symbol_value("defense")),
+    poem_const_value(poem_symbol_value("speed")),
+    poem_const_multi_function("stat"),
   ),
   functions: @[stat_0, stat_1, stat_2, stat_3, test],
 )

@@ -27,6 +27,6 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(multi_functions: @["add_five"]),
+  constants: poem_constants(poem_const_multi_function("add_five")),
   functions: @[add_five, test],
 )

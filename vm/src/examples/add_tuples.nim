@@ -32,24 +32,26 @@ let test = PoemFunction(
   instructions: @[
     poem_inst(PoemOperation.Const, 0, 0),
     poem_inst(PoemOperation.Const, 1, 1),
-    poem_inst_dispatch(0, 0, 0, 1),
+    poem_inst_dispatch(0, 2, 0, 1),
     poem_inst_return(0),
   ],
 )
 
 let poem* = Poem(
-  constants: PoemConstants(
-    values: @[
+  constants: poem_constants(
+    poem_const_value(
       poem_tuple_value(
         @[poem_int_value(1), poem_int_value(2)],
         int_tuple2,
       ),
+    ),
+    poem_const_value(
       poem_tuple_value(
         @[poem_int_value(5), poem_int_value(7)],
         int_tuple2,
       ),
-    ],
-    multi_functions: @["add_tuples"],
+    ),
+    poem_const_multi_function("add_tuples"),
   ),
   functions: @[add_tuples, test],
 )
