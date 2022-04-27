@@ -12,37 +12,39 @@ import scala.collection.immutable.HashMap
   * process is carried out during writing.
   */
 class ConstantsTable {
+  import ConstantsTableEntry._
 
-  private val typesIndex = new IndexMap[PoemType]
-  private val valuesIndex = new IndexMap[PoemValue]
-  private val namesIndex = new IndexMap[String]
-  private val intrinsicsIndex = new IndexMap[PoemIntrinsic]
-  private val schemasIndex = new IndexMap[NamePath]
-  private val globalVariablesIndex = new IndexMap[NamePath]
-  private val multiFunctionsIndex = new IndexMap[NamePath]
-  private val functionInstancesIndex = new IndexMap[PoemFunctionInstance]
-  private val metaShapesIndex = new IndexMap[PoemMetaShape]
+  private val index = new IndexMap[ConstantsTableEntry]
 
-  def tpe(poemType: PoemType): ConstantsIndex = typesIndex.getOrInsert(poemType)
-  def value(poemValue: PoemValue): ConstantsIndex = valuesIndex.getOrInsert(poemValue)
-  def name(name: String): ConstantsIndex = namesIndex.getOrInsert(name)
-  def intrinsic(intrinsic: PoemIntrinsic): ConstantsIndex = intrinsicsIndex.getOrInsert(intrinsic)
-  def schema(schema: NamePath): ConstantsIndex = schemasIndex.getOrInsert(schema)
-  def globalVariable(globalVariable: NamePath): ConstantsIndex = globalVariablesIndex.getOrInsert(globalVariable)
-  def multiFunction(multiFunction: NamePath): ConstantsIndex = multiFunctionsIndex.getOrInsert(multiFunction)
-  def functionInstance(instance: PoemFunctionInstance): ConstantsIndex = functionInstancesIndex.getOrInsert(instance)
-  def metaShape(metaShape: PoemMetaShape): ConstantsIndex = metaShapesIndex.getOrInsert(metaShape)
+  def entries: Vector[ConstantsTableEntry] = index.entries
 
-  def types: Vector[PoemType] = typesIndex.entries
-  def values: Vector[PoemValue] = valuesIndex.entries
-  def names: Vector[String] = namesIndex.entries
-  def intrinsics: Vector[PoemIntrinsic] = intrinsicsIndex.entries
-  def schemas: Vector[NamePath] = schemasIndex.entries
-  def globalVariables: Vector[NamePath] = globalVariablesIndex.entries
-  def multiFunctions: Vector[NamePath] = multiFunctionsIndex.entries
-  def functionInstances: Vector[PoemFunctionInstance] = functionInstancesIndex.entries
-  def metaShapes: Vector[PoemMetaShape] = metaShapesIndex.entries
+  def tpe(poemType: PoemType): ConstantsIndex = index.getOrInsert(TypeEntry(poemType))
+  def value(poemValue: PoemValue): ConstantsIndex = index.getOrInsert(ValueEntry(poemValue))
+  def name(name: String): ConstantsIndex = index.getOrInsert(NameEntry(name))
+  def intrinsic(intrinsic: PoemIntrinsic): ConstantsIndex = index.getOrInsert(IntrinsicEntry(intrinsic))
+  def schema(schema: NamePath): ConstantsIndex = index.getOrInsert(SchemaEntry(schema))
+  def globalVariable(globalVariable: NamePath): ConstantsIndex = index.getOrInsert(GlobalVariableEntry(globalVariable))
+  def multiFunction(multiFunction: NamePath): ConstantsIndex = index.getOrInsert(MultiFunctionEntry(multiFunction))
+  def functionInstance(instance: PoemFunctionInstance): ConstantsIndex = index.getOrInsert(FunctionInstanceEntry(instance))
+  def metaShape(metaShape: PoemMetaShape): ConstantsIndex = index.getOrInsert(MetaShapeEntry(metaShape))
+}
 
+sealed abstract class ConstantsTableEntry(val variant: ConstantsTableEntry.Variant.Value)
+
+object ConstantsTableEntry {
+  object Variant extends Enumeration {
+    val Type, Val, Name, Intrinsic, Schema, GlobalVariable, MultiFunction, FunctionInstance, MetaShape = Value
+  }
+
+  case class TypeEntry(tpe: PoemType) extends ConstantsTableEntry(Variant.Type)
+  case class ValueEntry(value: PoemValue) extends ConstantsTableEntry(Variant.Val)
+  case class NameEntry(name: String) extends ConstantsTableEntry(Variant.Name)
+  case class IntrinsicEntry(intrinsic: PoemIntrinsic) extends ConstantsTableEntry(Variant.Intrinsic)
+  case class SchemaEntry(name: NamePath) extends ConstantsTableEntry(Variant.Schema)
+  case class GlobalVariableEntry(name: NamePath) extends ConstantsTableEntry(Variant.GlobalVariable)
+  case class MultiFunctionEntry(name: NamePath) extends ConstantsTableEntry(Variant.MultiFunction)
+  case class FunctionInstanceEntry(instance: PoemFunctionInstance) extends ConstantsTableEntry(Variant.FunctionInstance)
+  case class MetaShapeEntry(metaShape: PoemMetaShape) extends ConstantsTableEntry(Variant.MetaShape)
 }
 
 object ConstantsTable {

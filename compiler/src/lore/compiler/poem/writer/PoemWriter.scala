@@ -12,7 +12,7 @@ object PoemWriter {
     val entriesWriter = writeEntries(poemFragment)
     implicit val writer: BytecodeWriter = new BytecodeWriter()
     writer.writeString("poem")
-    writeConstantsTable(constantsTable)
+    ConstantsTableWriter.write(constantsTable)
 
     // This copies all bytes written to `entriesWriter` to the main writer.
     entriesWriter.output.writeTo(writer.output)
@@ -36,24 +36,12 @@ object PoemWriter {
     writer
   }
 
-  private def writeConstantsTable(constantsTable: ConstantsTable)(implicit writer: BytecodeWriter): Unit = {
-    writer.writeManyWithCount16(constantsTable.types, PoemTypeWriter.write)
-    writer.writeManyWithCount16(constantsTable.values, PoemValueWriter.write)
-    writer.writeManyWithCount16(constantsTable.names, writer.writeStringWithLength)
-    writer.writeManyWithCount16(constantsTable.intrinsics.map(_.name), writer.writeStringWithLength)
-    writer.writeManyWithCount16(constantsTable.schemas, writer.writeNamePath)
-    writer.writeManyWithCount16(constantsTable.globalVariables, writer.writeNamePath)
-    writer.writeManyWithCount16(constantsTable.multiFunctions, writer.writeNamePath)
-    writer.writeManyWithCount16(constantsTable.functionInstances, writeFunctionInstance)
-    writer.writeManyWithCount16(constantsTable.metaShapes, writeMetaShape)
-  }
-
-  private def writeFunctionInstance(instance: PoemFunctionInstance)(implicit writer: BytecodeWriter): Unit = {
+  def writeFunctionInstance(instance: PoemFunctionInstance)(implicit writer: BytecodeWriter): Unit = {
     writer.writeNamePath(instance.name)
     writer.writeManyWithCount8(instance.typeArguments, PoemTypeWriter.write)
   }
 
-  private def writeMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter): Unit = {
+  def writeMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter): Unit = {
     writeShapePropertyNames(metaShape.names, withCount = true)
   }
 
