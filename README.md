@@ -15,6 +15,7 @@ This repository is divided into the following parts:
 - **VM:** The VM executes Poem bytecode produced by the compiler. Crucially, the VM also implements Lore's type system, which is required for run-time multiple dispatch. It supports multi-functions natively and is thus a multiple dispatch VM.
 - **Pyramid:** This is the Lore standard library, which defines core functions expected by the compiler, functions to work with values such as lists, maps and strings, and additional types such as Options. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of (religious) lore in the world.
 - **Test:** Functional tests, which are comprised of many smaller Lore programs. This is the de-facto place to look at existing Lore code, such as [test/lessons](test/lessons) and [test/combat](test/combat).
+- **LSP:** An LSP language server and VSCode extension. Neither are currently up-to-date as Lore evolves, but they will be supported in the future to offer native IDE integration.
 
 
 
