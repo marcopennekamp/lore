@@ -731,9 +731,9 @@ proc read_poem*(path: string): Poem =
     fail(fmt"""Poem file "{path}" has an illegal file header. The file must begin with the ASCII string `poem`.""")
 
   let constants = stream.read_constants()
-  let schemas = stream.read_many_with_count(PoemSchema, uint16, read_schema)
-  let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint16, read_global_variable)
-  let functions = stream.read_many_with_count(PoemFunction, uint16, read_function)
+  let schemas = stream.read_many_with_count(PoemSchema, uint32, read_schema)
+  let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint32, read_global_variable)
+  let functions = stream.read_many_with_count(PoemFunction, uint32, read_function)
   Poem(
     constants: constants,
     schemas: schemas,
@@ -747,9 +747,9 @@ proc write_poem*(path: string, poem: Poem) =
 
   stream.write_str("poem")
   stream.write_constants(poem.constants)
-  stream.write_many_with_count(poem.schemas, uint16, write_schema)
-  stream.write_many_with_count(poem.global_variables, uint16, write_global_variable)
-  stream.write_many_with_count(poem.functions, uint16, write_function)
+  stream.write_many_with_count(poem.schemas, uint32, write_schema)
+  stream.write_many_with_count(poem.global_variables, uint32, write_global_variable)
+  stream.write_many_with_count(poem.functions, uint32, write_function)
 
 ########################################################################################################################
 # Constants.                                                                                                           #

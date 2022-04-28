@@ -39,6 +39,17 @@ class BytecodeWriter {
     output.write(newBuffer(2).putShort(value.toShort).array())
   }
 
+  def writeUInt32(value: Long): Unit = {
+    if (value > 4294967295L) {
+      throw CompilationException(s"Cannot write value $value as a uint32: Maximum value exceeded.")
+    }
+
+    output.write(((value & 0xFFFFFF00) >> 24).toByte)
+    output.write(((value & 0xFFFF00) >> 16).toByte)
+    output.write(((value & 0xFF00) >> 8).toByte)
+    output.write((value & 0xFF).toByte)
+  }
+
   def writeInt64(value: Long): Unit = output.writeBytes(newBuffer(8).putLong(value).array())
 
   def writeFloat64(value: Double): Unit = output.writeBytes(newBuffer(8).putDouble(value).array())

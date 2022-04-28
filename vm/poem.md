@@ -10,11 +10,11 @@ Concretely, a Poem file has the following structure:
 
   - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
   - **ConstantsTable** (ConstantsTable)
-  - **Schema count** (uint16)
+  - **Schema count** (uint32)
   - **Schemas** (Schema*)
-  - **Global variable count** (uint16)
+  - **Global variable count** (uint32)
   - **Global variables** (GlobalVariable*)
-  - **Function count** (uint16)
+  - **Function count** (uint32)
   - **Functions** (Function*)
 
 ### Constants

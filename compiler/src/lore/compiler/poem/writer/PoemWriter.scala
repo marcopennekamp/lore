@@ -23,14 +23,13 @@ object PoemWriter {
   private def writeEntries(poemFragment: PoemFragment)(implicit constantsTable: ConstantsTable): BytecodeWriter = {
     implicit val writer: BytecodeWriter = new BytecodeWriter()
 
-    // No schemas and global variables yet.
-    writer.writeUInt16(poemFragment.schemas.length)
+    writer.writeUInt32(poemFragment.schemas.length)
     poemFragment.schemas.foreach(PoemSchemaWriter.write)
 
-    writer.writeUInt16(poemFragment.globalVariables.length)
+    writer.writeUInt32(poemFragment.globalVariables.length)
     poemFragment.globalVariables.foreach(PoemGlobalVariableWriter.write)
 
-    writer.writeUInt16(poemFragment.functions.length)
+    writer.writeUInt32(poemFragment.functions.length)
     poemFragment.functions.foreach(PoemFunctionWriter.write)
 
     writer
