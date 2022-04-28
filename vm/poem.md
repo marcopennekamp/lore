@@ -4,53 +4,19 @@ This document describes the structure of the `.poem` bytecode format. Poem files
 
 ### Poems
 
-A **Poem** is a single bytecode unit. It contains exactly one *Constants* table, any number of *Schemas*, any number of *GlobalVariables*, and any number of *Function* definitions. All Functions in a Poem have the same constants table.
+A **Poem** is a single bytecode unit. It contains any number of *Schemas*, *GlobalVariables*, and *Functions*. 
+
+A VM program may consist of many poems. An explicit organisation of which items to put into which poem files is not prescribed. The Lore compiler usually puts a whole program into a single poem file, but it's also possible to put each function and type definition into its own poem (though not recommended), or anything in between. The VM is designed to handle fragmented multi-function definitions across as many poem files as necessary.
 
 Concretely, a Poem file has the following structure:
 
   - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
-  - **ConstantsTable** (ConstantsTable)
   - **Schema count** (uint32)
   - **Schemas** (Schema*)
   - **Global variable count** (uint32)
   - **Global variables** (GlobalVariable*)
   - **Function count** (uint32)
   - **Functions** (Function*)
-
-### Constants
-
-The **Constants** table holds Poem-wide constant types, values, and names, as well as references to intrinsics, schemas, global variables, multi-functions, function instances, and meta shapes. Constants are indexed by a 16-bit unsigned integer ID global to the constants table. For example, if the constants table has two types and two values, the ID of the second value would be 3. Constants do not need to be ordered by their variant. For example, a constants table may consist of a value, schema, type, function instance, and another type, in this order.
-
-The constants table has the following structure:
-
-  - **Entry count** (uint16)
-  - **Entries** (ConstantsEntry*)
-
-### ConstantsEntry
-
-A **ConstantsEntry** has the following structure:
-
-  - **Variant** (uint8):
-    - 0: Type
-    - 1: Value
-    - 2: Name
-    - 3: Intrinsic
-    - 4: Schema
-    - 5: GlobalVariable
-    - 6: MultiFunction
-    - 7: FunctionInstance
-    - 8: MetaShape
-  - The representation depends on *Variant*:
-    - Type:
-      - **Type** (Type)
-    - Value:
-      - **Value** (Value)
-    - Name, Intrinsic, Schema, GlobalVariable, MultiFunction:
-      - **Name** (String): The name of the intrinsic/schema/global variable/multi-function.
-    - FunctionInstance:
-      - **FunctionInstance** (FunctionInstance): Function instance constants are used by `Call` instructions to directly call a function instance, without the need to create a function instance or a constant function value.
-    - MetaShape:
-      - **MetaShape** (MetaShape): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
 
 ### Schemas
 
@@ -111,11 +77,55 @@ A **Function** represents a single function definition. Its structure is as foll
   - **Output type** (Type)
   - **Abstract** (bool)
   - If *Abstract* is false:
+    - **Constants** (Constants)
     - **Register count** (uint16)
     - **Instruction count** (uint16)
     - **Instructions** (Instruction*)
 
 Note that functions backing lambdas (used with the `FunctionLambda` instruction) may not have type parameter *bounds*. The VM expects all type parameters to have the bounds `Nothing` and `Any`.
+
+### Function Instances
+
+A poem **FunctionInstance** represents the constant instantiation of a single-function multi-function. It has the following structure:
+
+- **Name** (String)
+- **Type argument count** (uint8)
+- **Type arguments** (Type*)
+
+### Constants
+
+The **Constants** table holds Function-wide constant types, values, and names, as well as references to intrinsics, schemas, global variables, multi-functions, function instances, and meta shapes. Constants are indexed by a 16-bit unsigned integer ID global to the constants table. For example, if the constants table has two types and two values, the ID of the second value would be 3. Constants do not need to be ordered by their variant. For example, a constants table may consist of a value, schema, type, function instance, and another type, in this order.
+
+The constants table has the following structure:
+
+- **Entry count** (uint16)
+- **Entries** (ConstantsEntry*)
+
+### ConstantsEntry
+
+A **ConstantsEntry** has the following structure:
+
+- **Variant** (uint8):
+  - 0: Type
+  - 1: Value
+  - 2: Name
+  - 3: Intrinsic
+  - 4: Schema
+  - 5: GlobalVariable
+  - 6: MultiFunction
+  - 7: FunctionInstance
+  - 8: MetaShape
+- The representation depends on *Variant*:
+  - Type:
+    - **Type** (Type)
+  - Value:
+    - **Value** (Value)
+  - Name, Intrinsic, Schema, GlobalVariable, MultiFunction:
+    - **Name** (String): The name of the intrinsic/schema/global variable/multi-function.
+  - FunctionInstance:
+    - **FunctionInstance** (FunctionInstance): Function instance constants are used by `Call` instructions to directly call a function instance, without the need to create a function instance or a constant function value.
+  - MetaShape:
+    - **MetaShape** (MetaShape): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
 
 ### Instructions
 
@@ -127,14 +137,6 @@ Variable-size instructions have two big advantages compared to fixed-size instru
   - They hide implementation-specific details of the evaluation, such as operands lists and frame-aware intrinsics.
 
 TODO (vm): Document instruction encoding in-depth.
-
-### Function Instances
-
-A poem **FunctionInstance** represents the constant instantiation of a single-function multi-function. It has the following structure:
-
-- **Name** (String)
-- **Type argument count** (uint8)
-- **Type arguments** (Type*)
 
 ### Meta Shapes
 

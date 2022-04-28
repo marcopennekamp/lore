@@ -11,6 +11,13 @@ let concat = PoemFunction(
   input_type: poem_tuple_type([poem_list_type(poem_type_variable(0)), poem_list_type(poem_type_variable(1))]),
   output_type: poem_list_type(poem_sum_type([poem_type_variable(0), poem_type_variable(1)])),
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_type(
+      poem_list_type(
+        poem_sum_type(@[poem_type_variable(0), poem_type_variable(1)])
+      )
+    ),
+  ),
   register_count: 6,
   instructions: @[
     # input: list1 in reg0, list2 in reg1
@@ -34,22 +41,7 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_list_type(poem_sum_type([poem_int_type, poem_string_type])),
   is_abstract: false,
-  register_count: 2,
-  instructions: @[
-    poem_inst(PoemOperation.Const, 0, 1),
-    poem_inst(PoemOperation.Const, 1, 2),
-    poem_inst_dispatch(0, 3, 0, 1),        # list1 = concat(list1, list2)
-    poem_inst_return(0),
-  ],
-)
-
-let poem* = Poem(
   constants: poem_constants(
-    poem_const_type(
-      poem_list_type(
-        poem_sum_type(@[poem_type_variable(0), poem_type_variable(1)])
-      )
-    ),
     poem_const_value(
       poem_list_value(
         @[poem_int_value(1)],
@@ -64,5 +56,15 @@ let poem* = Poem(
     ),
     poem_const_multi_function("concat"),
   ),
+  register_count: 2,
+  instructions: @[
+    poem_inst(PoemOperation.Const, 0, 0),
+    poem_inst(PoemOperation.Const, 1, 1),
+    poem_inst_dispatch(0, 2, 0, 1),        # list1 = concat(list1, list2)
+    poem_inst_return(0),
+  ],
+)
+
+let poem* = Poem(
   functions: @[concat, test],
 )

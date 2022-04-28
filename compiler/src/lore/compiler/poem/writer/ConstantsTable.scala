@@ -8,7 +8,7 @@ import lore.compiler.semantics.NamePath
 import scala.collection.immutable.HashMap
 
 /**
-  * The constants table collects and indexes the constants required by all poem instructions of a poem fragment. This
+  * The constants table collects and indexes the constants required by all poem instructions of a poem function. This
   * process is carried out during writing.
   */
 class ConstantsTable {

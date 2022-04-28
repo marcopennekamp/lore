@@ -15,15 +15,19 @@ let add1 = PoemFunction(
   input_type: poem_tuple_type([position_1D, position_1D]),
   output_type: position_1D,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_name("x"),
+    poem_const_meta_shape(meta_position_1D),
+  ),
   register_count: 4,
   instructions: @[
     # Add x coordinates.
-    poem_inst_shape_property_get(2, 0, 7),
-    poem_inst_shape_property_get(3, 1, 7),
+    poem_inst_shape_property_get(2, 0, 0),
+    poem_inst_shape_property_get(3, 1, 0),
     poem_inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
-    poem_inst_shape(0, 11, 0),
+    poem_inst_shape(0, 1, 0),
     poem_inst_return(0),
   ],
 )
@@ -33,20 +37,25 @@ let add2 = PoemFunction(
   input_type: poem_tuple_type([position_2D, position_2D]),
   output_type: position_2D,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_name("x"),
+    poem_const_name("y"),
+    poem_const_meta_shape(meta_position_2D),
+  ),
   register_count: 5,
   instructions: @[
     # Add x coordinates.
-    poem_inst_shape_property_get(2, 0, 7),
-    poem_inst_shape_property_get(3, 1, 7),
+    poem_inst_shape_property_get(2, 0, 0),
+    poem_inst_shape_property_get(3, 1, 0),
     poem_inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    poem_inst_shape_property_get(2, 0, 8),
-    poem_inst_shape_property_get(3, 1, 8),
+    poem_inst_shape_property_get(2, 0, 1),
+    poem_inst_shape_property_get(3, 1, 1),
     poem_inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
-    poem_inst_shape(0, 12, 4, 0),
+    poem_inst_shape(0, 2, 4, 0),
     poem_inst_return(0),
   ],
 )
@@ -56,25 +65,31 @@ let add3 = PoemFunction(
   input_type: poem_tuple_type([position_3D, position_3D]),
   output_type: position_3D,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_name("x"),
+    poem_const_name("y"),
+    poem_const_name("z"),
+    poem_const_meta_shape(meta_position_3D),
+  ),
   register_count: 7,
   instructions: @[
     # Add x coordinates.
-    poem_inst_shape_property_get(2, 0, 7),
-    poem_inst_shape_property_get(3, 1, 7),
+    poem_inst_shape_property_get(2, 0, 0),
+    poem_inst_shape_property_get(3, 1, 0),
     poem_inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    poem_inst_shape_property_get(2, 0, 8),
-    poem_inst_shape_property_get(3, 1, 8),
+    poem_inst_shape_property_get(2, 0, 1),
+    poem_inst_shape_property_get(3, 1, 1),
     poem_inst(PoemOperation.RealAdd, 5, 2, 3),
 
     # Add z coordinates.
-    poem_inst_shape_property_get(2, 0, 9),
-    poem_inst_shape_property_get(3, 1, 9),
+    poem_inst_shape_property_get(2, 0, 2),
+    poem_inst_shape_property_get(3, 1, 2),
     poem_inst(PoemOperation.RealAdd, 6, 2, 3),
 
     # Create and return the new shape.
-    poem_inst_shape(0, 13, 4, 5, 6),
+    poem_inst_shape(0, 3, 4, 5, 6),
     poem_inst_return(0),
   ],
 )
@@ -82,7 +97,7 @@ let add3 = PoemFunction(
 proc add_positions(index_1: uint16, index_2: uint16): seq[PoemInstruction] = @[
   poem_inst(PoemOperation.Const, 1, index_1),
   poem_inst(PoemOperation.Const, 2, index_2),
-  poem_inst_dispatch(1, 10, 1, 2),
+  poem_inst_dispatch(1, 7, 1, 2),
   poem_inst(PoemOperation.ListAppendUntyped, 0, 0, 1),
 ]
 
@@ -91,29 +106,8 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_list_type(position_1D),
   is_abstract: false,
-  register_count: 3,
-  instructions:
-    # Prepare the result list.
-    @[poem_inst(PoemOperation.Const, 0, 0)] &
-
-    # Add all position combinations to the list.
-    add_positions(1, 2) &  # Add p1_1 and p1_2.
-    add_positions(1, 4) &  # Add p1_1 and p2_2.
-    add_positions(1, 6) &  # Add p1_1 and p3_2.
-    add_positions(3, 2) &  # Add p2_1 and p1_2.
-    add_positions(3, 4) &  # Add p2_1 and p2_2.
-    add_positions(3, 6) &  # Add p2_1 and p3_2.
-    add_positions(5, 2) &  # Add p3_1 and p1_2.
-    add_positions(5, 4) &  # Add p3_1 and p2_2.
-    add_positions(5, 6) &  # Add p3_1 and p3_2.
-
-    # Return the resulting list.
-    @[poem_inst_return(0)],
-)
-
-let poem* = Poem(
   constants: poem_constants(
-    # All shapes added to this list will have the supertype position_1D. Hence we can pretype the list and use
+    # All shapes added to this list will have the supertype `position_1D`. Hence we can pretype the list and use
     # `ListAppendUntyped`.
     poem_const_value(
       poem_list_value(
@@ -170,18 +164,29 @@ let poem* = Poem(
       ),
     ),
 
-    # ID: 7..9
-    poem_const_name("x"),
-    poem_const_name("y"),
-    poem_const_name("z"),
-
-    # ID: 10
+    # 7
     poem_const_multi_function("add"),
-
-    # ID: 11..13
-    poem_const_meta_shape(meta_position_1D),
-    poem_const_meta_shape(meta_position_2D),
-    poem_const_meta_shape(meta_position_3D),
   ),
+  register_count: 3,
+  instructions:
+    # Prepare the result list.
+    @[poem_inst(PoemOperation.Const, 0, 0)] &
+
+    # Add all position combinations to the list.
+    add_positions(1, 2) &  # Add p1_1 and p1_2.
+    add_positions(1, 4) &  # Add p1_1 and p2_2.
+    add_positions(1, 6) &  # Add p1_1 and p3_2.
+    add_positions(3, 2) &  # Add p2_1 and p1_2.
+    add_positions(3, 4) &  # Add p2_1 and p2_2.
+    add_positions(3, 6) &  # Add p2_1 and p3_2.
+    add_positions(5, 2) &  # Add p3_1 and p1_2.
+    add_positions(5, 4) &  # Add p3_1 and p2_2.
+    add_positions(5, 6) &  # Add p3_1 and p3_2.
+
+    # Return the resulting list.
+    @[poem_inst_return(0)],
+)
+
+let poem* = Poem(
   functions: @[test, add1, add2, add3],
 )

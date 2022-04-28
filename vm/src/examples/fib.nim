@@ -5,6 +5,9 @@ let fib = PoemFunction(
   input_type: poem_tuple_type([poem_int_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_multi_function("fib"),
+  ),
   register_count: 4,
   instructions: @[
     poem_inst_int_const(3, 1),
@@ -28,6 +31,9 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_multi_function("fib"),
+  ),
   register_count: 1,
   instructions: @[
     poem_inst_int_const(0, 10),
@@ -37,8 +43,5 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: poem_constants(
-    poem_const_multi_function("fib"),
-  ),
   functions: @[fib, test],
 )

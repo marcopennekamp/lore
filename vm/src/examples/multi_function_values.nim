@@ -15,6 +15,7 @@ let handle1 = PoemFunction(
   input_type: poem_tuple_type([poem_int_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 2,
   instructions: @[
     poem_inst_int_const(1, 5),
@@ -28,9 +29,12 @@ let handle2 = PoemFunction(
   input_type: poem_tuple_type([poem_real_type]),
   output_type: poem_real_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_value(poem_real_value(2.5)),
+  ),
   register_count: 2,
   instructions: @[
-    poem_inst(PoemOperation.Const, 1, 1),
+    poem_inst(PoemOperation.Const, 1, 0),
     poem_inst(PoemOperation.RealAdd, 0, 0, 1),
     poem_inst_return(0),
   ],
@@ -41,12 +45,16 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_tuple_type([handle_output, handle_output]),
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_value(poem_multi_function_value("handle", poem_function_type(handle_input, handle_output))),
+    poem_const_value(poem_real_value(3.3)),
+  ),
   register_count: 3,
   instructions: @[
-    poem_inst(PoemOperation.Const, 0, 2),
+    poem_inst(PoemOperation.Const, 0, 0),
     poem_inst_int_const(1, 14),
     poem_inst_function_call(1, 0, 1),
-    poem_inst(PoemOperation.Const, 2, 0),
+    poem_inst(PoemOperation.Const, 2, 1),
     poem_inst_function_call(2, 0, 2),
     poem_inst_tuple(0, 1, 2),
     poem_inst_return(0),
@@ -54,10 +62,5 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: poem_constants(
-    poem_const_value(poem_real_value(3.3)),
-    poem_const_value(poem_real_value(2.5)),
-    poem_const_value(poem_multi_function_value("handle", poem_function_type(handle_input, handle_output))),
-  ),
   functions: @[handle0, handle1, handle2, test],
 )

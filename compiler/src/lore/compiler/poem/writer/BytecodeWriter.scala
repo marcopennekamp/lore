@@ -82,6 +82,20 @@ class BytecodeWriter {
     values.foreach(write)
   }
 
+  def writeStream(stream: ByteArrayOutputStream): Unit = {
+    stream.writeTo(output)
+  }
+
   private def newBuffer(capacity: Int): ByteBuffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN)
+
+}
+
+object BytecodeWriter {
+
+  def nested(f: BytecodeWriter => Unit): ByteArrayOutputStream = {
+    val writer = new BytecodeWriter
+    f(writer)
+    writer.output
+  }
 
 }

@@ -10,6 +10,7 @@ let add_tuples = PoemFunction(
   ]),
   output_type: int_tuple2,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 4,
   instructions: @[
     poem_inst(PoemOperation.TupleGet, 2, 0, 1),
@@ -28,16 +29,6 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: int_tuple2,
   is_abstract: false,
-  register_count: 2,
-  instructions: @[
-    poem_inst(PoemOperation.Const, 0, 0),
-    poem_inst(PoemOperation.Const, 1, 1),
-    poem_inst_dispatch(0, 2, 0, 1),
-    poem_inst_return(0),
-  ],
-)
-
-let poem* = Poem(
   constants: poem_constants(
     poem_const_value(
       poem_tuple_value(
@@ -53,5 +44,15 @@ let poem* = Poem(
     ),
     poem_const_multi_function("add_tuples"),
   ),
+  register_count: 2,
+  instructions: @[
+    poem_inst(PoemOperation.Const, 0, 0),
+    poem_inst(PoemOperation.Const, 1, 1),
+    poem_inst_dispatch(0, 2, 0, 1),
+    poem_inst_return(0),
+  ],
+)
+
+let poem* = Poem(
   functions: @[add_tuples, test],
 )

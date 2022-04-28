@@ -88,10 +88,10 @@ type
       ## The monomorphic instance of a function is only defined if the function is monomorphic. This instance can be
       ## used to bypass creating new function instances every time dispatch is resolved, even though the type argument
       ## list will always be empty.
-    register_count*: uint16
-    instructions*: seq[Instruction]
     constants*: Constants
       ## `constants` will be initialized after all type, value, and multi-function constants have been resolved.
+    register_count*: uint16
+    instructions*: seq[Instruction]
     frame_size*: uint16
       ## `frame_size` is a precomputed size for faster frame creation. It's initialized by `init_frame_stats`.
 

@@ -5,6 +5,9 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_type(poem_list_type(poem_int_type)),
+  ),
   register_count: 3,
   instructions: @[
     poem_inst_int_const(0, 1),
@@ -18,8 +21,5 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: poem_constants(
-    poem_const_type(poem_list_type(poem_int_type)),
-  ),
   functions: @[test],
 )

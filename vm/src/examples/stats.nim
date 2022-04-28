@@ -18,6 +18,7 @@ let stat_1 = PoemFunction(
   input_type: poem_tuple_type([attack_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 1,
   instructions: @[
     poem_inst_int_const(0, 11),
@@ -30,6 +31,7 @@ let stat_2 = PoemFunction(
   input_type: poem_tuple_type([defense_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 1,
   instructions: @[
     poem_inst_int_const(0, 7),
@@ -42,6 +44,7 @@ let stat_3 = PoemFunction(
   input_type: poem_tuple_type([speed_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 1,
   instructions: @[
     poem_inst_int_const(0, 3),
@@ -54,6 +57,12 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_value(poem_symbol_value("attack")),
+    poem_const_value(poem_symbol_value("defense")),
+    poem_const_value(poem_symbol_value("speed")),
+    poem_const_multi_function("stat"),
+  ),
   register_count: 3,
   instructions: @[
     poem_inst(PoemOperation.Const, 0, 0),
@@ -69,11 +78,5 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: poem_constants(
-    poem_const_value(poem_symbol_value("attack")),
-    poem_const_value(poem_symbol_value("defense")),
-    poem_const_value(poem_symbol_value("speed")),
-    poem_const_multi_function("stat"),
-  ),
   functions: @[stat_0, stat_1, stat_2, stat_3, test],
 )

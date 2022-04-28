@@ -9,48 +9,17 @@ import types
 
 type
   Poem* = ref object
-    ## A Poem is essentially a single unit of bytecode which contains type and multi-function definitions. A program
-    ## may consist of many Poems. An explicit organisation of which items to put in which files is not prescribed. A
-    ## Lore compiler may decide to put a whole program into a single Poem (as long as the Constants table suffices),
-    ## put each function and type definition into its own Poem, or anything in between.
+    ## A Poem is essentially a single unit of bytecode which contains schema, global variable, and multi-function
+    ## definitions. See `poem.md` for an overview of the format.
     ##
     ## After a Poem has been read, it contains mostly unresolved objects, such as unresolved types and functions.
     ## Resolution entails creating objects in the right order (e.g. creating types first) and then building the
-    ## required structures with the correct pointers.
+    ## required structures with the correct pointers, which is covered by `universes.nim`.
     ##
     ## `.poem` files must be encoded in big endian.
-    constants*: PoemConstants
     schemas*: seq[PoemSchema]
     global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
-
-  PoemConstants* = ref object
-    entries*: seq[PoemConstantsEntry]
-
-  PoemConstantsEntryVariant* {.pure.} = enum
-    Type
-    Value
-    Name
-    Intrinsic
-    Schema
-    GlobalVariable
-    MultiFunction
-    FunctionInstance
-    MetaShape
-
-  PoemConstantsEntry* = ref object of RootObj
-    case variant*: PoemConstantsEntryVariant
-    of PoemConstantsEntryVariant.Type:
-      tpe*: PoemType
-    of PoemConstantsEntryVariant.Value:
-      value*: PoemValue
-    of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
-       PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
-      name*: string
-    of PoemConstantsEntryVariant.FunctionInstance:
-      function_instance*: PoemFunctionInstance
-    of PoemConstantsEntryVariant.MetaShape:
-      meta_shape*: PoemMetaShape
 
   PoemSchema* = ref object of RootObj
     kind*: Kind
@@ -85,11 +54,41 @@ type
     input_type*: PoemType
     output_type*: PoemType
     is_abstract*: bool
+    constants*: PoemConstants
+      ## `constants` are `nil` if the function is abstract.
     register_count*: uint16
     instructions*: seq[PoemInstruction]
 
     resolved_function*: Function
       ## This is used to refer to the corresponding Function object during multiple steps of universe resolution.
+
+  PoemConstants* = ref object
+    entries*: seq[PoemConstantsEntry]
+
+  PoemConstantsEntryVariant* {.pure.} = enum
+    Type
+    Value
+    Name
+    Intrinsic
+    Schema
+    GlobalVariable
+    MultiFunction
+    FunctionInstance
+    MetaShape
+
+  PoemConstantsEntry* = ref object of RootObj
+    case variant*: PoemConstantsEntryVariant
+    of PoemConstantsEntryVariant.Type:
+      tpe*: PoemType
+    of PoemConstantsEntryVariant.Value:
+      value*: PoemValue
+    of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+       PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+      name*: string
+    of PoemConstantsEntryVariant.FunctionInstance:
+      function_instance*: PoemFunctionInstance
+    of PoemConstantsEntryVariant.MetaShape:
+      meta_shape*: PoemMetaShape
 
   PoemOperation* {.pure.} = enum
     ## Most poem instructions are encoded as size-truncated versions of their corresponding evaluator instruction,
@@ -683,12 +682,12 @@ proc write_uint16(stream: FileStream, value: uint16) = stream.write(value)
 # Poems (top-level).                                                                                                   #
 ########################################################################################################################
 
-proc read_constants(stream: FileStream): PoemConstants
-proc read_constants_entry(stream: FileStream): PoemConstantsEntry
 proc read_schema(stream: FileStream): PoemSchema
 proc read_struct_property(stream: FileStream): PoemStructProperty
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
+proc read_constants(stream: FileStream): PoemConstants
+proc read_constants_entry(stream: FileStream): PoemConstantsEntry
 proc read_instruction(stream: FileStream): PoemInstruction
 proc read_function_instance(stream: FileStream): PoemFunctionInstance
 proc read_meta_shape(stream: FileStream): PoemMetaShape
@@ -697,12 +696,12 @@ proc read_type(stream: FileStream): PoemType
 proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
 
-proc write_constants(stream: FileStream, constants: PoemConstants)
-proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry)
 proc write_schema(stream: FileStream, schema: PoemSchema)
 proc write_struct_property(stream: FileStream, property: PoemStructProperty)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
+proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry)
 proc write_instruction(stream: FileStream, instruction: PoemInstruction)
 proc write_operation(stream: FileStream, operation: PoemOperation)
 proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance)
@@ -730,12 +729,10 @@ proc read_poem*(path: string): Poem =
   if magic_string != "poem":
     fail(fmt"""Poem file "{path}" has an illegal file header. The file must begin with the ASCII string `poem`.""")
 
-  let constants = stream.read_constants()
   let schemas = stream.read_many_with_count(PoemSchema, uint32, read_schema)
   let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint32, read_global_variable)
   let functions = stream.read_many_with_count(PoemFunction, uint32, read_function)
   Poem(
-    constants: constants,
     schemas: schemas,
     global_variables: global_variables,
     functions: functions,
@@ -746,54 +743,9 @@ proc write_poem*(path: string, poem: Poem) =
   defer: stream.close()
 
   stream.write_str("poem")
-  stream.write_constants(poem.constants)
   stream.write_many_with_count(poem.schemas, uint32, write_schema)
   stream.write_many_with_count(poem.global_variables, uint32, write_global_variable)
   stream.write_many_with_count(poem.functions, uint32, write_function)
-
-########################################################################################################################
-# Constants.                                                                                                           #
-########################################################################################################################
-
-proc read_constants(stream: FileStream): PoemConstants =
-  PoemConstants(entries: stream.read_many_with_count(PoemConstantsEntry, uint16, read_constants_entry))
-
-proc read_constants_entry(stream: FileStream): PoemConstantsEntry =
-  let variant_code = stream.read(uint8)
-  if variant_code < ord(low(PoemConstantsEntryVariant)) or variant_code > ord(high(PoemConstantsEntryVariant)):
-    raise new_exception(IOError, fmt"Unknown constants entry variant {variant_code}.")
-
-  let variant = PoemConstantsEntryVariant(variant_code)
-  case variant
-  of PoemConstantsEntryVariant.Type:
-    PoemConstantsEntry(variant: variant, tpe: stream.read_type())
-  of PoemConstantsEntryVariant.Value:
-    PoemConstantsEntry(variant: variant, value: stream.read_value())
-  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
-     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
-    PoemConstantsEntry(variant: variant, name: stream.read_string_with_length())
-  of PoemConstantsEntryVariant.FunctionInstance:
-    PoemConstantsEntry(variant: variant, function_instance: stream.read_function_instance())
-  of PoemConstantsEntryVariant.MetaShape:
-    PoemConstantsEntry(variant: variant, meta_shape: stream.read_meta_shape())
-
-proc write_constants(stream: FileStream, constants: PoemConstants) =
-  stream.write_many_with_count(constants.entries, uint16, write_constants_entry)
-
-proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry) =
-  stream.write(cast[uint8](entry.variant))
-  case entry.variant
-  of PoemConstantsEntryVariant.Type:
-    stream.write_type(entry.tpe)
-  of PoemConstantsEntryVariant.Value:
-    stream.write_value(entry.value)
-  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
-     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
-    stream.write_string_with_length(entry.name)
-  of PoemConstantsEntryVariant.FunctionInstance:
-    stream.write_function_instance(entry.function_instance)
-  of PoemConstantsEntryVariant.MetaShape:
-    stream.write_meta_shape(entry.meta_shape)
 
 ########################################################################################################################
 # Schemas.                                                                                                             #
@@ -914,6 +866,7 @@ proc read_function(stream: FileStream): PoemFunction =
   )
 
   if not is_abstract:
+    function.constants = stream.read_constants()
     function.register_count = stream.read(uint16)
     function.instructions = stream.read_many_with_count(PoemInstruction, uint16, read_instruction)
 
@@ -927,8 +880,66 @@ proc write_function(stream: FileStream, function: PoemFunction) =
   stream.write(function.is_abstract)
 
   if not function.is_abstract:
+    stream.write_constants(function.constants)
     stream.write(function.register_count)
     stream.write_many_with_count(function.instructions, uint16, write_instruction)
+
+########################################################################################################################
+# Function instances.                                                                                                  #
+########################################################################################################################
+
+proc read_function_instance(stream: FileStream): PoemFunctionInstance =
+  let name = stream.read_string_with_length()
+  let type_arguments = stream.read_many_with_count(PoemType, uint8, read_type)
+  PoemFunctionInstance(name: name, type_arguments: type_arguments)
+
+proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance) =
+  stream.write_string_with_length(instance.name)
+  stream.write_many_with_count(instance.type_arguments, uint8, write_type)
+
+########################################################################################################################
+# Constants.                                                                                                           #
+########################################################################################################################
+
+proc read_constants(stream: FileStream): PoemConstants =
+  PoemConstants(entries: stream.read_many_with_count(PoemConstantsEntry, uint16, read_constants_entry))
+
+proc read_constants_entry(stream: FileStream): PoemConstantsEntry =
+  let variant_code = stream.read(uint8)
+  if variant_code < ord(low(PoemConstantsEntryVariant)) or variant_code > ord(high(PoemConstantsEntryVariant)):
+    raise new_exception(IOError, fmt"Unknown constants entry variant {variant_code}.")
+
+  let variant = PoemConstantsEntryVariant(variant_code)
+  case variant
+  of PoemConstantsEntryVariant.Type:
+    PoemConstantsEntry(variant: variant, tpe: stream.read_type())
+  of PoemConstantsEntryVariant.Value:
+    PoemConstantsEntry(variant: variant, value: stream.read_value())
+  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+    PoemConstantsEntry(variant: variant, name: stream.read_string_with_length())
+  of PoemConstantsEntryVariant.FunctionInstance:
+    PoemConstantsEntry(variant: variant, function_instance: stream.read_function_instance())
+  of PoemConstantsEntryVariant.MetaShape:
+    PoemConstantsEntry(variant: variant, meta_shape: stream.read_meta_shape())
+
+proc write_constants(stream: FileStream, constants: PoemConstants) =
+  stream.write_many_with_count(constants.entries, uint16, write_constants_entry)
+
+proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry) =
+  stream.write(cast[uint8](entry.variant))
+  case entry.variant
+  of PoemConstantsEntryVariant.Type:
+    stream.write_type(entry.tpe)
+  of PoemConstantsEntryVariant.Value:
+    stream.write_value(entry.value)
+  of PoemConstantsEntryVariant.Name, PoemConstantsEntryVariant.Intrinsic, PoemConstantsEntryVariant.Schema,
+     PoemConstantsEntryVariant.GlobalVariable, PoemConstantsEntryVariant.MultiFunction:
+    stream.write_string_with_length(entry.name)
+  of PoemConstantsEntryVariant.FunctionInstance:
+    stream.write_function_instance(entry.function_instance)
+  of PoemConstantsEntryVariant.MetaShape:
+    stream.write_meta_shape(entry.meta_shape)
 
 ########################################################################################################################
 # Instructions.                                                                                                        #
@@ -1246,19 +1257,6 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet,
      PoemOperation.Intrinsic, GlobalGet, Dispatch, Call, CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
-
-########################################################################################################################
-# Function instances.                                                                                                  #
-########################################################################################################################
-
-proc read_function_instance(stream: FileStream): PoemFunctionInstance =
-  let name = stream.read_string_with_length()
-  let type_arguments = stream.read_many_with_count(PoemType, uint8, read_type)
-  PoemFunctionInstance(name: name, type_arguments: type_arguments)
-
-proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance) =
-  stream.write_string_with_length(instance.name)
-  stream.write_many_with_count(instance.type_arguments, uint8, write_type)
 
 ########################################################################################################################
 # Meta shapes.                                                                                                         #

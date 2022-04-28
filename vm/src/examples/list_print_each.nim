@@ -8,9 +8,12 @@ let test_lambda0 = PoemFunction(
   input_type: lambda_input,
   output_type: poem_unit_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_intrinsic("lore.io.println"),
+  ),
   register_count: 1,
   instructions: @[
-    poem_inst_intrinsic(0, 3, 0),  # lore.io.println
+    poem_inst_intrinsic(0, 0, 0),  # lore.io.println
     poem_inst_return(0),
   ],
 )
@@ -20,16 +23,6 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_unit_type,
   is_abstract: false,
-  register_count: 2,
-  instructions: @[
-    poem_inst(PoemOperation.Const, 0, 0),
-    poem_inst(PoemOperation.Const, 1, 1),
-    poem_inst_intrinsic(0, 2, 0, 1),       # lore.lists.each
-    poem_inst_return(0),
-  ],
-)
-
-let poem* = Poem(
   constants: poem_constants(
     poem_const_value(
       poem_list_value(
@@ -41,7 +34,16 @@ let poem* = Poem(
       poem_single_function_value("test/lambda0", @[], poem_function_type(lambda_input, poem_unit_type)),
     ),
     poem_const_intrinsic("lore.list.each"),
-    poem_const_intrinsic("lore.io.println")
   ),
+  register_count: 2,
+  instructions: @[
+    poem_inst(PoemOperation.Const, 0, 0),
+    poem_inst(PoemOperation.Const, 1, 1),
+    poem_inst_intrinsic(0, 2, 0, 1),       # lore.lists.each
+    poem_inst_return(0),
+  ],
+)
+
+let poem* = Poem(
   functions: @[test_lambda0, test],
 )

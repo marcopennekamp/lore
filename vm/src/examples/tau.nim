@@ -15,6 +15,9 @@ let tau_initialize = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_real_type,
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_global_variable("pi"),
+  ),
   register_count: 1,
   instructions: @[
     poem_inst_global_get(0, 0),
@@ -28,6 +31,10 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_tuple_type([poem_real_type, poem_real_type]),
   is_abstract: false,
+  constants: poem_constants(
+    poem_const_global_variable("pi"),
+    poem_const_global_variable("tau"),
+  ),
   register_count: 2,
   instructions: @[
     poem_inst_global_get(0, 0),
@@ -38,10 +45,6 @@ let test = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: poem_constants(
-    poem_const_global_variable("pi"),
-    poem_const_global_variable("tau"),
-  ),
   global_variables: @[pi, tau],
   functions: @[tau_initialize, test],
 )

@@ -5,6 +5,7 @@ let increment = PoemFunction(
   input_type: poem_tuple_type([poem_int_type]),
   output_type: poem_int_type,
   is_abstract: false,
+  constants: poem_constants(),
   register_count: 2,
   instructions: @[
     poem_inst_int_const(1, 1),
@@ -18,16 +19,6 @@ let test = PoemFunction(
   input_type: poem_unit_type,
   output_type: poem_int_type,
   is_abstract: false,
-  register_count: 2,
-  instructions: @[
-    poem_inst_int_const(0, 41),
-    poem_inst(PoemOperation.Const, 1, 0),
-    poem_inst_function_call(0, 1, 0),
-    poem_inst_return(0),
-  ],
-)
-
-let poem* = Poem(
   constants: poem_constants(
     poem_const_value(
       poem_single_function_value(
@@ -40,5 +31,15 @@ let poem* = Poem(
       ),
     ),
   ),
+  register_count: 2,
+  instructions: @[
+    poem_inst_int_const(0, 41),
+    poem_inst(PoemOperation.Const, 1, 0),
+    poem_inst_function_call(0, 1, 0),
+    poem_inst_return(0),
+  ],
+)
+
+let poem* = Poem(
   functions: @[increment, test],
 )
