@@ -109,10 +109,10 @@ type
   LambdaContext* = distinct ImSeq[TaggedValue]
     ## A LambdaContext bundles the values of captured variables for a lambda function.
 
-  Constants* = ImSeq[ConstantsEntry]
-    ## A Constants object provides quick access to predefined types, values, names, intrinsics, schemas,
-    ## global variables, multi-functions, function instances, and meta shapes. It may be shared across multiple
-    ## function definitions.
+  Constants* = distinct ImSeq[ConstantsEntry]
+    ## A Constants table provides quick access to predefined types, values, names, intrinsics, schemas, global
+    ## variables, multi-functions, function instances, and meta shapes. It may be shared across multiple function
+    ## definitions.
     ##
     ## Constants table entries are heterogenous and accessed by a uint16 index. For example, the constants table may
     ## contain a type, a value, and another type, in this order. This lessens the burden on the compiler, as entries of
@@ -320,7 +320,7 @@ proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 # Constants.                                                                                                           #
 ########################################################################################################################
 
-proc `[]`*(constants: Constants, index: int): ConstantsEntry {.inline.} = cast[ImSeq[ConstantsEntry]](constants)[index]
+proc `[]`*(constants: Constants, index: uint): ConstantsEntry {.borrow.}
 
 proc const_type*(constants: Constants, index: uint16): Type {.inline.} = cast[Type](constants[index])
 proc const_value*(constants: Constants, index: uint16): TaggedValue {.inline.} = cast[TaggedValue](constants[index])
