@@ -38,7 +38,14 @@ type
     ## instances. Types which themselves contain other types should be marked `acyclic`.
     kind*: Kind
 
-  TypeParameter* = ref object
+  TypeVariable* {.pure, acyclic.} = ref object of Type
+    ## A type variable is a type parameter, as well as an application of a type argument at the type variable's index.
+    ## For example, if we have a function with two type variables A and B, the B (with index 1) would refer to the
+    ## second type argument.
+    ##
+    ## Type variable objects are unique per declaration and thus exhibit referential equality. This is the simplest and
+    ## most effective way to implement type variable equality.
+    index*: uint8
     name*: string
     lower_bound*: Type
     upper_bound*: Type
@@ -48,17 +55,6 @@ type
     Covariant
     Contravariant
     Invariant
-
-  TypeVariable* {.pure, acyclic.} = ref object of Type
-    ## A type variable represents the application of a type argument at the index. For example, if we have a function
-    ## with two type parameters A and B, the type variable with index 1 would refer to the second type argument, whose
-    ## parameter is B.
-    index*: uint8
-
-    parameter*: TypeParameter
-      ## `parameter` is only defined for type variables contained in a function's input or output type. For all other
-      ## kinds of type variables, `parameter` is `nil`. It is specifically used by subtyping and fit when comparing two
-      ## uninstantiated input types, such as when a multi-function hierarchy is built.
 
   SumType* {.pure, acyclic.} = ref object of Type
     parts*: ImSeq[Type]
@@ -98,7 +94,7 @@ type
       ## Either `Trait` or `Struct`.
     name*: string
       ## The full name of the declared schema.
-    type_parameters*: ImSeq[TypeParameter]
+    type_parameters*: ImSeq[TypeVariable]
     supertraits*: ImSeq[TraitType]
       ## A list of directly extended traits. Type variables within these trait types are uninstantiated and reference
       ## this schema's type parameters.
@@ -187,8 +183,8 @@ proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]):
 proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool
 proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool
 
-proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
-proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
+proc fits*(ts1: open_array[Type], ts2: open_array[Type], type_parameters: ImSeq[TypeVariable]): ImSeq[Type]
+proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], type_parameters: ImSeq[TypeVariable]): ImSeq[Type]
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
@@ -217,7 +213,6 @@ let
   string_type* = Type(kind: String)
   unit_type* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
 
-proc new_type_variable*(index: uint8): TypeVariable = TypeVariable(index: index, parameter: nil)
 proc new_sum_type*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
 proc new_sum_type*(parts: open_array[Type]): SumType = new_sum_type(new_immutable_seq(parts))
 proc new_intersection_type*(parts: ImSeq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
@@ -242,51 +237,39 @@ proc function_as_type*(input: TupleType, output: Type): Type = new_function_type
 proc list_as_type*(element: Type): Type = new_list_type(element)
 
 ########################################################################################################################
-# Type parameters.                                                                                               #
+# Type variables.                                                                                                      #
 ########################################################################################################################
 
-proc `===`(a: TypeParameter, b: TypeParameter): bool {.inline.} =
-  ## Checks the referential equality of the two type parameters.
-  cast[pointer](a) == cast[pointer](b)
-
-proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `tpe`. `assignments` may not
-  ## contain type variables due to subtyping optimizations.
-  if parameter.lower_bound.kind != Kind.Nothing: is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
+proc lower_bound_contains*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `tv`'s lower bound (instantiated via the given assignments) contains `tpe`. `assignments` may not contain
+  ## type variables due to subtyping optimizations.
+  if tv.lower_bound.kind != Kind.Nothing: is_subtype_substitute1(tv.lower_bound, tpe, assignments)
   else: true
 
-proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `tpe`. `assignments` may not
-  ## contain type variables due to subtyping optimizations.
-  if parameter.upper_bound.kind != Kind.Any: is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
+proc upper_bound_contains*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `tv`'s upper bound (instantiated via the given assignments) contains `tpe`. `assignments` may not contain
+  ## type variables due to subtyping optimizations.
+  if tv.upper_bound.kind != Kind.Any: is_subtype_substitute2(tpe, tv.upper_bound, assignments)
   else: true
 
-proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `tpe`. `assignments`
-  ## may not contain type variables due to subtyping optimizations.
-  lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
+proc bounds_contain*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `tv`'s lower and upper bound (instantiated via the given assignments) contain `tpe`. `assignments` may not
+  ## contain type variables due to subtyping optimizations.
+  lower_bound_contains(tv, tpe, assignments) and upper_bound_contains(tv, tpe, assignments)
 
-proc lower_bound_contains_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+proc lower_bound_contains_polyassign*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
   ## Like `lower_bound_contains`, but `assignments` may contain type variables.
-  if parameter.lower_bound.kind != Kind.Nothing: is_subtype(substitute(parameter.lower_bound, assignments), tpe)
+  if tv.lower_bound.kind != Kind.Nothing: is_subtype(substitute(tv.lower_bound, assignments), tpe)
   else: true
 
-proc upper_bound_contains_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+proc upper_bound_contains_polyassign*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
   ## Like `upper_bound_contains`, but `assignments` may contain type variables.
-  if parameter.upper_bound.kind != Kind.Any: is_subtype(tpe, substitute(parameter.upper_bound, assignments))
+  if tv.upper_bound.kind != Kind.Any: is_subtype(tpe, substitute(tv.upper_bound, assignments))
   else: true
 
-proc bounds_contain_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+proc bounds_contain_polyassign*(tv: TypeVariable, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
   ## Like `bounds_contain`, but `assignments` may contain type variables.
-  lower_bound_contains_polyassign(parameter, tpe, assignments) and upper_bound_contains_polyassign(parameter, tpe, assignments)
-
-proc as_type_arguments*(type_parameters: ImSeq[TypeParameter]): ImSeq[TypeVariable] =
-  ## Creates a list of type variables that reference the given type parameters exactly.
-  var type_arguments = new_immutable_seq[TypeVariable](type_parameters.len)
-  for i in 0 ..< type_parameters.len:
-    let parameter = type_parameters[i]
-    type_arguments[i] = TypeVariable(index: uint8(i), parameter: parameter)
-  type_arguments
+  lower_bound_contains_polyassign(tv, tpe, assignments) and upper_bound_contains_polyassign(tv, tpe, assignments)
 
 ########################################################################################################################
 # Shapes.                                                                                                              #
@@ -383,7 +366,7 @@ proc initialize(
   schema: Schema,
   kind: Kind,
   name: string,
-  type_parameters: ImSeq[TypeParameter],
+  type_parameters: ImSeq[TypeVariable],
   supertraits: ImSeq[TraitType],
   representative: DeclaredType,
 ) =
@@ -577,15 +560,19 @@ proc find_supertype*(tpe: DeclaredType, schema: Schema): DeclaredType =
 
 proc new_trait_schema*(
   name: string,
-  type_parameters: ImSeq[TypeParameter],
+  type_parameters: ImSeq[TypeVariable],
   supertraits: ImSeq[TraitType],
 ): TraitSchema =
   let schema = TraitSchema(
     # Inherited shape types are resolved in a second step.
     inherited_shape_type: nil,
   )
-  let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  let representative = TraitType(kind: Kind.Trait, schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+  let representative = TraitType(
+    kind: Kind.Trait,
+    schema: schema,
+    type_arguments: cast[ImSeq[Type]](type_parameters),
+    supertraits: supertraits
+  )
   schema.initialize(Kind.Trait, name, type_parameters, supertraits, representative)
   schema
 
@@ -648,7 +635,7 @@ proc has_open_properties*(schema: StructSchema): bool {.inline.} = schema.open_p
 
 proc new_struct_schema*(
   name: string,
-  type_parameters: ImSeq[TypeParameter],
+  type_parameters: ImSeq[TypeVariable],
   supertraits: ImSeq[TraitType],
   properties: ImSeq[StructSchemaProperty],
   property_declaration_order: ImSeq[string],
@@ -671,8 +658,7 @@ proc new_struct_schema*(
     open_property_indices: open_property_indices,
     property_declaration_order: property_declaration_order,
   )
-  let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  let representative = new_struct_type(schema, type_arguments, supertraits, nil)
+  let representative = new_struct_type(schema, cast[ImSeq[Type]](type_parameters), supertraits, nil)
   schema.initialize(Kind.Struct, name, type_parameters, supertraits, representative)
   schema
 
@@ -794,14 +780,8 @@ proc are_equal*(t1: Type, t2: Type): bool =
 
   case t1.kind
   of Kind.TypeVariable:
-    # Type variables with associated parameters can be checked for equality beyond referential equality. This is
-    # especially crucial because during resolution each occurrence of a type variable gets a new allocated instance.
-    # TODO (assembly): This is a bandaid fix. We should ultimately achieve the referential equality of equal type
-    #                  variables.
-    let tv1 = cast[TypeVariable](t1)
-    let tv2 = cast[TypeVariable](t2)
-    if tv1.parameter != nil and tv2.parameter != nil: tv1.parameter === tv2.parameter
-    else: false # Referential equality has already been checked.
+    # Type variables can only be referentially equal.
+    false
 
   of Kind.Any: true
   of Kind.Nothing: true
@@ -961,29 +941,17 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
 ########################################################################################################################
 
 proc variable_subtypes_type(substitution_mode: SubstitutionMode, tv1: TypeVariable, t2: Type, assignments: open_array[Type]): bool =
-  # TODO (assembly): This equality check is a bandaid fix that should be caught by referential equality. We'll be able
-  #                  to change this after the referential equality of type variables has been ensured.
-  if t2.kind == Kind.TypeVariable and are_equal(tv1, t2):
-    return true
-
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T2:
-    assert(tv1.parameter != nil)
-    is_subtype(tv1.parameter.upper_bound, t2)
+    is_subtype(tv1.upper_bound, t2)
   of SubstitutionMode.T1:
     let t1 = assignments[tv1.index]
     is_subtype_substitute1(t1, t2, assignments)
 
 proc type_subtypes_variable(substitution_mode: SubstitutionMode, t1: Type, tv2: TypeVariable, assignments: open_array[Type]): bool =
-  # TODO (assembly): This equality check is a bandaid fix that should be caught by referential equality. We'll be able
-  #                  to change this after the referential equality of type variables has been ensured.
-  if t1.kind == Kind.TypeVariable and are_equal(t1, tv2):
-    return true
-
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T1:
-    assert(tv2.parameter != nil)
-    is_subtype(t1, tv2.parameter.lower_bound)
+    is_subtype(t1, tv2.lower_bound)
   of SubstitutionMode.T2:
     let t2 = assignments[tv2.index]
     is_subtype_substitute2(t1, t2, assignments)
@@ -1323,7 +1291,7 @@ template fits_impl(
   is_poly1: bool,
   ts1: open_array[Type],
   ts2: open_array[Type],
-  parameters: ImSeq[TypeParameter],
+  type_parameters: ImSeq[TypeVariable],
 ): ImSeq[Type] =
   ## `ts1` may contain type variables if and only if `is_poly1` is true. This allows `fits_impl` to choose the right
   ## subtyping strategy. Because when subtyping with a substitution mode, `assignments` may not contain type variables,
@@ -1340,13 +1308,13 @@ template fits_impl(
       return nil
 
   # Consistency constraint: All variables must have an assignment.
-  for i in 0 ..< parameters.len:
+  for i in 0 ..< type_parameters.len:
     if assignments[i] == nil:
       return nil
 
   # Consistency constraint: All bounds must be kept.
-  for i in 0 ..< parameters.len:
-    let parameter = parameters[i]
+  for i in 0 ..< type_parameters.len:
+    let parameter = type_parameters[i]
     let tpe = assignments[i]
     if is_poly1:
       if not bounds_contain_polyassign(parameter, tpe, assignments):
@@ -1366,27 +1334,27 @@ template fits_impl(
 
   # So far, we've used an array on the stack for the type assignments. We have to convert these to a heap-allocated
   # ImSeq now, so that they outlive the lifetime of this function call.
-  new_immutable_seq(assignments, parameters.len)
+  new_immutable_seq(assignments, type_parameters.len)
 
-proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
+proc fits*(t1: Type, t2: Type, type_parameters: ImSeq[TypeVariable]): ImSeq[Type] {.inline.} =
   ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
   ## `parameters` must contain all type parameters which variables in `t2` refer to, in the proper order. `t1` may NOT
   ## contain type variables.
-  fits([t1], [t2], parameters)
+  fits([t1], [t2], type_parameters)
 
-proc fits_poly1*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
+proc fits_poly1*(t1: Type, t2: Type, type_parameters: ImSeq[TypeVariable]): ImSeq[Type] {.inline.} =
   ## Equivalent to `fits(t1, t2, parameters)`, but `t1` may contain type variables.
-  fits_poly1([t1], [t2], parameters)
+  fits_poly1([t1], [t2], type_parameters)
 
-proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+proc fits*(ts1: open_array[Type], ts2: open_array[Type], type_parameters: ImSeq[TypeVariable]): ImSeq[Type] =
   ## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. `fits` returns the list of assigned
   ## type arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2`
   ## refer to, in the proper order. `ts1` may NOT contain type variables.
-  fits_impl(false, ts1, ts2, parameters)
+  fits_impl(false, ts1, ts2, type_parameters)
 
-proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], type_parameters: ImSeq[TypeVariable]): ImSeq[Type] =
   ## Equivalent to `fits(ts1, ts2, parameters)`, but `ts1` may contain type variables.
-  fits_impl(true, ts1, ts2, parameters)
+  fits_impl(true, ts1, ts2, type_parameters)
 
 proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
   ## Assigns all matching types in `t1` to type variables in `t2`, saving them in `assignments`. If an assignment
@@ -1940,8 +1908,7 @@ proc `$`*(tpe: Type): string =
   case tpe.kind
   of Kind.TypeVariable:
     let tv = cast[TypeVariable](tpe)
-    if tv.parameter != nil: tv.parameter.name & "(" & $tv.index & ")"
-    else: "tv" & $tv.index
+    tv.name & "(" & $tv.index & ")"
   of Kind.Any: "Any"
   of Kind.Nothing: "Nothing"
   of Kind.Real: "Real"

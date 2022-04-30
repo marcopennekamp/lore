@@ -18,23 +18,21 @@ proc resolve_schemas(universe: Universe, poems: seq[Poem])
 
 proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
 proc resolve(universe: Universe, poem_function: PoemFunction)
-proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): ptr FunctionInstance
-proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
+proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance, type_variables: ImSeq[TypeVariable]): ptr FunctionInstance
+proc resolve(universe: Universe, poem_constants: PoemConstants, type_variables: ImSeq[TypeVariable]): Constants
 proc resolve(universe: Universe, poem_instructions: seq[PoemInstruction], constants: Constants): seq[Instruction]
-proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypeParameter
-proc resolve(universe: Universe, poem_type: PoemType): Type
-proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
+proc resolve(universe: Universe, poem_type_parameters: seq[PoemTypeParameter]): ImSeq[TypeVariable]
+proc resolve(universe: Universe, poem_type: PoemType, type_variables: ImSeq[TypeVariable]): Type
+proc resolve(universe: Universe, poem_value: PoemValue, type_variables: ImSeq[TypeVariable]): TaggedValue
 
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
+template resolve_many(universe, sequence, argument): untyped = sequence.map(o => universe.resolve(o, argument))
 
 proc finalize(mf: MultiFunction)
 proc attach_constants(poem_function: PoemFunction, universe: Universe)
 proc attach_instructions(poem_function: PoemFunction, universe: Universe)
 
 proc initialize_introspection(universe: Universe)
-
-proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
-proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
 
 ########################################################################################################################
 # Top-level resolution.                                                                                                #
@@ -148,11 +146,11 @@ proc get_schema_dependencies(poem_schema: PoemSchema): seq[string] =
   dependencies
 
 proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema =
-  let type_parameters = new_immutable_seq(universe.resolve_many(poem_schema.type_parameters))
+  let type_parameters = universe.resolve(poem_schema.type_parameters)
 
   # The poem reader ensures that the supertraits are all named types, but we have to additionally rule out that some of
   # these named types might be structs.
-  let supertypes = new_immutable_seq(universe.resolve_many(poem_schema.supertraits))
+  let supertypes = new_immutable_seq(universe.resolve_many(poem_schema.supertraits, type_parameters))
   for supertype in supertypes:
     if supertype.kind != Kind.Trait:
       quit(fmt"The schema {poem_schema.name} has a supertrait which isn't a trait.")
@@ -194,17 +192,19 @@ proc resolve_struct_property_declaration_order(universe: Universe, poem_properti
   declaration_order
 
 proc resolve_schema_attachments(universe: Universe, poem_schemas: TableRef[string, PoemSchema]) =
+  ## Resolves inherited shape types and property types in a second schema resolution phase.
   for name, schema in universe.schemas:
     if schema.kind == Kind.Trait:
       let schema = cast[TraitSchema](schema)
       let poem_schema = cast[PoemTraitSchema](poem_schemas[name])
       # The poem reader ensures that this is a shape type, so we can just cast!
-      schema.attach_inherited_shape_type(cast[ShapeType](universe.resolve(poem_schema.inherited_shape_type)))
+      let shape_type = cast[ShapeType](universe.resolve(poem_schema.inherited_shape_type, schema.type_parameters))
+      schema.attach_inherited_shape_type(shape_type)
     elif schema.kind == Kind.Struct:
       let schema = cast[StructSchema](schema)
       let poem_schema = cast[PoemStructSchema](poem_schemas[name])
       for poem_property in poem_schema.properties:
-        schema.attach_property_type(poem_property.name, universe.resolve(poem_property.tpe))
+        schema.attach_property_type(poem_property.name, universe.resolve(poem_property.tpe, schema.type_parameters))
 
 ########################################################################################################################
 # Global variable resolution.                                                                                          #
@@ -220,7 +220,7 @@ proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable) =
   universe.global_variables[name] = poem_global_variable.resolve(universe)
 
 method resolve(poem_global_variable: PoemEagerGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
-  let value = universe.resolve(poem_global_variable.value)
+  let value = universe.resolve(poem_global_variable.value, empty_immutable_seq[TypeVariable]())
   new_eager_global(poem_global_variable.name, value)
 
 method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
@@ -248,21 +248,13 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
 proc resolve(universe: Universe, poem_function: PoemFunction) =
   ## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
   let multi_function = universe.get_or_register_multi_function(poem_function.name)
-  let type_parameters = new_immutable_seq(universe.resolve_many(poem_function.type_parameters))
+  let type_parameters = universe.resolve(poem_function.type_parameters)
 
-  let input_type_raw = universe.resolve(poem_function.input_type)
+  let input_type_raw = universe.resolve(poem_function.input_type, type_parameters)
   if input_type_raw.kind != Kind.Tuple:
     quit(fmt"Functions must always have a tuple as their input type. Function name: {poem_function.name}.")
   let input_type = cast[TupleType](input_type_raw)
-  let output_type = universe.resolve(poem_function.output_type)
-
-  # We have to attach the type parameters to each type variable contained in the type parameters' bounds and the input
-  # and output types.
-  for type_parameter in type_parameters:
-    attach_type_parameters(type_parameter.lower_bound, type_parameters)
-    attach_type_parameters(type_parameter.upper_bound, type_parameters)
-  attach_type_parameters(input_type, type_parameters)
-  attach_type_parameters(output_type, type_parameters)
+  let output_type = universe.resolve(poem_function.output_type, type_parameters)
 
   # Constants and instructions are resolved in a second step.
   let function = Function(
@@ -303,22 +295,23 @@ proc finalize(mf: MultiFunction) =
 ########################################################################################################################
 
 proc attach_constants(poem_function: PoemFunction, universe: Universe) =
-  poem_function.resolved_function.constants =
+  let function = poem_function.resolved_function
+  function.constants =
     if not poem_function.is_abstract:
-      universe.resolve(poem_function.constants)
+      universe.resolve(poem_function.constants, function.type_parameters)
     else:
       Constants(empty_immutable_seq[ConstantsEntry]())
 
-proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
+proc resolve(universe: Universe, poem_constants: PoemConstants, type_variables: ImSeq[TypeVariable]): Constants =
   var entries = new_immutable_seq[ConstantsEntry](poem_constants.entries.len)
   for i in 0 ..< poem_constants.entries.len:
     let poem_entry = poem_constants.entries[i]
     entries[i] =
       case poem_entry.variant
       of PoemConstantsEntryVariant.Type:
-        cast[ConstantsEntry](universe.resolve(poem_entry.tpe))
+        cast[ConstantsEntry](universe.resolve(poem_entry.tpe, type_variables))
       of PoemConstantsEntryVariant.Value:
-        cast[ConstantsEntry](universe.resolve(poem_entry.value))
+        cast[ConstantsEntry](universe.resolve(poem_entry.value, type_variables))
       of PoemConstantsEntryVariant.Name:
         cast[ConstantsEntry](ConstantsEntryName(name: poem_entry.name))
       of PoemConstantsEntryVariant.Intrinsic:
@@ -338,7 +331,7 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
           quit(fmt"The multi-function `{poem_entry.name}` doesn't exist.")
         cast[ConstantsEntry](universe.multi_functions[poem_entry.name])
       of PoemConstantsEntryVariant.FunctionInstance:
-        cast[ConstantsEntry](universe.resolve(poem_entry.function_instance))
+        cast[ConstantsEntry](universe.resolve(poem_entry.function_instance, type_variables))
       of PoemConstantsEntryVariant.MetaShape:
         cast[ConstantsEntry](get_meta_shape(poem_entry.meta_shape.property_names))
   Constants(entries)
@@ -773,12 +766,12 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 # Function instance resolution.                                                                                        #
 ########################################################################################################################
 
-proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): ptr FunctionInstance =
+proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance, type_variables: ImSeq[TypeVariable]): ptr FunctionInstance =
   if poem_function_instance.name notin universe.multi_functions:
     quit(fmt"The multi-function `{poem_function_instance.name}` doesn't exist.")
 
   let mf = universe.multi_functions[poem_function_instance.name]
-  let type_arguments = new_immutable_seq(universe.resolve_many(poem_function_instance.type_arguments))
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_function_instance.type_arguments, type_variables))
 
   # As the type arguments are static, their bound conformity has already been checked at compile time. However, as
   # universe resolution isn't performance-critical, the added redundancy of a bounds check doesn't hurt.
@@ -788,158 +781,179 @@ proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): 
 # Type parameter resolution.                                                                                           #
 ########################################################################################################################
 
-proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypeParameter =
-  let lower_bound = universe.resolve(poem_type_parameter.lower_bound)
-  let upper_bound = universe.resolve(poem_type_parameter.upper_bound)
+proc resolve(universe: Universe, poem_type_parameters: seq[PoemTypeParameter]): ImSeq[TypeVariable] =
+  ## Resolves the given poem type parameters to a list of type variables. The type variables may already be used in the
+  ## bounds of preceding type variables, and should be used in any other types to ensure referential equality of type
+  ## variables.
+  var type_variables: ImSeq[TypeVariable] = new_immutable_seq[TypeVariable](poem_type_parameters.len)
+  for index in 0 ..< poem_type_parameters.len:
+    let poem_type_parameter = poem_type_parameters[index]
+    let lower_bound = universe.resolve(poem_type_parameter.lower_bound, type_variables)
+    let upper_bound = universe.resolve(poem_type_parameter.upper_bound, type_variables)
 
-  TypeParameter(
-    name: poem_type_parameter.name,
-    lower_bound: lower_bound,
-    upper_bound: upper_bound,
-    variance: poem_type_parameter.variance,
-  )
+    type_variables[index] = TypeVariable(
+      kind: Kind.TypeVariable,
+      index: uint8(index),
+      name: poem_type_parameter.name,
+      lower_bound: lower_bound,
+      upper_bound: upper_bound,
+      variance: poem_type_parameter.variance,
+    )
+  type_variables
 
 ########################################################################################################################
 # Type resolution.                                                                                                     #
 ########################################################################################################################
 
-# TODO (assembly): Type variables are currently not resolved so that the same type variable is referentially equal
-# across all its uses. This makes type variable equality hard to define. Another issue is that we have to attach type
-# parameters after the fact, which is sloppy and can lead to errors. In fact, one such error occurred because we forgot
-# to attach type parameters to type variables contained in type parameter bounds.
-#
-# The solution would be to carry a parameter `type_variables: open_array[TypeVariable]` throughout type resolution so
-# that type variables with the same index get the same type variable instance. The major blocker that keeps us from
-# changing this is that the constants table can contain type variables, which we can't associate with a single function
-# type parameter context. The most elegant solution would probably be to associate a new constants table with every
-# function instead of a whole poem file. This would also simplify resolution in general and allow programs of arbitrary
-# size to be contained in a single poem file.
+type TypeResolutionContext = object
+  universe: Universe
+  type_variables: ImSeq[TypeVariable]
+    ## All type variables that the type to resolve may reference. Using `type_variables` for type variable resolution
+    ## ensures that all occurences of a type variable are resolved to the same reference, which allows checking type
+    ## variable equality with referential equality.
 
-method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
+method resolve(poem_type: PoemType, context: TypeResolutionContext): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")
 
-proc resolve(universe: Universe, poem_type: PoemType): Type =
-  poem_type.resolve(universe)
+proc resolve(universe: Universe, poem_type: PoemType, type_variables: ImSeq[TypeVariable]): Type =
+  ## Resolves the given poem type, taking type variables from `type_variables`.
+  poem_type.resolve(TypeResolutionContext(universe: universe, type_variables: type_variables))
 
-method resolve(poem_type: PoemTypeVariable, universe: Universe): Type {.locks: "unknown".} = new_type_variable(poem_type.index)
+template resolve_many_types(poem_types, context): untyped = poem_types.map(pt => pt.resolve(context))
 
-method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
+method resolve(poem_type: PoemTypeVariable, context: TypeResolutionContext): Type {.locks: "unknown".} =
+  if int(poem_type.index) >= context.type_variables.len:
+    quit(fmt"Cannot get type variable with index {poem_type.index}: out of bounds.")
+  context.type_variables[poem_type.index]
 
-method resolve(poem_type: PoemXaryType, universe: Universe): Type =
+method resolve(poem_type: PoemBasicType, context: TypeResolutionContext): Type {.locks: "unknown".} =
+  poem_type.tpe
+
+method resolve(poem_type: PoemXaryType, context: TypeResolutionContext): Type =
   if poem_type.kind == Kind.Sum:
-    new_sum_type(universe.resolve_many(poem_type.types))
+    new_sum_type(poem_type.types.resolve_many_types(context))
   elif poem_type.kind == Kind.Intersection:
-    new_intersection_type(universe.resolve_many(poem_type.types))
+    new_intersection_type(poem_type.types.resolve_many_types(context))
   elif poem_type.kind == Kind.Tuple:
     if poem_type.types.len == 0:
       unit_type
     else:
-      new_tuple_type(universe.resolve_many(poem_type.types))
+      new_tuple_type(poem_type.types.resolve_many_types(context))
   elif poem_type.kind == Kind.Function:
-    let resolved_types = universe.resolve_many(poem_type.types)
+    let resolved_types = poem_type.types.resolve_many_types(context)
     let input = resolved_types[0]
     if (input.kind != Kind.Tuple):
       quit("Function type inputs must be tuple types.")
     new_function_type(cast[TupleType](input), resolved_types[1])
   elif poem_type.kind == Kind.List:
-    new_list_type(universe.resolve(poem_type.types[0]))
+    new_list_type(poem_type.types[0].resolve(context))
   else:
     quit(fmt"Unsupported kind {poem_type.kind}.")
 
-method resolve(poem_type: PoemShapeType, universe: Universe): Type {.locks: "unknown".} =
+method resolve(poem_type: PoemShapeType, context: TypeResolutionContext): Type {.locks: "unknown".} =
   let meta_shape = get_meta_shape(poem_type.property_names)
-  let property_types = universe.resolve_many(poem_type.property_types)
+  let property_types = poem_type.property_types.resolve_many_types(context)
   new_shape_type(meta_shape, property_types)
 
-method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = new_symbol_type(poem_type.name)
+method resolve(poem_type: PoemSymbolType, context: TypeResolutionContext): Type {.locks: "unknown".} =
+  new_symbol_type(poem_type.name)
 
-method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
-  if poem_type.name notin universe.schemas:
+method resolve(poem_type: PoemNamedType, context: TypeResolutionContext): Type {.locks: "unknown".} =
+  if poem_type.name notin context.universe.schemas:
     quit(fmt"The schema for a named type {poem_type.name} hasn't been resolved yet or doesn't exist.")
-
-  let schema = universe.schemas[poem_type.name]
-  let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.type_arguments))
+  let schema = context.universe.schemas[poem_type.name]
+  let type_arguments = new_immutable_seq(poem_type.type_arguments.resolve_many_types(context))
   force_instantiate_schema(schema, type_arguments)
 
 ########################################################################################################################
 # Value resolution.                                                                                                    #
 ########################################################################################################################
 
-method resolve(poem_value: PoemValue, universe: Universe): TaggedValue {.base, locks: "unknown".} =
+type ValueResolutionContext = object
+  universe: Universe
+  type_variables: ImSeq[TypeVariable]
+
+method resolve(poem_value: PoemValue, context: ValueResolutionContext): TaggedValue {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemValues.")
 
-proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue =
-  poem_value.resolve(universe)
+proc resolve(universe: Universe, poem_value: PoemValue, type_variables: ImSeq[TypeVariable]): TaggedValue =
+  poem_value.resolve(ValueResolutionContext(universe: universe, type_variables: type_variables))
 
-method resolve(poem_value: PoemIntValue, universe: Universe): TaggedValue {.locks: "unknown".} = tag_int(poem_value.int)
-method resolve(poem_value: PoemRealValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_real_value_tagged(poem_value.real)
-method resolve(poem_value: PoemBooleanValue, universe: Universe): TaggedValue {.locks: "unknown".} = tag_boolean(poem_value.boolean)
-method resolve(poem_value: PoemStringValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_string_value_tagged(poem_value.string)
+proc resolve_value_type[T: Type](poem_type: PoemType, expected_kind: Kind, context: ValueResolutionContext): T {.inline.} =
+  let tpe = context.universe.resolve(poem_type, context.type_variables)
+  if tpe.kind != expected_kind:
+    quit(fmt"A {expected_kind} value must have a {expected_kind} type, but the type has kind {tpe.kind}.")
+  cast[T](tpe)
 
-method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Tuple)
-  let elements = universe.resolve_many(poem_value.elements)
+method resolve(poem_value: PoemIntValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  tag_int(poem_value.int)
+
+method resolve(poem_value: PoemRealValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  new_real_value_tagged(poem_value.real)
+
+method resolve(poem_value: PoemBooleanValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  tag_boolean(poem_value.boolean)
+
+method resolve(poem_value: PoemStringValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  new_string_value_tagged(poem_value.string)
+
+method resolve(poem_value: PoemTupleValue, context: ValueResolutionContext): TaggedValue =
+  let tpe = resolve_value_type[TupleType](poem_value.tpe, Kind.Tuple, context)
+  let elements = context.universe.resolve_many(poem_value.elements, context.type_variables)
   new_tuple_value_tagged(new_immutable_seq(elements), tpe)
 
-method resolve(poem_value: PoemFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+method resolve(poem_value: PoemFunctionValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
   quit("Please implement `resolve` for all PoemFunctionValues.")
 
-method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Function)
-  let mf = universe.multi_functions[poem_value.name]
+method resolve(poem_value: PoemMultiFunctionValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  let tpe = resolve_value_type[FunctionType](poem_value.tpe, Kind.Function, context)
+  let mf = context.universe.multi_functions[poem_value.name]
   tag_reference(new_multi_function_value(cast[pointer](mf), tpe))
 
-method resolve(poem_value: PoemSingleFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Function)
-
-  let mf = universe.multi_functions[poem_value.name]
+method resolve(poem_value: PoemSingleFunctionValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  let tpe = resolve_value_type[FunctionType](poem_value.tpe, Kind.Function, context)
+  let mf = context.universe.multi_functions[poem_value.name]
   if not mf.is_single_function:
     quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
 
   let function = mf.functions[0]
-  let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.type_arguments))
+  let type_arguments = new_immutable_seq(context.universe.resolve_many(poem_value.type_arguments, context.type_variables))
   let instance = function.instantiate(type_arguments)
   tag_reference(new_single_function_value(cast[pointer](instance), tpe))
 
-method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Function)
-
-  let mf = universe.multi_functions[poem_value.name]
-  let input_type = universe.resolve(poem_value.input_type)
-  assert(input_type.kind == Kind.Tuple)
-  let input_types = cast[TupleType](universe.resolve(poem_value.input_type)).elements
+method resolve(poem_value: PoemFixedFunctionValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  let tpe = resolve_value_type[FunctionType](poem_value.tpe, Kind.Function, context)
+  let mf = context.universe.multi_functions[poem_value.name]
+  let input_type = context.universe.resolve(poem_value.input_type, context.type_variables)
+  if input_type.kind != Kind.Tuple:
+    quit(fmt"A single function value's input type be a tuple type.")
+  let input_types = cast[TupleType](input_type).elements
 
   var target = new_function_instance()
   find_dispatch_target(mf, input_types.to_open_array, target[])
 
   tag_reference(new_single_function_value(target, tpe))
 
-method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.List)
-  let elements = universe.resolve_many(poem_value.elements)
+method resolve(poem_value: PoemListValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  let tpe = resolve_value_type[ListType](poem_value.tpe, Kind.List, context)
+  let elements = context.universe.resolve_many(poem_value.elements, context.type_variables)
   new_list_value_tagged(new_immutable_seq(elements), tpe)
 
-method resolve(poem_value: PoemShapeValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Shape)
-  let shape_type = cast[ShapeType](tpe)
-  let property_values = universe.resolve_many(poem_value.property_values)
-  new_shape_value_tagged(shape_type.meta, property_values)
+method resolve(poem_value: PoemShapeValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  let tpe = resolve_value_type[ShapeType](poem_value.tpe, Kind.Shape, context)
+  let property_values = context.universe.resolve_many(poem_value.property_values, context.type_variables)
+  new_shape_value_tagged(tpe.meta, property_values)
 
-method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_symbol_value_tagged(poem_value.name)
+method resolve(poem_value: PoemSymbolValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  new_symbol_value_tagged(poem_value.name)
 
-method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  if poem_value.tpe.name notin universe.schemas:
+method resolve(poem_value: PoemStructValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  if poem_value.tpe.name notin context.universe.schemas:
     quit(fmt"The schema {poem_value.tpe.name} for a struct value doesn't exist.")
 
-  let schema = universe.schemas[poem_value.tpe.name]
-  let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.tpe.type_arguments))
-  let property_values = universe.resolve_many(poem_value.property_values)
+  let schema = context.universe.schemas[poem_value.tpe.name]
+  let type_arguments = new_immutable_seq(context.universe.resolve_many(poem_value.tpe.type_arguments, context.type_variables))
+  let property_values = context.universe.resolve_many(poem_value.property_values, context.type_variables)
   new_struct_value_tagged(schema, type_arguments, property_values)
 
 ########################################################################################################################
@@ -957,7 +971,7 @@ proc initialize_introspection(universe: Universe) =
     let supertrait = cast[TraitSchema](supertrait_schema).get_representative
     let schema = new_struct_schema(
       "lore.core.Type/impl",
-      empty_immutable_seq[TypeParameter](),
+      empty_immutable_seq[TypeVariable](),
       new_immutable_seq[TraitType]([supertrait]),
       # The struct schema has no properties, because the actual value is represented by a IntrospectionTypeValue, which
       # contains no openly available properties, but actually hides the Type as a `boxed_type` field.
@@ -965,41 +979,3 @@ proc initialize_introspection(universe: Universe) =
       empty_immutable_seq[string](),
     )
     universe.introspection_type_struct_schema = schema
-
-########################################################################################################################
-# Helpers.                                                                                                             #
-########################################################################################################################
-
-proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
-  case tpe.kind
-  of Kind.TypeVariable:
-    let tv = cast[TypeVariable](tpe)
-    tv.parameter = type_parameters[tv.index]
-
-  of Kind.Sum: attach_type_parameters(cast[SumType](tpe).parts, type_parameters)
-  of Kind.Intersection: attach_type_parameters(cast[IntersectionType](tpe).parts, type_parameters)
-  of Kind.Tuple: attach_type_parameters(cast[TupleType](tpe).elements, type_parameters)
-
-  of Kind.Function:
-    let tpe = cast[FunctionType](tpe)
-    attach_type_parameters(tpe.input, type_parameters)
-    attach_type_parameters(tpe.output, type_parameters)
-
-  of Kind.List:
-    attach_type_parameters(cast[ListType](tpe).element, type_parameters)
-
-  of Kind.Map:
-    let tpe = cast[MapType](tpe)
-    attach_type_parameters(tpe.key, type_parameters)
-    attach_type_parameters(tpe.value, type_parameters)
-
-  of Kind.Trait, Kind.Struct:
-    let tpe = cast[DeclaredType](tpe)
-    attach_type_parameters(tpe.type_arguments, type_parameters)
-    attach_type_parameters(cast[ImSeq[Type]](tpe.supertraits), type_parameters)
-
-  else: discard
-
-proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter]) =
-  for tpe in types:
-    attach_type_parameters(tpe, type_parameters)

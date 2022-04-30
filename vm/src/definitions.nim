@@ -5,7 +5,7 @@ import std/tables
 
 import imseqs
 from instructions import Instruction
-from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, StructSchema, new_function_type,
+from types import Type, TypeVariable, TupleType, FunctionType, MetaShape, Schema, StructSchema, new_function_type,
                   bounds_contain, get_representative, fits_poly1, substitute, `$`
 from values import TaggedValue, IntrospectionTypeValue, tag_reference
 
@@ -71,7 +71,7 @@ type
     function*: Function
     # TODO (vm): Do we need the type parameters and input type cache? Are they even beneficial? (This should be
     #            revisited once we have a proper benchmarking solution.)
-    type_parameters*: ImSeq[TypeParameter]
+    type_parameters*: ImSeq[TypeVariable]
       ## This caches the type parameters of the function, removing a layer of pointer indirection.
     input_type*: TupleType
       ## This caches the input type of the function, removing a layer of pointer indirection.
@@ -79,7 +79,7 @@ type
 
   Function* = ref object
     multi_function*: MultiFunction
-    type_parameters*: ImSeq[TypeParameter]
+    type_parameters*: ImSeq[TypeVariable]
     input_type*: TupleType
     output_type*: Type
     is_abstract*: bool
