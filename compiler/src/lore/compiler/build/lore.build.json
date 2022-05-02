@@ -1,6 +1,6 @@
 {
   "sdk": ".",
-  "target": "lore_target",
+  "target": "lore_target/binary.poem",
   "sources": [],
   "compilerOptions": {
     "showFeedbackStackTraces": false

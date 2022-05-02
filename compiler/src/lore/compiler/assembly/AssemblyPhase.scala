@@ -10,20 +10,16 @@ import lore.compiler.poem.writer.PoemWriter
 import lore.compiler.semantics.Registry
 import lore.compiler.types.DeclaredSchema
 
-import java.nio.file.Path
-
 object AssemblyPhase {
 
   val logger: Logger = Logger("lore.compiler.assembly")
   val loggerBlank: Logger = Logger("lore.compiler.assembly.blank")
 
-  def process(implicit compilerOptions: CompilerOptions, registry: Registry): Vector[AssembledFragment] = {
-    // TODO (assembly): The assembly phase should generate PoemFragments that resemble the actual Fragments. So all
-    //                  individual definitions in a fragment should be placed into the same PoemFragment. We can
-    //                  achieve this by differentiating each definition's position.
-    //                  Alternatively, we can build a single big `binary.poem` file, but this requires constant tables
-    //                  to be unique per function. Since we probably have to do that anyway (see the corresponding VM
-    //                  TODO), this is likely the best approach.
+  /**
+    * The assembly phase generates the bytecode of a single Poem, as the whole program will be placed into a single
+    * file.
+    */
+  def process(implicit compilerOptions: CompilerOptions, registry: Registry): Array[Byte] = {
     var poemSchemas = Vector.empty[PoemSchema]
     var poemGlobalVariables = Vector.empty[PoemGlobalVariable]
     var poemFunctions = Vector.empty[PoemFunction]
@@ -49,10 +45,8 @@ object AssemblyPhase {
     }
 
     val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions)
-
     logPoemFunctions(poemFunctions)
-
-    Vector(AssembledFragment(Path.of("binary.poem"), PoemWriter.writeFragment(poemFragment)))
+    PoemWriter.writeFragment(poemFragment)
   }
 
   /**

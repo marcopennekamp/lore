@@ -1,7 +1,6 @@
 package lore.compiler.build
 
 import lore.compiler.LoreCompiler
-import lore.compiler.assembly.AssembledFragment
 import lore.compiler.core.{CompilationException, CompilerOptions, Fragment, Position}
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
@@ -21,18 +20,17 @@ object BuildApi {
     implicit val reporter: MemoReporter = MemoReporter()
 
     val compilationStartTime = System.nanoTime()
-    val (_, optionalCode) = compile(options)
+    val (_, bytecode) = compile(options)
     val compilationEndTime = System.nanoTime()
 
-    // TODO (assembly): We need to delete the old .poem files first.
     logCompilationFeedback(reporter, compilationStartTime, compilationEndTime)(options.compilerOptions)
-    optionalCode.foreach(writeResult(_)(options))
+    bytecode.foreach(writeResult(_)(options))
   }
 
   /**
     * Compiles a Lore program from the given build options.
     */
-  def compile(options: BuildOptions)(implicit reporter: Reporter): (Option[Registry], Vector[AssembledFragment]) = {
+  def compile(options: BuildOptions)(implicit reporter: Reporter): (Option[Registry], Option[Array[Byte]]) = {
     val fragments = getFragments(options)
     LoreCompiler.compile(fragments, options.compilerOptions)
   }
@@ -94,13 +92,12 @@ object BuildApi {
   /**
     * Writes the result of the compilation to the file system.
     */
-  def writeResult(assembledFragment: AssembledFragment)(implicit options: BuildOptions): Unit = {
-    val targetPath = options.target.resolve(assembledFragment.path)
+  def writeResult(bytecode: Array[Byte])(implicit options: BuildOptions): Unit = {
+    val targetPath = options.target
     if (targetPath.getParent != null) {
       Files.createDirectories(targetPath.getParent)
     }
-
-    Files.write(targetPath, assembledFragment.bytecode)
+    Files.write(targetPath, bytecode)
   }
 
 }

@@ -1,6 +1,6 @@
 {
   "sdk": "../..",
-  "target": "../../lore-program.js",
+  "target": "../../lore_target/binary.poem",
   "sources": [
     "."
   ]

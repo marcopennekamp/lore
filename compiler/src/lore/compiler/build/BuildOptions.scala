@@ -18,7 +18,7 @@ case class BuildOptions(
   sdk: Path = Path.of(BuildOptions.defaultSdk),
 
   /**
-    * The folder that the generated poem bytecode is written to, the default being `lore_target`.
+    * The file that the generated poem bytecode is written to, the default being `lore_target/binary.poem`.
     */
   target: Path = Path.of(BuildOptions.defaultTarget),
 
@@ -32,5 +32,5 @@ case class BuildOptions(
 
 object BuildOptions {
   val defaultSdk = "."
-  val defaultTarget = "lore_target"
+  val defaultTarget = "lore_target/binary.poem"
 }
