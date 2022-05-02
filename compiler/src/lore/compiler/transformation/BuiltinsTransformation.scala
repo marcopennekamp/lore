@@ -45,8 +45,11 @@ object BuiltinsTransformation {
 
   /**
     * Transforms comparison operations (==, !=, <, <=, >, >=) into the proper expressions, invoking the standard
-    * functions areEqual, isLessThan, and isLessThanOrEqual for complex comparisons. Results in an error if areEqual,
-    * isLessThan, or isLessThanOrEqual doesn't return a boolean value.
+    * functions `equal?`, `less_than?`, and `less_than_equal?` for complex comparisons. Results in an error if these
+    * functions don't return a boolean value.
+    *
+    * This function also catches illegal Boolean/Boolean and Symbol/Symbol comparisons, such as `true < false`,
+    * `true <= false`, and `#new < #old`. These result in an appropriate error.
     *
     * If an expression cannot be created, the function falls back to [[Expression.Hole]] with a Boolean type.
     */
@@ -57,24 +60,25 @@ object BuiltinsTransformation {
     right: Expression,
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
+    lazy val directComparison = Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
+    def transformDirectOnlyEquals(domain: String): Expression = {
+      cmf match {
+        case registry.core.equal => directComparison
+        case registry.core.less_than | registry.core.less_than_equal =>
+          reporter.error(ExpressionFeedback.IllegalComparison(domain, position))
+          Expression.Hole(BasicType.Boolean, position)
+        case _ => throw CompilationException(s"The core multi-function ${cmf.name} is not a comparison function.")
+      }
+    }
+
     (left.tpe, right.tpe) match {
       // The following type combinations can be compared by specialized instructions: `(Int | Real, Int | Real)`,
-      // `(Boolean, Boolean)`, `(String, String)`.
-      case (t1: BasicType, t2: BasicType) if (t1.isNumeric && t2.isNumeric) || (t1 == t2 && t1.isPrimitive) =>
-        Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
-
-      case (_: SymbolType, _: SymbolType) => cmf match {
-        case registry.core.equal =>
-          // Because symbol values are interned, they can be compared by reference, using the equality operator.
-          Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
-
-        case registry.core.less_than | registry.core.less_than_equal =>
-          reporter.error(ExpressionFeedback.IllegalSymbolComparison(position))
-          Expression.Hole(BasicType.Boolean, position)
-
-        case _ => throw CompilationException(s"The core multi-function ${cmf.name} is not a comparison function!")
-      }
-
+      // `(Boolean, Boolean)`, `(String, String)`, and `(Symbol, Symbol)`. `(Boolean, Boolean)` and `(Symbol, Symbol)`
+      // comparisons are invalid, resulting in an error.
+      case (t1: BasicType, t2: BasicType) if t1.isNumeric && t2.isNumeric => directComparison
+      case (BasicType.Boolean, BasicType.Boolean) => transformDirectOnlyEquals("Booleans")
+      case (BasicType.String, BasicType.String) => directComparison
+      case (_: SymbolType, _: SymbolType) => transformDirectOnlyEquals("Symbols")
       case _ => multiFunctionCall(cmf, Vector(left, right), position)
     }
   }

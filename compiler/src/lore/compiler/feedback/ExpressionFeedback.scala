@@ -9,8 +9,8 @@ import lore.compiler.syntax.ExprNode
 import lore.compiler.types.BasicType
 
 object ExpressionFeedback {
-  case class IllegalSymbolComparison(override val position: Position) extends Feedback.Error(position) {
-    override def message = "Symbols are unordered and may not be compared using 'less than' or 'greater than'."
+  case class IllegalComparison(domain: String, override val position: Position) extends Feedback.Error(position) {
+    override def message = s"$domain are unordered and may not be compared using `<`, `>`, `<=`, or `>=`."
   }
 
   case class ImmutableAssignment(access: Expression.Access) extends Feedback.Error(access) {

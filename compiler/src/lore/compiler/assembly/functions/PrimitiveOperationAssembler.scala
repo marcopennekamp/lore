@@ -152,7 +152,6 @@ object PrimitiveOperationAssembler {
       }
 
       case BasicType.Boolean => operator match {
-        // TODO (assembly): Ensure that Boolean less than/less than equals never reaches the assembly phase.
         case BinaryOperator.Equals => PoemOperation.BooleanEq
         case _ => invalidOperator
       }
