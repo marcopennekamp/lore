@@ -203,6 +203,18 @@ A **declared type** is any type defined by a struct or trait and hence a type th
 
 
 
+### Primitive Types
+
+A **primitive type** is a type whose values are simple and cannot contain sub-values, with various primitive operations made available by the VM. Lore has the following primitives:
+
+- Int
+- Real
+- Boolean
+- String
+- Symbol
+
+
+
 ### Abstractness
 
 Each type is either **abstract** or concrete. Functions may only be declared as abstract if their input type has at least one abstract parameter. Since this has important implications for the general use of abstraction patterns in Lore, it is important to understand when types are abstract:

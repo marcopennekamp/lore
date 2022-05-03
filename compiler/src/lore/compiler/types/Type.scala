@@ -45,6 +45,15 @@ object Type {
   ).map(t => (t.name, t)).toMap
 
   /**
+    * Whether the given type is a primitive type, i.e. an Int, Real, Boolean, String, or symbol.
+    */
+  def isPrimitive(t: Type): Boolean = t match {
+    case BasicType.Int | BasicType.Real | BasicType.Boolean | BasicType.String => true
+    case _: SymbolType => true
+    case _ => false
+  }
+
+  /**
     * Whether all values inhabiting the given type are definitively symbols.
     *
     * TODO (syntax): This function is more or less a hack because we don't have a general symbol type that supertypes

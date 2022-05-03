@@ -4,11 +4,6 @@ import lore.compiler.semantics.NamePath
 
 sealed abstract class BasicType(override val name: NamePath, val kind: Kind) extends NamedType {
   /**
-    * Whether the basic type describes primitive values (Int, Real, Boolean, String).
-    */
-  def isPrimitive: Boolean = false
-
-  /**
     * Whether the basic type describes numeric values (Int, Real).
     */
   def isNumeric: Boolean = false
@@ -28,7 +23,6 @@ object BasicType {
   case object Nothing extends BasicType(NamePath("Nothing"), Kind.Nothing)
 
   case object Int extends BasicType(NamePath("Int"), Kind.Int) {
-    override def isPrimitive: Boolean = true
     override def isNumeric: Boolean = true
 
     /**
@@ -43,15 +37,10 @@ object BasicType {
   }
 
   case object Real extends BasicType(NamePath("Real"), Kind.Real) {
-    override def isPrimitive: Boolean = true
     override def isNumeric: Boolean = true
   }
 
-  case object Boolean extends BasicType(NamePath("Boolean"), Kind.Boolean) {
-    override def isPrimitive: Boolean = true
-  }
+  case object Boolean extends BasicType(NamePath("Boolean"), Kind.Boolean)
 
-  case object String extends BasicType(NamePath("String"), Kind.String) {
-    override def isPrimitive: Boolean = true
-  }
+  case object String extends BasicType(NamePath("String"), Kind.String)
 }
