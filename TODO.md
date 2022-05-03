@@ -61,6 +61,8 @@
 - Possibly add protocols. (Also see the specification proposal.)
   - This will allow us to add equality, ordering, hashing, and stringification protocols to the core, which makes the operations associated with these protocols more type-safe. For example, right now, it is possible to compare values of any two types, even those that are incomparable (e.g. `function == struct`).
   - Protocols might be mergeable with "global specialization".
+- Introduce a `Number` type that supertypes both `Int` and `Real` (possibly just `type Number = Int | Real`) and that can be used for arithmetic operations. The exact semantics of such a type have to be figured out, but the easiest would be implicit conversions from `Int | Real` to `Real`, which could be supported by amending the `IntToReal` instruction such that it's idempotent if `Real` values are passed to it.
+  - The motivation for a `Number` type would be defining math functions, for example, but this requires specialization instead of implicit conversion. For example, a function `func max[N <: Number](a: N, b: N): N = if a > b then a else b` would need to be specialized for `Int` and `Real`, or alternatively work with an implementation of `>` that delegates to the correct instruction based on `N`. And then there is performance, as type parameters are notoriously slow to handle in Lore's multiple dispatch. So this would require a separate compile-time specialization mechanism, which perhaps isn't worth the effort given that we only have two number types.
 
 ##### Syntax
 

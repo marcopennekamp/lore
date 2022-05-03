@@ -65,7 +65,7 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
 
   private def findConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
     getDirectSubtypes(tpe).flatMap {
-      subtype => if (Type.isConcrete(subtype)) Vector(subtype) else findConcreteSubtypes(subtype)
+      subtype => if (subtype.isConcrete) Vector(subtype) else findConcreteSubtypes(subtype)
     }
   }
 

@@ -5,7 +5,6 @@ import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, Literal, UnaryOperator, XaryOperator}
-import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.utils.CollectionExtensions.{OptionVectorExtension, VectorExtension}
 
 object ValueAssembler {
@@ -43,7 +42,7 @@ object ValueAssembler {
     case expression@Expression.Tuple(values, _) =>
       // The tuple's type is directly built from its element types, so we can just check the former for type
       // variables.
-      if (isPolymorphic(expression.tpe)) {
+      if (expression.tpe.isPolymorphic) {
         return None
       }
       generate(values).map(values => PoemTupleValue(values, TypeAssembler.generate(expression.tpe)))
@@ -85,7 +84,7 @@ object ValueAssembler {
     case Expression.ListConstruction(values, _) =>
       // In contrast to tuples, a list constant's type isn't guaranteed to contain the types of all its elements. For
       // example, a list `[a, b]` with `a: Any` and `b: X` will have the element type `Any`.
-      if (values.exists(v => isPolymorphic(v.tpe))) {
+      if (values.exists(v => v.tpe.isPolymorphic)) {
         return None
       }
       generate(values).map(values => PoemListValue(values, TypeAssembler.generate(expression.tpe)))
@@ -94,7 +93,7 @@ object ValueAssembler {
     case Expression.MapConstruction(_, _) => None
 
     case Expression.ShapeValue(properties, _) =>
-      if (isPolymorphic(expression.tpe)) {
+      if (expression.tpe.isPolymorphic) {
         return None
       }
 

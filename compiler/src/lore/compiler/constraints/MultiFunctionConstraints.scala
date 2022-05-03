@@ -65,7 +65,7 @@ object MultiFunctionConstraints {
     * Verifies that the given function satisfies the input abstractness constraint.
     */
   private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    if (Type.isConcrete(function.signature.inputType)) {
+    if (function.signature.inputType.isConcrete) {
       reporter.error(FunctionIllegallyAbstract(function))
     }
   }
@@ -108,7 +108,7 @@ object MultiFunctionConstraints {
     subtypes.flatMap { subtype =>
       if (mf.fit(subtype).exists(f2 => Fit.isMoreSpecific(f2.signature.inputType, inputType))) {
         Vector.empty
-      } else if (Type.isAbstract(subtype)) {
+      } else if (subtype.isAbstract) {
         verifyInputTypeTotality(subtype, mf)
       } else Vector(subtype)
     }
@@ -151,7 +151,7 @@ object MultiFunctionConstraints {
     * relevant subtype.
     */
   private def relevantSubtypes(tpe: Type)(implicit registry: Registry): Vector[Type] = tpe match {
-    case t if Type.isConcrete(t) => Vector(t)
+    case t if t.isConcrete => Vector(t)
     case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)
     case SumType(parts) => parts.flatMap(relevantSubtypes).toVector
     case IntersectionType(_) => concreteSubtypes(tpe)
@@ -163,7 +163,7 @@ object MultiFunctionConstraints {
     * `tpe`.
     */
   private def concreteSubtypes(tpe: Type)(implicit registry: Registry): Vector[Type] = tpe match {
-    case t if Type.isConcrete(t) => Vector(t)
+    case t if t.isConcrete => Vector(t)
     case dt: DeclaredType => registry.declaredTypeHierarchy.getConcreteSubtypes(dt)
     case SumType(parts) => parts.flatMap(concreteSubtypes).toVector
     case IntersectionType(parts) => parts.flatMap(concreteSubtypes).toVector.filter(subtype => subtype <= tpe)

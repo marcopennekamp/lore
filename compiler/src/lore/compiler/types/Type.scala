@@ -4,10 +4,6 @@ import com.typesafe.scalalogging.Logger
 import lore.compiler.semantics.NamePath
 import lore.compiler.utils.CollectionExtensions._
 
-import java.io.ByteArrayOutputStream
-import java.math.BigInteger
-import java.security.MessageDigest
-
 /**
   * Any Lore type.
   *
@@ -19,6 +15,14 @@ import java.security.MessageDigest
 trait Type extends TypeSchema with HasMembers {
   override def parameters: Vector[TypeVariable] = Vector.empty
   override def instantiate(assignments: TypeVariable.Assignments): Type = this
+
+  def isPrimitive: Boolean = Type.isPrimitive(this)
+  def isNumeric: Boolean = Type.isNumeric(this)
+  def isSymbol: Boolean = Type.isSymbol(this)
+  def isAbstract: Boolean = Type.isAbstract(this)
+  def isConcrete: Boolean = Type.isConcrete(this)
+  def isPolymorphic: Boolean = Type.isPolymorphic(this)
+  def isMonomorphic: Boolean = Type.isMonomorphic(this)
 
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def </=(rhs: Type): Boolean = !(this <= rhs)
@@ -54,7 +58,14 @@ object Type {
   }
 
   /**
-    * Whether all values inhabiting the given type are definitively symbols.
+    * Whether the given type is numeric (Int, Real).
+    *
+    * Note that a type `Int | Real` is <i>not</i> numeric because the sum has to be deconstructed first.
+    */
+  def isNumeric(t: Type): Boolean = t == BasicType.Int || t == BasicType.Real
+
+  /**
+    * Whether all values inhabiting the given type are symbols.
     *
     * TODO (syntax): This function is more or less a hack because we don't have a general symbol type that supertypes
     *                all symbols. If this was the case, we could easily check that `t` is a symbol type with the

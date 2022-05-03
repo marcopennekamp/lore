@@ -61,7 +61,7 @@ object BuiltinsTransformation {
       case (t1: BasicType, t2: BasicType) if t1.isNumeric && t2.isNumeric => true
       case (BasicType.Boolean, BasicType.Boolean) => cmf == registry.core.equal
       case (BasicType.String, BasicType.String) => true
-      case (t1, t2) if Type.isSymbol(t1) && Type.isSymbol(t2) => cmf == registry.core.equal
+      case (t1, t2) if t1.isSymbol && t2.isSymbol => cmf == registry.core.equal
       case _ => false
     }
 
