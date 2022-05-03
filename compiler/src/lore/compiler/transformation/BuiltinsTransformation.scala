@@ -1,18 +1,18 @@
 package lore.compiler.transformation
 
-import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.core.Position
+import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.core.CoreMultiFunction
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.types.{BasicType, SymbolType, TupleType}
+import lore.compiler.types.{BasicType, TupleType, Type}
 
 object BuiltinsTransformation {
 
   /**
-    * Builds a multi-function call to a core multi-function such as `to_string`.
+    * Builds a multi-function call to a core multi-function such as `lore.core.to_string`.
     */
   def multiFunctionCall(
     cmf: CoreMultiFunction,
@@ -27,14 +27,10 @@ object BuiltinsTransformation {
           MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, position),
           min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, inputType, min, position),
         ).map { instance =>
-          // Even though we already checked during resolution that the core multi-function has the correct output type,
-          // the user might define a more general core function that dispatch might lead to here. We thus have to check
-          // once again that the output type is correct.
-          val expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
-          if (instance.signature.outputType </= cmf.outputType) {
-            reporter.error(TypingFeedback.SubtypeExpected(instance.signature.outputType, cmf.outputType, expression))
-          }
-          expression
+          // The specific instance's output type will be a subtype of the CMF's expected output type because the
+          // instance is necessarily a specialization of the CMF. Output types are kept consistent by multi-function
+          // constraints.
+          Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
         }.getOrElse {
           Expression.Hole(cmf.outputType, position)
         }
@@ -48,9 +44,6 @@ object BuiltinsTransformation {
     * functions `equal?`, `less_than?`, and `less_than_equal?` for complex comparisons. Results in an error if these
     * functions don't return a boolean value.
     *
-    * This function also catches illegal Boolean/Boolean and Symbol/Symbol comparisons, such as `true < false`,
-    * `true <= false`, and `#new < #old`. These result in an appropriate error.
-    *
     * If an expression cannot be created, the function falls back to [[Expression.Hole]] with a Boolean type.
     */
   def transformComparison(
@@ -60,27 +53,20 @@ object BuiltinsTransformation {
     right: Expression,
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
-    lazy val directComparison = Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
-    def transformDirectOnlyEquals(domain: String): Expression = {
-      cmf match {
-        case registry.core.equal => directComparison
-        case registry.core.less_than | registry.core.less_than_equal =>
-          reporter.error(ExpressionFeedback.IllegalComparison(domain, position))
-          Expression.Hole(BasicType.Boolean, position)
-        case _ => throw CompilationException(s"The core multi-function ${cmf.name} is not a comparison function.")
-      }
+    // The following type combinations can be compared by specialized instructions: `(Int | Real, Int | Real)`,
+    // `(Boolean, Boolean)` (equality only), `(String, String)`, and `(Symbol, Symbol)` (equality only). Boolean and
+    // symbol order is included in the default implementation of `lore.core.less_than?`, but not available as a
+    // specialized instruction.
+    val hasSpecializedInstruction = (left.tpe, right.tpe) match {
+      case (t1: BasicType, t2: BasicType) if t1.isNumeric && t2.isNumeric => true
+      case (BasicType.Boolean, BasicType.Boolean) => cmf == registry.core.equal
+      case (BasicType.String, BasicType.String) => true
+      case (t1, t2) if Type.isSymbol(t1) && Type.isSymbol(t2) => cmf == registry.core.equal
+      case _ => false
     }
 
-    (left.tpe, right.tpe) match {
-      // The following type combinations can be compared by specialized instructions: `(Int | Real, Int | Real)`,
-      // `(Boolean, Boolean)`, `(String, String)`, and `(Symbol, Symbol)`. `(Boolean, Boolean)` and `(Symbol, Symbol)`
-      // comparisons are invalid, resulting in an error.
-      case (t1: BasicType, t2: BasicType) if t1.isNumeric && t2.isNumeric => directComparison
-      case (BasicType.Boolean, BasicType.Boolean) => transformDirectOnlyEquals("Booleans")
-      case (BasicType.String, BasicType.String) => directComparison
-      case (_: SymbolType, _: SymbolType) => transformDirectOnlyEquals("Symbols")
-      case _ => multiFunctionCall(cmf, Vector(left, right), position)
-    }
+    if (hasSpecializedInstruction) Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
+    else multiFunctionCall(cmf, Vector(left, right), position)
   }
 
 }

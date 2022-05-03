@@ -45,6 +45,19 @@ object Type {
   ).map(t => (t.name, t)).toMap
 
   /**
+    * Whether all values inhabiting the given type are definitively symbols.
+    *
+    * TODO (syntax): This function is more or less a hack because we don't have a general symbol type that supertypes
+    *                all symbols. If this was the case, we could easily check that `t` is a symbol type with the
+    *                subtyping expression `t <: Symbol`.
+    */
+  def isSymbol(t: Type): Boolean = t match {
+    case SumType(parts) => parts.forall(isSymbol)
+    case _: SymbolType => true
+    case _ => false
+  }
+
+  /**
     * Whether the given type is abstract.
     *
     * For an elaboration on the choices made here consult the specification.

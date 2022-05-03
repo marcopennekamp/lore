@@ -36,6 +36,7 @@
     - Also consider adding default element names again, i.e. `tuple.a` for a tuple `(A, B)` referring to the first element. Might still be a slippery slope.
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
   - Trailing lambdas.
+  - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.Symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
   - Clear all `TODO (syntax)` entries.
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
