@@ -27,4 +27,4 @@ block:
 
   let property_index2 = get_interned_property_index(@["nature", "load", "name", "nature", "level", "load"])
 
-  assert cast[uint](cast[pointer](property_index1)) == cast[uint](cast[pointer](property_index2))
+  assert cast[pointer](property_index1) == cast[pointer](property_index2)

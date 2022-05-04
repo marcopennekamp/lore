@@ -175,6 +175,9 @@ const max_type_parameters* = 32
 proc instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
 proc instantiate_struct_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): StructType
 
+proc `===`*(a: Type, b: Type): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
+proc `!==`*(a: Type, b: Type): bool {.inline.} = not (a === b)
+
 proc are_equal*(t1: Type, t2: Type): bool
 proc are_all_equal(types: open_array[Type]): bool
 
@@ -278,10 +281,13 @@ proc bounds_contain_polyassign*(tv: TypeVariable, tpe: Type, assignments: open_a
 # TODO (vm/parallel): This should be protected by a lock.
 var interned_meta_shapes = new_table[ImSeq[string], MetaShape]()
 
+proc `===`*(a: MetaShape, b: MetaShape): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
+proc `!==`*(a: MetaShape, b: MetaShape): bool {.inline.} = not (a === b)
+
 proc get_meta_shape*(property_names: ImSeq[string]): MetaShape =
   ## Creates a new meta shape from the given sorted and unique list of property names, or gets the interned version.
   var meta_shape = interned_meta_shapes.get_or_default(property_names)
-  if meta_shape == nil:
+  if meta_shape === nil:
     meta_shape = MetaShape(
       property_names: property_names,
       property_index: get_interned_property_index(to_open_array(property_names)),
@@ -298,10 +304,6 @@ proc get_meta_shape_safe*(property_names: seq[string]): MetaShape =
   sort(names)
   names = deduplicate(names, is_sorted = true)
   get_meta_shape(names)
-
-proc `===`*(a: MetaShape, b: MetaShape): bool {.inline.} =
-  ## Checks the equality of two interned meta shapes.
-  cast[pointer](a) == cast[pointer](b)
 
 proc property_count*(meta_shape: MetaShape): int {.inline.} = meta_shape.property_names.len
 proc property_count*(tpe: ShapeType): int {.inline.} = tpe.meta.property_count
@@ -391,7 +393,7 @@ proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredT
 
 template require_instantiated_schema[T](instantiate_type: T): T =
   let tpe = instantiate_type
-  if tpe == nil:
+  if tpe === nil:
     quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to their bounds.")
   tpe
 
@@ -577,9 +579,8 @@ proc new_trait_schema*(
   schema
 
 proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: ShapeType) =
-  if schema.inherited_shape_type != nil:
+  if schema.inherited_shape_type !== nil:
     quit(fmt"An inherited shape type has already been attached to trait schema {schema.name}.")
-
   schema.inherited_shape_type = inherited_shape_type
 
 proc instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
@@ -605,7 +606,7 @@ proc force_instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[
   require_instantiated_schema(instantiate_trait_schema(schema, type_arguments))
 
 proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
-  if tpe.inherited_shape_type_cache != nil:
+  if tpe.inherited_shape_type_cache !== nil:
     return tpe.inherited_shape_type_cache
 
   let schema: TraitSchema = tpe.get_schema
@@ -680,7 +681,7 @@ proc instantiate_struct_schema*(
   ## if the struct type should have no concrete open property types. If `schema` cannot be instantiated with the type
   ## arguments, `nil` is returned.
   # TODO (vm/intern): This function should intern the declared types.
-  if schema.is_constant and open_property_types == nil:
+  if schema.is_constant and open_property_types === nil:
     return schema.get_representative
 
   if not bounds_contain(schema, type_arguments):
@@ -718,13 +719,13 @@ proc get_property_type*(tpe: StructType, property_offset: uint16): Type =
   ## schema's property type instantiated with the struct's type arguments. All results are cached in the struct type's
   ## `property_type_cache`.
   let cached_candidate = tpe.property_type_cache[property_offset]
-  if cached_candidate != nil:
+  if cached_candidate !== nil:
     return cached_candidate
 
   let schema = tpe.get_schema
   let property = schema.properties[property_offset]
   let candidate_type =
-    if property.is_open and tpe.open_property_types != nil:
+    if property.is_open and tpe.open_property_types !== nil:
       tpe.open_property_types[property.open_index]
     elif schema.is_constant:
       property.tpe
@@ -760,10 +761,6 @@ proc get_property_type*(tpe: Type, name: string): Type =
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
-
-proc `===`(a: Type, b: Type): bool {.inline.} =
-  ## Checks the referential equality of the two types.
-  cast[pointer](a) == cast[pointer](b)
 
 proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
 proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
@@ -919,9 +916,9 @@ proc are_declared_types_equal(t1: DeclaredType, t2: DeclaredType): bool =
 proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
   ## Checks whether `t1`'s open property types are equal to `t2`'s open property types. The struct types must have the
   ## same schema.
-  if t1.open_property_types == nil and t2.open_property_types == nil:
+  if t1.open_property_types === nil and t2.open_property_types === nil:
     true
-  elif t1.open_property_types != nil and t2.open_property_types != nil:
+  elif t1.open_property_types !== nil and t2.open_property_types !== nil:
     # If both types have open property types, we can bypass `get_property_type`.
     for i in 0 ..< t1.open_property_types.len:
       if not are_equal(t1.open_property_types[i], t2.open_property_types[i]):
@@ -1021,7 +1018,7 @@ proc shape_subtypes_shape(
     for i in 0 ..< s2.property_count:
       let property_name = s2.meta.property_names[i]
       let p1_type = s1.get_property_type_if_exists(property_name)
-      if p1_type == nil:
+      if p1_type === nil:
         return false
       let p2_type = s2.property_types[i]
       if not is_subtype_substitute(substitution_mode, p1_type, p2_type, assignments):
@@ -1064,7 +1061,7 @@ proc declared_type_subtypes_trait(substitution_mode: SubstitutionMode, t1: Decla
     type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments)
   else:
     let supertrait = t1.find_supertrait(t2.get_schema)
-    supertrait != nil and is_subtype_substitute(substitution_mode, supertrait, t2, assignments)
+    supertrait !== nil and is_subtype_substitute(substitution_mode, supertrait, t2, assignments)
 
 proc struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, t2: ShapeType, assignments: open_array[Type]): bool =
   for i in 0 ..< t2.property_count:
@@ -1072,7 +1069,7 @@ proc struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, 
     #            allocation is hiding here.
     let property_name = t2.meta.property_names[i]
     let p1 = t1.get_property_type_if_exists(property_name)
-    if p1 == nil or not is_subtype_substitute(substitution_mode, p1, t2.property_types[i], assignments):
+    if p1 === nil or not is_subtype_substitute(substitution_mode, p1, t2.property_types[i], assignments):
       return false
   true
 
@@ -1081,7 +1078,7 @@ proc struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructType,
   if t1.schema === t2.schema and type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments):
     # If the open property types of t2 are empty, and t1 and t2 agree in their type arguments, t2 will always be a
     # supertype of t1. Each property type of t2 is as general as possible.
-    if t2.open_property_types == nil:
+    if t2.open_property_types === nil:
       return true
 
     for i in t1.get_schema.open_property_indices:
@@ -1309,7 +1306,7 @@ template fits_impl(
 
   # Consistency constraint: All variables must have an assignment.
   for i in 0 ..< type_parameters.len:
-    if assignments[i] == nil:
+    if assignments[i] === nil:
       return nil
 
   # Consistency constraint: All bounds must be kept.
@@ -1368,7 +1365,7 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
   of Kind.TypeVariable:
     let index = cast[TypeVariable](t2).index
     let existing_assignment = assignments[index]
-    if existing_assignment == nil:
+    if existing_assignment === nil:
       assignments[index] = t1
     else:
       if not are_equal(existing_assignment, t1):
@@ -1437,13 +1434,13 @@ template fits_assign_shape_via_property_names(t1, t2, assignments): untyped =
   for i in 0 ..< t2.property_count:
     let property_name = t2.meta.property_names[i]
     let p1_type = t1.get_property_type_if_exists(property_name)
-    if p1_type != nil and not fits_assign(p1_type, t2.property_types[i], assignments):
+    if p1_type !== nil and not fits_assign(p1_type, t2.property_types[i], assignments):
       return false
 
 proc fits_assign_shape(t1: Type, t2: ShapeType, assignments: var FitsAssignments): bool =
   if t1.kind == Kind.Shape:
     let t1 = cast[ShapeType](t1)
-    if t1.meta == t2.meta:
+    if t1.meta === t2.meta:
       for i in 0 ..< t2.property_count:
         if not fits_assign(t1.property_types[i], t2.property_types[i], assignments):
           return false
@@ -1463,7 +1460,7 @@ proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: 
       t1
     elif t2.kind == Kind.Trait:
       let supertrait = t1.find_supertrait(cast[TraitSchema](t2.schema))
-      if supertrait == nil:
+      if supertrait === nil:
         return false
       supertrait
     else:
@@ -1698,7 +1695,7 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
       let property_name = meta_shape.property_names[i]
       for shape_type in shapes:
         let property_type = shape_type.get_property_type_if_exists(property_name)
-        if property_type != nil:
+        if property_type !== nil:
           property_type_parts.add(property_type)
       property_types[i] = simplify_construct_covariant(kind, property_type_parts)
       property_type_parts.set_len(0)
@@ -1729,7 +1726,7 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
       # Note that this instantiation ignores a struct type's open property types. This is okay, as simplified types
       # shouldn't contain open property types anyway.
       let declared_type = instantiate_schema(schema, type_arguments)
-      if declared_type != nil:
+      if declared_type !== nil:
         results.add(declared_type)
       else:
         # If the schema cannot be instantiated with the combined type arguments, default to the uncombined declared
@@ -1806,7 +1803,7 @@ proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type =
   ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type. If `tpe` contains no
   ## variables to substitute, `tpe` itself is returned unchanged.
   let res = substitute_optimized(tpe, type_arguments)
-  if res != nil: res
+  if res !== nil: res
   else: tpe
 
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
@@ -1816,7 +1813,7 @@ proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
 
 template substitute_unary_and_construct(child0: Type, type_arguments: open_array[Type], constructor): Type =
   let result0 = substitute_optimized(child0, type_arguments)
-  if result0 != nil: constructor(result0)
+  if result0 !== nil: constructor(result0)
   else: nil
 
 template substitute_binary_and_construct(child0: Type, child1: Type, type_arguments: open_array[Type], constructor): Type =
@@ -1826,7 +1823,7 @@ template substitute_binary_and_construct(child0: Type, child1: Type, type_argume
 
 template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: open_array[Type], constructor): Type =
   let results = substitute_multiple_optimized(children, type_arguments)
-  if results != nil: constructor(results)
+  if results !== nil: constructor(results)
   else: nil
 
 template substitute_declared_type_arguments(tpe: Type, type_arguments: open_array[Type]): ImSeq[Type] =
@@ -1863,18 +1860,18 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
   of Kind.Shape:
     let tpe = cast[ShapeType](tpe)
     let property_types = substitute_multiple_optimized(tpe.property_types, type_arguments)
-    if property_types != nil: new_shape_type(tpe.meta, property_types)
+    if property_types !== nil: new_shape_type(tpe.meta, property_types)
     else: nil
 
   of Kind.Trait:
     let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
-    if type_arguments != nil: force_instantiate_trait_schema(cast[TraitType](tpe).get_schema, type_arguments)
+    if type_arguments !== nil: force_instantiate_trait_schema(cast[TraitType](tpe).get_schema, type_arguments)
     else: nil
 
   of Kind.Struct:
     let tpe = cast[StructType](tpe)
     let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
-    if type_arguments != nil: force_instantiate_struct_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
+    if type_arguments !== nil: force_instantiate_struct_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
     else: nil
 
   else: nil
@@ -1885,8 +1882,8 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
   let length = types.len
   for i in 0 ..< length:
     let candidate = substitute_optimized(types[i], type_arguments)
-    if candidate != nil:
-      if result_types == nil:
+    if candidate !== nil:
+      if result_types === nil:
         result_types = new_immutable_seq(types)
       result_types[i] = candidate
 
@@ -1947,7 +1944,7 @@ proc stringify_open_properties(tpe: DeclaredType): string =
     return ""
 
   let tpe = cast[StructType](tpe)
-  if tpe.open_property_types == nil:
+  if tpe.open_property_types === nil:
     return ""
 
   let schema = tpe.get_schema

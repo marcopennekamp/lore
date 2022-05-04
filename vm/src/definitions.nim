@@ -145,8 +145,8 @@ const operand_list_limit*: int = 256
 const introspection_type_trait_name*: string = "lore.core.Type"
   ## The VM needs to know the Type trait as defined in `core.lore` to properly "generate" a backing struct for it.
 
-proc `===`*(f1: Function, f2: Function): bool
-proc `!==`*(f1: Function, f2: Function): bool = not (f1 === f2)
+proc `===`*(f1: Function, f2: Function): bool {.inline.} = cast[pointer](f1) == cast[pointer](f2)
+proc `!==`*(f1: Function, f2: Function): bool {.inline.} = not (f1 === f2)
 
 proc `$`*(function: Function): string
 
@@ -159,8 +159,11 @@ proc `$`*(function: Function): string
 var active_universe: Universe = nil
   ## This is the active universe which can be accessed as a global variable from across the VM.
 
+proc `===`*(a: Universe, b: Universe): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
+proc `!==`*(a: Universe, b: Universe): bool {.inline.} = not (a === b)
+
 proc get_active_universe*(): Universe =
-  if active_universe == nil:
+  if active_universe === nil:
     quit("Cannot get the active universe, as it is `nil`.")
   active_universe
 
@@ -198,8 +201,8 @@ proc are_functions_unique*(mf: MultiFunction): bool =
   for f1 in mf.functions:
     let has_duplicate = mf.functions.any_it(
       f1 !== it and
-        fits_poly1(f1.input_type, it.input_type, it.type_parameters) != nil and
-        fits_poly1(it.input_type, f1.input_type, f1.type_parameters) != nil
+        fits_poly1(f1.input_type, it.input_type, it.type_parameters) !== nil and
+        fits_poly1(it.input_type, f1.input_type, f1.type_parameters) !== nil
     )
     if has_duplicate:
       return false
@@ -211,15 +214,12 @@ proc are_functions_unique*(mf: MultiFunction): bool =
 
 proc roots*(dispatch_hierarchy: DispatchHierarchy): ImSeq[DispatchHierarchyNode] {.inline.} = cast[ImSeq[DispatchHierarchyNode]](dispatch_hierarchy)
 
-proc `===`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool =
-  ## Checks the referential equality of the two dispatch hierarchy nodes.
-  cast[pointer](n1) == cast[pointer](n2)
-
-proc `!==`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool = not (n1 === n2)
+proc `===`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool {.inline.} = cast[pointer](n1) == cast[pointer](n2)
+proc `!==`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool {.inline.} = not (n1 === n2)
 
 proc attach_dispatch_hierarchy*(mf: MultiFunction, dispatch_hierarchy: DispatchHierarchy) =
   ## Attaches the given hierarchy to the multi-function.
-  if cast[ImSeq[DispatchHierarchyNode]](mf.dispatch_hierarchy) != nil:
+  if cast[ImSeq[DispatchHierarchyNode]](mf.dispatch_hierarchy) !== nil:
     quit(fmt"Cannot attach a dispatch hierarchy to the multi-function `{mf.name}` as it already has a dispatch hierarchy.")
   mf.dispatch_hierarchy = dispatch_hierarchy
 
@@ -297,10 +297,6 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
   let function = mf.get_single_function
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
-
-proc `===`*(f1: Function, f2: Function): bool =
-  ## Checks the referential equality of the two functions.
-  cast[pointer](f1) == cast[pointer](f2)
 
 # Function equality/hashing is defined as referential equality/hashing and used for including functions in hash sets.
 proc `==`*(f1: Function, f2: Function): bool = f1 === f2

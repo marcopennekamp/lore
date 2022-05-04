@@ -32,7 +32,7 @@ iterator min(hierarchy: DispatchHierarchy, input_types: open_array[Type]): Funct
   # as they are calculated by `fits`, and are needed in case the node is selected.
   for node in hierarchy.roots:
     let type_arguments = fits(input_types, node.input_type.elements.to_open_array, node.type_parameters)
-    if type_arguments != nil:
+    if type_arguments !== nil:
       min_remaining.add(MinCandidate(node: node, type_arguments: type_arguments))
 
   while min_remaining.len > 0:
@@ -43,7 +43,7 @@ iterator min(hierarchy: DispatchHierarchy, input_types: open_array[Type]): Funct
     var should_select = true
     for successor in candidate.node.successors:
       let type_arguments = fits(input_types, successor.input_type.elements.to_open_array, successor.type_parameters)
-      if type_arguments != nil:
+      if type_arguments !== nil:
         should_select = false
         min_remaining.add(MinCandidate(node: successor, type_arguments: type_arguments))
 
@@ -66,7 +66,7 @@ proc min_poly_node(roots: open_array[DispatchHierarchyNode], input_types: open_a
   #     `remaining` list can be simplified.
   var remaining = new_seq_of_cap[DispatchHierarchyNode](8)
   for node in roots:
-    if fits_poly1(input_types, node.input_type.elements.to_open_array, node.type_parameters) != nil:
+    if fits_poly1(input_types, node.input_type.elements.to_open_array, node.type_parameters) !== nil:
       remaining.add(node)
 
   var results = new_seq_of_cap[DispatchHierarchyNode](4)
@@ -75,7 +75,7 @@ proc min_poly_node(roots: open_array[DispatchHierarchyNode], input_types: open_a
 
     var should_select = true
     for successor in node.successors:
-      if fits_poly1(input_types, successor.input_type.elements.to_open_array, successor.type_parameters) != nil:
+      if fits_poly1(input_types, successor.input_type.elements.to_open_array, successor.type_parameters) !== nil:
         should_select = false
         remaining.add(successor)
 
@@ -126,7 +126,7 @@ proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], tar
           candidates.add(addr function.monomorphic_instance)
       else:
         let type_arguments = fits(input_types, function_input_types.to_open_array, function.type_parameters)
-        if type_arguments != nil:
+        if type_arguments !== nil:
           # TODO (vm): This shouldn't need to allocate any function instances once we've moved to hierarchical dispatch.
           candidates.add(new_function_instance(function, type_arguments))
 
@@ -142,7 +142,7 @@ proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], tar
             to_open_array(candidate.function.input_type.elements),
             candidate.function.type_parameters,
           )
-          if type_arguments != nil:
+          if type_arguments !== nil:
             is_most_specific = false
             break
       if is_most_specific: most_specific.add(candidate)
@@ -197,7 +197,7 @@ proc build_dispatch_hierarchy*(mf: MultiFunction): DispatchHierarchy =
     for f1 in remaining:
       let has_superfunction = remaining.any_it(
         f1 !== it and
-          fits_poly1(f1.input_type.elements.to_open_array, it.input_type.elements.to_open_array, it.type_parameters) != nil
+          fits_poly1(f1.input_type.elements.to_open_array, it.input_type.elements.to_open_array, it.type_parameters) !== nil
       )
       if not has_superfunction:
         top.add(f1)

@@ -156,6 +156,9 @@ proc join*[T](seq: ImSeq[T], separator: string): string =
   str
 
 proc `hash`*[T](seq: ImSeq[T]): Hash = hash(to_open_array(seq))
+proc `===`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = cast[pointer](s1) == cast[pointer](s2)
+proc `!==`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = not (s1 === s2)
+
 
 proc `$`*[T](seq: ImSeq[T]): string =
   "[" & seq.join(", ") & "]"

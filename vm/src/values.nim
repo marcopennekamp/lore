@@ -100,8 +100,11 @@ const
   False: TaggedValue = TaggedValue(0 or TagBoolean)
   True: TaggedValue = TaggedValue((1 shl 3) or TagBoolean)
 
-proc `===`(v1: TaggedValue, v2: TaggedValue): bool = uint64(v1) == uint64(v2)
-proc `===`(v1: Value, v2: Value): bool = cast[uint](v1) == cast[uint](v2)
+proc `===`*(v1: TaggedValue, v2: TaggedValue): bool {.inline.} = uint64(v1) == uint64(v2)
+proc `!==`*(v1: TaggedValue, v2: TaggedValue): bool {.inline.} = not (v1 === v2)
+
+proc `===`*(v1: Value, v2: Value): bool {.inline.} = cast[pointer](v1) == cast[pointer](v2)
+proc `!==`*(v1: Value, v2: Value): bool {.inline.} = not (v1 === v2)
 
 proc get_type*(value: TaggedValue): Type
 
@@ -137,7 +140,7 @@ proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value === True
 
-proc is_nil_reference*(value: TaggedValue): bool = is_reference(value) and untag_reference(value) == nil
+proc is_nil_reference*(value: TaggedValue): bool = is_reference(value) and untag_reference(value) === nil
 
 ########################################################################################################################
 # Reals.                                                                                                               #
@@ -300,7 +303,7 @@ proc new_struct_value*(tpe: StructType, property_values: open_array[TaggedValue]
   let schema = tpe.get_schema
   let open_property_types = get_open_property_types(schema, property_values)
   let new_type =
-    if open_property_types != nil: instantiate_struct_schema(tpe, open_property_types)
+    if open_property_types !== nil: instantiate_struct_schema(tpe, open_property_types)
     else: tpe
 
   let value = alloc_struct_value(schema)
@@ -356,7 +359,7 @@ proc get_type*(value: TaggedValue): Type =
   let tag = get_tag(value)
   if tag == TagReference:
     let ref_value = untag_reference(value)
-    if ref_value != nil: ref_value.tpe else: any_type
+    if ref_value !== nil: ref_value.tpe else: any_type
   elif tag == TagInt:
     int_type
   elif tag == TagBoolean:
@@ -525,7 +528,7 @@ proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string =
   let tag = get_tag(tagged_value)
   if tag == TagReference:
     let value = untag_reference(tagged_value)
-    if value != nil: stringify(value, rec)
+    if value !== nil: stringify(value, rec)
     else: "nil"
   elif tag == TagInt:
     $untag_int(tagged_value)

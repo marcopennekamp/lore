@@ -474,7 +474,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.FunctionLambdaPoly0: generate_lambda(true, false)
 
     of Operation.LambdaLocal:
-      if ImSeq[TaggedValue](frame.lambda_context) == nil:
+      if ImSeq[TaggedValue](frame.lambda_context) === nil:
         quit(fmt"`LambdaLocal` cannot be executed because the lambda context is `nil`.")
       regv_set_arg(0, frame.lambda_context[instruction.arg(1)])
 
@@ -607,7 +607,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.StructEq:
       let a = regv_get_ref_arg(1, StructValue)
       let b = regv_get_ref_arg(2, StructValue)
-      regv_set_bool_arg(0, cast[pointer](a) == cast[pointer](b))
+      regv_set_bool_arg(0, a === b)
 
     of Operation.PropertyGetNamed:
       let instance = regv_get_arg(1)
@@ -757,7 +757,7 @@ proc evaluate(frame: FramePtr) =
       let schema = const_schema_arg(2)
       let index = instruction.arg(3)
       let target_type = tpe.find_supertype(schema)
-      if unlikely(target_type == nil):
+      if unlikely(target_type === nil):
         quit(fmt"Cannot perform operation `TypePathTypeArgument` given schema `{schema.name}` on type `{tpe.schema.name}`, because `find_supertype` is nil.")
       regt_set_arg(0, target_type.type_arguments[index])
 
