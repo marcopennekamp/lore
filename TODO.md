@@ -5,7 +5,8 @@
 ##### Minimum Viable Language
 
 - Implement a compiler backend for producing poem binaries.
-  - Isn't the default `less_than_equal?` definition incorrect for some of the more complex structures? For example, a query `%{ status: #ok } <= %{ status: #ok, result: 'abc' }` returns `false` because the shapes are neither equal (the right shape has an additional property), nor is the left shape less than the right one. However, when following the lexicographic definition of a "less than equal?", `left.status <= right.status` would be a valid interpretation, which would return `true`.
+  - Change the kind (and thereby default order) of symbols to be between `String` and `Tuple`, or even after `Boolean`, as symbols could very much be considered "primitive" values. Maybe we should extend the definition of a primitive to symbols in general. A symbol is not a basic type, but primitive types don't necessarily have to be basic types.
+  - Implement the Adventurer example from `equality-order.md` as a test example for equality/order. (Maybe even a lesson.)
   - Fix compiler tests.
   - Clear all `TODO (assembly)` entries.
 - Implement a new automatic testing solution to execute the functional tests. This is a great opportunity to formulate a general, simple testing solution that users can also access and which treats tests as first-class citizens. For example, we could implement tests as normal funcs with an `@test` annotation that takes an expected value. These `@test` functions would be compiled into an entry function that's executed by the VM if the program is compiled as a test program, or we could even add VM support for test functions and give the VM a `test` command. The latter would allow users of libraries to execute library tests even when they're just using a library, as the tests would always be bundled with the poem binaries. The `test` command could also filter tests by module.
@@ -27,6 +28,7 @@
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
 - Syntax changes:
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
+  - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
   - Rename `act` to `proc`? This would be in line with `func`.
   - Rename `Boolean` to `Bool`? Int is also abbreviated.
   - Rename `let mut` to `var`? It's less to write and in line with `let`.
@@ -61,6 +63,7 @@
 - Possibly add protocols. (Also see the specification proposal.)
   - This will allow us to add equality, ordering, hashing, and stringification protocols to the core, which makes the operations associated with these protocols more type-safe. For example, right now, it is possible to compare values of any two types, even those that are incomparable (e.g. `function == struct`).
   - Protocols might be mergeable with "global specialization".
+- Allow non-equality (`!=`) to be implemented separately, as non-equality can sometimes be proven more quickly than equality.
 - Introduce a `Number` type that supertypes both `Int` and `Real` (possibly just `type Number = Int | Real`) and that can be used for arithmetic operations. The exact semantics of such a type have to be figured out, but the easiest would be implicit conversions from `Int | Real` to `Real`, which could be supported by amending the `IntToReal` instruction such that it's idempotent if `Real` values are passed to it.
   - The motivation for a `Number` type would be defining math functions, for example, but this requires specialization instead of implicit conversion. For example, a function `func max[N <: Number](a: N, b: N): N = if a > b then a else b` would need to be specialized for `Int` and `Real`, or alternatively work with an implementation of `>` that delegates to the correct instruction based on `N`. And then there is performance, as type parameters are notoriously slow to handle in Lore's multiple dispatch. So this would require a separate compile-time specialization mechanism, which perhaps isn't worth the effort given that we only have two number types.
 

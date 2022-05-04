@@ -1,5 +1,4 @@
 import std/times
-import std/os
 import std/monotimes
 import std/sugar
 

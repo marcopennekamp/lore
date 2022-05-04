@@ -165,10 +165,6 @@ If `a` or `b` is a `Real` and the other is an `Int`, the `Int` will be implicitl
 
 Division of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
 
-##### Equality and Order
-
-Numbers are equal and ordered in accordance to mathematical norms.
-
 
 
 ### Booleans
@@ -184,10 +180,6 @@ a && b  // Conjunction
 a || b  // Disjunction
 !a      // Logical Not
 ```
-
-##### Equality and Order
-
-True is equal to true, false is equal to false. Booleans are unordered.
 
 
 
@@ -215,10 +207,6 @@ let announcement = '${p.name}, you have $k apples. Please claim your ${if k < 10
 
 One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `lore.String.concat`.
 
-##### Equality and Order
-
-Two strings are equal if they have exactly the same bytes. Strings are ordered lexicographically by code point. This ordering will not produce good user-facing results, but constitutes a sensible default.
-
 
 
 ### Tuples
@@ -239,10 +227,6 @@ get(t, 2) // c
 
 Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `Unit` or `()`. The unit value is special in Lore, as it is the de-facto throwaway value, and also the implicit return type of actions.
 
-##### Equality and Order
-
-Two tuples are equal if they have the same size and their elements are equal under `lore.core.equal?`. A tuple is less than another tuple if they have the same size and their elements follow lexicographic ordering under `lore.core.less_than?`.
-
 
 
 ### Anonymous Functions
@@ -258,10 +242,6 @@ let square: Real => Real = v => v * v
 map([1, 2, 3, 4, 5], v => v + 3)
 ```
 
-##### Equality and Order
-
-Anonymous functions are equal by reference and unordered.
-
 
 
 ### Lists
@@ -271,10 +251,6 @@ Lore supports **lists** as first-class constructs. A list is an immutable, homog
 You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]` and has the type `Nothing`. You can **append** to a list with the `:+` operator, which is the native way to expand a list.
 
 Lore currently has no native, mutable array type. They will eventually be added to Pyramid with VM support.
-
-##### Equality and Order
-
-Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal under `lore.core.equal?`. A list `v1` is less than another list `v2` if their elements follow lexicographic ordering under `lore.core.less_than?`. If all elements are equal, but `v1` is shorter than `v2`, `v1 < v2` holds.
 
 
 
@@ -295,10 +271,6 @@ let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
 // points: #[String -> Int]
 ```
 
-##### Equality and Order
-
-Two maps are equal if they have the same size and for each key/value pair in the first map, there is a key/value pair in the second map that is equal under `lore.core.equal?`. Maps are unordered by default.
-
 
 
 ### Shapes
@@ -311,14 +283,6 @@ Two maps are equal if they have the same size and for each key/value pair in the
 let bark_options = %{ show_teeth: true, volume: 80 }
 // bark_options: %{ show_teeth: Boolean, volume: Int }
 ```
-
-##### Equality and Order
-
-Two shapes are equal if their properties are equal under `lore.core.equal?`.
-
-A shape `s1` is less than a shape `s2` if properties in `s1` follow lexicographic order under `lore.core.less_than?` when compared to properties with the same name from `s2`. Properties are considered in the order of their names. If `s1` contains a property that isn't contained in `s2`, `s1` cannot be less than `s2`.
-
-Comparing shape values with the exact same property names follows a strict total order if the property values also follow a strict total order. Otherwise, shape value comparison follows a strict *partial* order, as not all elements are comparable. For example, `%{ foo: 5 }` and `%{ bar: 10 }` are incomparable, because neither value contains the other's property names.
 
 
 
@@ -337,10 +301,6 @@ func process(query: Query): Result | #syntax_error = do
   else get_result(parsed)
 end
 ```
-
-##### Equality and Order
-
-Two symbols are equal if they have the same name. Symbols are unordered.
 
 
 
@@ -375,14 +335,6 @@ struct StringBox = Box[String]
 let box = StringBox('I am in a box.')
 ```
 
-##### Equality and Order
-
-Struct equality is handled by the default implementation of `lore.core.equal?`, which compares the structs' schemas for equality and its properties with `lore.core.equal?`. You can override `lore.core.equal?` with your own definition for any combination of types.
-
-The default implementation of struct equality considers two structs with different open property types as equal if their property values are equal under `lore.core.equal?`, as struct types have no bearing on the definition of equality.
-
-A struct `s1` is less than a struct `s2` if `s1` and `s2` have the same schema and their properties in their order of declaration are lexicographically ordered under `lore.core.less_than?`. You can override `lore.core.less_than?` with your own definition for any combination of (struct) types.
-
 
 
 ### Member Access
@@ -397,26 +349,16 @@ Lore supports the following **comparison operators:**
 
 ```
 a == b   // Equality
-a != b   // Inequality
+a != b   // Non-equality
 a < b    // Less than
 a <= b   // Less than or equal
 a > b    // Greater than
 a >= b   // Greater than or equal
 ```
 
-Comparisons of `Real` and `Int` implicitly convert the `Int` to `Real`.
+Non-equality, `a != b`, is strictly defined as `!(a == b)`. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b`. These identities are resolved during the parsing phase.
 
-To define **equality** for a non-basic, non-symbol type, you can specialize the function `lore.core.equal?`. Inequality is strictly defined as `!equal?(a, b)`.
-
-```
-module lore.core do
-  func equal?(c1: Car, c2: Car): Boolean = ...
-  func equal?(SportsCar, CheapCar): Boolean = false
-  func equal?(CheapCar, SportsCar): Boolean = false  // Don't forget to be symmetric!
-end
-```
-
-To define **order** for a non-basic, non-symbol type, specialize the function `lore.core.less_than?` and optionally `lore.core.less_than_equal?`. The latter is already defined as `less_than?(a, b) || equal?(a, b)` in Pyramid. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b` .
+Default and custom equality and ordering is further elaborated on in the document [equality and order](equality-order.md).
 
 
 

@@ -29,4 +29,5 @@ Also consider taking a look at these **supplemental documents:**
 
 - [**Identifiers:**](identifiers.md) The rules surrounding different kinds of identifiers in Lore.
 - [**Scopes:**](scopes.md) A short overview of the different kinds of lexical scopes in Lore.
+- [**Equality and Order:**](equality-order.md) The rules of default equality and order for all kinds of values in Lore, as well as guidelines for implementing custom equality and order.
 - [**Run-time Types:**](runtime-types.md) As types direct multiple dispatch, we require types to be carried along even during program execution. This document describes the run-time type semantics, including several important compromises which a Lore programmer should be aware of.

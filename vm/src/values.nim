@@ -80,6 +80,7 @@ type
     meta*: MetaShape
     property_values*: UncheckedArray[TaggedValue]
 
+  # TODO (vm): The `name` property is redundant, as it's already known via the type.
   SymbolValue* {.pure, shallow.} = ref object of Value
     name*: string
 
@@ -107,12 +108,10 @@ proc `===`*(v1: Value, v2: Value): bool {.inline.} = cast[pointer](v1) == cast[p
 proc `!==`*(v1: Value, v2: Value): bool {.inline.} = not (v1 === v2)
 
 proc get_type*(value: TaggedValue): Type
+proc get_kind*(value: TaggedValue): Kind
 
 proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool
-proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool
-
 proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool
-proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool
 
 proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string
 proc stringify*(value: Value, rec: TaggedValue -> string): string
@@ -182,7 +181,7 @@ proc new_tuple_value*(elements: ImSeq[TaggedValue]): Value =
   let length = elements.len
   var element_types = new_immutable_seq[Type](length)
   for i in 0 ..< length:
-    element_types[i] = get_type(elements[i])
+    element_types[i] = elements[i].get_type
   new_tuple_value(elements, new_tuple_type(element_types))
 
 proc new_tuple_value_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple_value(elements))
@@ -233,7 +232,7 @@ proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedV
   for i in 0 ..< meta_shape.property_count:
     let property_value = property_values[i]
     shape_value.property_values[i] = property_value
-    property_types[i] = get_type(property_value)
+    property_types[i] = property_value.get_type
 
   shape_value.tpe = new_shape_type(meta_shape, property_types)
   shape_value
@@ -261,6 +260,7 @@ let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
 # Symbols.                                                                                                             #
 ########################################################################################################################
 
+# TODO (vm): Intern symbol values.
 proc new_symbol_value*(name: string): Value = SymbolValue(tpe: new_symbol_type(name), name: name)
 
 proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_symbol_value(name))
@@ -317,7 +317,7 @@ proc get_open_property_types*(schema: StructSchema, property_values: open_array[
   if schema.has_open_properties:
     var types = new_immutable_seq[Type](schema.open_property_count)
     for i in 0 ..< schema.open_property_count:
-      types[i] = get_type(property_values[schema.open_property_indices[i]])
+      types[i] = property_values[schema.open_property_indices[i]].get_type
     types
   else: nil
 
@@ -350,7 +350,7 @@ proc get_property_value*(instance: TaggedValue, name: string): TaggedValue =
   else: quit(fmt"Cannot get a property {name} from a value with kind {tpe.kind}.")
 
 ########################################################################################################################
-# Value types.                                                                                                         #
+# Value types and kinds.                                                                                                         #
 ########################################################################################################################
 
 proc get_type*(value: TaggedValue): Type =
@@ -358,14 +358,26 @@ proc get_type*(value: TaggedValue): Type =
   ## `typeof`.
   let tag = get_tag(value)
   if tag == TagReference:
+    # TODO (assembly): Can't we just run into a null pointer exception when `ref_value` is nil? Values should never be nil.
     let ref_value = untag_reference(value)
     if ref_value !== nil: ref_value.tpe else: any_type
   elif tag == TagInt:
     int_type
-  elif tag == TagBoolean:
-    boolean_type
   else:
-    quit(fmt"Unknown tag {tag}.")
+    boolean_type
+
+proc get_kind*(value: TaggedValue): Kind =
+  ## Returns the kind of `value`. This function avoids pointer indirection for Int and Boolean values compared to
+  ## calling `get_type(value).kind`.
+  let tag = get_tag(value)
+  if tag == TagReference:
+    # TODO (assembly): Can't we just run into a null pointer exception when `ref_value` is nil? Values should never be nil.
+    let ref_value = untag_reference(value)
+    if ref_value !== nil: ref_value.tpe.kind else: Kind.Any
+  elif tag == TagInt:
+    Kind.Int
+  else:
+    Kind.Boolean
 
 ########################################################################################################################
 # Value equality and comparison.                                                                                       #
@@ -374,150 +386,157 @@ proc get_type*(value: TaggedValue): Type =
 proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool =
   ## Whether `v1` and `v2` are equal under the rules of default equality, using `rec` to compare sub-values. This
   ## function is the default implementation for `lore.core.equal?`.
-  # The first case covers the equality of Int and Boolean values.
+  # The first case covers the equality of Int and Boolean values, as well as strict equality for references.
   if v1 === v2: true
-  else: get_tag(v1) == TagReference and get_tag(v2) == TagReference and are_equal(untag_reference(v1), untag_reference(v2), rec)
+  elif is_reference(v1) or is_reference(v2):
+    let kind1 = v1.get_kind
+    let kind2 = v2.get_kind
+    if kind1 == kind2:
+      case kind1
+      of Kind.Real:
+        untag_reference(v1, RealValue).real == untag_reference(v2, RealValue).real
+      of Kind.String:
+        untag_reference(v1, StringValue).string == untag_reference(v2, StringValue).string
+      of Kind.Tuple:
+        let v1 = untag_reference(v1, TupleValue)
+        let v2 = untag_reference(v2, TupleValue)
+        if v1.elements.len != v2.elements.len:
+          return false
+        for i in 0 ..< v1.elements.len:
+          if not rec(v1.elements[i], v2.elements[i]):
+            return false
+        true
+      of Kind.List:
+        let v1 = untag_reference(v1, ListValue)
+        let v2 = untag_reference(v2, ListValue)
+        if v1.elements.len != v2.elements.len:
+          return false
+        for i in 0 ..< v1.elements.len:
+          if not rec(v1.elements[i], v2.elements[i]):
+            return false
+        true
+      of Kind.Shape:
+        let v1 = untag_reference(v1, ShapeValue)
+        let v2 = untag_reference(v2, ShapeValue)
+        if v1.meta !== v2.meta:
+          return false
 
-proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool =
-  ## Whether `v1` and `v2` are equal under the rules of default equality, using `rec` to compare sub-values. This
-  ## function is a part of the default implementation for `lore.core.equal?`.
-  if v1 === v2:
-    return true
+        # As the meta shapes are equal, the property values must be in the same order.
+        for i in 0 ..< v1.property_count:
+          if not rec(v1.property_values[i], v2.property_values[i]):
+            return false
+        true
+      of Kind.Symbol:
+        # TODO (vm): Once symbol values are interned, this case is already covered by the `v1 === v2` check above.
+        untag_reference(v1, SymbolValue).name == untag_reference(v2, SymbolValue).name
+      of Kind.Struct:
+        let v1 = untag_reference(v1, StructValue)
+        let v2 = untag_reference(v2, StructValue)
+        if v1.struct_type.schema !== v2.struct_type.schema:
+          return false
 
-  # If their kinds differ, `v1` and `v2` cannot be equal under the rules of default equality.
-  if v1.tpe.kind != v2.tpe.kind:
-    return false
-
-  case v1.tpe.kind
-  of Kind.Real:
-    cast[RealValue](v1).real == cast[RealValue](v2).real
-  of Kind.String:
-    cast[StringValue](v1).string == cast[StringValue](v2).string
-  of Kind.Tuple:
-    let v1 = cast[TupleValue](v1)
-    let v2 = cast[TupleValue](v2)
-    if v1.elements.len != v2.elements.len:
-      return false
-    for i in 0 ..< v1.elements.len:
-      if not rec(v1.elements[i], v2.elements[i]):
-        return false
-    true
-  of Kind.List:
-    let v1 = cast[ListValue](v1)
-    let v2 = cast[ListValue](v2)
-    if v1.elements.len != v2.elements.len:
-      return false
-    for i in 0 ..< v1.elements.len:
-      if not rec(v1.elements[i], v2.elements[i]):
-        return false
-    true
-  of Kind.Shape:
-    let v1 = cast[ShapeValue](v1)
-    let v2 = cast[ShapeValue](v2)
-    if v1.meta != v2.meta:
-      return false
-    # As the meta shapes are equal, the property values must be in the same order.
-    for i in 0 ..< v1.property_count:
-      if not rec(v1.property_values[i], v2.property_values[i]):
-        return false
-    true
-  of Kind.Symbol:
-    # TODO (vm): Once symbol values are interned, this case is already covered by the `v1 === v2` check above.
-    cast[SymbolValue](v1).name == cast[SymbolValue](v2).name
-  of Kind.Struct:
-    let v1 = cast[StructValue](v1)
-    let v2 = cast[StructValue](v2)
-    if v1.struct_type.schema !== v2.struct_type.schema:
-      return false
-    # As the struct schemas are equal, the property values must be in the same order.
-    for i in 0 ..< v1.property_count:
-      if not rec(v1.property_values[i], v2.property_values[i]):
-        return false
-    true
-  else:
-    # Functions can only be referentially equal, so they are covered by this case.
-    false
+        # As the struct schemas are equal, the property values must be in the same order.
+        for i in 0 ..< v1.property_count:
+          if not rec(v1.property_values[i], v2.property_values[i]):
+            return false
+        true
+      else:
+        # Functions can only be referentially equal, so they are covered by this case.
+        false
+    elif kind1 == Kind.Int and kind2 == Kind.Real:
+      float64(untag_int(v1)) == untag_reference(v2, RealValue).real
+    elif kind1 == Kind.Real and kind2 == Kind.Int:
+      untag_reference(v1, RealValue).real == float64(untag_int(v2))
+    else: false
+  else: false
 
 proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool =
   ## Whether `v1` is less than `v2` under the rules of default comparisons, using `rec` to compare sub-values. This
   ## function is the default implementation for `lore.core.less_than?`.
-  let tag1 = get_tag(v1)
-  let tag2 = get_tag(v2)
-  if tag1 != tag2:
-    return false
-
-  if tag1 == TagInt: untag_int(v1) < untag_int(v2)
-  elif tag1 == TagReference: is_less_than(untag_reference(v1), untag_reference(v2), rec)
-  else: false
-
-proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool =
-  ## Whether `v1` is less than `v2` under the rules of default comparisons, using `rec` to compare sub-values. This
-  ## function is a part of the default implementation for `lore.core.less_than?`.
-  # If their kinds differ, `v1` cannot be less than `v2` under the rules of default comparisons.
-  if v1.tpe.kind != v2.tpe.kind:
-    return false
-
-  case v1.tpe.kind
-  of Kind.Real:
-    cast[RealValue](v1).real < cast[RealValue](v2).real
-  of Kind.String:
-    # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8. This should
-    # use the same approach as the instructions `StringLt` and `StringLte`.
-    cast[StringValue](v1).string < cast[StringValue](v2).string
-  of Kind.Tuple:
-    let v1 = cast[TupleValue](v1)
-    let v2 = cast[TupleValue](v2)
-    if v1.elements.len != v2.elements.len:
-      return false
-    for i in 0 ..< v1.elements.len:
-      if rec(v1.elements[i], v2.elements[i]):
-        return true
-      if rec(v2.elements[i], v1.elements[i]):
-        return false
-    false
-  of Kind.List:
-    let v1 = cast[ListValue](v1)
-    let v2 = cast[ListValue](v2)
-    let length = min(v1.elements.len, v2.elements.len)
-    for i in 0 ..< length:
-      if rec(v1.elements[i], v2.elements[i]):
-        return true
-      if rec(v2.elements[i], v1.elements[i]):
-        return false
-    # At this point, all elements are equal. If `v1` is the shorter list, it'll be less than `v2`.
-    v1.elements.len < v2.elements.len
-  of Kind.Shape:
-    let v1 = cast[ShapeValue](v1)
-    let v2 = cast[ShapeValue](v2)
-    for property_name in v1.meta.property_names:
-      let p2 = v2.get_property_value_if_exists(property_name)
-      if is_nil_reference(p2):
-        # `v1` cannot be less than `v2` if `property_name` doesn't exist in `v2`.
-        return false
-      let p1 = v1.get_property_value(property_name)
-      if rec(p1, p2):
-        return true
-      if rec(p2, p1):
-        return false
-    false
-  of Kind.Struct:
-    let v1 = cast[StructValue](v1)
-    let v2 = cast[StructValue](v2)
-    if v1.get_schema !== v2.get_schema:
-      return false
-    let schema = v1.get_schema
-    for property_name in schema.property_declaration_order:
-      let offset = schema.property_index.find_offset(property_name)
-      let p1 = v1.property_values[offset]
-      let p2 = v2.property_values[offset]
-      if rec(p1, p2):
-        return true
-      if rec(p2, p1):
-        return false
-    false
+  let kind1 = v1.get_kind
+  let kind2 = v2.get_kind
+  if kind1 != kind2:
+    if kind1 == Kind.Int and kind2 == Kind.Real:
+      float64(untag_int(v1)) < untag_reference(v2, RealValue).real
+    elif kind1 == Kind.Real and kind2 == Kind.Int:
+      untag_reference(v1, RealValue).real < float64(untag_int(v2))
+    else:
+      ord(kind1) < ord(kind2)
+  elif kind1 == Kind.Int: untag_int(v1) < untag_int(v2)
+  elif kind1 == Kind.Boolean: untag_boolean(v1) < untag_boolean(v2)
   else:
-    # Functions and symbols have no default order.
-    false
+    case kind1
+    of Kind.Real:
+      untag_reference(v1, RealValue).real < untag_reference(v2, RealValue).real
+    of Kind.String:
+      # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8. This
+      # should use the same approach as the instructions `StringLt` and `StringLte`.
+      untag_reference(v1, StringValue).string < untag_reference(v2, StringValue).string
+    of Kind.Tuple:
+      let v1 = untag_reference(v1, TupleValue)
+      let v2 = untag_reference(v2, TupleValue)
+      if v1.elements.len != v2.elements.len:
+        return v1.elements.len < v2.elements.len
+      for i in 0 ..< v1.elements.len:
+        if rec(v1.elements[i], v2.elements[i]):
+          return true
+        if rec(v2.elements[i], v1.elements[i]):
+          return false
+      false
+    of Kind.List:
+      let v1 = untag_reference(v1, ListValue)
+      let v2 = untag_reference(v2, ListValue)
+      let length = min(v1.elements.len, v2.elements.len)
+      for i in 0 ..< length:
+        if rec(v1.elements[i], v2.elements[i]):
+          return true
+        if rec(v2.elements[i], v1.elements[i]):
+          return false
+      # At this point, all elements are equal. If `v1` is the shorter list, it'll be less than `v2`.
+      v1.elements.len < v2.elements.len
+    of Kind.Shape:
+      let v1 = untag_reference(v1, ShapeValue)
+      let v2 = untag_reference(v2, ShapeValue)
+      if v1.property_count == v2.property_count:
+        if v1.meta === v2.meta:
+          # `v1` and `v2` have the same property names, so we can compare the values.
+          for index in 0 ..< v1.property_count:
+            let p1 = v1.property_values[index]
+            let p2 = v2.property_values[index]
+            if rec(p1, p2):
+              return true
+            if rec(p2, p1):
+              return false
+          false
+        else:
+          # `v1` and `v2` have different property names, so we need to compare the name lists.
+          v1.meta.property_names < v2.meta.property_names
+      else:
+        v1.property_count < v2.property_count
+    of Kind.Symbol:
+      untag_reference(v1, SymbolValue).name < untag_reference(v2, SymbolValue).name
+    of Kind.Struct:
+      let v1 = untag_reference(v1, StructValue)
+      let v2 = untag_reference(v2, StructValue)
+      let schema1 = v1.get_schema
+      let schema2 = v2.get_schema
+      if schema1 === schema2:
+        for property_name in schema1.property_declaration_order:
+          let offset = schema1.property_index.find_offset(property_name)
+          let p1 = v1.property_values[offset]
+          let p2 = v2.property_values[offset]
+          if rec(p1, p2):
+            return true
+          if rec(p2, p1):
+            return false
+        false
+      else:
+        # The structs can't be compared directly. To still induce a default order, structs of differing schemas are
+        # ordered by their type name.
+        schema1.name < schema2.name
+    else:
+      # Functions have no default order.
+      false
 
 ########################################################################################################################
 # Stringification.                                                                                                     #

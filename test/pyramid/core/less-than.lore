@@ -17,6 +17,10 @@ module lore.core do
   func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
 end
 
+// TODO (assembly): Ensure that the type kind order is properly implemented by default order. Also ensure that
+//                  comparisons between int and real values properly promote the int, even when the numbers are given
+//                  to the default implementation.
+
 func test(): [Boolean] = do
   // We have to use `Any` as a type so that the compiler doesn't generate the direct comparison operations for
   // primitives.

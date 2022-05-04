@@ -5,29 +5,33 @@ module lore.core
 //                 `less_than?`, which should be locked behind a trait Order.
 //                 Of course, this and other traits defined in Core need proper support for providing "implementations"
 //                 for traits, unless we want to hardcode these traits into the compiler. We will also have to provide
-//                 a means with which a standard implementation can be derived for Equality, Order, and Showable. And
-//                 finally, there need to be standard implementations for lists, maps, etc.
+//                 a means with which a standard implementation can be derived for Equality, Order, and Showable.
 
 /**
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked when using
-  * the == and != operators with at least one non-primitive, non-symbol operand.
+  * the `==` and `!=` operators with at least one non-primitive operand.
   *
-  * The default implementation acts according to the specification and uses `equal?` for recursive comparisons.
+  * The default implementation acts according to the specification (`equality-order.md`) and uses `equal?` for
+  * recursive comparisons.
   */
 func equal?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.equal?', a, b, equal? :: (Any, Any) => Boolean)
 
 /**
  * The default "less than" function used by the compiler for comparing complex types. This function is invoked when
- * using the < and > operators with at least one non-primitive, non-symbol operand.
+ * using the `<` and `>` operators with at least one non-primitive operand.
  *
- * The default implementation acts according to the specification and uses `less_than?` for recursive comparisons.
+ * The default implementation acts according to the specification (`equality-order.md`) and uses `less_than?` for
+ * recursive comparisons.
  */
 func less_than?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.less_than?', a, b, less_than? :: (Any, Any) => Boolean)
 
 /**
  * The default "less than or equal" function used by the compiler for comparing complex types. This function is invoked
- * when using the <= and >= operators with at least one non-primitive, non-symbol operand. By default, `less_than?` and
- * `equal?` are used to test the values, but this behavior can be implemented more efficiently for specialized types.
+ * when using the `<=` and `>=` operators with at least one non-primitive operand.
+ *
+ * By default, `less_than_equal?` is defined in terms of `less_than?` and `equal?`, which preserves the expression
+ * identity `(a <= b) == (a < b || a == b)`. Alternatives to this definition are considered in the specification in the
+ * document `equality-order.md`.
  */
 func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b)
 
