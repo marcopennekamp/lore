@@ -5,6 +5,8 @@ discard """
 import "../../src/imseqs.nim"
 import "../../src/types.nim"
 
+# TODO (assembly): Fix this test.
+
 # Objective: Ensure that type simplification works correctly for non-trivial types.
 block:
   let primitives1 = new_immutable_seq([real_type, int_type, sum([int_type, string_type]), sum([boolean_type])])

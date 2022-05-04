@@ -12,6 +12,10 @@
 - Implement a rudimentary form of instruction validation before execution, such as that no register indices are out of bounds, and possibly simple type checking for constants.
   - Constants accessed via an ID should be checked against the expected variant. For example, if a constant is expected to be an intrinsic, but the actual constant is a value, the VM should quit with an appropriate error (during pre-execution validation) instead of casting the constant to the wrong type and carrying forward the error.
 
+#### Code Quality
+
+- Now that reference comparisons are handled by `===`, we can define `==` as `are_equal` and `<=` as `is_subtype` for Types, and `==` as `are_equal` and `<` as `is_less_than` for TaggedValues.
+
 #### Optimization
 
 - Implement declared type interning:

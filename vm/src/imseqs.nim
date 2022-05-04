@@ -155,10 +155,24 @@ proc join*[T](seq: ImSeq[T], separator: string): string =
     str.add($seq[i])
   str
 
-proc `hash`*[T](seq: ImSeq[T]): Hash = hash(to_open_array(seq))
 proc `===`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = cast[pointer](s1) == cast[pointer](s2)
 proc `!==`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = not (s1 === s2)
 
+proc `==`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = s1 === s2 or s1.to_open_array == s2.to_open_array
+proc `!=`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool {.inline.} = not (s1 == s2)
+
+proc `hash`*[T](seq: ImSeq[T]): Hash {.inline.} = hash(to_open_array(seq))
+
+proc `<`*[T](s1: ImSeq[T], s2: ImSeq[T]): bool =
+  ## Whether `s1` is lexicographically less than `s2`. If all common elements of `s1` and `s2` are equal, the shorter
+  ## list is less than the other.
+  let length = min(s1.len, s2.len)
+  for i in 0 ..< length:
+    if s1[i] < s2[i]:
+      return true
+    if s2[i] < s1[i]:
+      return false
+  s1.len < s2.len
 
 proc `$`*[T](seq: ImSeq[T]): string =
   "[" & seq.join(", ") & "]"
