@@ -357,27 +357,17 @@ proc get_type*(value: TaggedValue): Type =
   ## Returns the type of `value`. This function is called `get_type` so it doesn't clash with Nim's system function
   ## `typeof`.
   let tag = get_tag(value)
-  if tag == TagReference:
-    # TODO (assembly): Can't we just run into a null pointer exception when `ref_value` is nil? Values should never be nil.
-    let ref_value = untag_reference(value)
-    if ref_value !== nil: ref_value.tpe else: any_type
-  elif tag == TagInt:
-    int_type
-  else:
-    boolean_type
+  if tag == TagReference: untag_reference(value).tpe
+  elif tag == TagInt: int_type
+  else: boolean_type
 
 proc get_kind*(value: TaggedValue): Kind =
   ## Returns the kind of `value`. This function avoids pointer indirection for Int and Boolean values compared to
   ## calling `get_type(value).kind`.
   let tag = get_tag(value)
-  if tag == TagReference:
-    # TODO (assembly): Can't we just run into a null pointer exception when `ref_value` is nil? Values should never be nil.
-    let ref_value = untag_reference(value)
-    if ref_value !== nil: ref_value.tpe.kind else: Kind.Any
-  elif tag == TagInt:
-    Kind.Int
-  else:
-    Kind.Boolean
+  if tag == TagReference: untag_reference(value).tpe.kind
+  elif tag == TagInt: Kind.Int
+  else: Kind.Boolean
 
 ########################################################################################################################
 # Value equality and comparison.                                                                                       #
