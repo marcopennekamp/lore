@@ -103,8 +103,6 @@ object Synthesizer {
 
       case Expression.ShapeValue(properties, _) => infer(properties.map(_.value), assignments)
 
-      case Expression.Symbol(_, _) => Some(assignments)
-
       case Expression.PropertyDefaultValue(_, _) => Some(assignments)
 
       case expression@Expression.UnaryOperation(operator, value, _, _) =>

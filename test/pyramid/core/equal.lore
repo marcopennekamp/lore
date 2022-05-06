@@ -42,6 +42,11 @@ func test(): [Boolean] = do
   let str2: Any = 'bar'
   let str3: Any = 'Hello'
 
+  let sym1: Any = #name
+  let sym2: Any = #name
+  let sym3: Any = #foo
+  let sym4: Any = #bar
+
   let tpl1 = (str1, str2)
   let tpl2 = (str1, str2, str3)
   let tpl3 = (str3, str2, str1)
@@ -54,11 +59,6 @@ func test(): [Boolean] = do
   let list3 = [str3, str2, str1]
   let list4 = [tpl1, tpl2, tpl3]
   let list5 = [tpl1, tpl3, tpl2]
-
-  let sym1: Any = #name
-  let sym2: Any = #name
-  let sym3: Any = #foo
-  let sym4: Any = #bar
 
   let pos1 = Position2(5.0, 7.0)
   let pos2 = Position3(5.0, 7.0, 1.0)
@@ -101,6 +101,10 @@ func test(): [Boolean] = do
     str1 == str3,  // true
     str2 == str3,  // false
 
+    // Symbols
+    sym1 == sym2,  // true
+    sym3 == sym4,  // false
+
     // Tuples
     tpl1 == tpl2,  // false
     tpl1 == tpl3,  // false
@@ -124,10 +128,6 @@ func test(): [Boolean] = do
     // Lists: Ensure that the default implementation calls back into `lore.core.equal?`.
     [pers1, pers2] == [pers3, pers5],  // true
     [bag1, bag3] == [bag3, bag1],  // true
-
-    // Symbols
-    sym1 == sym2,  // true
-    sym3 == sym4,  // false
 
     // Structs
     pos1 == pos2,  // false

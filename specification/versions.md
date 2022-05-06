@@ -4,10 +4,10 @@
 
 The **first version** of Lore, which is still in development, includes or will include the following features:
 
-- **Types:** Sum types, intersection types, tuple types, function types, list types, map types, shape types, symbol types, trait and struct types, type variables, abstractness, type inference, type aliases.
+- **Types:** Basic types (Int, Real, Boolean, String), symbol types, sum types, intersection types, tuple types, function types, list types, map types, shape types, trait and struct types, type variables, abstractness, type inference, type aliases.
 - **Functions:** Multi-functions, function declarations with type parameters, multiple dispatch, abstract functions, fixed functions, static "no dispatch" functions.
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
-- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, multi-function values, lists, maps, shapes, symbols, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
+- **Expressions:** Literals and value constructors (numbers, booleans, strings, symbols, tuples, anonymous functions, multi-function values, lists, maps, shapes, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
 - **Modules:** Module declarations, imports and name resolution, companion modules.
 - **Miscellaneous:** Global constants, `domain` blocks.
 

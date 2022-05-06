@@ -24,6 +24,10 @@ case class PoemStringValue(value: String) extends PoemValue {
   override def tpe: PoemType = PoemBasicType(BasicType.String)
 }
 
+case class PoemSymbolValue(name: String) extends PoemValue {
+  override lazy val tpe: PoemType = PoemSymbolType(name)
+}
+
 case class PoemTupleValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue
 
 object PoemFunctionValueVariant extends Enumeration {
@@ -57,9 +61,5 @@ case class PoemFixedFunctionValue(mf: NamePath, inputType: PoemType, tpe: PoemTy
 case class PoemListValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue
 
 case class PoemShapeValue(properties: Map[String, PoemValue], tpe: PoemType) extends PoemValue with Poem.SortedProperties[PoemValue]
-
-case class PoemSymbolValue(name: String) extends PoemValue {
-  override lazy val tpe: PoemType = PoemSymbolType(name)
-}
 
 case class PoemStructValue(properties: Map[String, PoemValue], tpe: PoemType) extends PoemValue with Poem.SortedProperties[PoemValue]

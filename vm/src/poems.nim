@@ -136,6 +136,8 @@ type
     StringLt
     StringLte
 
+    SymbolEq
+
     Tuple
       ## target_reg: uint16, element_regs: uint8 * uint16
     TupleGet
@@ -179,8 +181,6 @@ type
 
     Shape
       ## target_reg: uint16, mtsh: uint16, property_value_regs: uint8 * uint16
-
-    SymbolEq
 
     Struct
       ## target_reg: uint16, tpe: uint16, value_argument_regs: uint8 * uint16
@@ -403,6 +403,9 @@ type
   PoemBasicType* = ref object of PoemType
     tpe*: Type
 
+  PoemSymbolType* = ref object of PoemType
+    name*: string
+
   PoemXaryType* = ref object of PoemType
     ## This unresolved type contains any number of child types and represents sums, functions, lists, etc.
     kind*: Kind
@@ -411,9 +414,6 @@ type
   PoemShapeType* = ref object of PoemType
     property_names*: seq[string]
     property_types*: seq[PoemType]
-
-  PoemSymbolType* = ref object of PoemType
-    name*: string
 
   PoemNamedType* = ref object of PoemType
     name*: string
@@ -433,6 +433,9 @@ type
 
   PoemStringValue* = ref object of PoemValue
     string*: string
+
+  PoemSymbolValue* = ref object of PoemValue
+    name*: string
 
   PoemTupleValue* = ref object of PoemValue
     tpe*: PoemType
@@ -466,9 +469,6 @@ type
   PoemShapeValue* = ref object of PoemValue
     tpe*: PoemShapeType
     property_values*: seq[PoemValue]
-
-  PoemSymbolValue* = ref object of PoemValue
-    name*: string
 
   PoemStructValue* = ref object of PoemValue
     tpe*: PoemNamedType
@@ -517,6 +517,9 @@ proc poem_real_value*(value: float64): PoemValue = PoemRealValue(real: value)
 proc poem_boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
 proc poem_string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
+proc poem_symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
+proc poem_symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
+
 proc poem_type_variable*(index: uint8): PoemType = PoemTypeVariable(index: index)
 
 proc poem_sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
@@ -540,9 +543,6 @@ proc poem_shape_value*(property_names: seq[string], property_types: seq[PoemType
   poem_shape_value(poem_shape_type_concrete(property_names, property_types), property_values)
 
 let poem_empty_shape_type*: PoemShapeType = poem_shape_type_concrete(@[], @[])
-
-proc poem_symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
-proc poem_symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
 proc poem_named_type_concrete*(name: string, type_arguments: seq[PoemType]): PoemNamedType = PoemNamedType(name: name, type_arguments: type_arguments)
 proc poem_named_type_concrete*(name: string): PoemNamedType = poem_named_type_concrete(name, @[])
@@ -639,12 +639,12 @@ const
   mkReal = 3'u8
   mkBoolean = 4'u8
   mkString = 5'u8
+  mkSymbol = 6'u8
   mkVariable = 16'u8
   mkFunction = 17'u8
   mkList = 18'u8
   mkMap = 19'u8
   mkShape = 20'u8
-  mkSymbol = 21'u8
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
@@ -1250,8 +1250,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   of Assign, Const, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
      JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeOf: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
-     BooleanOr, BooleanAnd, BooleanEq, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped,
-     ListGet, SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
+     BooleanOr, BooleanAnd, BooleanEq, StringConcat, StringEq, StringLt, StringLte, SymbolEq, TupleGet,
+     ListAppendUntyped, ListGet, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
   of IntConst, PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.FunctionLambda, PoemOperation.Shape,
      PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet,
@@ -1340,6 +1340,9 @@ proc read_type(stream: FileStream): PoemType =
     of mkReal: poem_real_type
     of mkBoolean: poem_boolean_type
     of mkString: poem_string_type
+    of mkSymbol:
+      let name = stream.read_string_with_length()
+      poem_symbol_type(name)
     of mkVariable:
       let index = stream.read(uint8)
       poem_type_variable(index)
@@ -1359,9 +1362,6 @@ proc read_type(stream: FileStream): PoemType =
       let property_names = stream.read_many(string, property_count, read_string_with_length)
       let property_types = stream.read_many(PoemType, property_count, read_type)
       poem_shape_type(property_names, property_types)
-    of mkSymbol:
-      let name = stream.read_string_with_length()
-      poem_symbol_type(name)
     else: raise new_exception(IOError, fmt"Unknown metadata-kinded type {metadata}.")
 
   of tkSum: stream.read_xary_type(Kind.Sum, metadata)
@@ -1391,6 +1391,7 @@ proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
   of Kind.Real: (tkMetadataKinded, mkReal)
   of Kind.Boolean: (tkMetadataKinded, mkBoolean)
   of Kind.String: (tkMetadataKinded, mkString)
+  of Kind.Symbol: (tkMetadataKinded, mkSymbol)
   of Kind.Sum: (tkSum, child_count)
   of Kind.Intersection: (tkIntersection, child_count)
   of Kind.Tuple: (tkTuple, child_count)
@@ -1398,7 +1399,6 @@ proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
   of Kind.List: (tkMetadataKinded, mkList)
   of Kind.Map: (tkMetadataKinded, mkMap)
   of Kind.Shape: (tkMetadataKinded, mkShape)
-  of Kind.Symbol: (tkMetadataKinded, mkSymbol)
   of Kind.Trait: (tkNamed, child_count)
   of Kind.Struct: (tkNamed, child_count)
   stream.write_type_tag(tag_kind, tag_metadata)
@@ -1421,6 +1421,10 @@ method write(tpe: PoemTypeVariable, stream: FileStream) {.locks: "unknown".} =
 method write(tpe: PoemBasicType, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(tpe.tpe.kind)
 
+method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type_tag(Kind.Symbol)
+  stream.write_string_with_length(tpe.name)
+
 method write(tpe: PoemXaryType, stream: FileStream) =
   let child_count = uint64(tpe.types.len)
   if child_count > 31:
@@ -1438,10 +1442,6 @@ method write(tpe: PoemShapeType, stream: FileStream) =
   stream.write(cast[uint8](property_count))
   stream.write_shape_property_names(tpe.property_names, with_count = false)
   stream.write_many(tpe.property_types, write_type)
-
-method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type_tag(Kind.Symbol)
-  stream.write_string_with_length(tpe.name)
 
 method write(tpe: PoemNamedType, stream: FileStream) =
   stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.type_arguments.len))
@@ -1469,6 +1469,9 @@ proc read_value(stream: FileStream): PoemValue =
       let value = stream.read_string_with_length()
       poem_string_value(value)
     else: fail("Invalid kind for basic type value.")
+  elif tpe of PoemSymbolType:
+    let symbol_type = cast[PoemSymbolType](tpe)
+    poem_symbol_value(symbol_type.name)
   elif tpe of PoemXaryType:
     let xary = cast[PoemXaryType](tpe)
     case xary.kind
@@ -1496,9 +1499,6 @@ proc read_value(stream: FileStream): PoemValue =
     let shape_type = cast[PoemShapeType](tpe)
     let property_values = stream.read_many(PoemValue, uint(shape_type.property_names.len), read_value)
     poem_shape_value(shape_type, property_values)
-  elif tpe of PoemSymbolType:
-    let symbol_type = cast[PoemSymbolType](tpe)
-    poem_symbol_value(symbol_type.name)
   elif tpe of PoemNamedType:
     let named_type = cast[PoemNamedType](tpe)
     let property_values = stream.read_many_with_count(PoemValue, uint16, read_value)
@@ -1527,6 +1527,9 @@ method write(value: PoemBooleanValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(poem_string_type)
   stream.write_string_with_length(value.string)
+
+method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(poem_symbol_type(value.name))
 
 method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)
@@ -1558,9 +1561,6 @@ method write(value: PoemListValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemShapeValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)
   stream.write_many(value.property_values, write_value)
-
-method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(poem_symbol_type(value.name))
 
 method write(value: PoemStructValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)

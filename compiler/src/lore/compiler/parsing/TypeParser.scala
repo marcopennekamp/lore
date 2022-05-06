@@ -28,8 +28,10 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | tupleType | listType | mapType | shapeType | symbolType | instantiation | namedType | enclosedType)
+    P(symbolType | unitType | tupleType | listType | mapType | shapeType | instantiation | namedType | enclosedType)
   }
+
+  private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~~ "#" ~ identifier ~~ Index).map(withPosition(TypeExprNode.SymbolNode))
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~~ "(" ~ ")" ~~ Index).map {
     case (startIndex, endIndex) => TypeExprNode.UnitNode(Position(fragment, startIndex, endIndex))
@@ -58,8 +60,6 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
     def property = P(Index ~~ name ~ typing ~~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
     P(Index ~~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ ",".? ~ "}" ~~ Index).map(withPosition(TypeExprNode.ShapeNode))
   }
-
-  private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~~ "#" ~ identifier ~~ Index).map(withPosition(TypeExprNode.SymbolNode))
 
   private def instantiation[_: P]: P[TypeExprNode.InstantiationNode] = {
     P(Index ~~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ ",".? ~ "]" ~~ Index).map(withPosition(TypeExprNode.InstantiationNode))

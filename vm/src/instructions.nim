@@ -133,6 +133,9 @@ type
       ##
       ## Compares two strings lexicographically.
 
+    SymbolEq
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
+
     Tuple
       ## reg(arg0) <- tuple(opl(0 .. arg1))
 
@@ -238,9 +241,6 @@ type
       ##
       ## Returns the shape property value with the name `nam(arg2)`. This is only possible when accessing a value which
       ## is guaranteed to be a shape. Otherwise, PropertyGetNamed must be used.
-
-    SymbolEq
-      ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     Struct
       ## arg2: value argument count

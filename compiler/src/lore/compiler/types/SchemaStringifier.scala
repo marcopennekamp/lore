@@ -23,6 +23,7 @@ object SchemaStringifier {
     val infix = stringifyInfixOperator(parentPrecedence, toStringWithPrecedence(_, verbose, _)) _
 
     schema match {
+      case SymbolType(name) => s"#$name"
       case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
       case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
       case TupleType(elements) =>
@@ -36,7 +37,6 @@ object SchemaStringifier {
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
         s"%{ ${propertyRepresentations.mkString(", ")} }"
-      case SymbolType(name) => s"#$name"
       case dt: DeclaredType =>
         val typeArguments = if (dt.typeArguments.nonEmpty) s"[${dt.typeArguments.map(toString(_, verbose)).mkString(", ")}]" else ""
         if (verbose) {

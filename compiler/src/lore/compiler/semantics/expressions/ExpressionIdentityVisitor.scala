@@ -29,7 +29,6 @@ trait ExpressionIdentityVisitor[R] extends ExpressionVisitor[Expression, R] {
   override def visit(expression: ListConstruction)(values: Vector[Expression]): R = wrap(expression.copy(values))
   override def visit(expression: MapConstruction)(entries: Vector[(Expression, Expression)]): R = wrap(expression.withEntries(entries))
   override def visit(expression: ShapeValue)(properties: Vector[Expression]): R = wrap(expression.withPropertyValues(properties))
-  override def visit(expression: Symbol): R = wrap(expression)
   override def visit(expression: PropertyDefaultValue): R = wrap(expression)
   override def visit(expression: UnaryOperation)(value: Expression): R = wrap(expression.copy(value = value))
   override def visit(expression: BinaryOperation)(left: Expression, right: Expression): R = wrap(expression.copy(left = left, right = right))

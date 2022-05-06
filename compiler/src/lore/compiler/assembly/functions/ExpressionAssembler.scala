@@ -79,7 +79,6 @@ class ExpressionAssembler(
       case expression: ListConstruction => handle(expression)
       case expression: MapConstruction => handle(expression)
       case expression: ShapeValue => handle(expression)
-      case expression: Symbol => handle(expression)
       case expression: PropertyDefaultValue => handle(expression)
       case expression: UnaryOperation => handle(expression)
       case expression: BinaryOperation => handle(expression)
@@ -149,8 +148,7 @@ class ExpressionAssembler(
   }
 
   private def handle(literal: Literal): Chunk = {
-    val regResult = registerProvider.fresh()
-    ValueAssembler.generateConstForced(literal, regResult)
+    ValueAssembler.generateConstForced(literal, registerProvider.fresh())
   }
 
   private def handle(expression: Tuple): Chunk = {
@@ -219,10 +217,6 @@ class ExpressionAssembler(
       val instruction = PoemInstruction.Shape(target, metaShape, propertyRegisters)
       Chunk.concat(sortedChunks) ++ Chunk(target, instruction)
     }
-  }
-
-  private def handle(symbol: Symbol): Chunk = {
-    ValueAssembler.generateConstForced(symbol, registerProvider.fresh())
   }
 
   private def handle(expression: PropertyDefaultValue): Chunk = {

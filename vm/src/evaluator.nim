@@ -415,6 +415,11 @@ proc evaluate(frame: FramePtr) =
     of Operation.StringLt: generate_binary_operator("string", "bool", a < b)
     of Operation.StringLte: generate_binary_operator("string", "bool", a <= b)
 
+    of Operation.SymbolEq:
+      let a = regv_get_ref_arg(1, SymbolValue)
+      let b = regv_get_ref_arg(2, SymbolValue)
+      regv_set_bool_arg(0, a.name == b.name)
+
     of Operation.Tuple:
       var elements = oplv_get_imseq_arg(1)
       regv_set_ref_arg(0, values.new_tuple_value(elements))
@@ -548,11 +553,6 @@ proc evaluate(frame: FramePtr) =
       let shape = regv_get_ref_arg(1, ShapeValue)
       let name = const_name_arg(2)
       regv_set_arg(0, shape.get_property_value(name))
-
-    of Operation.SymbolEq:
-      let a = regv_get_ref_arg(1, SymbolValue)
-      let b = regv_get_ref_arg(2, SymbolValue)
-      regv_set_bool_arg(0, a.name == b.name)
 
     of Operation.Struct:
       let tpe = cast[StructType](const_types_arg(1))

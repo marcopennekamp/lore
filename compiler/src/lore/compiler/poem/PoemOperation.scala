@@ -13,11 +13,11 @@ object PoemOperation extends Enumeration {
   val RealNeg, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte = Value
   val BooleanConst, BooleanNot, BooleanOr, BooleanAnd, BooleanEq = Value
   val StringOf, StringConcat, StringEq, StringLt, StringLte = Value
+  val SymbolEq = Value
   val Tuple, TupleGet = Value
   val FunctionCall, FunctionSingle, FunctionLambda, LambdaLocal = Value
   val List, ListAppend, ListAppendUntyped, ListLength, ListGet = Value
   val Shape = Value
-  val SymbolEq = Value
   val Struct, StructPoly, StructEq = Value
   val PropertyGet, PropertySet = Value
   val Jump, JumpIfFalse, JumpIfTrue = Value

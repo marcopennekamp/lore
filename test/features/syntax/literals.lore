@@ -15,6 +15,8 @@ func test(): [Any] = [
   'world!',
   'is ${c()} or is ${c()} not?',
 
+  #error,
+
   [
     (),
     (0, 'hello', true),
@@ -46,6 +48,4 @@ func test(): [Any] = [
     %{ name: 'John', occupation: 'Salaryman' },
     %{ part1: %{ a: 1, b: 2 }, part2: %{ c: 3, a: 'hello' } },
   ],
-
-  #error,
 ]

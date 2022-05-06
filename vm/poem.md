@@ -165,7 +165,7 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
 
   - **Type tag** (uint8): The kind of type and, possibly, information about its operand count.
     - **Kind** (bits 0-2):
-      - 000: Metadata-kinded type (Any, Nothing, Int, Real, Boolean, String, Variable, Function, List, Map, Shape, Symbol)
+      - 000: Metadata-kinded type (Any, Nothing, Int, Real, Boolean, String, Symbol, Variable, Function, List, Map, Shape)
       - 001: Sum
       - 010: Intersection
       - 011: Tuple
@@ -178,16 +178,18 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
         - 00011: Real
         - 00100: Boolean
         - 00101: String
+        - 00110: Symbol
         - 10000: Variable
         - 10001: Function
         - 10010: List
         - 10011: Map
         - 10100: Shape
-        - 10101: Symbol
       - Sum/Intersection/Tuple/Named: the number of operands (0 to 31)
   - **Operands**:
     - Any/Nothing/Int/Real/Boolean/String:
       - *None.*
+    - Symbol:
+      - **Name** (String)
     - Variable:
       - **Index** (uint8)
     - Function:
@@ -202,8 +204,6 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
       - **Property count** (uint8)
       - **Property names** (String*): The property names must be ordered lexicographically and may not contain duplicates.
       - **Property types** (Type*): The property types must be in the same order as the property names.
-    - Symbol:
-      - **Name** (String)
     - Sum/Intersection/Tuple:
       - **Parts/elements** (Type*)
     - Named:
@@ -224,6 +224,8 @@ A **Value** is encoded as follows:
       - **Value** (bool)
     - String:
       - **Value** (String)
+    - Symbol:
+      - *Type* already carries the name of the symbol value.
     - Tuple:
       - **Elements** (Value*)
       - The element count is given by *Type*.
@@ -244,8 +246,6 @@ A **Value** is encoded as follows:
       - **Elements** (Value*)
     - Shape:
       - **Property values** (Value*): The property values must be in the same order as the type's property names.
-    - Symbol:
-      - *Type* already carries the name of the symbol value.
     - Struct:
       - **Property count** (uint16)
       - **Property values** (Value*): The property values must be in the same order as the struct schema's property names, which is implicitly determined by the value's NamedType.

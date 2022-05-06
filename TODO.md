@@ -5,7 +5,6 @@
 ##### Minimum Viable Language
 
 - Implement a compiler backend for producing poem binaries.
-  - Change the kind (and thereby default order) of symbols to be between `String` and `Tuple`, or even after `Boolean`, as symbols could very much be considered "primitive" values. Maybe we should extend the definition of a primitive to symbols in general. A symbol is not a basic type, but primitive types don't necessarily have to be basic types.
   - Implement the Adventurer example from `equality-order.md` as a test example for equality/order. (Maybe even a lesson.)
   - Fix compiler tests.
   - Clear all `TODO (assembly)` entries.

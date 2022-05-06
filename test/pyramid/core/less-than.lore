@@ -17,10 +17,6 @@ module lore.core do
   func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
 end
 
-// TODO (assembly): Ensure that the type kind order is properly implemented by default order. Also ensure that
-//                  comparisons between int and real values properly promote the int, even when the numbers are given
-//                  to the default implementation.
-
 func test(): [Boolean] = do
   // We have to use `Any` as a type so that the compiler doesn't generate the direct comparison operations for
   // primitives.
@@ -101,6 +97,10 @@ func test(): [Boolean] = do
     str3 < str4,  // true
     str4 < str3,  // false
 
+    // Symbols
+    sym1 < sym2,  // true
+    sym2 < sym1,  // false
+
     // Tuples
     tpl1 < tpl1,  // false
     tpl1 < tpl2,  // true
@@ -130,10 +130,6 @@ func test(): [Boolean] = do
 
     // Lists: Ensure that the default implementation calls back into `lore.core.less_than?`.
     [pers1, pers4] < [pers3, pers2],  // true
-
-    // Symbols
-    sym1 < sym2,  // true
-    sym2 < sym1,  // false
 
     // Shapes
     shp1 < shp2,  // true
@@ -169,23 +165,25 @@ func test(): [Boolean] = do
     prm4 < prm1,  // true
 
     // Default kind order.
+    x1 < x4,       // false
+    x4 < x1,       // false
     x1 < tru,      // true
     tru < x1,      // false
-    x3 < tru,      // true
-    tru < x3,      // false
+    x4 < tru,      // true
+    tru < x4,      // false
     tru < str1,    // true
     str1 < tru,    // false
-    str1 < tpl1,   // true
-    tpl1 < str1,   // false
+    str1 < sym1,   // true
+    sym1 < str1,   // false
+    sym1 < tpl1,   // true
+    tpl1 < sym1,   // false
     tpl1 < fun1,   // true
     fun1 < tpl1,   // false
     fun1 < list1,  // true
     list1 < fun1,  // false
     list1 < shp1,  // true
     shp1 < list1,  // false
-    shp1 < sym1,   // true
-    sym1 < shp1,   // false
-    sym1 < pos1,   // true
-    pos1 < sym1,   // false
+    shp1 < pos1,   // true
+    pos1 < shp1,   // false
   ]
 end

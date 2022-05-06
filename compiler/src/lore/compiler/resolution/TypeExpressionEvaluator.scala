@@ -45,6 +45,7 @@ object TypeExpressionEvaluator {
           schema.instantiate(argumentNodes.map(evaluate), expression.position)
       }
 
+      case TypeExprNode.SymbolNode(name, _) => Some(SymbolType(name))
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).sequence.map(SumType.construct)
       case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).sequence.map(IntersectionType.construct)
       case TypeExprNode.TupleNode(expressions, _) => expressions.map(evaluate).sequence.map(TupleType(_))
@@ -53,7 +54,6 @@ object TypeExpressionEvaluator {
       case TypeExprNode.ListNode(element, _) => evaluate(element).map(ListType)
       case TypeExprNode.MapNode(key, value, _) => (evaluate(key), evaluate(value)).sequence.map(MapType.tupled)
       case node@TypeExprNode.ShapeNode(_, _) => Some(evaluateShape(node))
-      case TypeExprNode.SymbolNode(name, _) => Some(SymbolType(name))
     }
   }
 

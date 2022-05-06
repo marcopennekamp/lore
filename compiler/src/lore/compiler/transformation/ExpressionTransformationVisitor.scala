@@ -49,6 +49,7 @@ class ExpressionTransformationVisitor(
     case RealLiteralNode(value, position) => Expression.Literal.real(value, position)
     case BoolLiteralNode(value, position) => Expression.Literal.boolean(value, position)
     case StringLiteralNode(value, position) => Expression.Literal.string(value, position)
+    case SymbolLiteralNode(name, position) => Expression.Literal.symbol(name, position)
 
     case FixedFunctionNode(namePathNode, typeExpressions, position) =>
       scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
@@ -70,8 +71,6 @@ class ExpressionTransformationVisitor(
         case Some(binding) => StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
         case None => Expression.Hole(BasicType.Nothing, position)
       }
-
-    case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Expression = node match {

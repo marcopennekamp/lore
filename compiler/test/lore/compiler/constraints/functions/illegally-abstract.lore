@@ -8,17 +8,17 @@ func f1(Any): Any
 
 func f2(String): String
 
-func f3((String, Int)): Real
+func f3(#designation123): Wood
 
-func f4(Tree => Wood): Wood
+func f4((String, Int)): Real
 
-func f5([Tree]): [Wood]
+func f5(Tree => Wood): Wood
 
-func f6(#[Wood -> Tree]): String
+func f6([Tree]): [Wood]
 
-func f7(%{ label: String }): Tree
+func f7(#[Wood -> Tree]): String
 
-func f8(#designation123): Wood
+func f8(%{ label: String }): Tree
 
 func f9(Struct): String
 

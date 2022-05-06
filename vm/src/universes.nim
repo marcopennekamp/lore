@@ -731,6 +731,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.StringLt: Operation.StringLt
   of PoemOperation.StringLte: Operation.StringLte
 
+  of PoemOperation.SymbolEq: Operation.SymbolEq
+
   of PoemOperation.TupleGet: Operation.TupleGet
 
   of PoemOperation.LambdaLocal: Operation.LambdaLocal
@@ -738,8 +740,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped
   of PoemOperation.ListLength: Operation.ListLength
   of PoemOperation.ListGet: Operation.ListGet
-
-  of PoemOperation.SymbolEq: Operation.SymbolEq
 
   of PoemOperation.StructEq: Operation.StructEq
 
@@ -829,6 +829,9 @@ method resolve(poem_type: PoemTypeVariable, context: TypeResolutionContext): Typ
 method resolve(poem_type: PoemBasicType, context: TypeResolutionContext): Type {.locks: "unknown".} =
   poem_type.tpe
 
+method resolve(poem_type: PoemSymbolType, context: TypeResolutionContext): Type {.locks: "unknown".} =
+  new_symbol_type(poem_type.name)
+
 method resolve(poem_type: PoemXaryType, context: TypeResolutionContext): Type =
   if poem_type.kind == Kind.Sum:
     new_sum_type(poem_type.types.resolve_many_types(context))
@@ -854,9 +857,6 @@ method resolve(poem_type: PoemShapeType, context: TypeResolutionContext): Type {
   let meta_shape = get_meta_shape(poem_type.property_names)
   let property_types = poem_type.property_types.resolve_many_types(context)
   new_shape_type(meta_shape, property_types)
-
-method resolve(poem_type: PoemSymbolType, context: TypeResolutionContext): Type {.locks: "unknown".} =
-  new_symbol_type(poem_type.name)
 
 method resolve(poem_type: PoemNamedType, context: TypeResolutionContext): Type {.locks: "unknown".} =
   if poem_type.name notin context.universe.schemas:
@@ -896,6 +896,9 @@ method resolve(poem_value: PoemBooleanValue, context: ValueResolutionContext): T
 
 method resolve(poem_value: PoemStringValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
   new_string_value_tagged(poem_value.string)
+
+method resolve(poem_value: PoemSymbolValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
+  new_symbol_value_tagged(poem_value.name)
 
 method resolve(poem_value: PoemTupleValue, context: ValueResolutionContext): TaggedValue =
   let tpe = resolve_value_type[TupleType](poem_value.tpe, Kind.Tuple, context)
@@ -943,9 +946,6 @@ method resolve(poem_value: PoemShapeValue, context: ValueResolutionContext): Tag
   let tpe = resolve_value_type[ShapeType](poem_value.tpe, Kind.Shape, context)
   let property_values = context.universe.resolve_many(poem_value.property_values, context.type_variables)
   new_shape_value_tagged(tpe.meta, property_values)
-
-method resolve(poem_value: PoemSymbolValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
-  new_symbol_value_tagged(poem_value.name)
 
 method resolve(poem_value: PoemStructValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
   if poem_value.tpe.name notin context.universe.schemas:

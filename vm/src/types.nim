@@ -19,6 +19,7 @@ type
     Real
     Boolean
     String
+    Symbol
     Sum
     Intersection
     Tuple
@@ -26,7 +27,6 @@ type
     List
     Map
     Shape
-    Symbol
     Trait
     Struct
 
@@ -55,6 +55,9 @@ type
     Covariant
     Contravariant
     Invariant
+
+  SymbolType* {.pure.} = ref object of Type
+    name*: string
 
   SumType* {.pure, acyclic.} = ref object of Type
     parts*: ImSeq[Type]
@@ -85,9 +88,6 @@ type
   ShapeType* {.pure, acyclic.} = ref object of Type
     meta*: MetaShape
     property_types*: ImSeq[Type]
-
-  SymbolType* {.pure.} = ref object of Type
-    name*: string
 
   Schema* {.inheritable, pure.} = ref object
     kind*: Kind
@@ -216,6 +216,9 @@ let
   string_type* = Type(kind: String)
   unit_type* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
 
+# TODO (vm): Intern symbol types.
+proc new_symbol_type*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
+
 proc new_sum_type*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
 proc new_sum_type*(parts: open_array[Type]): SumType = new_sum_type(new_immutable_seq(parts))
 proc new_intersection_type*(parts: ImSeq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
@@ -228,9 +231,6 @@ proc new_function_type_unsafe(input: Type, output: Type): FunctionType =
   FunctionType(kind: Kind.Function, input: cast[TupleType](input), output: output)
 proc new_list_type*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc new_map_type*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
-
-# TODO (vm): Intern symbol types.
-proc new_symbol_type*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
 # These functions are workarounds when creating arrays of types.
 proc sum_as_type*(parts: open_array[Type]): Type = new_sum_type(parts)
@@ -787,6 +787,11 @@ proc are_equal*(t1: Type, t2: Type): bool =
   of Kind.Boolean: true
   of Kind.String: true
 
+  of Kind.Symbol:
+    let s1 = cast[SymbolType](t1)
+    let s2 = cast[SymbolType](t2)
+    s1.name == s2.name
+
   of Kind.Sum:
     let s1 = cast[SumType](t1)
     let s2 = cast[SumType](t2)
@@ -824,11 +829,6 @@ proc are_equal*(t1: Type, t2: Type): bool =
       are_exactly_equal(s1.property_types, s2.property_types)
     else:
       false
-
-  of Kind.Symbol:
-    let s1 = cast[SymbolType](t1)
-    let s2 = cast[SymbolType](t2)
-    s1.name == s2.name
 
   of Kind.Trait:
     let t1 = cast[TraitType](t1)
@@ -1126,6 +1126,13 @@ proc is_subtype_impl(
   of Kind.Nothing:
     return true
 
+  # TODO (vm): This case can be removed if symbol types are interned.
+  of Kind.Symbol:
+    if t2.kind == Kind.Symbol:
+      let s1 = cast[SymbolType](t1)
+      let s2 = cast[SymbolType](t2)
+      return s1.name == s2.name
+
   of Kind.Sum:
     let s1 = cast[SumType](t1)
     if t2.kind == Kind.Sum:
@@ -1173,13 +1180,6 @@ proc is_subtype_impl(
   of Kind.Shape:
     if t2.kind == Kind.Shape:
       return shape_subtypes_shape(substitution_mode, cast[ShapeType](t1), cast[ShapeType](t2), assignments)
-
-  # TODO (vm): This case can be removed if symbol types are interned.
-  of Kind.Symbol:
-    if t2.kind == Kind.Symbol:
-      let s1 = cast[SymbolType](t1)
-      let s2 = cast[SymbolType](t2)
-      return s1.name == s2.name
 
   of Kind.Trait, Kind.Struct:
     if t2.kind == Kind.Trait:
@@ -1912,6 +1912,7 @@ proc `$`*(tpe: Type): string =
   of Kind.Int: "Int"
   of Kind.Boolean: "Boolean"
   of Kind.String: "String"
+  of Kind.Symbol: "#" & cast[SymbolType](tpe).name
   of Kind.Sum: "(" & cast[SumType](tpe).parts.join(" | ") & ")"
   of Kind.Intersection: "(" & cast[IntersectionType](tpe).parts.join(" & ") & ")"
   of Kind.Tuple: "(" & cast[TupleType](tpe).elements.join(", ") & ")"
@@ -1928,7 +1929,6 @@ proc `$`*(tpe: Type): string =
     for i in 0 ..< tpe.property_count:
       properties[i] = tpe.meta.property_names[i] & ": " & $tpe.property_types[i]
     "%{ " & properties.join(", ") & " }"
-  of Kind.Symbol: "#" & cast[SymbolType](tpe).name
   of Kind.Trait, Kind.Struct:
     let tpe = cast[DeclaredType](tpe)
     let type_arguments =

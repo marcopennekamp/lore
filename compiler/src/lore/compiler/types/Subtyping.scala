@@ -13,28 +13,15 @@ object Subtyping {
     }
 
     val result1 = t1 match {
-      // Nothing is a subtype of all types.
-      case BasicType.Nothing => true
-
       // All instances of v1 are definitely subtypes of t2 if v1's upper bound is a subtype of t2, hence ensuring
       // that any instance of v1 has t2 as a supertype.
       case v1: TypeVariable => isSubtype(v1.upperBound, t2)
 
-      case d1: DeclaredType => t2 match {
-        // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal
-        // d2. If the declared types contain type arguments, we additionally have to take variance into account and
-        // check all type arguments against each other. Because a shape supertype can never be a subtype of a declared
-        // type, we do not have to check shape supertypes.
-        case d2: DeclaredType =>
-          return d1 == d2 || (
-            if (d1.schema == d2.schema) checkTypeArguments(d1, d2)
-            else d1.findSupertype(d2.schema).exists(isSubtype(_, d2))
-          )
+      // Nothing is a subtype of all types.
+      case BasicType.Nothing => true
 
-        // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a
-        // shape type.
-        case s2: ShapeType => isSubtype(d1.asShapeType, s2)
-
+      case a1: SymbolType => t2 match {
+        case a2: SymbolType => a1 == a2
         case _ => false
       }
 
@@ -91,8 +78,21 @@ object Subtyping {
         case _ => false
       }
 
-      case a1: SymbolType => t2 match {
-        case a2: SymbolType => a1 == a2
+      case d1: DeclaredType => t2 match {
+        // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal
+        // d2. If the declared types contain type arguments, we additionally have to take variance into account and
+        // check all type arguments against each other. Because a shape supertype can never be a subtype of a declared
+        // type, we do not have to check shape supertypes.
+        case d2: DeclaredType =>
+          return d1 == d2 || (
+            if (d1.schema == d2.schema) checkTypeArguments(d1, d2)
+            else d1.findSupertype(d2.schema).exists(isSubtype(_, d2))
+            )
+
+        // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a
+        // shape type.
+        case s2: ShapeType => isSubtype(d1.asShapeType, s2)
+
         case _ => false
       }
 

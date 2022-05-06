@@ -18,12 +18,12 @@ object PoemTypeWriter {
   private val mkReal = 3
   private val mkBoolean = 4
   private val mkString = 5
+  private val mkSymbol = 6
   private val mkVariable = 16
   private val mkFunction = 17
   private val mkList = 18
   private val mkMap = 19
   private val mkShape = 20
-  private val mkSymbol = 21
 
   def write(tpe: PoemType)(implicit writer: BytecodeWriter): Unit = tpe match {
     case PoemTypeVariable(index) =>
@@ -32,6 +32,10 @@ object PoemTypeWriter {
 
     case PoemBasicType(underlying) =>
       writeTypeTag(underlying.kind)
+
+    case PoemSymbolType(name) =>
+      writeTypeTag(Kind.Symbol)
+      writer.writeStringWithLength(name)
 
     case PoemXaryType(kind, types) =>
       writeTypeTag(kind, types.length)
@@ -46,10 +50,6 @@ object PoemTypeWriter {
       writer.writeUInt8(properties.size)
       PoemWriter.writeShapePropertyNames(tpe.sortedNames, withCount = false)
       tpe.sortedProperties.foreach(write)
-
-    case PoemSymbolType(name) =>
-      writeTypeTag(Kind.Symbol)
-      writer.writeStringWithLength(name)
 
     case PoemNamedType(schema, typeArguments) =>
       writeTypeTag(schema.kind, typeArguments.length)
@@ -75,6 +75,7 @@ object PoemTypeWriter {
       case Kind.Real => (tkMetadataKinded, mkReal)
       case Kind.Boolean => (tkMetadataKinded, mkBoolean)
       case Kind.String => (tkMetadataKinded, mkString)
+      case Kind.Symbol => (tkMetadataKinded, mkSymbol)
       case Kind.Sum => (tkSum, childCount)
       case Kind.Intersection => (tkIntersection, childCount)
       case Kind.Tuple => (tkTuple, childCount)
@@ -82,7 +83,6 @@ object PoemTypeWriter {
       case Kind.List => (tkMetadataKinded, mkList)
       case Kind.Map => (tkMetadataKinded, mkMap)
       case Kind.Shape => (tkMetadataKinded, mkShape)
-      case Kind.Symbol => (tkMetadataKinded, mkSymbol)
       case Kind.Trait => (tkNamed, childCount)
       case Kind.Struct => (tkNamed, childCount)
     }

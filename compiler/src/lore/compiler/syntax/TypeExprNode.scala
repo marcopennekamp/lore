@@ -10,6 +10,7 @@ sealed trait TypeExprNode extends Node
 object TypeExprNode {
   case class TypeNameNode(namePathNode: NamePathNode, position: Position) extends TypeExprNode with PathNamedNode
   case class InstantiationNode(typeNameNode: TypeNameNode, arguments: Vector[TypeExprNode], position: Position) extends TypeExprNode
+  case class SymbolNode(name: String, position: Position) extends TypeExprNode
   case class SumNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class IntersectionNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class TupleNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
@@ -19,7 +20,6 @@ object TypeExprNode {
   case class MapNode(key: TypeExprNode, value: TypeExprNode, position: Position) extends TypeExprNode
   case class ShapeNode(properties: Vector[ShapePropertyNode], position: Position) extends TypeExprNode
   case class ShapePropertyNode(nameNode: NameNode, tpe: TypeExprNode, position: Position) extends NamedNode
-  case class SymbolNode(name: String, position: Position) extends TypeExprNode
 
   /**
     * Constructs a right-associative nested function type from the given types.

@@ -29,9 +29,6 @@ object PoemInstructionWriter {
         write(target)
         writer.writeBoolean16(value)
 
-      case PoemInstruction.StringOf(target, value) => write(target, value)
-      case PoemInstruction.StringConcat(target, a, b) => write(target, a, b)
-
       case PoemInstruction.Tuple(target, elements) =>
         write(target)
         writeOperandsWithLength8(elements)
@@ -76,8 +73,6 @@ object PoemInstructionWriter {
         write(target)
         writeConstantMetaShape(metaShape)
         writeOperandsWithLength8(properties)
-
-      case PoemInstruction.SymbolEq(target, a, b) => write(target, a, b)
 
       case PoemInstruction.Struct(target, tpe, valueArguments) =>
         write(target)

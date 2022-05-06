@@ -144,7 +144,7 @@ object SemanticTokensHandler {
 
       case ExprNode.ShapeValuePropertyNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
 
-      case ExprNode.SymbolValueNode(_, _) => singleHighlight(node, SemanticTokenTypes.EnumMember)
+      case ExprNode.SymbolLiteralNode(_, _) => singleHighlight(node, SemanticTokenTypes.EnumMember)
 
       case ExprNode.SimpleCallNode(nameNode, _, _) =>
         context.globalIndex.getBindingDeclaration(nameNode.value) match {

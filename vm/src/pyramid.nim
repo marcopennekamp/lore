@@ -16,9 +16,9 @@ template arg(index: int): TaggedValue = arguments[index]
 template arg_int(index: int): int64 = untag_int(arg(index))
 template arg_real(index: int): float64 = untag_reference(arg(index), RealValue).real
 template arg_string(index: int): string = untag_reference(arg(index), StringValue).string
+template arg_symbol(index: int): SymbolValue = untag_reference(arg(index), SymbolValue)
 template arg_function(index: int): FunctionValue = untag_reference(arg(index), FunctionValue)
 template arg_list(index: int): ListValue = untag_reference(arg(index), ListValue)
-template arg_symbol(index: int): SymbolValue = untag_reference(arg(index), SymbolValue)
 
 var error_symbol: TaggedValue = tag_reference(nil)
 
@@ -126,6 +126,10 @@ proc string_to_upper(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_upper(string: String): String
   new_string_value_tagged(arg_string(0).to_upper)
 
+proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## name(value: Any): String
+  new_string_value_tagged(arg_symbol(0).name)
+
 proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## concat(list1: [A], list2: [B]): [A | B]
   let list1 = arg_list(0)
@@ -185,10 +189,6 @@ proc list_filter(frame: FramePtr, arguments: Arguments): TaggedValue =
   let elements = list.elements.filter_it(untag_boolean(evaluator.evaluate_function_value(predicate, frame, it)))
   new_list_value_tagged(elements, list.tpe)
 
-proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## name(value: Any): String
-  new_string_value_tagged(arg_symbol(0).name)
-
 proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## println(value: Any): Unit
   echo arg(0)
@@ -241,6 +241,8 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.string.to_lower", string_to_lower, 1),
   intr("lore.string.to_upper", string_to_upper, 1),
 
+  intr("lore.symbol.name", symbol_name, 1),
+
   intr("lore.list.concat", list_concat, 2),
   intr("lore.list.slice", list_slice, 3),
   intr("lore.list.flatten", list_flatten, 1),
@@ -248,8 +250,6 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.list.flat_map", list_flat_map, 2),
   intr("lore.list.each", list_each, 2),
   intr("lore.list.filter", list_filter, 2),
-
-  intr("lore.symbol.name", symbol_name, 1),
 
   intr("lore.io.println", io_println, 1),
 

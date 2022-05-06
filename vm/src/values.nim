@@ -55,6 +55,10 @@ type
   StringValue* {.pure, shallow.} = ref object of Value
     string*: string
 
+  # TODO (vm): The `name` property is redundant, as it's already known via the type.
+  SymbolValue* {.pure, shallow.} = ref object of Value
+    name*: string
+
   # TODO (vm): We can optimize this by introducing special types for small tuples, such as Tuple2 and Tuple3, which
   #            would be 24 and 32 bytes large due to alignment. This will remove one layer of pointer indirection and
   #            save an allocation, but obviously complicate the code.
@@ -79,10 +83,6 @@ type
   ShapeValue* {.pure, shallow.} = ref object of Value
     meta*: MetaShape
     property_values*: UncheckedArray[TaggedValue]
-
-  # TODO (vm): The `name` property is redundant, as it's already known via the type.
-  SymbolValue* {.pure, shallow.} = ref object of Value
-    name*: string
 
   StructValue* {.pure, shallow.} = ref object of Value
     property_values*: UncheckedArray[TaggedValue]
@@ -161,6 +161,15 @@ proc new_string_value*(value: string): Value =
   string_value
 
 proc new_string_value_tagged*(value: string): TaggedValue = tag_reference(new_string_value(value))
+
+########################################################################################################################
+# Symbols.                                                                                                             #
+########################################################################################################################
+
+# TODO (vm): Intern symbol values.
+proc new_symbol_value*(name: string): Value = SymbolValue(tpe: new_symbol_type(name), name: name)
+
+proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_symbol_value(name))
 
 ########################################################################################################################
 # Tuples.                                                                                                              #
@@ -255,15 +264,6 @@ proc get_property_value_if_exists*(shape: ShapeValue, name: string): TaggedValue
 let empty_meta_shape*: MetaShape = get_meta_shape([])
 
 let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
-
-########################################################################################################################
-# Symbols.                                                                                                             #
-########################################################################################################################
-
-# TODO (vm): Intern symbol values.
-proc new_symbol_value*(name: string): Value = SymbolValue(tpe: new_symbol_type(name), name: name)
-
-proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_symbol_value(name))
 
 ########################################################################################################################
 # Structs.                                                                                                             #
@@ -387,6 +387,9 @@ proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue
         untag_reference(v1, RealValue).real == untag_reference(v2, RealValue).real
       of Kind.String:
         untag_reference(v1, StringValue).string == untag_reference(v2, StringValue).string
+      of Kind.Symbol:
+        # TODO (vm): Once symbol values are interned, this case is already covered by the `v1 === v2` check above.
+        untag_reference(v1, SymbolValue).name == untag_reference(v2, SymbolValue).name
       of Kind.Tuple:
         let v1 = untag_reference(v1, TupleValue)
         let v2 = untag_reference(v2, TupleValue)
@@ -416,9 +419,6 @@ proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue
           if not rec(v1.property_values[i], v2.property_values[i]):
             return false
         true
-      of Kind.Symbol:
-        # TODO (vm): Once symbol values are interned, this case is already covered by the `v1 === v2` check above.
-        untag_reference(v1, SymbolValue).name == untag_reference(v2, SymbolValue).name
       of Kind.Struct:
         let v1 = untag_reference(v1, StructValue)
         let v2 = untag_reference(v2, StructValue)
@@ -462,6 +462,8 @@ proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedVa
       # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8. This
       # should use the same approach as the instructions `StringLt` and `StringLte`.
       untag_reference(v1, StringValue).string < untag_reference(v2, StringValue).string
+    of Kind.Symbol:
+      untag_reference(v1, SymbolValue).name < untag_reference(v2, SymbolValue).name
     of Kind.Tuple:
       let v1 = untag_reference(v1, TupleValue)
       let v2 = untag_reference(v2, TupleValue)
@@ -503,8 +505,6 @@ proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedVa
           v1.meta.property_names < v2.meta.property_names
       else:
         v1.property_count < v2.property_count
-    of Kind.Symbol:
-      untag_reference(v1, SymbolValue).name < untag_reference(v2, SymbolValue).name
     of Kind.Struct:
       let v1 = untag_reference(v1, StructValue)
       let v2 = untag_reference(v2, StructValue)
@@ -552,6 +552,9 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
   of Kind.String: cast[StringValue](value).string
+  of Kind.Symbol:
+    let symbol = cast[SymbolValue](value)
+    "#" & symbol.name
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
     "(" & $tpl.elements.map_it(string, rec(it)).join(", ") & ")"
@@ -570,9 +573,6 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
     for i in 0 ..< shape.property_count:
       properties.add(shape.meta.property_names[i] & ": " & rec(shape.property_values[i]))
     "%{ " & properties.join(", ") & " }"
-  of Kind.Symbol:
-    let symbol = cast[SymbolValue](value)
-    "#" & symbol.name
   of Kind.Struct:
     let struct = cast[StructValue](value)
     let schema = struct.get_schema

@@ -33,6 +33,8 @@ object PoemIntrinsic {
     intr("lore.string.to_lower", 1),
     intr("lore.string.to_upper", 1),
 
+    intr("lore.symbol.name", 1),
+
     intr("lore.tuple.get!", 2, isVirtual = true),
 
     intr("lore.list.get!", 2, isVirtual = true),
@@ -44,8 +46,6 @@ object PoemIntrinsic {
     intr("lore.list.flat_map", 2),
     intr("lore.list.each", 2),
     intr("lore.list.filter", 2),
-
-    intr("lore.symbol.name", 1),
 
     intr("lore.io.println", 1),
 

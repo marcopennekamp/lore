@@ -12,6 +12,7 @@ A **type expression** is a representation of a particular type, built with the t
 
 - `id` — A **named type** (basic type, declared type, type variable, type alias) is accessible via its name. It has to be declared or bound in an accessible scope before it can be used in a type expression.
   - See [identifiers](identifiers.md) for rules governing type names.
+- `#id` — **Symbol types** describing symbol values.
 - `t1 | t2 | t3` — A **sum type** is simply constructed by connecting different type expressions with `|`.
 - `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
 - `(t1, t2, t3)` — **Tuple types** describing tuple values.
@@ -19,7 +20,6 @@ A **type expression** is a representation of a particular type, built with the t
 - `[t]` — **List types** describing *immutable* lists.
 - `#[t1 -> t2]` — **Map types** describing *immutable* maps.
 - `%{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
-- `#name` — **Symbol types** describing symbol values.
 
 Note that the compiler immediately performs the following **simplifications** on sum and intersection types:
 
@@ -32,7 +32,7 @@ Type constructors have the following **precedence** (lowest priority first):
 |                                  // sum types
 &                                  // intersection types
 =>                                 // function types
-() (,) [] #[->] %{} #id (...) id   // unit, tuple, list, map, shape, symbol, enclosed, names
+id #id () (,) [] #[->] %{} (...)   // name, symbol, unit, tuple, list, map, shape, enclosed
 ```
 
 
@@ -76,6 +76,22 @@ A **basic type** is one of the following, built-in *named types:*
 - `Real` represents floating-point values.
 - `Boolean` represents boolean values.
 - `String` represents string values.
+
+
+
+### Symbol Types
+
+A **symbol type** describes a specific symbol value. Only the symbol value `#name` can inhabit a symbol type `#name`.
+
+The purpose of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent different color values as `#red | #green | #blue`.
+
+###### Syntax Example
+
+```
+#red | #green | #blue
+Real | #precision_error
+(String, Int) => (#ok | #error)
+```
 
 
 
@@ -181,22 +197,6 @@ A shape or struct type `A` is the **subtype** of a shape type `B` if `A` contain
 
 
 
-### Symbol Types
-
-A **symbol type** describes a specific symbol value. Only the symbol value `#name` can inhabit a symbol type `#name`.
-
-The purpose of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent different color values as `#red | #green | #blue`.
-
-###### Syntax Example
-
-```
-#red | #green | #blue
-Real | #nan
-(String, Int) => (#ok | #error)
-```
-
-
-
 ### Declared Types
 
 A **declared type** is any type defined by a struct or trait and hence a type that describes user-defined data structures. Declared types are simply referred to via their name. Some declared types expect type arguments, which can either be specified manually or, in some cases, inferred.
@@ -220,6 +220,7 @@ A **primitive type** is a type whose values are simple and cannot contain sub-va
 Each type is either **abstract** or concrete. Functions may only be declared as abstract if their input type has at least one abstract parameter. Since this has important implications for the general use of abstraction patterns in Lore, it is important to understand when types are abstract:
 
 - A **basic type** is always concrete.
+- A **symbol type** is always concrete.
 - A **sum type** is always abstract. (In its normal form.)
 - An **intersection type** is abstract if at least one of its parts is abstract.
   - Note that there are special rules concerning **augmentations**, defined further below.
@@ -229,7 +230,6 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 - A **map type** is always concrete.
 - A **shape type** is always concrete on its own. It may stand as an augmentation.
   - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which we do not support.
-- A **symbol type** is always concrete.
 - A **trait** is always abstract on its own. It may stand as an augmentation.
 - A **struct** is usually concrete. 
   - A parameterized struct with an **open type argument** is abstract if the type argument is abstract.

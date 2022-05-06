@@ -49,10 +49,17 @@ object ExprNode {
   case class VariableNode(namePathNode: NamePathNode, position: Position) extends LeafNode with ExprNode with AddressNode with PathNamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Numeric expressions.
+  // Literals.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class IntLiteralNode(value: Long, position: Position) extends LeafNode with ExprNode
   case class RealLiteralNode(value: Double, position: Position) extends LeafNode with ExprNode
+  case class BoolLiteralNode(value: Boolean, position: Position) extends LeafNode with ExprNode
+  case class StringLiteralNode(value: String, position: Position) extends LeafNode with ExprNode
+  case class SymbolLiteralNode(name: String, position: Position) extends LeafNode with ExprNode
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Numeric operations.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class AdditionNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class SubtractionNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class MultiplicationNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
@@ -60,9 +67,8 @@ object ExprNode {
   case class NegationNode(expr: ExprNode, position: Position) extends UnaryNode(expr) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Boolean expressions and comparison operators.
+  // Boolean operations and comparison operators.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class BoolLiteralNode(value: Boolean, position: Position) extends LeafNode with ExprNode
   case class ConjunctionNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
   case class DisjunctionNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
   case class LogicalNotNode(expr: ExprNode, position: Position) extends UnaryNode(expr) with ExprNode
@@ -75,9 +81,8 @@ object ExprNode {
   def greaterThanEquals(left: ExprNode, right: ExprNode, position: Position): LessThanEqualsNode = LessThanEqualsNode(right, left, position)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // String expressions.
+  // String operations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class StringLiteralNode(value: String, position: Position) extends LeafNode with ExprNode
   case class ConcatenationNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,11 +160,6 @@ object ExprNode {
   ) extends XaryNode(properties.map(_.expression)) with ExprNode
 
   case class ShapeValuePropertyNode(nameNode: NameNode, expression: ExprNode, position: Position) extends NamedNode
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Symbol expressions.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class SymbolValueNode(name: String, position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.

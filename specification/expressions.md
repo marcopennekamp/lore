@@ -209,6 +209,24 @@ One might expect the plus operator to support **string concatenation**. This is 
 
 
 
+### Symbols
+
+A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `#foo` and its type is `#foo`. Symbols are interned at run time.
+
+We suggest using a `#snake_case` naming convention for symbols.
+
+###### Example
+
+```
+func process(query: Query): Result | #syntax_error = do
+  let parsed = parse(query)
+  if error?(parsed) then #syntax_error
+  else get_result(parsed)
+end
+```
+
+
+
 ### Tuples
 
 Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogeneous lists of values. Tuples are created by putting parentheses around comma-separated values: `(a, b, c)`. The tuple's type is constructed from the element types.
@@ -282,24 +300,6 @@ let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
 ```
 let bark_options = %{ show_teeth: true, volume: 80 }
 // bark_options: %{ show_teeth: Boolean, volume: Int }
-```
-
-
-
-### Symbols
-
-A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `#foo` and its type is `#foo`. Symbols are interned at run time.
-
-We suggest using a `#snake_case` naming convention for symbols.
-
-###### Example
-
-```
-func process(query: Query): Result | #syntax_error = do
-  let parsed = parse(query)
-  if error?(parsed) then #syntax_error
-  else get_result(parsed)
-end
 ```
 
 

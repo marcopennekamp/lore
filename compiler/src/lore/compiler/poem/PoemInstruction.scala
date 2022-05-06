@@ -94,9 +94,6 @@ object PoemInstruction {
 
   case class BooleanConst(target: PReg, value: Boolean) extends PoemInstruction(PoemOperation.BooleanConst)
 
-  case class StringOf(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.StringOf)
-  case class StringConcat(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StringConcat)
-
   case class Tuple(target: PReg, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.Tuple)
   case class TupleGet(target: PReg, tuple: PReg, index: Int) extends PoemInstruction(PoemOperation.TupleGet)
 
@@ -114,8 +111,6 @@ object PoemInstruction {
   case class ListGet(target: PReg, list: PReg, index: PReg) extends PoemInstruction(PoemOperation.ListGet)
 
   case class Shape(target: PReg, metaShape: PMtsh, properties: Vector[PReg]) extends PoemInstruction(PoemOperation.Shape)
-
-  case class SymbolEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.SymbolEq)
 
   case class Struct(target: PReg, tpe: PTpe, valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
   case class StructPoly(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.StructPoly)
@@ -211,8 +206,6 @@ object PoemInstruction {
       case IntConst(target, _) => target.id
       case IntToReal(target, value) => Register.max(target, value)
       case BooleanConst(target, _) => target.id
-      case StringOf(target, value) => Register.max(target, value)
-      case StringConcat(target, a, b) => Register.max(target, a, b)
       case Tuple(target, elements) => Register.max(target, elements)
       case TupleGet(target, tuple, _) => Register.max(target, tuple)
       case FunctionCall(target, function, arguments) => Register.max(target, function, arguments)
@@ -225,7 +218,6 @@ object PoemInstruction {
       case ListLength(target, list) => Register.max(target, list)
       case ListGet(target, list, index) => Register.max(target, list, index)
       case Shape(target, _, properties) => Register.max(target, properties)
-      case SymbolEq(target, a, b) => Register.max(target, a, b)
       case Struct(target, _, valueArguments) => Register.max(target, valueArguments)
       case StructPoly(target, _, typeArguments, valueArguments) => Register.max(target, typeArguments ++ valueArguments)
       case StructEq(target, a, b) => Register.max(target, a, b)
@@ -266,8 +258,6 @@ object PoemInstruction {
       case instruction@IntConst(target, _) => instruction.copy(target = applyTarget(target))
       case instruction@IntToReal(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
       case instruction@BooleanConst(target, _) => instruction.copy(target = applyTarget(target))
-      case instruction@StringOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
-      case instruction@StringConcat(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
       case instruction@Tuple(target, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
       case instruction@TupleGet(target, tuple, _) => instruction.copy(target = applyTarget(target), tuple = applySource(tuple))
       case instruction@FunctionCall(target, function, arguments) => instruction.copy(target = applyTarget(target), function = applySource(function), arguments = arguments.map(applySource))
@@ -280,7 +270,6 @@ object PoemInstruction {
       case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
       case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
       case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
-      case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
       case instruction@Struct(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
       case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
       case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
@@ -325,8 +314,6 @@ object PoemInstruction {
       case IntConst(target, _) => (Vector(target), Vector.empty)
       case IntToReal(target, value) => (Vector(target), Vector(value))
       case BooleanConst(target, _) => (Vector(target), Vector.empty)
-      case StringOf(target, value) => (Vector(target), Vector(value))
-      case StringConcat(target, a, b) => (Vector(target), Vector(a, b))
       case Tuple(target, elements) => (Vector(target), elements)
       case TupleGet(target, tuple, _) => (Vector(target), Vector(tuple))
       case FunctionCall(target, function, arguments) => (Vector(target), function +: arguments)
@@ -339,7 +326,6 @@ object PoemInstruction {
       case ListLength(target, list) => (Vector(target), Vector(list))
       case ListGet(target, list, index) => (Vector(target), Vector(list, index))
       case Shape(target, _, properties) => (Vector(target), properties)
-      case SymbolEq(target, a, b) => (Vector(target), Vector(a, b))
       case Struct(target, _, valueArguments) => (Vector(target), valueArguments)
       case StructPoly(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
       case StructEq(target, a, b) => (Vector(target), Vector(a, b))
@@ -377,8 +363,6 @@ object PoemInstruction {
       case IntConst(target, value) => s"$target <- $value"
       case IntToReal(target, value) => s"$target <- $value as Real"
       case BooleanConst(target, value) => s"$target <- $value"
-      case StringOf(target, value) => s"$target <- string_of($value)"
-      case StringConcat(target, a, b) => s"$target <- concat($a, $b)"
       case Tuple(target, elements) => s"$target <- tuple(${elements.mkString(", ")})"
       case TupleGet(target, tuple, index) => s"$target <- $tuple[$index]"
       case FunctionCall(target, function, arguments) => s"$target <- $function(${arguments.mkString(", ")})"
@@ -391,7 +375,6 @@ object PoemInstruction {
       case ListLength(target, list) => s"$target <- $list.length"
       case ListGet(target, list, index) => s"$target <- $list[$index]"
       case Shape(target, metaShape, properties) => s"$target <- shape($metaShape, ${properties.mkString(", ")})"
-      case SymbolEq(target, a, b) => s"$target <- $a $b"
       case Struct(target, tpe, valueArguments) => s"$target <- $tpe(${valueArguments.mkString(", ")})"
       case StructPoly(target, schema, typeArguments, valueArguments) => s"$target <- ${schema.name}[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
       case StructEq(target, a, b) => s"$target <- $a $b"

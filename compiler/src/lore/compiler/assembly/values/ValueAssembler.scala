@@ -36,6 +36,7 @@ object ValueAssembler {
         case Literal.RealValue(value) => PoemRealValue(value)
         case Literal.BooleanValue(value) => PoemBooleanValue(value)
         case Literal.StringValue(value) => PoemStringValue(value)
+        case Literal.SymbolValue(name) => PoemSymbolValue(name)
       }
       Some(poemValue)
 
@@ -100,8 +101,6 @@ object ValueAssembler {
       properties
         .map(p => generate(p.value).map(p.name -> _)).sequence
         .map(properties => PoemShapeValue(properties.toMap, TypeAssembler.generate(expression.tpe)))
-
-    case Expression.Symbol(name, _) => Some(PoemSymbolValue(name))
 
     case Expression.UnaryOperation(operator, value, _, _) =>
       generate(value).flatMap { operand =>

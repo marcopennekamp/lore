@@ -132,10 +132,15 @@ object Expression {
       override def tpe: Type = BasicType.String
     }
 
+    case class SymbolValue(name: String) extends LiteralValue {
+      override def tpe: Type = SymbolType(name)
+    }
+
     def integer(value: Long, position: Position): Literal = Literal(IntValue(value), position)
     def real(value: Double, position: Position): Literal = Literal(RealValue(value), position)
     def boolean(value: Boolean, position: Position): Literal = Literal(BooleanValue(value), position)
     def string(value: String, position: Position): Literal = Literal(StringValue(value), position)
+    def symbol(name: String, position: Position): Literal = Literal(SymbolValue(name), position)
   }
 
   case class Tuple(values: Vector[Expression], position: Position) extends Expression {
@@ -232,10 +237,6 @@ object Expression {
 
   case class ShapeProperty(name: String, value: Expression) {
     def asShapeTypeProperty: ShapeType.Property = ShapeType.Property(name, value.tpe)
-  }
-
-  case class Symbol(name: String, position: Position) extends Expression {
-    override def tpe: SymbolType = SymbolType(name)
   }
 
   case class PropertyDefaultValue(property: StructPropertyDefinition, position: Position) extends Expression {

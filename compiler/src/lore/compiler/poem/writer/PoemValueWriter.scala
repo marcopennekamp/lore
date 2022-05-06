@@ -22,6 +22,9 @@ object PoemValueWriter {
       PoemTypeWriter.write(PoemBasicType(BasicType.String))
       writer.writeStringWithLength(value)
 
+    case PoemSymbolValue(name) =>
+      PoemTypeWriter.write(PoemSymbolType(name))
+
     case PoemTupleValue(elements, tpe) =>
       PoemTypeWriter.write(tpe)
       elements.foreach(write)
@@ -41,9 +44,6 @@ object PoemValueWriter {
     case value@PoemShapeValue(_, tpe) =>
       PoemTypeWriter.write(tpe)
       value.sortedProperties.foreach(write)
-
-    case PoemSymbolValue(name) =>
-      PoemTypeWriter.write(PoemSymbolType(name))
 
     case value@PoemStructValue(_, tpe) =>
       PoemTypeWriter.write(tpe)
