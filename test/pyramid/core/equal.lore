@@ -82,14 +82,14 @@ func test(): [Boolean] = do
   let prm4 = Parameterized[#foo](5)
 
   [
-    // Integers and Reals
+    // Integers and Reals (note that Ints are coerced to Reals)
     x1 == x2,  // false
     x1 == x3,  // false
     x2 == x3,  // true
     x4 == x5,  // false
     x4 == x6,  // false
     x5 == x6,  // true
-    x3 == x6,  // false
+    x3 == x6,  // true
 
     // Booleans
     tru1 == tru2,  // true
