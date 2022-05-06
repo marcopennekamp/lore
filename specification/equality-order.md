@@ -28,7 +28,7 @@ In comparisons between `Real` and `Int`, both the compiler and the default imple
 
 A particular issue with ordering arbitrary values is that some values are simply incomparable, which results in partial orders. Comparison sorting algorithms require total orders, so it's desirable to ensure that most orders are total. Lore tries to give a sensible default order to any kind of value to attempt exactly this. One such measure is assigning an order to booleans, namely `false < true`.
 
-If two values have different type kinds, the values are ordered based on the kind, in this order: `Int/Real < Boolean < String < Tuple < Function < List < Map < Shape < Symbol < Struct`. Note that in comparisons between `Real` and `Int`, both the compiler and the default implementation of order promote the `Int` to a `Real`.
+If two values have different type kinds, the values are ordered based on the kind, in this order: `Int/Real < Boolean < String < Tuple < Function < List < Map < Shape < Symbol < Struct`. Note that in comparisons between `Real` and `Int`, both the compiler and the default implementation of order promote the `Int` to a `Real`. This kind order is instrumental in achieving a total order between arbitrary values.
 
 - **Ints:** Two integers are ordered in accordance to standard signed 64-bit integer comparison.
 - **Reals:** Two numbers are ordered in accordance to the IEEE 754 standard for 64-bit floats.
@@ -87,4 +87,3 @@ There are legitimate reasons to provide an alternative definition for `<=`:
 
 - **Lexicographic ordering:** A programmer may desire to define `<=` lexicographically. For example, a comparison `Struct(#ok, 'abcd') <= Struct(#ok, 'abc')` returns `false`. However, when following an alternative lexicographic definition of `<=`, the first property would be compared first, leading to a comparison `#ok <= #ok`. This is true, so the overall comparison would result in `true`. 
 - **Performance:** The simple definition of `less_than_equal?` calls into `less_than?` and `equal?` separately. In most cases, it's faster to combine these two concerns in a specialized function. Providing an alternative implementation for performance-critical types may be a valid path.
-****

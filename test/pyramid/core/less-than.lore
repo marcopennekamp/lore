@@ -39,6 +39,9 @@ func test(): [Boolean] = do
   let str3: Any = 'bar'
   let str4: Any = 'baz'
 
+  let sym1: Any = #bar
+  let sym2: Any = #foo
+
   let tpl1 = (str1, str2)
   let tpl2 = (str2, str1)
   let tpl3 = (str1, str2, str3)
@@ -52,6 +55,12 @@ func test(): [Boolean] = do
   let list3 = [str2, str1]
   let list4 = [tpl1, tpl2]
   let list5 = [tpl1, tpl2, tpl3]
+
+  let shp1 = %{ }
+  let shp2 = %{ name: 'kodo' }
+  let shp3 = %{ age: 20 }
+  let shp4 = %{ name: 'bar', age: 15 }
+  let shp5 = %{ name: 'foo', age: 15 }
 
   let pos1 = Position2(5.0, 7.0)
   let pos2 = Position2(5.0, 9.0)
@@ -70,18 +79,19 @@ func test(): [Boolean] = do
   let prm4 = Parameterized[#foo](2)
 
   [
-    // Integers and Reals
+    // Integers and Reals (note that Ints are coerced to Reals)
     x1 < x2,  // false
     x1 < x3,  // true
     x2 < x3,  // true
     x4 < x5,  // false
     x4 < x6,  // true
     x5 < x6,  // true
-    x1 < x6,  // false
+    x1 < x5,  // false
+    x1 < x6,  // true
 
     // Booleans
     tru < fls,  // false
-    fls < tru,  // false
+    fls < tru,  // true
 
     // Strings
     str1 < str2,  // true
@@ -113,13 +123,28 @@ func test(): [Boolean] = do
     [] < list2,     // true
     list2 < list3,  // true
     list3 < list2,  // false
-    list3 < list4,  // false
+    list3 < list4,  // true
     list4 < list3,  // false
     list4 < list5,  // true
     list5 < list4,  // false
 
     // Lists: Ensure that the default implementation calls back into `lore.core.less_than?`.
     [pers1, pers4] < [pers3, pers2],  // true
+
+    // Symbols
+    sym1 < sym2,  // true
+    sym2 < sym1,  // false
+
+    // Shapes
+    shp1 < shp2,  // true
+    shp2 < shp1,  // false
+    shp2 < shp3,  // false
+    shp3 < shp2,  // true, because the incompatible shape properties are compared by name.
+    shp2 < shp4,  // true
+    shp4 < shp2,  // false
+    shp3 < shp4,  // true
+    shp4 < shp5,  // true
+    shp5 < shp4,  // false
 
     // Structs
     pos1 < pos2,  // true
@@ -142,5 +167,25 @@ func test(): [Boolean] = do
     prm1 < prm3,  // true
     prm1 < prm4,  // false
     prm4 < prm1,  // true
+
+    // Default kind order.
+    x1 < tru,      // true
+    tru < x1,      // false
+    x3 < tru,      // true
+    tru < x3,      // false
+    tru < str1,    // true
+    str1 < tru,    // false
+    str1 < tpl1,   // true
+    tpl1 < str1,   // false
+    tpl1 < fun1,   // true
+    fun1 < tpl1,   // false
+    fun1 < list1,  // true
+    list1 < fun1,  // false
+    list1 < shp1,  // true
+    shp1 < list1,  // false
+    shp1 < sym1,   // true
+    sym1 < shp1,   // false
+    sym1 < pos1,   // true
+    pos1 < sym1,   // false
   ]
 end
