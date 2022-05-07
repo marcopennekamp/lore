@@ -1,6 +1,6 @@
 # Shapes
 
-A **shape** is a view on values that have properties, offering the power of structural typing. A shape consists of a set of **immutable properties**, much like a struct, but shapes are unnamed and define no constructor function. If properties agree, struct type can be a subtype of a shape, allowing you to pass structs to functions that expect shapes. **Shape values** can also be created as ad-hoc representations of shape types. Such a representation is similar dictionaries in dynamically typed languages.
+A **shape** is a typed view on properties, offering the power of structural typing. A shape consists of a set of **immutable properties**, much like a struct, but shapes are unnamed and define no constructor function. If properties agree, a struct type can be a subtype of a shape, allowing you to pass structs to functions that expect shapes. **Shape values** can also be created as ad-hoc representations of shape types. Such a representation is similar to dictionaries in dynamically typed languages.
 
 At run time, multi-function calls are **dispatched** based on the property types contained in the shape or struct value. This allows a Lore programmer to specialize functions based on actual property types, effectively enabling styles such as component-based programming.
 
@@ -21,12 +21,12 @@ Shapes can be directly constructed as **values**. This comes in handy for ad-hoc
 ###### Syntax Example
 
 ```
-type Options = %{ show_teeth: Boolean, volume: Real  }
+type Options = %{ show_teeth?: Boolean, volume: Real }
 
-func bark(options: Options): String = ...
+func bark(options: Options): String = 'Your dog barks at a volume of ${options.volume} decibels!'
 
 act test()
-  bark(%{ show_teeth: true, volume: 80 })
+  bark(%{ show_teeth?: true, volume: 80 })
 end
 ```
 
@@ -34,7 +34,7 @@ end
 
 ### Type Semantics
 
-Shape types are *structural types*. A struct or shape type `A` is a **subtype** of another shape type `B` if `A` contains all properties of `B` and each property type is a subtype of its opposite in `B`.
+Shape types are *structural types*. A struct or shape type `A` is a **subtype** of a shape type `B` if `A` contains all properties of `B` and each property type is a subtype of its opposite in `B`.
 
 ###### Example
 
@@ -79,7 +79,7 @@ free(Whitebox(tiger))      // --> panics
 
 One way to build programs with a healthy level of abstraction is **component-based programming**. The idea is that data consists of multiple components which can each provide already implemented functionality. For example, an **entity** called `Hero` may have a component `Position` and a component `Shape`. There may be functions such as `move` to manipulate position and a function `render` that requires both a `Position` and a `Shape` to work.
 
-We can support such **entity-component systems** natively (and especially with type safety) in Lore using structural typing. The following code implements the constellation of Hero, Position and Shape:
+We can support such **entity-component systems** natively (and especially with type safety) using structural typing. The following code implements the constellation of Hero, Position and Shape:
 
 ```
 struct Position
@@ -87,7 +87,7 @@ struct Position
 end
 type +Position = %{ position: Position }
 
-act move(entity: +Position, distance: Real, direction: Vector3)
+act move(entity: +Position, distance: Real, direction: Vector3) do
   // calculate new x, y and z coordinates...
   entity.position.x = x
   entity.position.y = y
@@ -100,14 +100,14 @@ struct Shape
 end
 type +Shape = %{ shape: Shape }
 
-act render(entity: +Position & +Shape)
+act render(entity: +Position & +Shape) do
   // use entity.position and entity.shape to render the entity...
 end
 
 // The `extends` is not strictly necessary, but provides additional compile-time safety should either
 // +Position/+Shape or the corresponding properties change unexpectedly.
 struct Hero extends +Position, +Shape
-  position: Position  // Note that position does not need to be open since structs can't have subtypes.
+  position: Position  // Note that position does not need to be open since structs like Position can't have subtypes.
   shape: Shape
 end
 ```
@@ -117,7 +117,7 @@ The benefit of this approach: any struct or shape that contains a property `posi
 **Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
 
 ```
-act render(entity: +Position & +Shape & +Color)
+act render(entity: +Position & +Shape & +Color) do
   // use position, shape AND color to render the entity...
 end
 ```
@@ -144,7 +144,7 @@ The ability to dispatch on property types effectively turns a struct type into a
    
    struct Coffin(nail: Nail)
    
-   act main()
+   act main() do
      let fancy = FancyNail()
      let bloody = BloodyNail()
      let coffin_fancy = Coffin(fancy)
@@ -171,15 +171,15 @@ end
 type +Position = %{ position: Position }
 type +Position3D = %{ position: Position3D }
 
-act move(entity: +Position)
+act move(entity: +Position) do
   ...
 end
 
-act move(entity: +Position3D)
+act move(entity: +Position3D) do
   ...
 end
 
-act test()
+act test() do
   let hero = Hero(Health(), Position3D(0, 0, 0))
   
   // Dispatches to the second move function, since position is an open property.
