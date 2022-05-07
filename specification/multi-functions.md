@@ -20,7 +20,7 @@ A **multi-function** is a set of functions with the same full name. Each multi-f
 func foo(number: Int): Real = number * 1.5
 func foo(string: String): String = '$string ???'
 
-act bar(value: Real)
+act bar(value: Real) do
   println(value)
 end
 ```
