@@ -27,7 +27,7 @@ Extending the shape type `%{ property: C }` adds a member `property: C` to `T`.
 
 A **struct** is a data type carrying a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is always concrete and never abstract. A struct may extend traits and shapes, which is elaborated on further below.
 
-Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines. Both approaches are permitted interchangeably, giving the ability to use both commas and newlines in the same struct definition. All styles and approaches should be chosen based on readability.
+Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines.
 
 Properties can be **accessed** using the member access notation `struct.property`.
 
@@ -290,7 +290,7 @@ func distance(pos1: Position, pos2: Position): Real = do
   sqrt(dx * dx + dy * dy + dz * dz)
 end
 
-act test()
+act test() do
   let box = Box(0, 10, 0, 10, 0, 10)
   let point = Point(3, 7, 9)
   println(distance(box, point)) // --> 3.4641...
@@ -353,11 +353,11 @@ trait Dead
 The core usefulness of a label type comes from the idea that we can **specialize functions** when the label is present:
 
 ```
-act hit(monster: Monster)
+act hit(monster: Monster) do
   ...
 end
 
-act hit(monster: Monster & Dead)
+act hit(monster: Monster & Dead) do
   // Do something else if the monster is dead.
 end
 ```
