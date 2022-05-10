@@ -3,7 +3,9 @@ module lore
 module List do
   use lore.core.panic
   use lore.Enum._
+  use lore.number.odd?
   use lore.Option._
+  use lore.sort.merge_sort
 
   /**
     * Returns the element at the given index. If `index` is out of range, `get!` panics.
@@ -70,6 +72,34 @@ module List do
     */
   @where A
   func slice(list: [A], start: Int): [A] = slice(list, start, length(list))
+
+  /**
+    * Splits `list` into two lists, leaving `count` elements in the first list.
+    */
+  @where A
+  func split(list: [A], count: Int): ([A], [A]) = (
+    list |> slice(0, count),
+    list |> slice(count),
+  )
+
+  /**
+    * Splits `list` into two equally sized lists. If `list`'s length is odd, the odd element ends up in the first list.
+    */
+  @where A
+  func split(list: [A]): ([A], [A]) = do
+    if odd?(length(list))
+      split(list, length(list) / 2 + 1)
+    else
+      split(list, length(list) / 2)
+    end
+  end
+
+  /**
+    * Sorts `list` with a stable sorting algorithm, currently a merge sort. The utilized comparison function is
+    * `lore.core.less_than?`.
+    */
+  @where A
+  func sort(list: [A]): [A] = merge_sort(list)
 
   /**
     * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are

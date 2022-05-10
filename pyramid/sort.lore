@@ -1,0 +1,73 @@
+module lore.sort
+
+use lore.core.panic
+use lore.List.[get!, length, concat, split]
+use lore.Tuple.[first, second]
+
+use lore.IO.println
+
+// TODO (pyramid): The standard sorting algorithm could be improved, e.g. using a Timsort, Blocksort, in-place merge
+//                 sort, or similar. We could also use an in-place insertion sort for (sub-)lists of fewer than 8 or 16
+//                 elements, but for this to have a performance effect, we'd need mutable arrays instead of lists.
+//                 Currently, building `result` in `merge` performs a lot of typed append operations. We can get rid of
+//                 these by using an array data structure or similar.
+// TODO (pyramid): We can specialize sorting algorithms for `[Int]`, `[Real]`, `[String]`, and other types.
+// TODO (vm): Sorting with `merge_sort` takes a long time, of course owing to the naive implementation, but it's also a
+//            good real-world example of how lists would be handled in normal Lore code. Perhaps we can profile the
+//            execution of `test/pyramid/sort/numbers.lore` and see where the VM spends the most time to improve list
+//            operations in general.
+
+/**
+  * Sorts `list` with a simple stable merge sort. The utilized comparison function is `lore.core.less_than?`.
+  */
+@where A
+func merge_sort(list: [A]): [A] = do
+  if length(list) <= 1
+    return list
+  end
+
+  // TODO (case): Goddamn it, this needs pattern matching! It could be (with tuple mapping):
+  //                let (left, right) = split(list) |> map(merge_sort)
+  let split_lists = split(list)
+  let left = first(split_lists) |> merge_sort
+  let right = second(split_lists) |> merge_sort
+
+  merge(left, right)
+end
+
+// TODO (pyramid): Should be a private function.
+@where A, B
+func merge(list1: [A], list2: [B]): [A | B] = do
+  let mut result: [A | B] = []
+
+  let mut i1 = 0
+  let mut i2 = 0
+  let len1 = length(list1)
+  let len2 = length(list2)
+  while i1 < len1 && i2 < len2
+    let e1 = get!(list1, i1)
+    let e2 = get!(list2, i2)
+
+    // We're using `<` with flipped operands instead of `<=`, as it can be generally assumed that `<` will be faster,
+    // due to the default implementation of `lore.core.less_than_equal?`. If `e1` and `e2` are equal, the elements will
+    // still be merged stably.
+    if e2 < e1
+      result = result :+ e2
+      i2 += 1
+    else
+      result = result :+ e1
+      i1 += 1
+    end
+  end
+
+  while i1 < len1
+    result = result :+ get!(list1, i1)
+    i1 += 1
+  end
+  while i2 < len2
+    result = result :+ get!(list2, i2)
+    i2 += 1
+  end
+
+  result
+end
