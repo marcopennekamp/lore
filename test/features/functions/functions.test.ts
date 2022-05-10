@@ -16,8 +16,8 @@ Deno.test(`${base}/constructor`, async () => {
   assertStructHasValues(result.elements.get(1), 'Company', { name: 'Victor', worth: 21 })
 })
 
-Deno.test(`${base}/filter-curried`, async () => {
-  const result: ListValue<ListValue<number>> = await LoreTest.run(`${base}/filter-curried.lore`)
+Deno.test(`${base}/filter_curried`, async () => {
+  const result: ListValue<ListValue<number>> = await LoreTest.run(`${base}/filter_curried.lore`)
   assertListForall(
     result,
     [[2, 4], [4, 8, 6], [], []],
@@ -41,7 +41,7 @@ Deno.test(`${base}/map`, async () => {
   assertListEquals(names, ['Alpha', 'Beta', 'Gamma'])
 })
 
-Deno.test(`${base}/multi-function-value`, async () => {
-  const result: ListValue<number> = await LoreTest.run(`${base}/multi-function-value.lore`)
+Deno.test(`${base}/multi_function_value`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/multi_function_value.lore`)
   assertListEquals(result, [6.0, 15.0, 10.5, 38.5])
 })

@@ -45,8 +45,8 @@ Deno.test(`${base}/goods`, async () => {
   assertListEquals(result, [48.5, 17.2, 1.6])
 })
 
-Deno.test(`${base}/open-properties`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/open-properties.lore`)
+Deno.test(`${base}/open_properties`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/open_properties.lore`)
   assertListEquals(result, ['thing with content', 'thing with content', 'thing with hammer'])
 })
 
@@ -61,8 +61,8 @@ Deno.test(`${base}/option`, async () => {
   ])
 })
 
-Deno.test(`${base}/type-filter`, async () => {
-  const result: TupleValue = await LoreTest.run(`${base}/type-filter.lore`)
+Deno.test(`${base}/type_filter`, async () => {
+  const result: TupleValue = await LoreTest.run(`${base}/type_filter.lore`)
   assertIsTuple(result, [Lists.type(Types.number), Lists.type(Types.string)])
   assertListEquals(result.elements[0], [12, 5, 37])
   assertListEquals(result.elements[1], ['hello world', 'cool world'])

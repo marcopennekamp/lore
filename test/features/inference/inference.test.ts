@@ -10,18 +10,18 @@ Deno.test(`${base}/ascription`, async () => {
   assertEquals(result, 'Some(mouse)')
 })
 
-Deno.test(`${base}/function-list`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/function-list.lore`)
+Deno.test(`${base}/function_list`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/function_list.lore`)
   assertListEquals(result, ['foo', 'bar', '!foobar!'])
 })
 
-Deno.test(`${base}/function-list-append`, async () => {
-  const result: ListValue<boolean> = await LoreTest.run(`${base}/function-list-append.lore`)
+Deno.test(`${base}/function_list_append`, async () => {
+  const result: ListValue<boolean> = await LoreTest.run(`${base}/function_list_append.lore`)
   assertListEquals(result, [false, true, true, false, false, false, false, true])
 })
 
-Deno.test(`${base}/sum-list`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/sum-list.lore`)
+Deno.test(`${base}/sum_list`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/sum_list.lore`)
   assertListEquals(result, ['cat', 'dog', 'cat'])
 })
 
@@ -30,7 +30,7 @@ Deno.test(`${base}/wrapper`, async () => {
   assertListEquals(result, ['Hey!', 'Hey! Hey!', 'Hey! Hey! Hey!'])
 })
 
-Deno.test(`${base}/wrapper-alias`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/wrapper-alias.lore`)
+Deno.test(`${base}/wrapper_alias`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/wrapper_alias.lore`)
   assertListEquals(result, ['Hey!', 'Hey! Hey! Hey!', 'Hey! Hey! Hey! Hey! Hey!'])
 })

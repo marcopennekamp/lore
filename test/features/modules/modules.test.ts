@@ -10,17 +10,17 @@ Deno.test(`${base}/companions`, async () => {
   assertListEquals(result, [0, 1, 2, 3, 4, 5, 6, 7])
 })
 
-Deno.test(`${base}/homonymous-nested`, async () => {
-  const result: ListValue<string | number> = await LoreTest.run(`${base}/homonymous-nested.lore`)
+Deno.test(`${base}/homonymous_nested`, async () => {
+  const result: ListValue<string | number> = await LoreTest.run(`${base}/homonymous_nested.lore`)
   assertListEquals(result, ['Foo', 17])
 })
 
-Deno.test(`${base}/mutual-import`, async () => {
-  const result: number = await LoreTest.run(`${base}/mutual-import.lore`)
+Deno.test(`${base}/mutual_import`, async () => {
+  const result: number = await LoreTest.run(`${base}/mutual_import.lore`)
   assertEquals(result, 12)
 })
 
-Deno.test(`${base}/name-resolution`, async () => {
-  const result: ListValue<number> = await LoreTest.run(`${base}/name-resolution.lore`)
+Deno.test(`${base}/name_resolution`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/name_resolution.lore`)
   assertListEquals(result, [13, 5.5, 7])
 })

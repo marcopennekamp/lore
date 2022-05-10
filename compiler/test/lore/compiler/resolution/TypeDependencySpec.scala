@@ -8,7 +8,7 @@ class TypeDependencySpec extends BaseSpec {
   private val fragmentBase = "resolution"
 
   "resolution/dependency-cycles" should "be compiled with 'inheritance cycle' errors" in {
-    assertCompilationErrorSignatures(s"$fragmentBase/dependency-cycles.lore")(
+    assertCompilationErrorSignatures(s"$fragmentBase/dependency_cycles.lore")(
       (classOf[TypeDependencies.InheritanceCycle], 1),
       (classOf[TypeDependencies.InheritanceCycle], 1),
       (classOf[TypeDependencies.InheritanceCycle], 2),

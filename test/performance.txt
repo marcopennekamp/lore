@@ -9,24 +9,24 @@ Initial results:
 
 Naive lists
 ------------------------------
-hello-name              1100ns
+hello_name              1100ns
 resistor                9800ns
 bunsnatcher            10000ns
 calculator             58500ns
 combat                188000ns
-lists/append-many     500000ns
-lists/concat-many   11045000ns
+lists/append_many     500000ns
+lists/concat_many   11045000ns
 
 
 immutable-js lists
 ------------------------------
-hello-name              2000ns
+hello_name              2000ns
 resistor               14500ns
 bunsnatcher            11300ns
 calculator             67000ns
 combat                218000ns
-lists/append-many     110000ns
-lists/concat-many    1295000ns
+lists/append_many     110000ns
+lists/concat_many    1295000ns
 
 
 
@@ -35,21 +35,21 @@ Optimized operations (map/flat_map/filter/concat):
 
 Naive lists
 ----------------------------
-hello-name             850ns
+hello_name             850ns
 resistor              5200ns
 bunsnatcher           9500ns
 calculator           58000ns
 combat              188000ns
-lists/append-many   488000ns
-lists/concat-many    94500ns
+lists/append_many   488000ns
+lists/concat_many    94500ns
 
 
 immutable-js lists
 ----------------------------
-hello-name            1300ns
+hello_name            1300ns
 resistor              8800ns
 bunsnatcher          10000ns
 calculator           67000ns
 combat              220000ns
-lists/append-many   105000ns
-lists/concat-many   330000ns
+lists/append_many   105000ns
+lists/concat_many   330000ns

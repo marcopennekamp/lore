@@ -36,8 +36,8 @@ Deno.test(`${base}/associativity`, async () => {
   assertEquals(result, 18)
 })
 
-Deno.test(`${base}/call-line-stretching`, async () => {
-  const result: TupleValue = await LoreTest.run(`${base}/call-line-stretching.lore`)
+Deno.test(`${base}/call_line_stretching`, async () => {
+  const result: TupleValue = await LoreTest.run(`${base}/call_line_stretching.lore`)
   assertEquals(result.lore$type, Tuple.unitType)
 })
 
@@ -51,8 +51,8 @@ Deno.test(`${base}/conditionals`, async () => {
   ])
 })
 
-Deno.test(`${base}/implicit-unit`, async () => {
-  const result: TupleValue = await LoreTest.run(`${base}/implicit-unit.lore`)
+Deno.test(`${base}/implicit_unit`, async () => {
+  const result: TupleValue = await LoreTest.run(`${base}/implicit_unit.lore`)
   assertEquals(result.lore$type, Tuple.unitType)
 })
 
@@ -134,8 +134,8 @@ Deno.test(`${base}/return`, async () => {
   assertListEquals(result, [10, 1, 5, 5])
 })
 
-Deno.test(`${base}/special-characters`, async () => {
-  const result: ListValue<boolean> = await LoreTest.run(`${base}/special-characters.lore`)
+Deno.test(`${base}/special_characters`, async () => {
+  const result: ListValue<boolean> = await LoreTest.run(`${base}/special_characters.lore`)
   assertListEquals(result, [true, false, false, true])
 })
 
@@ -155,8 +155,8 @@ Deno.test(`${base}/strings`, async () => {
   ])
 })
 
-Deno.test(`${base}/trailing-commas`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/trailing-commas.lore`)
+Deno.test(`${base}/trailing_commas`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/trailing_commas.lore`)
   assertListEquals(result, [
     'bar',
     'boo',

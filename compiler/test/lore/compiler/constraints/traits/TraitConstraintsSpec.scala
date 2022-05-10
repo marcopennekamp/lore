@@ -8,7 +8,7 @@ class TraitConstraintsSpec extends BaseSpec {
   "constraints/traits/invariant-inheritance" should "be compiled with various inheritance errors" in {
     // TODO (invariant-inheritance): Make this test pass. Multiple-inherited supertraits with invariant type parameters
     //                               should not have conflicting type arguments.
-    assertCompilationErrorMessages(s"$fragmentBase/invariant-inheritance.lore")(
+    assertCompilationErrorMessages(s"$fragmentBase/invariant_inheritance.lore")(
       ("The invariant parameter A of trait X, which Z inherits from, has multiple conflicting type arguments: Int, Real.", 5),
       ("The invariant parameter A of trait X, which W inherits from, has multiple conflicting type arguments: A, B.", 8),
     )

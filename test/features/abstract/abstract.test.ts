@@ -9,8 +9,8 @@ Deno.test(`${base}/intersection`, async () => {
   assertListEquals(result, ['A', 'C', 'B', 'C', 'C', 'B', 'C', 'B', 'C', 'B', 'A', 'C', 'X1|X2', 'X1|X2', 'X3'])
 })
 
-Deno.test(`${base}/partial-specialization`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/partial-specialization.lore`)
+Deno.test(`${base}/partial_specialization`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/partial_specialization.lore`)
   assertListEquals(result, ['A1,B', 'A1,B', 'A2,B', 'A2,B'])
 })
 

@@ -24,8 +24,8 @@ Deno.test(`${base}/double`, async () => {
   assertListEquals(result, [0, -4, 5, 12, 44])
 })
 
-Deno.test('math/min-max', async () => {
-  const result: ListValue<number> = await LoreTest.run('math/min-max.lore')
+Deno.test('math/min_max', async () => {
+  const result: ListValue<number> = await LoreTest.run('math/min_max.lore')
   assertListEquals(result, [-5, 0, 1.8, 1.2, 1])
 })
 

@@ -34,7 +34,7 @@
 - Implement fast persistent lists.
 - Implement fast persistent maps.
 - Before implementing bytecode JIT compilation, we could try the more specific case of compiling dispatch hierarchies to native dispatch functions, which should vastly improve dispatch performance.
-  - To measure dispatch performance properly, we should measure dispatch directly instead of measuring representative programs such as `hello-name.lore`.
+  - To measure dispatch performance properly, we should measure dispatch directly instead of measuring representative programs such as `hello_name.lore`.
 - Implement a dispatch cache.
   - Potentially. Jitting dispatch functions might bring better results across the board. My main two worries with dispatch caching are that (1) gauging the cost of plain dispatch vs. a hash table lookup with every function call is quite hard and (2) dispatch caches that never remove "old" entries might grow to very large sizes, without the programmer understanding why the program is eating so much memory. Whereas, caches with expiring entries incur a certain overhead. And additionally, using a dispatch cache in *some* functions incurs a constant run-time overhead *everywhere* because types have to be hashed. Hashing could be carried out lazily, which adds additional overhead, and hashes themselves increase the memory consumption of a type by 8 bytes.
 - We can flatten many `ImSeq`s into `UncheckedArray`s or `ImSeqObj`s for types and values (especially tuples, shapes, sum/intersection types, etc.). This will save allocations when creating values, but also make the VM's code a bit more complicated. We'll either have to pass around these embedded ImSeqObj as pointers, or write some glue code here and there.

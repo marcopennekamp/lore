@@ -88,7 +88,7 @@ The supposed ambiguity between `f(a: A)` and `f(y: Y)` is artificial because `f(
 
 We could just throw abstract functions out of the min-set at compile-time, but this seems to be too simple. The change also has many, many implications and might not be the right step.
 
-There are other questions, too: What if `f(y: Y)` was also abstract? How would we choose between `f(a: A)` and `f(y: Y)`? And what if the return type of `f(y: Y)` was simply wrong? (See [this file](./wrong-return-type.lore) for an example.) 
+There are other questions, too: What if `f(y: Y)` was also abstract? How would we choose between `f(a: A)` and `f(y: Y)`? And what if the return type of `f(y: Y)` was simply wrong? (See [this file](./wrong_return_type.lore) for an example.) 
 
 #### Change 3: Run-time Dispatch
 
@@ -96,7 +96,7 @@ Right now, the **run-time multiple dispatch algorithm** assumes that when going 
 
 #### The Smoking Gun?
 
-The **return type** example above might be the smoking gun that kills this proposal. If `f(y: Y)` provided an implementation for `f(a1: A1)` (in the [linked example](./wrong-return-type.lore)), we'd also have to check that `f(y: Y)` adheres to the return type of `f(a: A)`. So suddenly, we have to include return types in the totality constraint check.
+The **return type** example above might be the smoking gun that kills this proposal. If `f(y: Y)` provided an implementation for `f(a1: A1)` (in the [linked example](./wrong_return_type.lore)), we'd also have to check that `f(y: Y)` adheres to the return type of `f(a: A)`. So suddenly, we have to include return types in the totality constraint check.
 
 If this is possible, the proposal can live on. But is it possible in the general case? Do we want to solve the general case or just provide utility to Lore programmers? And can we hold up our run-time type guarantees? So far, at least return types have been sound and they need to continue to do so.
 

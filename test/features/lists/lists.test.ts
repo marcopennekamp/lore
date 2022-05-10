@@ -6,8 +6,8 @@ import { LoreTest } from '../../base.ts'
 
 const base = 'features/lists'
 
-Deno.test(`${base}/append-many`, async () => {
-  const result: ListValue<number> = await LoreTest.run(`${base}/append-many.lore`)
+Deno.test(`${base}/append_many`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/append_many.lore`)
   const expected: Array<number> = []
   for (let i = 0; i < 1000; i += 1) {
     expected.push(i)
@@ -28,8 +28,8 @@ Deno.test(`${base}/concat`, async () => {
   )
 })
 
-Deno.test(`${base}/concat-many`, async () => {
-  const result: ListValue<number> = await LoreTest.run(`${base}/concat-many.lore`)
+Deno.test(`${base}/concat_many`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/concat_many.lore`)
   const expected: Array<number> = []
   for (let i = 0; i < 5000; i += 1) {
     expected.push(42)

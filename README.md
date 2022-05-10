@@ -2,7 +2,7 @@
 
 **Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming.
 
-To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some of the examples in the `tests` folder, such as [hello-name.lore](test/lessons/hello-name.lore).
+To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some of the examples in the `tests` folder, such as [hello_name.lore](test/lessons/hello_name.lore).
 
 
 
@@ -34,11 +34,11 @@ I haven't yet invested time into making Lore ready for the public. Hence, I'm no
 You are welcome to clone the repository and make it work yourself, however. Here is a short guideline:
 
 1. You will need [SBT](https://www.scala-sbt.org) to build and execute the compiler, and [Nim](https://nim-lang.org/install.html) to build the VM.
-2. In the project's `<root>` folder, execute the command `sbt`, which starts an SBT session. I'd suggest compiling the [test/lessons/hello-name.lore](test/lessons/hello-name.lore) example first, which is in many ways Lore's hello world. Inside the SBT console, execute the following command: `compiler/run compile test/lessons/hello-name.lore`. 
+2. In the project's `<root>` folder, execute the command `sbt`, which starts an SBT session. I'd suggest compiling the [test/lessons/hello_name.lore](test/lessons/hello_name.lore) example first, which is in many ways Lore's hello world. Inside the SBT console, execute the following command: `compiler/run compile test/lessons/hello_name.lore`. 
 3. The compilation should finish with a message `[info] Compilation was successful.`. The compiler will have created a file `lore_target/binary.poem`, which is the bytecode file that the VM can execute.
 4. `cd` to the folder `vm` and execute the following command: `./run.sh vm.nim ../lore_target/binary.poem test`. This executes the Lore program you just compiled.
    - You might have to `chmod` the `run.sh` file for execution permissions. 
-   - The argument `test` specifies the entry multi-function for the VM, which is `test` for `hello-name.lore` and all other test programs.
+   - The argument `test` specifies the entry multi-function for the VM, which is `test` for `hello_name.lore` and all other test programs.
 5. If everything goes well, the result reported by the VM should be: `[Hello, world., Hello, anonymous #5., Hello, marco., Hello, console., Hello, anonymous #42.] :: [String]`.
 6. From here on out, you might want to compile additional examples or write your own Lore programs. Here are some tips:
    - The compiler accepts multiple files and folders. For example, executing `compiler/run compile test/combat` in SBT will compile all `.lore` files of the `test/combat` example.

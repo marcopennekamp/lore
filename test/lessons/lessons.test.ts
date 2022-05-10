@@ -10,8 +10,8 @@ Deno.test(`${base}/fibonacci`, async () => {
   assertEquals(result, 55)
 })
 
-Deno.test(`${base}/hello-name`, async () => {
-  const result: ListValue<string> = await LoreTest.run(`${base}/hello-name.lore`)
+Deno.test(`${base}/hello_name`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/hello_name.lore`)
   assertListEquals(result, [
     'Hello, world.',
     'Hello, anonymous #5.',
