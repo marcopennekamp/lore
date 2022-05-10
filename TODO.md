@@ -5,7 +5,6 @@
 ##### Minimum Viable Language
 
 - Implement a compiler backend for producing poem binaries.
-  - Implement the Adventurer example from `equality-order.md` as a test example for equality/order. (Maybe even a lesson.)
   - Fix compiler tests.
   - Clear all `TODO (assembly)` entries.
 - Implement a new automatic testing solution to execute the functional tests. This is a great opportunity to formulate a general, simple testing solution that users can also access and which treats tests as first-class citizens. For example, we could implement tests as normal funcs with an `@test` annotation that takes an expected value. These `@test` functions would be compiled into an entry function that's executed by the VM if the program is compiled as a test program, or we could even add VM support for test functions and give the VM a `test` command. The latter would allow users of libraries to execute library tests even when they're just using a library, as the tests would always be bundled with the poem binaries. The `test` command could also filter tests by module.

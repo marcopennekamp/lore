@@ -1,0 +1,48 @@
+// This lesson implements the example from `Custom Equality and Order` in `equality-order.md`.
+use lore.core.to_string
+use lore.Enum.map
+use lore.List.sort
+
+struct Adventurer
+  id: Int
+  name: String
+  equipment: [Item]
+end
+
+module lore.core do
+  func equal?(adv1: Adventurer, adv2: Adventurer): Boolean = adv1.id == adv2.id
+
+  func less_than?(adv1: Adventurer, adv2: Adventurer): Boolean = do
+    adv1.name < adv2.name || adv1.name == adv2.name && adv1.id < adv2.id
+  end
+
+  func to_string(adv: Adventurer): String = '${adv.name}(${adv.id})'
+end
+
+struct Item
+  name: String
+  value: Int
+end
+
+let sword: Item = Item('Sword', 10)
+let apple: Item = Item('Apple', 1)
+let armor: Item = Item('Armor', 50)
+let peach: Item = Item('Peach', 3)
+let knife: Item = Item('Knife', 7)
+
+func test(): [String] = do
+  let knight_equipment = [sword, armor]
+  let scout_equipment = [armor, knife]
+  let merchant_equipment = [apple, peach, knife]
+
+  let adventurers = [
+    Adventurer(4, 'Ser Oncewas', merchant_equipment),
+    Adventurer(3, 'Lancelot', knight_equipment),
+    Adventurer(2, 'Abby', scout_equipment),
+    Adventurer(1, 'Steve', merchant_equipment),
+    Adventurer(5, 'Eliza', merchant_equipment),
+    Adventurer(0, 'Steve', knight_equipment),
+  ]
+
+  sort(adventurers) |> map(to_string)
+end
