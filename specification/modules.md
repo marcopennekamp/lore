@@ -88,7 +88,7 @@ end
 
 In this example, `test` has access to `west` as it's locally declared, `baz` from `use bin.ban.baz`, `foo` as it's locally declared in the local root module, `Math` via the import at the root, `east` as a global module member, and module `lore` (for example) via the global root scope. `foo.bar.baz` is not accessible to `test`, because `use bin.ban.baz`  has precedence. For `test`'s frame of reference, the second `module foo.bar` declaration is NOT a local module. `foo.doo` is not accessible, even though `foo` is a parent module of `foo.bar`, as children don't automatically inherit the global members of their parent modules.
 
-##### Use Declarations
+##### Imports
 
 The `use` declaration can be used to introduce simple names for other module members at their point of use. It is also called an **import**. It has three flavors:
 
@@ -129,6 +129,10 @@ use lore.Math._
 let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
 ```
 
+###### Convention: Full names in `use`
+
+Unless the import is targeting a companion module, it is good practice to use a fully qualified module name with `use`, even if it could be abbreviated. This makes an import such as `use lore.map.abc` possible while also defining a function `map` in the same scope. If the import was `use map.abc`, the compiler would try to import `abc` from the locally declared function `map`.
+
 
 
 ### Companion Modules
@@ -140,7 +144,7 @@ A type and a module may share a name. A module that bears the same name as a typ
 ###### Example
 
 ```
-module animals
+module animal
 
 trait Animal
 
