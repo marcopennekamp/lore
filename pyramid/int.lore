@@ -1,6 +1,0 @@
-module lore.Int
-
-/**
-  * Converts the given Int value to a Real.
-  */
-func to_real(value: Int): Real = intrinsic[Real]('lore.int.to_real', value)

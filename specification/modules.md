@@ -65,7 +65,7 @@ Also note that in the example above, globally declared members of the parent mod
 ###### Example
 
 ```
-use lore.Math
+use lore.number
 
 module foo do
   use bin.ban.baz
@@ -82,11 +82,11 @@ module foo.bar do
 end
 
 module foo do 
-  func doo(): Int = Math.min(22, 7)
+  func doo(): Int = number.min(22, 7)
 end
 ```
 
-In this example, `test` has access to `west` as it's locally declared, `baz` from `use bin.ban.baz`, `foo` as it's locally declared in the local root module, `Math` via the import at the root, `east` as a global module member, and module `lore` (for example) via the global root scope. `foo.bar.baz` is not accessible to `test`, because `use bin.ban.baz`  has precedence. For `test`'s frame of reference, the second `module foo.bar` declaration is NOT a local module. `foo.doo` is not accessible, even though `foo` is a parent module of `foo.bar`, as children don't automatically inherit the global members of their parent modules.
+In this example, `test` has access to `west` as it's locally declared, `baz` from `use bin.ban.baz`, `foo` as it's locally declared in the local root module, `number` via the import at the root, `east` as a global module member, and module `lore` (for example) via the global root scope. `foo.bar.baz` is not accessible to `test`, because `use bin.ban.baz`  has precedence. For `test`'s frame of reference, the second `module foo.bar` declaration is NOT a local module. `foo.doo` is not accessible, even though `foo` is a parent module of `foo.bar`, as children don't automatically inherit the global members of their parent modules.
 
 ##### Imports
 
@@ -117,14 +117,15 @@ The `use` declaration can only be placed at the beginning of a module declaratio
 ```
 // Simple:
 use lore.Enum.map
-use lore.Math.increment
+use lore.number.increment
 [1, 2, 3] |> map(increment)
 
 // Multiple:
-use lore.[Enum, Math]
-[1, 2, 3] |> Enum.map(Math.increment)
+use lore.[Enum, number]
+[1, 2, 3] |> Enum.map(number.increment)
 
 // Wildcard:
+use lore.number._
 use lore.Math._
 let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
 ```

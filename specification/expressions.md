@@ -151,7 +151,7 @@ Conversions between integers and reals can be done with the functions `lore.Int.
 
 ##### Arithmetic Operators
 
-The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function `lore.Math.remainder`.
+The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function `lore.number.remainder`.
 
 ```
 a + b  // Addition

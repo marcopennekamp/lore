@@ -1,0 +1,143 @@
+/** `lore.number` provides common functions for integers and reals, as well as modules `Int` and `Real` for
+  * constructing integers and reals from other representations.
+  *
+  * The intent in providing a common module for numbers is to simplify working with numbers of type `Int | Real`.
+  * Almost all of the functions in `lore.number` are defined for both `Int` and `Real`.
+  *
+  * Also see `lore.Math` for mathematically focused functions.
+  */
+module lore.number
+
+// TODO (pyramid): Implement `even?` and `odd?` with bitwise operations.
+
+use lore.Enum.fold
+use lore.Option
+use lore.Option.[Some, None]
+
+/**
+  * Whether `value` is even.
+  */
+func even?(value: Int): Boolean = remainder(value, 2) == 0
+
+/**
+  * Whether `value` is odd.
+  */
+func odd?(value: Int): Boolean = remainder(value, 2) == 1
+
+/**
+  * Whether `value` is not a number.
+  */
+func nan?(value: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', value)
+func nan?(value: Int): Boolean = false
+
+/**
+  * Converts `value` to Real.
+  */
+func to_real(value: Int): Real = intrinsic[Real]('lore.int.to_real', value)
+func to_real(value: Real): Real = value
+
+/**
+  * Converts `value` to an Int by truncating the fractional part.
+  */
+func to_int(value: Real): Int = intrinsic[Int]('lore.real.to_int', value)
+func to_int(value: Int): Int = value
+
+/**
+  * Computes the integer remainder of `a` and `b`.
+  */
+func remainder(a: Int, b: Int): Int = intrinsic[Int]('lore.int.remainder', a, b)
+
+/**
+  * Increments `value` by 1.
+  */
+func increment(value: Int): Int = value + 1
+
+/**
+  * Decrements `value` by 1.
+  */
+func decrement(value: Int): Int = value - 1
+
+/**
+  * Returns the minimum of `a` or `b`.
+  */
+func min(a: Int, b: Int): Int = if a < b then a else b
+func min(a: Real, b: Real): Real = if a < b then a else b
+
+/**
+  * Returns the maximum of `a` or `b`.
+  */
+func max(a: Int, b: Int): Int = if a > b then a else b
+func max(a: Real, b: Real): Real = if a > b then a else b
+
+/**
+  * Computes the absolute value of `value`.
+  */
+func absolute(value: Int): Int = if value < 0 then -value else value
+func absolute(value: Real): Real = if value < 0 then -value else value
+
+/**
+  * Computes `base` to the power of `exponent`.
+  *
+  * TODO (pyramid): Implement the variant for Int.
+  */
+func pow(base: Real, exponent: Real): Real = intrinsic[Real]('lore.real.pow', base, exponent)
+
+/**
+  * Returns the largest integer that is less than or equal to `x`.
+  */
+func floor(x: Real): Int = intrinsic[Int]('lore.real.floor', x)
+
+/**
+  * Rounds `x` to the nearest integer, with half-way values rounding up.
+  */
+func ceil(x: Real): Int = intrinsic[Int]('lore.real.ceil', x)
+
+/**
+  * Returns the smallest integer that is greater than or equal to `x`.
+  */
+func round(x: Real): Int = intrinsic[Int]('lore.real.round', x)
+
+/**
+  * Computes the sum of all integers in `list`.
+  */
+func sum(list: [Int]): Int = list |> fold(0, (a, b) => a + b)
+
+/**
+  * Computes the sum of all reals in `list`.
+  */
+func sum(list: [Real]): Real = list |> fold(0.0, (a, b) => a + b)
+
+/**
+  * Computes the product of all integers in `list`.
+  */
+func product(list: [Int]): Int = list |> fold(1, (a, b) => a * b)
+
+/**
+  * Computes the product of all reals in `list`.
+  */
+func product(list: [Real]): Real = list |> fold(1.0, (a, b) => a * b)
+
+module Int do
+  // TODO (pyramid): Implement `Int.parse`.
+end
+
+module Real do
+  /**
+    * Parses `string` as a Real value. If `string` cannot be parsed as such, `None` is returned. The case-insensitive
+    * constants `'nan'`, `'inf'`, and `'-inf'` are supported as well.
+    */
+  func parse(string: String): Option[Real] = do
+    // TODO (pyramid): There should be a function `Option.from_try` for a result `A | #error`, but the problem is that
+    //                 type parameters and sum/intersection types don't play nice together, yet. A middle ground would be
+    //                 to use pattern matching, which is also not implemented yet. So for now we're resorting to a manual
+    //                 extraction approach... Very ugly. We need pattern matching ASAP.
+    let result = intrinsic[Real | #error]('lore.real.parse', string)
+    result_to_option(result)
+  end
+
+  // TODO (pyramid): (1) this function would be superfluous if we had case expressions and (2) this function should be
+  //                 private.
+  func result_to_option(result: Real | #error): Option[Real]
+  func result_to_option(result: Real): Some[Real] = Some(result)
+  func result_to_option(#error): None = None
+end

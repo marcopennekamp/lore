@@ -76,14 +76,40 @@ proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## panic(message: String): Nothing
   quit(fmt"Panic: {arg(0)}")
 
+proc int_remainder(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## remainder(a: Int, b: Int): Int
+  tag_int(arg_int(0) mod arg_int(1))
+
 proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_real(value: Int): Real
   let value = arg_int(0)
   new_real_value_tagged(float64(value))
 
+proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## nan?(value: Real): Boolean
+  tag_boolean(arg_real(0) == NaN)
+
 proc real_to_int(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_int(value: Real): Int
   tag_int(int64(arg_real(0)))
+
+proc real_floor(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## floor(x: Real): Int
+  tag_int(math.floor(arg_real(0)).int64)
+
+proc real_ceil(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## ceil(x: Real): Int
+  tag_int(math.ceil(arg_real(0)).int64)
+
+proc real_round(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## round(x: Real): Int
+  tag_int(math.round(arg_real(0)).int64)
+
+proc real_pow(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## pow(base: Real, exponent: Real): Real
+  let base = arg_real(0)
+  let exponent = arg_real(1)
+  new_real_value_tagged(math.pow(base, exponent))
 
 proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## parse(value: String): Real | #error
@@ -91,10 +117,6 @@ proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
     new_real_value_tagged(parse_float(arg_string(0)))
   except ValueError:
     get_error_symbol()
-
-proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## nan?(value: Real): Boolean
-  tag_boolean(arg_real(0) == NaN)
 
 proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## length(string: String): Int
@@ -194,28 +216,6 @@ proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   echo arg(0)
   values.unit_value_tagged
 
-proc math_floor(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## floor(x: Real): Int
-  tag_int(math.floor(arg_real(0)).int64)
-
-proc math_ceil(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## ceil(x: Real): Int
-  tag_int(math.ceil(arg_real(0)).int64)
-
-proc math_round(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## round(x: Real): Int
-  tag_int(math.round(arg_real(0)).int64)
-
-proc math_remainder_int(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## remainder(a: Int, b: Int): Int
-  tag_int(arg_int(0) mod arg_int(1))
-
-proc math_pow(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## pow(base: Real, exponent: Real): Real
-  let base = arg_real(0)
-  let exponent = arg_real(1)
-  new_real_value_tagged(math.pow(base, exponent))
-
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
   Intrinsic(name: name, function: function, arity: arity)
 
@@ -227,11 +227,16 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.core.subtype?", core_subtype, 2),
   intr("lore.core.panic", core_panic, 1),
 
+  intr("lore.int.remainder", int_remainder, 2),
   intr("lore.int.to_real", int_to_real, 1),
 
-  intr("lore.real.to_int", real_to_int, 1),
-  intr("lore.real.parse", real_parse, 1),
   intr("lore.real.nan?", real_is_nan, 1),
+  intr("lore.real.to_int", real_to_int, 1),
+  intr("lore.real.floor", real_floor, 1),
+  intr("lore.real.ceil", real_ceil, 1),
+  intr("lore.real.round", real_round, 1),
+  intr("lore.real.pow", real_pow, 2),
+  intr("lore.real.parse", real_parse, 1),
 
   intr("lore.string.length", string_length, 1),
   intr("lore.string.at!", string_at, 2),
@@ -252,10 +257,4 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.list.filter", list_filter, 2),
 
   intr("lore.io.println", io_println, 1),
-
-  intr("lore.math.floor", math_floor, 1),
-  intr("lore.math.ceil", math_ceil, 1),
-  intr("lore.math.round", math_round, 1),
-  intr("lore.math.remainder[int]", math_remainder_int, 2),
-  intr("lore.math.pow", math_pow, 2),
 ]

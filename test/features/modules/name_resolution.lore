@@ -1,4 +1,4 @@
-use lore.Math
+use lore.number
 
 module foo do
   use bin.ban.baz
@@ -15,7 +15,7 @@ module foo.bar do
 end
 
 module foo do
-  func doo(): Int = Math.min(22, 7)
+  func doo(): Int = number.min(22, 7)
 end
 
 module bin.ban do

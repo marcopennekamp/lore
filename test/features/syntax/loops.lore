@@ -1,4 +1,4 @@
-use lore.Int.to_real
+use lore.number.to_real
 
 func divide_by_2(a: Int, b: Int): Real = do
   let mut r = to_real(a)

@@ -16,5 +16,3 @@ These **complex test cases** deserve their own directories:
 - [Calculator](calculator): A reverse Polish notation parser and evaluator. The calculator supports positive integers and basic arithmetic operations.
 - [Combat](combat): A turn-based combat simulation inspired by RPGs.
 - [Geometry](geometry): Several tests related to simple geometric calculations.
-- [Math](math): Several tests related to mathematical calculations.
-  - TODO: Some tests (like `min_max.lore`) need to be moved to Pyramid tests, some are examples, and others are feature tests.

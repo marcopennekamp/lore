@@ -2,8 +2,7 @@
 //            described here: https://en.wikipedia.org/wiki/Electronic_color_code#Resistors.
 
 use lore.Enum.[flat_map, map, present?]
-use lore.Int.to_real
-use lore.Math
+use lore.number.[to_real, pow]
 use lore.Option
 use lore.Option.[Some, None]
 
@@ -55,7 +54,7 @@ module Multiplier do
   // The multiplier of a figure X is 10^X, so we can calculate the multiplier here. The `Multiplier &` intersection is
   // necessary because `Figure` is not a subtype of `Multiplier`. If `figure` was just typed as `Figure`, the
   // multi-function call would be ambiguous for a type such as `Green` which extends both `Figure` and `Multiplier`.
-  func of(figure: Multiplier & Figure): Real = Math.pow(10.0, to_real(Figure.of(figure)))
+  func of(figure: Multiplier & Figure): Real = pow(10.0, to_real(Figure.of(figure)))
 end
 
 module Tolerance do

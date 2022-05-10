@@ -1,5 +1,5 @@
 use lore.Enum.[filter, map]
-use lore.Math
+use lore.number.remainder
 
 @where A
 func filter_curried(f: A => Boolean): [A] => [A] = do
@@ -13,5 +13,5 @@ func test(): [[Int]] = do
     [],
     [1, 1, 1, 1, 1],
   ]
-  data |> map(filter_curried(x => Math.remainder(x, 2) == 0))
+  data |> map(filter_curried(x => remainder(x, 2) == 0))
 end

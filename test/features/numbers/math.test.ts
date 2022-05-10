@@ -1,8 +1,8 @@
 import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
 import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/tuples.ts'
-import { assertListEquals, assertListForall, assertTupleEquals } from '../assertions.ts'
-import { LoreTest } from '../base.ts'
+import { assertListEquals, assertListForall, assertTupleEquals } from '../../assertions.ts'
+import { LoreTest } from '../../base.ts'
 
 const base = 'math'
 

@@ -2,9 +2,9 @@ module Tokenizer
 
 use lore.Enum.[map, empty?]
 use lore.IO.println
+use lore.number.Real
 use lore.Option
 use lore.Option.[Some, None, or_else]
-use lore.Real
 use lore.String
 use lore.Tuple
 

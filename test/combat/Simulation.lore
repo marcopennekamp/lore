@@ -1,7 +1,7 @@
 module combat.Simulation
 
 use lore.IO.println
-use lore.Math
+use lore.number.[min, max]
 
 use combat.combatants.Combatant
 use combat.effects._
@@ -92,7 +92,7 @@ func in_range?(combatant: Combatant, distance: Int): Boolean = Combatant.stat(co
  */
 func close_distance(combatant: Combatant, distance: Int): Int = do
   if distance > 0 && !in_range?(combatant, distance)
-    let new = Math.max(distance - Combatant.stat(combatant, #speed), 0)
+    let new = max(distance - Combatant.stat(combatant, #speed), 0)
     log('${Combatant.name(combatant)} closes distance to $new.')
     new
   else distance
@@ -126,7 +126,7 @@ end
  */
 act hit(source: CombatantState, target: CombatantState, damage: Int) do
   let defense = Combatant.stat(target.combatant, #defense)
-  let damage_after_defense = Math.max(damage - defense, 0)
+  let damage_after_defense = max(damage - defense, 0)
   log('${Combatant.name(source.combatant)} attacks ${Combatant.name(target.combatant)} for $damage_after_defense damage given a defense of $defense.')
   target.health -= damage_after_defense
   Combatant.on_hit(target.combatant)
@@ -144,7 +144,7 @@ end
 
 act heal(target: CombatantState, amount: Int) do
   let old_health = target.health
-  target.health = Math.min(target.health + amount, target.combatant.stats.maximum_health)
+  target.health = min(target.health + amount, target.combatant.stats.maximum_health)
   if target.health > old_health
     log('${Combatant.name(target.combatant)} is healed by ${target.health - old_health} points.')
   end

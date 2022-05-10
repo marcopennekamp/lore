@@ -1,5 +1,5 @@
 // This case tests how the totality constraint treats complex type arguments.
-use lore.Math
+use lore.number.max
 
 trait Element
 trait Fire extends Element
@@ -42,7 +42,7 @@ func damage_of(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): D
   calculate_damage(raw_damage(spell), defense / 2)
 end
 
-func calculate_damage(raw_damage: Damage, defense: Defense): Damage = Math.max(raw_damage - defense, 0)
+func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_damage - defense, 0)
 
 
 func test(): [Damage] = [

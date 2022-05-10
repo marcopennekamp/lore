@@ -2,7 +2,7 @@ import { ListValue } from '../../../runtime/src/lore/runtime/lists.ts'
 import { assertListEquals } from '../../assertions.ts'
 import { LoreTest } from '../../base.ts'
 
-const base = 'pyramid/options'
+const base = 'pyramid/option'
 
 Deno.test(`${base}/operations`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/operations.lore`)

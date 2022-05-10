@@ -19,11 +19,16 @@ object PoemIntrinsic {
     intr("lore.core.subtype?", 2),
     intr("lore.core.panic", 1),
 
+    intr("lore.int.remainder", 2),
     intr("lore.int.to_real", 1),
 
-    intr("lore.real.to_int", 1),
-    intr("lore.real.parse", 1),
     intr("lore.real.nan?", 1),
+    intr("lore.real.to_int", 1),
+    intr("lore.real.floor", 1),
+    intr("lore.real.ceil", 1),
+    intr("lore.real.round", 1),
+    intr("lore.real.pow", 2),
+    intr("lore.real.parse", 1),
 
     intr("lore.string.length", 1),
     intr("lore.string.at!", 2),
@@ -48,12 +53,6 @@ object PoemIntrinsic {
     intr("lore.list.filter", 2),
 
     intr("lore.io.println", 1),
-
-    intr("lore.math.floor", 1),
-    intr("lore.math.ceil", 1),
-    intr("lore.math.round", 1),
-    intr("lore.math.remainder[int]", 2),
-    intr("lore.math.pow", 2),
   )
 
   val intrinsicsMap: Map[String, PoemIntrinsic] = intrinsics.map(intrinsic => (intrinsic.name, intrinsic)).toMap

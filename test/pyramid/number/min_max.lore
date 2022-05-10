@@ -1,4 +1,4 @@
-use lore.Math.[min, max]
+use lore.number.[min, max]
 
 func test(): [Int | Real] = [
   min(-5, 0),

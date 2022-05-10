@@ -1,6 +1,6 @@
 module combat.effects
 
-use lore.Math
+use lore.number.floor
 
 /**
  * The entity is infused with Stormlight.
@@ -15,7 +15,7 @@ end
 
 module StatusEffect do
   domain effect: Infusion
-    func affect(#attack | #speed, value: Int): Int = Math.floor(value * 1.5)
+    func affect(#attack | #speed, value: Int): Int = floor(value * 1.5)
     func affect(#dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
     func affect(#regeneration, value: Int): Int = 5
   end
