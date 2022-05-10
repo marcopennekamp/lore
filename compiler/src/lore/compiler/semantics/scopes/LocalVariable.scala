@@ -37,6 +37,8 @@ case class LocalVariable(
   }
 
   override def hashCode(): Int = uniqueKey.hashCode()
+
+  override def toString: String = name
 }
 
 object LocalVariable {

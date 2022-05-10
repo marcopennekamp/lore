@@ -10,7 +10,7 @@ import lore.compiler.types.BasicType
 
 object ExpressionFeedback {
   case class ImmutableAssignment(access: Expression.Access) extends Feedback.Error(access) {
-    override def message = s"The variable or member $access may not be mutated."
+    override def message = s"The variable or member `$access` may not be mutated."
   }
 
   case class IllegalModuleValue(module: GlobalModule, override val position: Position) extends Feedback.Error(position) {
