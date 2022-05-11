@@ -19,6 +19,8 @@
         <appender-ref ref="standard" />
     </root>
 
+    <!-- Feedback logging should only be set to debug if individual phase time logging is desired. -->
+    <logger name="lore.compiler.feedback" level="info" />
     <logger name="lore.compiler.feedback.blank" additivity="false">
         <appender-ref ref="minimal"/>
     </logger>

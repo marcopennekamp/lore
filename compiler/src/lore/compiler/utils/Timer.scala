@@ -22,7 +22,12 @@ object Timer {
     }
   }
 
-  def timed[R](name: String, n: Int = 1, log: String => Unit = s => Feedback.logger.debug(s), unit: TimerUnit = TimerUnit.Microseconds)(block: => R): R = {
+  def timed[R](
+    name: String,
+    n: Int = 1,
+    log: String => Unit = s => Feedback.logger.debug(s),
+    unit: TimerUnit = TimerUnit.Microseconds,
+  )(block: => R): R = {
     val start = System.nanoTime()
     var result: R = block
     for (_ <- 1 until n) {
