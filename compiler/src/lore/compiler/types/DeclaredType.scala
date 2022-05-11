@@ -89,15 +89,17 @@ trait DeclaredType extends NamedType {
               case Variance.Covariant => IntersectionType.construct(arguments)
               case Variance.Contravariant => SumType.construct(arguments)
               case Variance.Invariant =>
-                // TODO (invariant-inheritance): The else case requires an additional constraint check. Invariant
-                //                               arguments across a type hierarchy should never be incompatible like
-                //                               this.
-                val uniqueArguments = arguments.toSet
-                if (uniqueArguments.size == 1) arguments.head
-                else throw CompilationException(
-                  s"The declared type $name has supertraits ${supertypeSchema.name} which have conflicting invariant" +
-                    s" type arguments: $uniqueArguments."
-                )
+                // The case that there is only one unique type argument for an invariant type parameter is already
+                // ensured by the supertrait invariance consistency constraint, but checking this during compilation is
+                // not costly and improves the compiler's resilience.
+                if (arguments.allEqual(identity)) {
+                  arguments.head
+                } else {
+                  throw CompilationException(
+                    s"The declared type $name has supertraits ${supertypeSchema.name} which have conflicting invariant" +
+                      s" type arguments: ${arguments.distinct.mkString(", ")}."
+                  )
+                }
             }
           }
           supertypeSchema.instantiate(combinedArguments).asInstanceOf[Option[DeclaredType]]

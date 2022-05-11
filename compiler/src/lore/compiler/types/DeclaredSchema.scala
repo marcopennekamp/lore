@@ -31,11 +31,6 @@ trait DeclaredSchema extends NamedSchema {
   lazy val declaredSupertypes: Vector[DeclaredType] = supertypes.filterType[DeclaredType]
 
   /**
-    * A unique list of declared schemas that this declared schema inherits from directly.
-    */
-  lazy val declaredSuperschemas: Vector[DeclaredSchema] = declaredSupertypes.map(_.schema).distinct
-
-  /**
     * A shape type that combines all shape types that this declared schema directly or indirectly inherits from. This
     * shape type provides an exhaustive list of properties that the declared schema has to have, in one way or another.
     * Any of the schema's type parameters are contained uninstantiated in the inherited shape type.

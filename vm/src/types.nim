@@ -538,11 +538,13 @@ proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema)
     intersection_simplified(type_argument_candidates),
     sum_simplified(type_argument_candidates),
     block:
-      # This is a tricky one. The compiler MUST guarantee that invariant type arguments are equal across a supertype
-      # hierarchy. Hence, we can assume that all types in `type_argument_candidates` are equal. We normally wouldn't
-      # even have to collect all `type_argument_candidates` for this, but I want to keep the assertion for now.
-      if not are_all_equal(type_argument_candidates.to_open_array):
-        quit(fmt"The declared type {tpe.schema.name} has supertraits {supertrait_schema.name} which have conflicting invariant type arguments.")
+      # The Lore compiler MUST guarantee that invariant type arguments are equal across a supertype hierarchy, and this
+      # is checked statically. Hence, we can assume that all types in `type_argument_candidates` are equal. The
+      # assertion's goal is to find bugs in edge cases where the Lore compiler doesn't enforce this correctly.
+      assert(
+        are_all_equal(type_argument_candidates.to_open_array),
+        fmt"The declared type {tpe.schema.name} has supertraits {supertrait_schema.name} which have conflicting invariant type arguments.",
+      )
       type_argument_candidates[0]
   )
   supertrait_schema.instantiate_trait_schema(type_arguments)

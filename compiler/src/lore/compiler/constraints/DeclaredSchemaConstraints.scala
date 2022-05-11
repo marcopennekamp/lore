@@ -1,8 +1,9 @@
 package lore.compiler.constraints
 
-import lore.compiler.feedback.Reporter
+import lore.compiler.feedback.{DeclaredSchemaFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{DeclaredSchemaDefinition, StructDefinition}
+import lore.compiler.types.TraitType
 import lore.compiler.types.TypeVariable.Variance
 
 object DeclaredSchemaConstraints {
@@ -10,10 +11,13 @@ object DeclaredSchemaConstraints {
   /**
     * Verifies:
     *   1. Co-/contra-/invariant type parameters must be used in appropriate positions in extended types.
-    *   2. All struct constraints if the given definition is a struct.
+    *   2. Supertrait invariance consistency: All types assigned to an invariant type parameter `A` of a supertrait `X`
+    *      are equal.
+    *   3. All struct constraints if the given definition is a struct.
     */
   def verify(definition: DeclaredSchemaDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyVariancePositions(definition)
+    verifySupertraitInvarianceConsistency(definition)
     definition match {
       case struct: StructDefinition => StructConstraints.verify(struct)
       case _ =>
@@ -26,6 +30,41 @@ object DeclaredSchemaConstraints {
   private def verifyVariancePositions(definition: DeclaredSchemaDefinition)(implicit reporter: Reporter): Unit = {
     definition.schema.supertypes.foreach {
       supertype => VarianceConstraints.verifyVariance(supertype, Variance.Covariant, definition.position)
+    }
+  }
+
+  /**
+    * Verifies that all types assigned to an invariant type parameter `A` of a supertrait `X` are equal.
+    *
+    * For example, if a struct `Z` extends both `X[Int]` and `X[Real]` directly or indirectly, and the type parameter
+    * `A` is invariant, `A` isn't assigned to consistently, as `Int` and `Real` aren't equal.
+    */
+  private def verifySupertraitInvarianceConsistency(definition: DeclaredSchemaDefinition)(implicit reporter: Reporter): Unit = {
+    val supertraitsBySchema = definition.schema.indirectDeclaredSupertypes.filter {
+      // This filter combines a type filter on TraitType with a check that the supertrait schema even has invariant
+      // type parameters. Traits without invariant type parameters can be ignored.
+      case supertrait: TraitType => supertrait.schema.hasInvariantParameters
+      case _ => false
+    }.asInstanceOf[Set[TraitType]].groupBy(_.schema)
+
+    supertraitsBySchema.foreach {
+      case (supertraitSchema, traitTypes) if traitTypes.size > 1 =>
+        val invariantTypeParameters = supertraitSchema.parameters.filter(_.variance == Variance.Invariant)
+        invariantTypeParameters.foreach { typeParameter =>
+          val typeArguments = traitTypes.map(_.assignments(typeParameter))
+          if (typeArguments.size > 1) {
+            reporter.error(
+              DeclaredSchemaFeedback.SupertraitInvarianceInconsistent(
+                definition.schema,
+                supertraitSchema,
+                typeParameter,
+                typeArguments.toVector,
+              )
+            )
+          }
+        }
+
+      case _ =>
     }
   }
 

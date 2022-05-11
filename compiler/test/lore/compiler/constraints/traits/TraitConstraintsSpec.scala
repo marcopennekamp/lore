@@ -5,12 +5,10 @@ import lore.compiler.test.BaseSpec
 class TraitConstraintsSpec extends BaseSpec {
   private val fragmentBase = "constraints/traits"
 
-  "constraints/traits/invariant-inheritance" should "be compiled with various inheritance errors" in {
-    // TODO (invariant-inheritance): Make this test pass. Multiple-inherited supertraits with invariant type parameters
-    //                               should not have conflicting type arguments.
+  "constraints/traits/invariant_inheritance" should "be compiled with various inheritance errors" in {
     assertCompilationErrorMessages(s"$fragmentBase/invariant_inheritance.lore")(
-      ("The invariant parameter A of trait X, which Z inherits from, has multiple conflicting type arguments: Int, Real.", 5),
-      ("The invariant parameter A of trait X, which W inherits from, has multiple conflicting type arguments: A, B.", 8),
+      ("The invariant parameter `A` of trait `X`, which `Z` inherits from, has multiple conflicting type arguments: Int, Real.", 5),
+      ("The invariant parameter `A` of trait `X`, which `W` inherits from, has multiple conflicting type arguments: A, B.", 8),
     )
   }
 
