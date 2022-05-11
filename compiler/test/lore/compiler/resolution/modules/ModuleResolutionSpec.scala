@@ -7,7 +7,7 @@ class ModuleResolutionSpec extends BaseSpec {
 
   private val fragmentBase = "resolution/modules"
 
-  "resolution/modules/duplicates" should "be compiled with various 'name taken' errors" in {
+  s"$fragmentBase/duplicates" should "be compiled with various 'name taken' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
       (classOf[GlobalVariableFeedback.NameTaken], 2),
       (classOf[MultiFunctionFeedback.NameTaken], 5),
@@ -15,7 +15,7 @@ class ModuleResolutionSpec extends BaseSpec {
     )
   }
 
-  "resolution/modules/imports" should "be compiled with various import errors" in {
+  s"$fragmentBase/imports" should "be compiled with various import errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/imports.lore")(
       (classOf[ModuleFeedback.Import.TooShort], 2),
       (classOf[ModuleFeedback.Import.UnresolvedHeadSegment], 5),

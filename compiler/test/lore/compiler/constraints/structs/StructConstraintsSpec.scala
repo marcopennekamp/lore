@@ -7,7 +7,7 @@ import lore.compiler.test.BaseSpec
 class StructConstraintsSpec extends BaseSpec {
   private val fragmentBase = "constraints/structs"
 
-  "constraints/structs/companion-modules" should "be compiled with various companion module errors" in {
+  s"$fragmentBase/companion_modules" should "be compiled with various companion module errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/companion_modules.lore")(
       (classOf[StructFeedback.CompanionModuleExpected], 4),
       (classOf[StructFeedback.Object.MemberNameTaken], 15),
@@ -16,13 +16,13 @@ class StructConstraintsSpec extends BaseSpec {
     )
   }
 
-  "constraints/structs/duplicate-property" should "be compiled with a 'duplicate property' error" in {
+  s"$fragmentBase/duplicate_property" should "be compiled with a 'duplicate property' error" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicate_property.lore")(
       (classOf[StructFeedback.DuplicateProperty], 2),
     )
   }
 
-  "constraints/structs/inherited-shape" should "be compiled with various shape inheritance errors" in {
+  s"$fragmentBase/inherited_shape" should "be compiled with various shape inheritance errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/inherited_shape.lore")(
       (classOf[StructFeedback.Shape.MissingProperty], 15),
       (classOf[StructFeedback.Shape.InvalidPropertyType], 16),
@@ -30,14 +30,14 @@ class StructConstraintsSpec extends BaseSpec {
     )
   }
 
-  "constraints/structs/object-property-values" should "be compiled with 'missing default value' errors" in {
+  s"$fragmentBase/object_property_values" should "be compiled with 'missing default value' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/object_property_values.lore")(
       (classOf[StructFeedback.Object.MissingDefault], 2),
       (classOf[StructFeedback.Object.MissingDefault], 8),
     )
   }
 
-  "constraints/structs/open-type-parameters" should "be compiled with various open type parameter errors" in {
+  s"$fragmentBase/open_type_parameters" should "be compiled with various open type parameter errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/open_type_parameters.lore")(
       (classOf[StructFeedback.OpenTypeParameter.CovarianceRequired], 2),
       (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 7),
@@ -48,7 +48,7 @@ class StructConstraintsSpec extends BaseSpec {
     )
   }
 
-  "constraints/structs/variance" should "be compiled with various variance errors" in {
+  s"$fragmentBase/variance" should "be compiled with various variance errors" in {
     assertCompilationErrorMessages(s"$fragmentBase/variance.lore")(
       ("The covariant type variable B is in an illegal contravariant position.", 5),
       ("The contravariant type variable A is in an illegal covariant position.", 5),

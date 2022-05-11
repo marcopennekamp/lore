@@ -6,7 +6,7 @@ import lore.compiler.test.BaseSpec
 class GlobalVariableResolutionSpec extends BaseSpec {
   private val fragmentBase = "resolution/variables"
 
-  "resolution/variables/duplicates" should "be compiled with various 'duplicate name' errors" in {
+  s"$fragmentBase/duplicates" should "be compiled with various 'duplicate name' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
       (classOf[GlobalVariableFeedback.AlreadyExists], 2),
       (classOf[GlobalVariableFeedback.NameTaken], 2),

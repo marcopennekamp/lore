@@ -79,7 +79,7 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
       val Position2D = ShapeType("x" -> real, "y" -> real)
       val Position3D = ShapeType("x" -> real, "y" -> real, "z" -> real)
 
-      val Box2D = ShapeType("x" -> int, "y" -> int, "width" -> int, "height" -> int)
+      val Box2D = ShapeType("x" -> real, "y" -> real, "width" -> real, "height" -> real)
 
       val Named = ShapeType("name" -> BasicType.String)
       val Sized = ShapeType("size" -> real)

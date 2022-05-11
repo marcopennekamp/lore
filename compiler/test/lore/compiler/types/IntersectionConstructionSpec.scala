@@ -25,7 +25,7 @@ class IntersectionConstructionSpec extends TypeSpec {
       ShapeType("animal" -> Chicken),
       ShapeType("animal" -> Animal, "size" -> int),
       ShapeType("size" -> real),
-    ) --> ShapeType("animal" -> Chicken, "size" -> int)
+    ) --> ShapeType("animal" -> Chicken, "size" -> (int & real))
 
     (
       Cat,
