@@ -5,7 +5,7 @@
 ##### Minimum Viable Language
 
 - Implement specs:
-  - Compiler: Specs in the Registry, ~~parsing~~, ~~resolution~~, ~~constraints~~, transformation, assembly.
+  - Compiler: Specs in the Registry, ~~parsing~~, ~~resolution~~, ~~constraints~~, ~~transformation~~, assembly.
   - VM: Spec definitions, poem reading and writing, universe resolution, `lore.test.assert` intrinsic, `test` and `bench` commands, spec name path filtering.
   - Pyramid: `lore.test` module with assertion functions.
   - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
