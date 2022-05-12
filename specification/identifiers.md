@@ -29,4 +29,4 @@ An identifier may never be equal to the following **keywords**:
 _ do else end false fixed for if intrinsic let return then true while yield
 ```
 
-Some additional words may have special meaning to the parser, but aren't keywords, because the parser can resolve the ambiguity in all instances. These words are: `act extends func mut struct trait type where`.
+Some additional words may have special meaning to the parser, but aren't keywords, because the parser can resolve the ambiguity in all instances. These words are: `act extends func mut spec struct trait type where`.

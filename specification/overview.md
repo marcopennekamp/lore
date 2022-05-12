@@ -21,6 +21,7 @@ To learn more about Lore, take a look at the following core documents:
 - [**Shapes:**](shapes.md) Shapes support multiple dispatch on properties, and the creation of ad-hoc data structures.
 - [**Expressions:**](expressions.md) Lore is an expression-based language, which means that there are no statements, only expressions. This document presents the kinds of values and expressions available in Lore.
 - [**Modules:**](modules.md) The module system supports splitting Lore programs into namespaces.
+- [**Specs:**](specs.md) Specs allow a Lore programmer to define tests and benchmarks and to execute them via VM commands.
 - [**Versions:**](versions.md) This document provides an overview of Lore's current and planned features.
 
 You don't need to read these documents in order, but it would be beneficial to read up on types and multi-functions before the other topics. There is simply no way around the very foundation of the language.

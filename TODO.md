@@ -4,12 +4,16 @@
 
 ##### Minimum Viable Language
 
-- Implement a new automatic testing solution to execute the functional tests. This is a great opportunity to formulate a general, simple testing solution that users can also access and which treats tests as first-class citizens. For example, we could implement tests as normal funcs with an `@test` annotation that takes an expected value. These `@test` functions would be compiled into an entry function that's executed by the VM if the program is compiled as a test program, or we could even add VM support for test functions and give the VM a `test` command. The latter would allow users of libraries to execute library tests even when they're just using a library, as the tests would always be bundled with the poem binaries. The `test` command could also filter tests by module.
-  - `@test` functions would have to be single functions so that multiple dispatch isn't confused. Such functions shouldn't be callable. We should also consider how we can accomplish dependency injection. These considerations combined might make it necessary to define tests as distinct entities (at least in the language, not necessarily the VM) with a `test` keyword and such.
-  - This framework should be used to test Pyramid. The tests would be placed in `*.test.lore` files directly in the Pyramid directory and be part of the generated binary, or in the Pyramid source files (e.g. `list.lore`) directly.
-  - We should leverage the test suite to also support benchmarks to be able to record performance changes when we optimize the VM. "Real" programs like `dispatch/hello_name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
-  - Functional tests in `test/` could all be compiled into one binary, if we use proper namespacing. This would allow the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
-  - Clear all `TODO (test)` entries.
+- Implement specs:
+  - Compiler: Specs in the Registry, parsing, resolution, transformation, assembly.
+    - Parsing: `spec` declarations, optional ID or String names, `@bench` annotation, `@bench_only` annotation. 
+  - VM: Spec definitions, poem reading and writing, universe resolution, `lore.test.assert` intrinsic, `test` and `bench` commands, spec name path filtering.
+  - Pyramid: `lore.test` module with assertion functions.
+  - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
+    - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
+    - Some tests should be moved into Pyramid itself.
+    - Some tests such as `hello_name.lore` and `combat` should be marked as benchmarks. We could also add additional benchmarks.
+  - Clear all `TODO (specs)` entries.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
@@ -26,7 +30,6 @@
   - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
   - Rename `act` to `proc`? This would be in line with `func`.
   - Rename `Boolean` to `Bool`? Int is also abbreviated.
-  - Rename `let mut` to `var`? It's less to write and in line with `let`.
   - Implement implicit real conversions for integer literals standing in `Real` contexts.
     - A list like `[0, -2, 2.5, 6, 22]` should also be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
   - Provide a means to directly access tuple elements, such as `._1`.
@@ -34,6 +37,7 @@
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
   - Trailing lambdas.
   - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.Symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
+  - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
   - Clear all `TODO (syntax)` entries.
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.

@@ -9,6 +9,7 @@ The **first version** of Lore, which is still in development, includes or will i
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
 - **Expressions:** Literals and value constructors (numbers, booleans, strings, symbols, tuples, anonymous functions, multi-function values, lists, maps, shapes, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
 - **Modules:** Module declarations, imports and name resolution, companion modules.
+- **Specs:** Spec declarations, basic assertions, `test` and `bench` VM commands.
 - **Miscellaneous:** Global constants, `domain` blocks.
 
 The language will also be accompanied by a standard library called **Pyramid**, which will include the following features:
@@ -24,7 +25,7 @@ This version of Lore will be used to **write the compiler in Lore**.
 
 ### Going Further
 
-The following feature are planned or considered for the future:
+The following features are planned or considered for the future:
 
 - **Exceptions:** Lore currently doesn't have exceptions, which is especially bad when multiple dispatch fails with an empty fit or ambiguity error, because the VM will simply terminate. We also need exceptions to implement non-local returns from anonymous functions.
 - **Trait/Struct extensions:** Traits and structs are quite bare bones. Other documents contain various ideas how to make traits and structs more comfortable and expressive, especially regarding properties. Some of the ideas are: mixins, virtual properties defined via multi-functions, shape subtyping that includes virtual properties, an improved "map syntax" for struct construction, and more.

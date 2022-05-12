@@ -8,12 +8,15 @@ A fragment may contain the following **declarations:**
 - [Trait and structs](traits-structs.md)
 - [Type aliases](types.md#type-aliases)
 - [Modules](modules.md)
+- [Specs](specs.md)
 - Global Variables
 - Domains
 
 ###### Example
 
 ```
+use lore.test._
+
 func identity(x: A): A where A = x
 
 act move(entity: Player, distance: Int) do
@@ -40,6 +43,17 @@ domain zombie: Zombie
   act damage(attack: Int) do
     zombie.health -= attack
   end
+end
+
+spec identity do
+  assert_equal(identity(5), 5)
+  assert_equal(identity('foo'), 'foo')
+end
+
+spec zombie_attack do
+  let zombie = Zombie(20)
+  damage(zombie, 7)
+  assert_equal(zombie.health, 13)
 end
 ```
 
