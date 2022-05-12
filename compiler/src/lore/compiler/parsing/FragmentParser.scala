@@ -17,6 +17,7 @@ class FragmentParser(implicit fragment: Fragment) {
   val nameParser = new NameParser
   val annotationParser = new AnnotationParser(nameParser)
   val expressionParser = new ExpressionParser(nameParser)
+  val stringParser = new StringParser(nameParser, expressionParser)
   val typeParser = new TypeParser(nameParser)
   val typeParameterParser = new TypeParameterParser(nameParser)
 
@@ -83,7 +84,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def moduleMember[_: P]: P[Vector[DeclNode]] = {
-    def single = P(module | globalVariable | function | action | typeDeclaration).map(Vector(_))
+    def single = P(module | globalVariable | function | action | typeDeclaration | spec).map(Vector(_))
     P(single | domain)
   }
 
@@ -167,6 +168,23 @@ class FragmentParser(implicit fragment: Fragment) {
     def inlineStyle = P(Index ~~ head ~~ Space.WS ~~ inlineWhere.?.map(_.getOrElse(Vector.empty)) ~~ definition ~~ Index)
 
     P(annotationStyle | inlineStyle)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Spec declarations.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  private def spec[_: P]: P[DeclNode.SpecNode] = {
+    def specName = P(name | stringParser.plainString.map(_.toNameNode))
+    def executionType = P(annotationParser.simple("bench" | "bench_only").?).map {
+      case None => (true, false)
+      case Some("bench") => (true, true)
+      case Some("bench_only") => (false, true)
+      case _ => (false, false)
+    }
+    P(executionType ~ Index ~~ "spec" ~~ Space.WS1 ~~/ specName ~ expressionParser.block ~~ Index).map {
+      case (isTest, isBenchmark, startIndex, nameNode, bodyNode, endIndex) =>
+        DeclNode.SpecNode(nameNode, isTest, isBenchmark, bodyNode, Position(fragment, startIndex, endIndex))
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

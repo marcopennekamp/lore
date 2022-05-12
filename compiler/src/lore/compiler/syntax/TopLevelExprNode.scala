@@ -54,7 +54,9 @@ object ExprNode {
   case class IntLiteralNode(value: Long, position: Position) extends LeafNode with ExprNode
   case class RealLiteralNode(value: Double, position: Position) extends LeafNode with ExprNode
   case class BoolLiteralNode(value: Boolean, position: Position) extends LeafNode with ExprNode
-  case class StringLiteralNode(value: String, position: Position) extends LeafNode with ExprNode
+  case class StringLiteralNode(value: String, position: Position) extends LeafNode with ExprNode {
+    def toNameNode: NameNode = NameNode(value, position)
+  }
   case class SymbolLiteralNode(name: String, position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

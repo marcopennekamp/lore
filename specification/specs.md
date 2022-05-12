@@ -8,7 +8,7 @@ Lore supports built-in testing and benchmarking via **specs**. They are first-cl
 
 ### Spec Declarations
 
-A **spec** is declared with the `spec` keyword, an optional name, and a body. The name may be an identifier or a string. Specs may share names with types and bindings, but not with other specs. The body usually contains assertions. If no assertions fail during the execution of the spec, the execution is successful. Importing or otherwise referring to specs within Lore code is impossible, as they must be executed using the VM's `test` and `bench` commands.
+A **spec** is declared with the `spec` keyword, a name, and a body. The name may be an identifier or a string. Specs may share names with types and bindings, but not with other specs. The body usually contains assertions. If no assertions fail during the execution of the spec, the execution is successful. Importing or otherwise referring to specs within Lore code is impossible, as they must be executed using the VM's `test` and `bench` commands.
 
 By default, a spec will only be executed as a test. A spec can optionally be marked as a `@bench` to include it in the suite of benchmarks. If the spec makes no contribution to testing, which is the case for pure benchmarks, the spec may be marked as `@bench_only` to include it in the suite of benchmarks, but exclude it from the suite of tests. 
 
@@ -22,10 +22,6 @@ spec name do
 end
 
 spec 'a string name' do
-  // body
-end
-
-spec do
   // body
 end
 

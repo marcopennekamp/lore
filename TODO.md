@@ -5,8 +5,7 @@
 ##### Minimum Viable Language
 
 - Implement specs:
-  - Compiler: Specs in the Registry, parsing, resolution, transformation, assembly.
-    - Parsing: `spec` declarations, optional ID or String names, `@bench` annotation, `@bench_only` annotation. 
+  - Compiler: Specs in the Registry, ~~parsing~~, resolution, transformation, assembly. 
   - VM: Spec definitions, poem reading and writing, universe resolution, `lore.test.assert` intrinsic, `test` and `bench` commands, spec name path filtering.
   - Pyramid: `lore.test` module with assertion functions.
   - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
@@ -38,6 +37,7 @@
   - Trailing lambdas.
   - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.Symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
   - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
+  - Consider adding `func`, `type`, `spec` etc. to the list of keywords. While the grammar might not be ambiguous now, it might become ambiguous later, and I'd like to avoid a design deadlock where adding e.g. `type` as a keyword isn't possible without breaking user code.
   - Clear all `TODO (syntax)` entries.
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.

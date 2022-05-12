@@ -110,6 +110,14 @@ object DeclNode {
     def name: Option[String] = nameNode.map(_.value)
   }
 
+  case class SpecNode(
+    nameNode: NameNode,
+    isTest: Boolean,
+    isBenchmark: Boolean,
+    body: ExprNode,
+    position: Position,
+  ) extends SimpleNamedDeclNode
+
   case class TypeVariableNode(
     nameNode: NameNode,
     lowerBound: Option[TypeExprNode],
