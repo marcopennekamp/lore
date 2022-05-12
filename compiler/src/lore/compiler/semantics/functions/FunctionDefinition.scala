@@ -22,7 +22,7 @@ class FunctionDefinition(
   val signature: FunctionSignature,
   val bodyNode: Option[ExprNode],
   val localModule: LocalModule,
-) extends Definition {
+) extends Definition with Positioned {
   override val name: NamePath = signature.name
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"

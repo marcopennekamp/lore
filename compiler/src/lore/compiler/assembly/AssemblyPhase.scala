@@ -25,7 +25,7 @@ object AssemblyPhase {
     var poemFunctions = Vector.empty[PoemFunction]
 
     registry.schemasInOrder.foreach {
-      case (_ , schema: DeclaredSchema) =>
+      case schema: DeclaredSchema =>
         val (poemSchema, poemSchemaFunctions, poemSchemaObject) = DeclaredSchemaAssembler.generate(schema)
         poemSchemas :+= poemSchema
         poemSchemaObject.foreach(poemGlobalVariables :+= _)

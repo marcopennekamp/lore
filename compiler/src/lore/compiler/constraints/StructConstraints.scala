@@ -14,8 +14,9 @@ object StructConstraints {
     * Verifies:
     *   1. Properties must be unique.
     *   2. The properties of the struct's inherited shape type must all be defined.
-    *   3. Co-/contra-/invariant type parameters must be used in appropriate positions in property types.
-    *   4. Open type parameters must be covariant, uniquely deducible, and used in immutable properties.
+    *   3. Expression constraints for all default value expressions.
+    *   4. Co-/contra-/invariant type parameters must be used in appropriate positions in property types.
+    *   5. Open type parameters must be covariant, uniquely deducible, and used in immutable properties.
     *
     * Additionally, if the struct is an object:
     *   1. All properties must have default values.
@@ -24,6 +25,7 @@ object StructConstraints {
   def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyPropertiesUnique(definition)
     verifyInheritedShapeProperties(definition)
+    verifyDefaultValueExpressionConstraints(definition)
     verifyVariancePositions(definition)
     verifyOpenTypeParameters(definition)
 
@@ -52,6 +54,15 @@ object StructConstraints {
           }
         case None => reporter.error(StructFeedback.Shape.MissingProperty(definition, shapeProperty))
       }
+    }
+  }
+
+  /**
+    * Verifies expression constraints for all default values.
+    */
+  private def verifyDefaultValueExpressionConstraints(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.properties.foreach { property =>
+      property.defaultValueNode.foreach(ExpressionConstraints.verify)
     }
   }
 

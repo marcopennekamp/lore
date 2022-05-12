@@ -1,6 +1,6 @@
 package lore.compiler.semantics.specs
 
-import lore.compiler.core.Position
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.semantics.{Definition, NamePath}
@@ -18,7 +18,7 @@ class SpecDefinition(
   val bodyNode: ExprNode,
   val localModule: LocalModule,
   override val position: Position,
-) extends Definition {
+) extends Definition with Positioned {
 
   /**
     * This is a variable because it will be transformed during the course of the compilation.

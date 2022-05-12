@@ -7,7 +7,7 @@ import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.types.{AliasSchema, DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
@@ -26,7 +26,25 @@ case class Registry(
   /**
     * All schemas in their proper order of resolution. Excludes predefined types.
     */
-  val schemasInOrder: Vector[(NamePath, NamedSchema)] = schemaResolutionOrder.map(name => (name, types.schemas(name)))
+  val schemasInOrder: Vector[NamedSchema] = schemaResolutionOrder.map(name => types.schemas(name))
+
+  /**
+    * All schema definitions in their proper order of resolution.
+    */
+  lazy val schemaDefinitionsInOrder: Vector[SchemaDefinition] = schemasInOrder.map {
+    case schema: DeclaredSchema => schema.definition
+    case schema: AliasSchema => schema.definition
+  }
+
+  /**
+    * An iterator that iterates through all schemas in order, then global variables, multi-functions, and specs.
+    */
+  def definitionsIterator: Iterator[Definition] = {
+    schemaDefinitionsInOrder.iterator ++
+      bindings.globalVariables.valuesIterator ++
+      bindings.multiFunctions.valuesIterator ++
+      specs.valuesIterator
+  }
 
   /**
     * Creates a type scope that represents the Registry. Name resolution requires the presence of a local module.

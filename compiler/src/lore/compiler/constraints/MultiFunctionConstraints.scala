@@ -14,7 +14,7 @@ object MultiFunctionConstraints {
     * Verifies:
     *   1. Parameter uniqueness for each function.
     *   2. Abstractness constraints for each function.
-    *   3. Return constraints for each function.
+    *   3. Expression constraints for each function body.
     *   4. A child function's output type is a subtype of its parent function's output type.
     *   5. All type parameters of each function are contained in their respective parameter types.
     *
@@ -23,8 +23,8 @@ object MultiFunctionConstraints {
   def verify(mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyParameterUniqueness(mf)
     verifyAbstractness(mf)
+    verifyExpressionConstraints(mf)
     verifyOutputTypes(mf)
-    verifyReturnConstraints(mf)
     verifyTypeParameters(mf)
   }
 
@@ -170,6 +170,13 @@ object MultiFunctionConstraints {
     case TupleType(elements) => elements.map(concreteSubtypes).sequence.map(TupleType(_))
   }
 
+  /**
+    * Verifies expression constraints for all functions defined in the given multi-function.
+    */
+  private def verifyExpressionConstraints(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
+    mf.functions.flatMap(_.bodyNode).foreach(ExpressionConstraints.verify)
+  }
+
   case class IncompatibleOutputTypes(
     child: FunctionSignature, parent: FunctionSignature, parentInstance: FunctionSignature,
   ) extends Feedback.Error(child) {
@@ -212,13 +219,6 @@ object MultiFunctionConstraints {
     }
 
     mf.hierarchy.roots.foreach(verifyHierarchyNode)
-  }
-
-  /**
-    * Verifies return constraints for all functions defined in the given multi-function.
-    */
-  private def verifyReturnConstraints(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
-    mf.functions.flatMap(_.bodyNode).foreach(ReturnConstraints.verify)
   }
 
   /**

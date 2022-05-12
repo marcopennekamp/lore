@@ -14,7 +14,7 @@ class GlobalVariableDefinition(
   val valueNode: ExprNode,
   val localModule: LocalModule,
   override val position: Position,
-) extends Definition with TypedBinding {
+) extends Definition with TypedBinding with Positioned {
 
   /**
     * This is a variable because it will be transformed during the course of the compilation.

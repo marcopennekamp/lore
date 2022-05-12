@@ -1,7 +1,5 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.Positioned
-
-trait Definition extends Positioned {
+trait Definition {
   def name: NamePath
 }
