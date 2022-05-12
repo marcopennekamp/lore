@@ -174,14 +174,14 @@ class FragmentParser(implicit fragment: Fragment) {
   // Spec declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def spec[_: P]: P[DeclNode.SpecNode] = {
-    def specName = P(name | stringParser.plainString.map(_.toNameNode))
+    def stringName = stringParser.plainString.map(literal => NameNode("'" + literal.value + "'", literal.position))
     def executionType = P(annotationParser.simple("bench" | "bench_only").?).map {
       case None => (true, false)
       case Some("bench") => (true, true)
       case Some("bench_only") => (false, true)
       case _ => (false, false)
     }
-    P(executionType ~ Index ~~ "spec" ~~ Space.WS1 ~~/ specName ~ expressionParser.block ~~ Index).map {
+    P(executionType ~ Index ~~ "spec" ~~ Space.WS1 ~~/ (name | stringName) ~ expressionParser.block ~~ Index).map {
       case (isTest, isBenchmark, startIndex, nameNode, bodyNode, endIndex) =>
         DeclNode.SpecNode(nameNode, isTest, isBenchmark, bodyNode, Position(fragment, startIndex, endIndex))
     }

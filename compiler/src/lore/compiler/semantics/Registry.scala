@@ -4,6 +4,7 @@ import lore.compiler.semantics.core.CoreDefinitions
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.semantics.scopes._
+import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
@@ -15,6 +16,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 case class Registry(
   types: Registry.Types,
   bindings: Registry.Bindings,
+  specs: Registry.Specs,
   core: CoreDefinitions,
   schemaResolutionOrder: Registry.SchemaResolutionOrder,
 ) {
@@ -63,5 +65,6 @@ object Registry {
     def scope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, this)
   }
 
+  type Specs = Map[NamePath, SpecDefinition]
   type SchemaResolutionOrder = Vector[NamePath]
 }

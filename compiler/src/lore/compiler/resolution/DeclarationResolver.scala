@@ -1,10 +1,11 @@
 package lore.compiler.resolution
 
-import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry.Bindings
-import lore.compiler.semantics.scopes.{StructBinding, StructConstructorBinding, StructObjectBinding}
-import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.semantics.scopes.{StructConstructorBinding, StructObjectBinding}
+import lore.compiler.semantics.specs.SpecDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
+import lore.compiler.semantics.{Definition, NamePath, Registry}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
@@ -31,6 +32,7 @@ object DeclarationResolver {
     val typeDeclNodes = allDeclarations.filterType[TypeDeclNode]
     val globalVariableDeclarations = allDeclarations.filterType[DeclNode.GlobalVariableNode]
     val multiFunctionDeclarations = allDeclarations.filterType[DeclNode.FunctionNode].groupBy(_.fullName)
+    val specDeclarations = allDeclarations.filterType[DeclNode.SpecNode]
 
     val typeDeclarations = typeDeclNodes.foldLeft(Map.empty: TypeDeclarations) {
       case (typeDeclarations, declaration) => processTypeDeclaration(declaration, typeDeclarations)
@@ -52,9 +54,9 @@ object DeclarationResolver {
 
     verifyBindingsUnique(bindings4)
 
+    val specs = resolveSpecs(specDeclarations)(types, bindings4, reporter)
     val coreDefinitions = CoreDefinitionsResolver.resolve()(types, bindings4, reporter)
-
-    Registry(types, bindings4, coreDefinitions, schemaResolutionOrder)
+    Registry(types, bindings4, specs, coreDefinitions, schemaResolutionOrder)
   }
 
   private def processTypeDeclaration(declaration: TypeDeclNode, declarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarations = {
@@ -109,15 +111,10 @@ object DeclarationResolver {
   private def resolveGlobalVariables(
     globalVariableDeclarations: Vector[DeclNode.GlobalVariableNode],
   )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.GlobalVariables = {
-    globalVariableDeclarations
-      .map(GlobalVariableDefinitionResolver.resolve)
-      .groupBy(_.name)
-      .map {
-        case (name, Vector(variable)) => name -> variable
-        case (name, variables) =>
-          variables.foreach(variable => reporter.error(GlobalVariableFeedback.AlreadyExists(variable)))
-          name -> variables.head
-      }
+    resolveUniqueDefinitions[DeclNode.GlobalVariableNode, GlobalVariableDefinition](
+      GlobalVariableDefinitionResolver.resolve(_),
+      GlobalVariableFeedback.AlreadyExists,
+    )(globalVariableDeclarations)
   }
 
   private def resolveMultiFunctions(
@@ -179,6 +176,30 @@ object DeclarationResolver {
         reporter.error(MultiFunctionFeedback.NameTaken(mf))
       }
     }
+  }
+
+  private def resolveSpecs(
+    specDeclarations: Vector[DeclNode.SpecNode],
+  )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.Specs = {
+    resolveUniqueDefinitions[DeclNode.SpecNode, SpecDefinition](
+      SpecDefinitionResolver.resolve(_),
+      SpecFeedback.AlreadyExists,
+    )(specDeclarations)
+  }
+
+  private def resolveUniqueDefinitions[N <: DeclNode, A <: Definition](
+    resolve: N => A,
+    alreadyExists: A => Feedback.Error,
+  )(declarations: Vector[N])(implicit reporter: Reporter): Map[NamePath, A] = {
+    declarations
+      .map(resolve)
+      .groupBy(_.name)
+      .map {
+        case (name, Vector(entity)) => name -> entity
+        case (name, entities) =>
+          entities.foreach(entity => reporter.error(alreadyExists(entity)))
+          name -> entities.head
+      }
   }
 
 }

@@ -6,7 +6,7 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.semantics.scopes.{BindingScope, FunctionBindingScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.semantics.{Definition, NamePath, Registry}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{Fit, Type, TypeVariable}
 
@@ -22,11 +22,11 @@ class FunctionDefinition(
   val signature: FunctionSignature,
   val bodyNode: Option[ExprNode],
   val localModule: LocalModule,
-) extends Positioned {
+) extends Definition {
+  override val name: NamePath = signature.name
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
-  val name: NamePath = signature.name
   val typeParameters: Vector[TypeVariable] = signature.typeParameters
   val isAbstract: Boolean = bodyNode.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
