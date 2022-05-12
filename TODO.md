@@ -5,7 +5,7 @@
 ##### Minimum Viable Language
 
 - Implement specs:
-  - Compiler: Specs in the Registry, ~~parsing~~, ~~resolution~~, constraints, transformation, assembly. 
+  - Compiler: Specs in the Registry, ~~parsing~~, ~~resolution~~, ~~constraints~~, transformation, assembly.
   - VM: Spec definitions, poem reading and writing, universe resolution, `lore.test.assert` intrinsic, `test` and `bench` commands, spec name path filtering.
   - Pyramid: `lore.test` module with assertion functions.
   - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
@@ -43,14 +43,14 @@
   - Clear all `TODO (case)` entries.
 - Refactor Pyramid and add more types and functions.
   - Clear all `TODO (pyramid)` entries.
+
+##### MVL improvements
+
 - Implement iterators as a first-class feature with the keyword `iter`. Iterators should be able to be passed around as values or to be wrapped in another type (such as a Sequence or Stream type), which would also be able to wrap lists and maps. Iterators should also be able to be inlined, for example when directly used in a `for` loop. We'll have to see how to reconcile the concepts of a `yield` in an iterator and a `yield` in a for/while. Maybe we can combine these concepts somehow.
   - An alternative would be a template/macro system, but this would only cover the inline uses of an iterator. Maybe the inline iterator and an iterator as a value are two different concepts which Lore needs both.
   - Also implement some form of ranges for index iteration using `for`.
   - The goal should be to have a sort of "Enum" interface against which general sequence functions can be written.
   - Are transducers applicable here? (I think they're quite hard to put into a language with a static type system, but we should explore this idea more.)
-
-##### MVL improvements
-
 - Implement a new backend for lists.
   - Clear all `TODO (lists)` entries.
 - Add immutable (hash) sets with a syntax `#[A]`.
