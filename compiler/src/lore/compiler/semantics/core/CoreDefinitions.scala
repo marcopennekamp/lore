@@ -16,8 +16,6 @@ class CoreDefinitions(
   val less_than_equal: CoreMultiFunction,
   val hash: CoreMultiFunction,
   val to_string: CoreMultiFunction,
-  //val type_of: CoreMultiFunction,
-  //val subtype: CoreMultiFunction,
 )
 
 object CoreDefinitions {
