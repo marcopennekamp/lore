@@ -14,13 +14,13 @@ object ExpressionFeedback {
   }
 
   case class IllegalModuleValue(module: GlobalModule, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The binding ${module.name} is a module. Modules cannot be used directly as" +
+    override def message: String = s"The binding `${module.name}` is a module. Modules cannot be used directly as" +
       s" expressions."
   }
 
   case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Feedback.Error(node) {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
-      s" ${BasicType.Int.minimum} and ${BasicType.Int.maximum}. The runtime will not be able to properly " +
+      s" ${BasicType.Int.minimum} and ${BasicType.Int.maximum}. The runtime will not be able to properly" +
       s" store and process integers this large."
   }
 
@@ -42,7 +42,7 @@ object ExpressionFeedback {
 
   object FixedFunction {
     case class MultiFunctionExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
-      override def message = s"The binding $name must be a multi-function to be fixed."
+      override def message = s"The binding `$name` must be a multi-function to be fixed."
     }
   }
 }
