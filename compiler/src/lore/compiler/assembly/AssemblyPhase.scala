@@ -4,9 +4,10 @@ import com.typesafe.scalalogging.Logger
 import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.schemas.DeclaredSchemaAssembler
+import lore.compiler.assembly.specs.SpecAssembler
 import lore.compiler.core.CompilerOptions
-import lore.compiler.poem.{PoemFragment, PoemFunction, PoemGlobalVariable, PoemSchema}
 import lore.compiler.poem.writer.PoemWriter
+import lore.compiler.poem.{PoemFragment, PoemFunction, PoemGlobalVariable, PoemSchema, PoemSpec}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.DeclaredSchema
 
@@ -23,6 +24,7 @@ object AssemblyPhase {
     var poemSchemas = Vector.empty[PoemSchema]
     var poemGlobalVariables = Vector.empty[PoemGlobalVariable]
     var poemFunctions = Vector.empty[PoemFunction]
+    var poemSpecs = Vector.empty[PoemSpec]
 
     registry.schemasInOrder.foreach {
       case schema: DeclaredSchema =>
@@ -34,17 +36,25 @@ object AssemblyPhase {
       case _ =>
     }
 
-    registry.bindings.globalVariables.values.toVector.foreach { global =>
+    registry.bindings.globalVariables.values.foreach { global =>
       val (poemGlobalVariable, poemInitializerFunctions) = GlobalVariableAssembler.generate(global)
       poemGlobalVariables :+= poemGlobalVariable
       poemFunctions ++= poemInitializerFunctions
     }
 
-    registry.bindings.multiFunctions.values.toVector.flatMap(_.functions).foreach { function =>
-      poemFunctions ++= FunctionAssembler.generate(function)
+    registry.bindings.multiFunctions.values.foreach { mf =>
+      mf.functions.foreach { function =>
+        poemFunctions ++= FunctionAssembler.generate(function)
+      }
     }
 
-    val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions)
+    registry.specs.values.foreach { spec =>
+      val (poemSpec, poemSpecFunction) = SpecAssembler.generate(spec)
+      poemSpecs :+= poemSpec
+      poemFunctions ++= poemSpecFunction
+    }
+
+    val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions, poemSpecs)
     logPoemFunctions(poemFunctions)
     PoemWriter.writeFragment(poemFragment)
   }

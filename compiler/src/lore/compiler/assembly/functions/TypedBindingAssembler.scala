@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{Chunk, AsmRuntimeNames, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
 import lore.compiler.poem.PoemInstruction
 import lore.compiler.semantics.scopes.{LocalVariable, StructObjectBinding, TypedBinding}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -30,7 +30,7 @@ object TypedBindingAssembler {
 
       case binding: StructObjectBinding =>
         val target = registerProvider.fresh()
-        val objectName = AsmRuntimeNames.struct.`object`(binding.definition.schema)
+        val objectName = RuntimeNames.struct.`object`(binding.definition.schema)
         Chunk(target, PoemInstruction.GlobalGet(target, objectName))
     }
   }

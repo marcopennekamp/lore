@@ -14,6 +14,8 @@ object PoemWriter {
     poemFragment.globalVariables.foreach(PoemGlobalVariableWriter.write)
     writer.writeUInt32(poemFragment.functions.length)
     poemFragment.functions.foreach(PoemFunctionWriter.write)
+    writer.writeUInt32(poemFragment.specs.length)
+    poemFragment.specs.foreach(PoemSpecWriter.write)
 
     writer.output.toByteArray
   }

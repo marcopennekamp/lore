@@ -2,7 +2,7 @@ package lore.compiler.assembly.globals
 
 import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{Chunk, AsmRuntimeNames}
+import lore.compiler.assembly.{Chunk, RuntimeNames}
 import lore.compiler.core.Position
 import lore.compiler.poem.{PoemEagerGlobalVariable, PoemFunction, PoemGlobalVariable, PoemLazyGlobalVariable}
 import lore.compiler.semantics.expressions.Expression
@@ -37,14 +37,8 @@ object GlobalVariableAssembler {
     value: Either[Expression, Chunk],
     position: Position,
   )(implicit registry: Registry): (PoemLazyGlobalVariable, Vector[PoemFunction]) = {
-    val initializerName = AsmRuntimeNames.globalVariable.initializer(name)
-    val signature = FunctionSignature(
-      initializerName,
-      Vector.empty,
-      Vector.empty,
-      tpe,
-      position,
-    )
+    val initializerName = RuntimeNames.globalVariable.initializer(name)
+    val signature = FunctionSignature.constant(initializerName, tpe, position)
     val generatedPoemFunctions = FunctionAssembler.generate(signature, value)
     (PoemLazyGlobalVariable(name, initializerName), generatedPoemFunctions)
   }

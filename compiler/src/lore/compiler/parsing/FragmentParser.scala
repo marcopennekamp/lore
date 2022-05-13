@@ -181,9 +181,9 @@ class FragmentParser(implicit fragment: Fragment) {
       case Some("bench_only") => (false, true)
       case _ => (false, false)
     }
-    P(executionType ~ Index ~~ "spec" ~~ Space.WS1 ~~/ (name | stringName) ~ expressionParser.block ~~ Index).map {
-      case (isTest, isBenchmark, startIndex, nameNode, bodyNode, endIndex) =>
-        DeclNode.SpecNode(nameNode, isTest, isBenchmark, bodyNode, Position(fragment, startIndex, endIndex))
+    P(executionType ~ "spec" ~~ Space.WS1 ~~/ (name | stringName) ~ expressionParser.block).map {
+      case (isTest, isBenchmark, nameNode, bodyNode) =>
+        DeclNode.SpecNode(nameNode, isTest, isBenchmark, bodyNode, nameNode.position)
     }
   }
 

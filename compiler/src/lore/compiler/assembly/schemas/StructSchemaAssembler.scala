@@ -3,7 +3,7 @@ package lore.compiler.assembly.schemas
 import lore.compiler.assembly.functions.{ConstructorAssembler, FunctionAssembler}
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.types.{TypeAssembler, TypePathAssembler}
-import lore.compiler.assembly.{Chunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RuntimeNames, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
@@ -83,7 +83,7 @@ object StructSchemaAssembler {
       Chunk.concat(typeArgumentChunks) ++ instanceChunk
     }
 
-    val signature = schema.constructorSignature.copy(name = AsmRuntimeNames.struct.constructor(schema))
+    val signature = schema.constructorSignature.copy(name = RuntimeNames.struct.constructor(schema))
     FunctionAssembler.generate(signature, Some(bodyChunk))
   }
 
@@ -95,7 +95,7 @@ object StructSchemaAssembler {
     * constant default values, though, and could be initialized as eager global variables in the future.
     */
   private def generateObject(schema: StructSchema)(implicit registry: Registry): (PoemGlobalVariable, Vector[PoemFunction]) = {
-    val name = AsmRuntimeNames.struct.`object`(schema)
+    val name = RuntimeNames.struct.`object`(schema)
 
     if (schema.definition.properties.isEmpty) {
       // Remember that objects cannot have type parameters.
@@ -120,14 +120,8 @@ object StructSchemaAssembler {
     schema.definition.properties.flatMap { property =>
       property.defaultValue match {
         case Some(defaultValue) =>
-          val functionName = AsmRuntimeNames.struct.defaultPropertyValue(property)
-          val signature = FunctionSignature(
-            functionName,
-            Vector.empty,
-            Vector.empty,
-            defaultValue.tpe,
-            defaultValue.position,
-          )
+          val functionName = RuntimeNames.struct.defaultPropertyValue(property)
+          val signature = FunctionSignature.constant(functionName, defaultValue.tpe, defaultValue.position)
           FunctionAssembler.generate(signature, Some(defaultValue), Map.empty)
 
         case None => Vector.empty

@@ -38,3 +38,9 @@ case class FunctionSignature(
     FunctionSignature(name, Vector.empty, substitutedParameters, substitutedOutputType, position)
   }
 }
+
+object FunctionSignature {
+  def constant(name: NamePath, outputType: Type, position: Position): FunctionSignature = {
+    FunctionSignature(name, Vector.empty, Vector.empty, outputType, position)
+  }
+}

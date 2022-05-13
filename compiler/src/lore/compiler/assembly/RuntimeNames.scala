@@ -1,11 +1,12 @@
 package lore.compiler.assembly
 
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.StructSchema
 
-object AsmRuntimeNames {
+object RuntimeNames {
 
   object struct {
     def constructor(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/construct")
@@ -16,6 +17,10 @@ object AsmRuntimeNames {
   object globalVariable {
     def initializer(name: NamePath): NamePath = name.appendToLastSegment("/init")
     def initializer(variable: GlobalVariableDefinition): NamePath = initializer(variable.name)
+  }
+
+  object spec {
+    def executable(spec: SpecDefinition): NamePath = spec.name.appendToLastSegment("/execute")
   }
 
 }

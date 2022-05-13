@@ -17,6 +17,8 @@ Concretely, a Poem file has the following structure:
   - **Global variables** (GlobalVariable*)
   - **Function count** (uint32)
   - **Functions** (Function*)
+  - **Spec count** (uint32)
+  - **Specs** (Spec*)
 
 ### Schemas
 
@@ -62,7 +64,7 @@ A **GlobalVariable** is represented as follows:
   - If *Lazy* is false:
     - **Value** (Value)
   - If *Lazy* is true:
-    - **Initializer Name** (String): The name of the function with which the lazy global variable should be initialized when it's first accessed. The function name must refer to a multi-function with exactly one function definition.
+    - **Initializer name** (String): The name of the function with which the lazy global variable should be initialized when it's first accessed. The name must refer to a single-function multi-function.
 
 Note that global variables are currently *not* typed. It would only be needed for checking bytecode, because values carry their own types.
 
@@ -137,6 +139,15 @@ Variable-size instructions have two big advantages compared to fixed-size instru
   - They hide implementation-specific details of the evaluation, such as operands lists and frame-aware intrinsics.
 
 TODO (vm): Document instruction encoding in-depth.
+
+### Specs
+
+A **Spec** is structured as follows:
+
+- **Name** (String)
+- **Test** (bool): Whether the spec should be executed as a test.
+- **Benchmark** (bool): Whether the spec should be executed as a benchmark.
+- **Executable name** (String): The name of the function that will be executed when the spec is run. The name must refer to a single-function multi-function.
 
 ### Meta Shapes
 
