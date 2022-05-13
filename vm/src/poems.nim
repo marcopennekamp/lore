@@ -9,7 +9,7 @@ import types
 
 type
   Poem* = ref object
-    ## A Poem is essentially a single unit of bytecode which contains schema, global variable, and multi-function
+    ## A Poem is essentially a single unit of bytecode which contains schema, global variable, multi-function, and spec
     ## definitions. See `poem.md` for an overview of the format.
     ##
     ## After a Poem has been read, it contains mostly unresolved objects, such as unresolved types and functions.
@@ -20,6 +20,7 @@ type
     schemas*: seq[PoemSchema]
     global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
+    specs*: seq[PoemSpec]
 
   PoemSchema* = ref object of RootObj
     kind*: Kind
@@ -385,6 +386,12 @@ type
     name*: string
     type_arguments*: seq[PoemType]
 
+  PoemSpec* = ref object
+    name*: string
+    is_test*: bool
+    is_benchmark*: bool
+    executable_name*: string
+
   PoemMetaShape* = ref object
     property_names*: seq[string]
 
@@ -690,6 +697,7 @@ proc read_constants(stream: FileStream): PoemConstants
 proc read_constants_entry(stream: FileStream): PoemConstantsEntry
 proc read_instruction(stream: FileStream): PoemInstruction
 proc read_function_instance(stream: FileStream): PoemFunctionInstance
+proc read_spec(stream: FileStream): PoemSpec
 proc read_meta_shape(stream: FileStream): PoemMetaShape
 proc read_type_parameters(stream: FileStream): seq[PoemTypeParameter]
 proc read_type(stream: FileStream): PoemType
@@ -705,6 +713,7 @@ proc write_constants_entry(stream: FileStream, entry: PoemConstantsEntry)
 proc write_instruction(stream: FileStream, instruction: PoemInstruction)
 proc write_operation(stream: FileStream, operation: PoemOperation)
 proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance)
+proc write_spec(stream: FileStream, spec: PoemSpec)
 proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape)
 proc write_shape_property_names(stream: FileStream, property_names: seq[string], with_count: bool)
 proc write_type_parameters(stream: FileStream, type_parameters: seq[PoemTypeParameter])
@@ -1257,6 +1266,24 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet,
      PoemOperation.Intrinsic, GlobalGet, Dispatch, Call, CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
+
+########################################################################################################################
+# Specs.                                                                                                               #
+########################################################################################################################
+
+proc read_spec(stream: FileStream): PoemSpec =
+  PoemSpec(
+    name: stream.read_string_with_length(),
+    is_test: stream.read(bool),
+    is_benchmark: stream.read(bool),
+    executable_name: stream.read_string_with_length(),
+  )
+
+proc write_spec(stream: FileStream, spec: PoemSpec) =
+  stream.write_string_with_length(spec.name)
+  stream.write(spec.is_test)
+  stream.write(spec.is_benchmark)
+  stream.write_string_with_length(spec.executable_name)
 
 ########################################################################################################################
 # Meta shapes.                                                                                                         #
