@@ -290,7 +290,10 @@ proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr Function
   #            upper bounds of contravariant parameters, as we can reasonably assume that the compiler has covered the
   #            other direction. This could be an optimization specifically for instantiations from instructions such
   #            as `CallPoly`.
-  if function.is_monomorphic: addr function.monomorphic_instance
+  if function.is_monomorphic:
+    if unlikely(type_arguments.len > 0):
+      fail_instantiation(function, type_arguments)
+    addr function.monomorphic_instance
   else:
     if unlikely(not can_instantiate_polymorphic(function, type_arguments)):
       fail_instantiation(function, type_arguments)
@@ -300,7 +303,10 @@ proc ensure_can_instantiate*(function: Function, type_arguments: ImSeq[Type]) =
   ## Quits execution if `function` cannot be instantiated with `type_arguments`. Applies the same checks to the type
   ## arguments as `instantiate`. This function is meant to be used in cases where a function instance is not needed.
   ## It's not meant to be used as a check before calling `instantiate`.
-  if unlikely(function.is_polymorphic and not can_instantiate_polymorphic(function, type_arguments)):
+  if unlikely(
+    function.is_monomorphic and type_arguments.len > 0 or
+    function.is_polymorphic and not can_instantiate_polymorphic(function, type_arguments)
+  ):
     fail_instantiation(function, type_arguments)
 
 proc new_function_type*(instance: ptr FunctionInstance): FunctionType =
