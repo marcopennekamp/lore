@@ -3,7 +3,7 @@ package lore.compiler.semantics.modules
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.DeclNode.ModuleNode
+import lore.compiler.syntax.DeclNode.{ModuleNode, SpecNode}
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
@@ -34,6 +34,8 @@ class GlobalModule(val name: NamePath) extends Binding {
       case node: DeclNode.AliasNode if node.isStructAlias => add(node.simpleName, node.position)
       case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
       case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)
+      case _: SpecNode =>
+        // Specs do not need to be added to the global module, because they can't be referenced from Lore code.
     }
   }
 
