@@ -275,8 +275,8 @@ proc ensure_can_instantiate*(function: Function, type_arguments: ImSeq[Type]) =
   if unlikely(function.is_polymorphic and not can_instantiate_polymorphic(function, type_arguments)):
     fail_instantiation(function, type_arguments)
 
-proc get_function_type*(instance: ptr FunctionInstance): FunctionType =
-  ## Constructs a new function type from the given function instance.
+proc new_function_type*(instance: ptr FunctionInstance): FunctionType =
+  ## Constructs a new function type from `instance`.
   let input_type = instance.function.input_type.substitute(instance.type_arguments.to_open_array)
   let output_type = instance.function.output_type.substitute(instance.type_arguments.to_open_array)
   new_function_type(cast[TupleType](input_type), output_type)
@@ -305,7 +305,7 @@ proc hash*(function: Function): Hash = hash(cast[pointer](function))
 proc `$`*(function: Function): string = fmt"{function.multi_function.name}{function.input_type}: {function.output_type}"
 
 proc `$`*(instance: ptr FunctionInstance): string =
-  let function_type = instance.get_function_type()
+  let function_type = instance.new_function_type()
   fmt"{instance.function.multi_function.name}{function_type.input}: {function_type.output}"
 
 proc `[]`*(context: LambdaContext, index: int): TaggedValue {.borrow.}

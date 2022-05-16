@@ -469,7 +469,7 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.FunctionSingle:
       let function_instance = const_multi_function_arg(1).instantiate_single_function(oplt_get_imseq_arg(2))
-      let tpe = function_instance.get_function_type()
+      let tpe = function_instance.new_function_type()
       let value = new_single_function_value(cast[pointer](function_instance), tpe)
       regv_set_arg(0, value)
 
