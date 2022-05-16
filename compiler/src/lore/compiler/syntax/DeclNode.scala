@@ -15,7 +15,9 @@ sealed trait DeclNode extends Node {
     * The [[LocalModule]] this DeclNode is declared in. Each DeclNode has exactly one associated local module.
     */
   var localModule: LocalModule = _
+}
 
+sealed trait NamedDeclNode extends DeclNode {
   /**
     * The simple name of the declared entity.
     */
@@ -27,12 +29,12 @@ sealed trait DeclNode extends Node {
   lazy val fullName: NamePath = localModule.modulePath + simpleName
 }
 
-sealed trait SimpleNamedDeclNode extends DeclNode {
+sealed trait SimpleNamedDeclNode extends NamedDeclNode {
   def nameNode: NameNode
   override def simpleName: String = nameNode.value
 }
 
-sealed trait PathNamedDeclNode extends DeclNode {
+sealed trait PathNamedDeclNode extends NamedDeclNode {
   def namePathNode: NamePathNode
   def namePath: NamePath = namePathNode.namePath
   override def simpleName: String = namePath.simpleName
@@ -41,12 +43,12 @@ sealed trait PathNamedDeclNode extends DeclNode {
 /**
   * Top-level binding declarations.
   */
-sealed trait BindingDeclNode extends DeclNode
+sealed trait BindingDeclNode extends NamedDeclNode
 
 /**
   * Top-level type declarations.
   */
-sealed trait TypeDeclNode extends DeclNode {
+sealed trait TypeDeclNode extends NamedDeclNode {
   def typeVariables: Vector[TypeVariableNode]
 }
 
@@ -111,12 +113,12 @@ object DeclNode {
   }
 
   case class SpecNode(
-    nameNode: NameNode,
+    description: String,
     isTest: Boolean,
     isBenchmark: Boolean,
     body: ExprNode,
     position: Position,
-  ) extends SimpleNamedDeclNode
+  ) extends DeclNode
 
   case class TypeVariableNode(
     nameNode: NameNode,

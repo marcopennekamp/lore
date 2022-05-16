@@ -5,7 +5,7 @@ import lore.compiler.semantics.Registry.Bindings
 import lore.compiler.semantics.scopes.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.semantics.{Definition, NamePath, Registry}
+import lore.compiler.semantics.{Definition, NamePath, NamedDefinition, Registry}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
@@ -181,13 +181,10 @@ object DeclarationResolver {
   private def resolveSpecs(
     specDeclarations: Vector[DeclNode.SpecNode],
   )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.Specs = {
-    resolveUniqueDefinitions[DeclNode.SpecNode, SpecDefinition](
-      SpecDefinitionResolver.resolve(_),
-      SpecFeedback.AlreadyExists,
-    )(specDeclarations)
+    specDeclarations.map(SpecDefinitionResolver.resolve)
   }
 
-  private def resolveUniqueDefinitions[N <: DeclNode, A <: Definition](
+  private def resolveUniqueDefinitions[N <: DeclNode, A <: NamedDefinition](
     resolve: N => A,
     alreadyExists: A => Feedback.Error,
   )(declarations: Vector[N])(implicit reporter: Reporter): Map[NamePath, A] = {

@@ -144,7 +144,8 @@ TODO (vm): Document instruction encoding in-depth.
 
 A **Spec** is structured as follows:
 
-- **Name** (String)
+- **Module name** (String): The name of the module the spec belongs to.
+- **Description** (String): The description shown after the spec has been executed.
 - **Test** (bool): Whether the spec should be executed as a test.
 - **Benchmark** (bool): Whether the spec should be executed as a benchmark.
 - **Executable name** (String): The name of the function that will be executed when the spec is run. The name must refer to a single-function multi-function.

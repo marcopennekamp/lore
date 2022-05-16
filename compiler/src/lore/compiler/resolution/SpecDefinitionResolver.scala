@@ -8,7 +8,7 @@ import lore.compiler.syntax.DeclNode
 object SpecDefinitionResolver {
 
   def resolve(node: DeclNode.SpecNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): SpecDefinition = {
-    new SpecDefinition(node.fullName, node.isTest, node.isBenchmark, node.body, node.localModule, node.position)
+    new SpecDefinition(node.description, node.isTest, node.isBenchmark, node.body, node.localModule, node.position)
   }
 
 }

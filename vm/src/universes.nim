@@ -1,3 +1,4 @@
+import std/algorithm
 import std/sequtils
 import std/strformat
 import std/tables
@@ -61,7 +62,7 @@ proc resolve*(poems: seq[Poem]): Universe =
     schemas: new_table[string, Schema](),
     global_variables: new_table[string, GlobalVariable](),
     multi_functions: new_table[string, MultiFunction](),
-    specs: new_table[string, Spec](),
+    specs: @[],
   )
 
   # Step 1: Register intrinsics first, as they have no dependencies.
@@ -82,7 +83,7 @@ proc resolve*(poems: seq[Poem]): Universe =
     for poem_global_variable in poem.global_variables:
       universe.global_variables[poem_global_variable.name] = universe.resolve(poem_global_variable)
     for poem_spec in poem.specs:
-      universe.specs[poem_spec.name] = universe.resolve(poem_spec)
+      universe.specs.add(universe.resolve(poem_spec))
 
   # Step 5: Attach constants and instructions to each function.
   for poem in poems:
@@ -93,6 +94,10 @@ proc resolve*(poems: seq[Poem]): Universe =
   # Step 6: Finalize each multi-function.
   for mf in universe.multi_functions.values:
     finalize(mf)
+
+  # Step 7: Sort specs by module name. This is important for test and benchmark reporting.
+  universe.specs.sort do (a: Spec, b: Spec) -> int:
+    cmp(a.module_name, b.module_name)
 
   universe.initialize_introspection()
   universe
@@ -768,13 +773,10 @@ proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance, t
 ########################################################################################################################
 
 proc resolve(universe: Universe, poem_spec: PoemSpec): Spec =
-  let name = poem_spec.name
-  if name in universe.specs:
-    quit(fmt"The spec `{name}` is declared twice.")
-
   let executable = universe.get_multi_function(poem_spec.executable_name).get_single_monomorphic_function_instance
   Spec(
-    name: name,
+    module_name: poem_spec.module_name,
+    description: poem_spec.description,
     is_test: poem_spec.is_test,
     is_benchmark: poem_spec.is_benchmark,
     executable: executable[],

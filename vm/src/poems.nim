@@ -387,7 +387,8 @@ type
     type_arguments*: seq[PoemType]
 
   PoemSpec* = ref object
-    name*: string
+    module_name*: string
+    description*: string
     is_test*: bool
     is_benchmark*: bool
     executable_name*: string
@@ -1276,14 +1277,16 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
 
 proc read_spec(stream: FileStream): PoemSpec =
   PoemSpec(
-    name: stream.read_string_with_length(),
+    module_name: stream.read_string_with_length(),
+    description: stream.read_string_with_length(),
     is_test: stream.read(bool),
     is_benchmark: stream.read(bool),
     executable_name: stream.read_string_with_length(),
   )
 
 proc write_spec(stream: FileStream, spec: PoemSpec) =
-  stream.write_string_with_length(spec.name)
+  stream.write_string_with_length(spec.module_name)
+  stream.write_string_with_length(spec.description)
   stream.write(spec.is_test)
   stream.write(spec.is_benchmark)
   stream.write_string_with_length(spec.executable_name)

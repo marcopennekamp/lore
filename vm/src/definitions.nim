@@ -29,7 +29,9 @@ type
     schemas*: TableRef[string, Schema]
     global_variables*: TableRef[string, GlobalVariable]
     multi_functions*: TableRef[string, MultiFunction]
-    specs*: TableRef[string, Spec]
+    specs*: seq[Spec]
+      ## After universe resolution, specs are guaranteed to be sorted by module name. The test and benchmark
+      ## functionality relies on this invariant.
     introspection_type_struct_schema*: StructSchema
 
   Intrinsic* = ref object
@@ -137,7 +139,8 @@ type
     name*: string
 
   Spec* = ref object
-    name*: string
+    module_name*: string
+    description*: string
     is_test*: bool
     is_benchmark*: bool
     executable*: FunctionInstance

@@ -48,7 +48,7 @@ object AssemblyPhase {
       }
     }
 
-    registry.specs.values.foreach { spec =>
+    registry.specs.foreach { spec =>
       val (poemSpec, poemSpecFunction) = SpecAssembler.generate(spec)
       poemSpecs :+= poemSpec
       poemFunctions ++= poemSpecFunction

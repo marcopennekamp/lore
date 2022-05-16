@@ -19,8 +19,4 @@ object RuntimeNames {
     def initializer(variable: GlobalVariableDefinition): NamePath = initializer(variable.name)
   }
 
-  object spec {
-    def executable(spec: SpecDefinition): NamePath = spec.name.appendToLastSegment("/execute")
-  }
-
 }

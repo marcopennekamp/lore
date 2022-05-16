@@ -43,7 +43,7 @@ case class Registry(
     schemaDefinitionsInOrder.iterator ++
       bindings.globalVariables.valuesIterator ++
       bindings.multiFunctions.valuesIterator ++
-      specs.valuesIterator
+      specs.iterator
   }
 
   /**
@@ -83,6 +83,6 @@ object Registry {
     def scope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, this)
   }
 
-  type Specs = Map[NamePath, SpecDefinition]
+  type Specs = Vector[SpecDefinition]
   type SchemaResolutionOrder = Vector[NamePath]
 }
