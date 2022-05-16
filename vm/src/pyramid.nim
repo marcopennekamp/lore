@@ -7,6 +7,7 @@ from std/unicode import rune_len, rune_at, rune_at_pos, to_utf8, to_lower, to_up
 from definitions import FramePtr, Intrinsic, IntrinsicFunction, get_active_universe, new_introspection_type_value
 from evaluator import nil
 import imseqs
+from specs import SpecAssertionError
 import types
 import values
 
@@ -14,6 +15,7 @@ type Arguments = open_array[TaggedValue]
 
 template arg(index: int): TaggedValue = arguments[index]
 template arg_int(index: int): int64 = untag_int(arg(index))
+template arg_boolean(index: int): bool = untag_boolean(arg(index))
 template arg_real(index: int): float64 = untag_reference(arg(index), RealValue).real
 template arg_string(index: int): string = untag_reference(arg(index), StringValue).string
 template arg_symbol(index: int): SymbolValue = untag_reference(arg(index), SymbolValue)
@@ -216,6 +218,11 @@ proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   echo arg(0)
   values.unit_value_tagged
 
+proc test_assert(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## assert(condition: Boolean, message: String): Unit
+  if not arg_boolean(0):
+    raise new_exception(SpecAssertionError, arg_string(1))
+
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
   Intrinsic(name: name, function: function, arity: arity)
 
@@ -257,4 +264,6 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.list.filter", list_filter, 2),
 
   intr("lore.io.println", io_println, 1),
+
+  intr("lore.test.assert", test_assert, 2),
 ]

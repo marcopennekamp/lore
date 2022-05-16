@@ -1,0 +1,17 @@
+module lore.test
+
+act assert(condition: Boolean, message: String) do
+  intrinsic[Unit]('lore.test.assert', condition, message)
+end
+
+act assert(condition: Boolean) do
+  assert(condition, 'The condition is expected to be true.')
+end
+
+act assert_equal(actual: Any, expected: Any, message: String) do
+  assert(actual == expected, message)
+end
+
+act assert_equal(actual: Any, expected: Any) do
+  assert_equal(actual, expected, 'The following actual and expected values should be equal:\n  - $actual\n  - $expected')
+end

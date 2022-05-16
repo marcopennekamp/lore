@@ -53,6 +53,8 @@ object PoemIntrinsic {
     intr("lore.list.filter", 2),
 
     intr("lore.io.println", 1),
+
+    intr("lore.test.assert", 2),
   )
 
   val intrinsicsMap: Map[String, PoemIntrinsic] = intrinsics.map(intrinsic => (intrinsic.name, intrinsic)).toMap
