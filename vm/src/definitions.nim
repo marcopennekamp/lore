@@ -29,6 +29,7 @@ type
     schemas*: TableRef[string, Schema]
     global_variables*: TableRef[string, GlobalVariable]
     multi_functions*: TableRef[string, MultiFunction]
+    specs*: TableRef[string, Spec]
     introspection_type_struct_schema*: StructSchema
 
   Intrinsic* = ref object
@@ -135,6 +136,13 @@ type
     ## always be casted to and from `pointer`.
     name*: string
 
+  Spec* = ref object
+    name*: string
+    is_test*: bool
+    is_benchmark*: bool
+    executable*: FunctionInstance
+      ## The function instance that executes the spec.
+
 when sizeof(Type) != 8 or sizeof(TaggedValue) != 8 or sizeof(ConstantsEntryName) != 8 or sizeof(Intrinsic) != 8 or
      sizeof(Schema) != 8 or sizeof(GlobalVariable) != 8 or sizeof(MultiFunction) != 8 or
      sizeof(ptr FunctionInstance) != 8 or sizeof(MetaShape) != 8:
@@ -169,6 +177,26 @@ proc get_active_universe*(): Universe =
 
 proc set_active_universe*(universe: Universe) =
   active_universe = universe
+
+proc get_intrinsic*(universe: Universe, name: string): Intrinsic =
+  if name notin universe.intrinsics:
+    quit(fmt"The intrinsic `{name}` does not exist.")
+  universe.intrinsics[name]
+
+proc get_schema*(universe: Universe, name: string): Schema =
+  if name notin universe.schemas:
+    quit(fmt"The schema `{name}` does not exist.")
+  universe.schemas[name]
+
+proc get_global_variable*(universe: Universe, name: string): GlobalVariable =
+  if name notin universe.global_variables:
+    quit(fmt"The global variable `{name}` does not exist.")
+  universe.global_variables[name]
+
+proc get_multi_function*(universe: Universe, name: string): MultiFunction =
+  if name notin universe.multi_functions:
+    quit(fmt"The multi-function `{name}` does not exist.")
+  universe.multi_functions[name]
 
 proc new_introspection_type_value*(universe: Universe, boxed_type: Type): IntrospectionTypeValue =
   IntrospectionTypeValue(tpe: universe.introspection_type_struct_schema.get_representative, boxed_type: boxed_type)
@@ -297,6 +325,12 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
   let function = mf.get_single_function
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
+
+proc get_single_monomorphic_function_instance*(mf: MultiFunction): ptr FunctionInstance =
+  let function = mf.get_single_function
+  if not function.is_monomorphic:
+    quit(fmt"The single-function multi-function `{mf.name}` is expected to be monomorphic.")
+  addr function.monomorphic_instance
 
 # Function equality/hashing is defined as referential equality/hashing and used for including functions in hash sets.
 proc `==`*(f1: Function, f2: Function): bool = f1 === f2

@@ -741,10 +741,12 @@ proc read_poem*(path: string): Poem =
   let schemas = stream.read_many_with_count(PoemSchema, uint32, read_schema)
   let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint32, read_global_variable)
   let functions = stream.read_many_with_count(PoemFunction, uint32, read_function)
+  let specs = stream.read_many_with_count(PoemSpec, uint32, read_spec)
   Poem(
     schemas: schemas,
     global_variables: global_variables,
     functions: functions,
+    specs: specs,
   )
 
 proc write_poem*(path: string, poem: Poem) =
@@ -755,6 +757,7 @@ proc write_poem*(path: string, poem: Poem) =
   stream.write_many_with_count(poem.schemas, uint32, write_schema)
   stream.write_many_with_count(poem.global_variables, uint32, write_global_variable)
   stream.write_many_with_count(poem.functions, uint32, write_function)
+  stream.write_many_with_count(poem.specs, uint32, write_spec)
 
 ########################################################################################################################
 # Schemas.                                                                                                             #

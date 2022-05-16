@@ -16,11 +16,12 @@ import values
 
 proc resolve_schemas(universe: Universe, poems: seq[Poem])
 
-proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
+proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable): GlobalVariable
 proc resolve(universe: Universe, poem_function: PoemFunction)
 proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance, type_variables: ImSeq[TypeVariable]): ptr FunctionInstance
 proc resolve(universe: Universe, poem_constants: PoemConstants, type_variables: ImSeq[TypeVariable]): Constants
 proc resolve(universe: Universe, poem_instructions: seq[PoemInstruction], constants: Constants): seq[Instruction]
+proc resolve(universe: Universe, poem_spec: PoemSpec): Spec
 proc resolve(universe: Universe, poem_type_parameters: seq[PoemTypeParameter]): ImSeq[TypeVariable]
 proc resolve(universe: Universe, poem_type: PoemType, type_variables: ImSeq[TypeVariable]): Type
 proc resolve(universe: Universe, poem_value: PoemValue, type_variables: ImSeq[TypeVariable]): TaggedValue
@@ -28,10 +29,12 @@ proc resolve(universe: Universe, poem_value: PoemValue, type_variables: ImSeq[Ty
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
 template resolve_many(universe, sequence, argument): untyped = sequence.map(o => universe.resolve(o, argument))
 
+# Post-construction initialization
 proc finalize(mf: MultiFunction)
 proc attach_constants(poem_function: PoemFunction, universe: Universe)
 proc attach_instructions(poem_function: PoemFunction, universe: Universe)
 
+# Feature initialization
 proc initialize_introspection(universe: Universe)
 
 ########################################################################################################################
@@ -49,6 +52,7 @@ proc resolve*(poems: seq[Poem]): Universe =
   ##    constants and instructions are resolved later due to dependencies on other multi-functions and global
   ##    variables.
   ##  - Global variables are resolved after functions, because lazy global variables point to a Function initializer.
+  ##  - Specs are resolved after functions, because specs point to a Function executable.
   ##  - Constants tables and instructions for all functions are resolved after schemas, multi-functions, and global
   ##    variables due to their dependency on these entities. Instructions depend on the constants table and are thus
   ##    resolved immediately after.
@@ -57,6 +61,7 @@ proc resolve*(poems: seq[Poem]): Universe =
     schemas: new_table[string, Schema](),
     global_variables: new_table[string, GlobalVariable](),
     multi_functions: new_table[string, MultiFunction](),
+    specs: new_table[string, Spec](),
   )
 
   # Step 1: Register intrinsics first, as they have no dependencies.
@@ -71,10 +76,13 @@ proc resolve*(poems: seq[Poem]): Universe =
     for poem_function in poem.functions:
       universe.resolve(poem_function)
 
-  # Step 4: Resolve global variables.
+  # Step 4: Resolve global variables and specs. Global variables and specs are independent of each other and can be
+  # resolved in one go.
   for poem in poems:
     for poem_global_variable in poem.global_variables:
-      universe.resolve(poem_global_variable)
+      universe.global_variables[poem_global_variable.name] = universe.resolve(poem_global_variable)
+    for poem_spec in poem.specs:
+      universe.specs[poem_spec.name] = universe.resolve(poem_spec)
 
   # Step 5: Attach constants and instructions to each function.
   for poem in poems:
@@ -213,11 +221,11 @@ proc resolve_schema_attachments(universe: Universe, poem_schemas: TableRef[strin
 method resolve(poem_global_variable: PoemGlobalVariable, universe: Universe): GlobalVariable {.base, locks: "unknown".} =
   quit(fmt"Please implement `resolve` for all PoemGlobalVariables.")
 
-proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable) =
+proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable): GlobalVariable =
   let name = poem_global_variable.name
   if name in universe.global_variables:
     quit(fmt"The global variable `{name}` is declared twice.")
-  universe.global_variables[name] = poem_global_variable.resolve(universe)
+  poem_global_variable.resolve(universe)
 
 method resolve(poem_global_variable: PoemEagerGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
   let value = universe.resolve(poem_global_variable.value, empty_immutable_seq[TypeVariable]())
@@ -225,19 +233,8 @@ method resolve(poem_global_variable: PoemEagerGlobalVariable, universe: Universe
 
 method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
   let name = poem_global_variable.name
-  let initializer_name = poem_global_variable.initializer_name
-  if not (initializer_name in universe.multi_functions):
-    quit(fmt"The global variable `{name}` requires an initializer function `{initializer_name}`, but it does not exist.")
-
-  let mf = universe.multi_functions[initializer_name]
-  if mf.functions.len > 1:
-    quit(fmt"The global variable `{name}` requires an initializer function `{initializer_name}`, but the associated multi-function has multiple function definitions.")
-
-  let initializer = mf.functions[0]
-  if not initializer.is_monomorphic:
-    quit(fmt"The global variable `{name}` has a polymorphic initializer function `{initializer_name}`. Initializer functions must be monomorphic.")
-
-  new_lazy_global(name, initializer.monomorphic_instance)
+  let initializer = universe.get_multi_function(poem_global_variable.initializer_name).get_single_monomorphic_function_instance
+  new_lazy_global(name, initializer[])
 
 ########################################################################################################################
 # Function resolution.                                                                                                 #
@@ -315,21 +312,13 @@ proc resolve(universe: Universe, poem_constants: PoemConstants, type_variables: 
       of PoemConstantsEntryVariant.Name:
         cast[ConstantsEntry](ConstantsEntryName(name: poem_entry.name))
       of PoemConstantsEntryVariant.Intrinsic:
-        if poem_entry.name notin universe.intrinsics:
-          quit(fmt"The intrinsic `{poem_entry.name}` doesn't exist.")
-        cast[ConstantsEntry](universe.intrinsics[poem_entry.name])
+        cast[ConstantsEntry](universe.get_intrinsic(poem_entry.name))
       of PoemConstantsEntryVariant.Schema:
-        if poem_entry.name notin universe.schemas:
-          quit(fmt"The schema `{poem_entry.name}` doesn't exist.")
-        cast[ConstantsEntry](universe.schemas[poem_entry.name])
+        cast[ConstantsEntry](universe.get_schema(poem_entry.name))
       of PoemConstantsEntryVariant.GlobalVariable:
-        if poem_entry.name notin universe.global_variables:
-          quit(fmt"The global variable `{poem_entry.name}` doesn't exist.")
-        cast[ConstantsEntry](universe.global_variables[poem_entry.name])
+        cast[ConstantsEntry](universe.get_global_variable(poem_entry.name))
       of PoemConstantsEntryVariant.MultiFunction:
-        if poem_entry.name notin universe.multi_functions:
-          quit(fmt"The multi-function `{poem_entry.name}` doesn't exist.")
-        cast[ConstantsEntry](universe.multi_functions[poem_entry.name])
+        cast[ConstantsEntry](universe.get_multi_function(poem_entry.name))
       of PoemConstantsEntryVariant.FunctionInstance:
         cast[ConstantsEntry](universe.resolve(poem_entry.function_instance, type_variables))
       of PoemConstantsEntryVariant.MetaShape:
@@ -767,15 +756,29 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 ########################################################################################################################
 
 proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance, type_variables: ImSeq[TypeVariable]): ptr FunctionInstance =
-  if poem_function_instance.name notin universe.multi_functions:
-    quit(fmt"The multi-function `{poem_function_instance.name}` doesn't exist.")
-
-  let mf = universe.multi_functions[poem_function_instance.name]
+  let mf = universe.get_multi_function(poem_function_instance.name)
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_function_instance.type_arguments, type_variables))
 
   # As the type arguments are static, their bound conformity has already been checked at compile time. However, as
   # universe resolution isn't performance-critical, the added redundancy of a bounds check doesn't hurt.
   mf.instantiate_single_function(type_arguments)
+
+########################################################################################################################
+# Spec resolution.                                                                                                     #
+########################################################################################################################
+
+proc resolve(universe: Universe, poem_spec: PoemSpec): Spec =
+  let name = poem_spec.name
+  if name in universe.specs:
+    quit(fmt"The spec `{name}` is declared twice.")
+
+  let executable = universe.get_multi_function(poem_spec.executable_name).get_single_monomorphic_function_instance
+  Spec(
+    name: name,
+    is_test: poem_spec.is_test,
+    is_benchmark: poem_spec.is_benchmark,
+    executable: executable[],
+  )
 
 ########################################################################################################################
 # Type parameter resolution.                                                                                           #
@@ -859,9 +862,7 @@ method resolve(poem_type: PoemShapeType, context: TypeResolutionContext): Type {
   new_shape_type(meta_shape, property_types)
 
 method resolve(poem_type: PoemNamedType, context: TypeResolutionContext): Type {.locks: "unknown".} =
-  if poem_type.name notin context.universe.schemas:
-    quit(fmt"The schema for a named type {poem_type.name} hasn't been resolved yet or doesn't exist.")
-  let schema = context.universe.schemas[poem_type.name]
+  let schema = context.universe.get_schema(poem_type.name)
   let type_arguments = new_immutable_seq(poem_type.type_arguments.resolve_many_types(context))
   force_instantiate_schema(schema, type_arguments)
 
@@ -916,10 +917,7 @@ method resolve(poem_value: PoemMultiFunctionValue, context: ValueResolutionConte
 method resolve(poem_value: PoemSingleFunctionValue, context: ValueResolutionContext): TaggedValue {.locks: "unknown".} =
   let tpe = resolve_value_type[FunctionType](poem_value.tpe, Kind.Function, context)
   let mf = context.universe.multi_functions[poem_value.name]
-  if not mf.is_single_function:
-    quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
-
-  let function = mf.functions[0]
+  let function = mf.get_single_function
   let type_arguments = new_immutable_seq(context.universe.resolve_many(poem_value.type_arguments, context.type_variables))
   let instance = function.instantiate(type_arguments)
   tag_reference(new_single_function_value(cast[pointer](instance), tpe))
