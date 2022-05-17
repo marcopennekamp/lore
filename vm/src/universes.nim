@@ -1,8 +1,8 @@
 import std/algorithm
 import std/sequtils
 import std/strformat
+import std/sugar
 import std/tables
-import sugar
 
 import definitions
 from dispatch import find_dispatch_target, build_dispatch_hierarchy
