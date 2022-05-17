@@ -1,5 +1,6 @@
 import std/times
 import std/monotimes
+import std/strutils
 import std/sugar
 
 const is_release* = defined(release) or defined(danger)
@@ -26,17 +27,34 @@ proc with_frame_mem*(f: (pointer) -> void) =
   f(frame_mem)
   dealloc(frame_mem)
 
-template benchmark*(benchmark_name: string, runs: int, code: untyped) =
+template timed*(code: untyped): int64 =
+  ## Times `code` with mono time and returns the time taken in nanoseconds.
+  var time: int64 = 0
   block:
     let t0 = get_mono_time()
-    var i: int = 0
-    while i < runs:
-      code
-      i += 1
-    let elapsed_ns = in_nanoseconds(get_mono_time() - t0)
+    code
+    time = in_nanoseconds(get_mono_time() - t0)
+  time
+
+template benchmark*(benchmark_name: string, runs: int, code: untyped) =
+  block:
+    let elapsed_ns = timed:
+      var i: int = 0
+      while i < runs:
+        code
+        i += 1
     let per_run = uint(elapsed_ns div runs)
     let unit = if runs > 1: "ns/op" else: "ns"
     echo benchmark_name, ": ", per_run, unit
+
+proc to_readable_time*(ns: int64): string =
+  ## Converts `ns` into a readable string of nanoseconds, microseconds, milliseconds, or seconds depending on its
+  ## magnitude. All times are reported with a single digit fraction.
+  template format_ns(magnitude: float64): string = (float64(ns) / magnitude).format_float(ffDecimal, 1)
+  if ns < 10000: $ns & "ns"
+  elif ns < 10000 * 1000: format_ns(1000.0) & "µs"
+  elif ns < 500000000: format_ns(1000000.0) & "ms"
+  else: format_ns(1000000000.0) & "s"
 
 template call_if_any_exists*(function, arg0, default0, arg1, default1, default_result): untyped =
   ## Calls `function` with `arg1` and `arg2` if either is not `nil`. Any `nil` argument is replaced with the default.

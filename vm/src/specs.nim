@@ -4,7 +4,7 @@ import std/terminal
 import definitions
 from evaluator import nil
 import imseqs
-from utils import with_frame_mem
+from utils import with_frame_mem, timed, to_readable_time
 
 type
   SpecAssertionError* = object of CatchableError
@@ -114,11 +114,12 @@ proc update(stats: SpecTestStats, result: SpecTestResult) =
   else:
     stats.failed_tests += 1
 
-proc print_summary(stats: SpecTestStats) =
+proc print_summary(stats: SpecTestStats, time_ns: int64) =
   let color = if stats.failed_tests == 0: fg_green else: fg_red
   styled_echo color, "Tests: total ", $stats.total_tests, ", ",
               "succeeded ", $stats.successful_tests, ", ",
-              "failed ", $stats.failed_tests
+              "failed ", $stats.failed_tests, " ",
+              "(completed in ", time_ns.to_readable_time, ")"
 
 proc run_test(spec: Spec, frame_mem: pointer): SpecTestResult =
   try:
@@ -131,16 +132,18 @@ proc run_test(spec: Spec, frame_mem: pointer): SpecTestResult =
 
 proc run_tests*(universe: Universe, module_name_filter: ModuleNameFilter) =
   var stats = SpecTestStats(total_tests: 0, successful_tests: 0, failed_tests: 0)
+  var time_ns: int64 = 0
   with_frame_mem(proc (frame_mem: pointer) =
-    for spec_group in universe.spec_groups(SpecPurpose.Test, module_name_filter):
-      spec_group.print_header()
-      for spec in spec_group.specs:
-        let result = run_test(spec, frame_mem)
-        stats.update(result)
-        result.print()
-      spec_group.print_footer()
+    time_ns = timed:
+      for spec_group in universe.spec_groups(SpecPurpose.Test, module_name_filter):
+        spec_group.print_header()
+        for spec in spec_group.specs:
+          let result = run_test(spec, frame_mem)
+          stats.update(result)
+          result.print()
+        spec_group.print_footer()
   )
-  stats.print_summary()
+  stats.print_summary(time_ns)
 
 ########################################################################################################################
 # Benchmarks.                                                                                                          #
