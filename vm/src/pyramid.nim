@@ -222,6 +222,7 @@ proc test_assert(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## assert(condition: Boolean, message: String): Unit
   if not arg_boolean(0):
     raise new_exception(SpecAssertionError, arg_string(1))
+  values.unit_value_tagged
 
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
   Intrinsic(name: name, function: function, arity: arity)
