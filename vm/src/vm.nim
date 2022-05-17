@@ -2,8 +2,9 @@ import os
 
 import definitions
 from evaluator import nil
+import imseqs
 from poems import nil
-from specs import run_tests
+from specs import ModuleNameFilter, run_tests
 from types import `$`
 from universes import nil
 from utils import with_frame_mem, benchmark
@@ -23,7 +24,10 @@ const help =
 Please run `vm.nim` with one of the following commands:
 
 - `run`: Execute a poem file. `run` expects a `.poem` file as the first and the entry function's name as the second argument. (Usage: `vm run binary.poem test`)
-- `test`: Execute test specs contained in a poem file. `test` expects a `.poem` file as the first argument. (Usage: `vm test binary.poem`)
+- specs:
+  - `test`: Execute test specs contained in a poem file. `test` expects a `.poem` file as the first argument. Additional arguments are interpreted as module names (see below). (Usage: `vm test binary.poem`)
+  - `bench`: Execute benchmark specs contained in a poem file. `bench` expects a `.poem` file as the first argument. Additional arguments are interpreted as module names (see below). (Usage: `vm bench binary.poem`)
+  - Any additional arguments to `test` and `bench` are interpreted as module names. If no module names are specified, all specs will be run. If at least one module name is specified, only specs whose module is one of the specified modules (or a sub-module) will be run. (Usage: `vm test binary.poem lessons features.dispatch`)
   """
 
 proc load_universe(poem_file_path: string): Universe =
@@ -54,7 +58,11 @@ proc run_vm() =
   elif command == "test":
     require_min_cli_arg_count(2)
     let universe = load_universe(param_str(2))
-    universe.run_tests()
+    let module_names = command_line_params()[2 ..< param_count()]
+    let module_name_filter = ModuleNameFilter(new_immutable_seq[string](module_names))
+    universe.run_tests(module_name_filter)
+  elif command == "bench":
+    echo "`bench` is not yet implemented."
   else:
     echo help
 

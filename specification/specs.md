@@ -60,7 +60,7 @@ end
 
 Specs can be executed directly by the VM as **tests** or as **benchmarks**. The VM provides the respective commands for this: `test` and `bench`. 
 
-Both commands allow **filtering** specs by module name, such as `module1.module2`. Only specs that are matched by one of the specified module name will be included. This includes the specs that are defined in submodules. For example, if a spec `S` is contained in `m1.m2.m3`, and the module name is `m1.m2`, `S` is executed. When no module names are given, all specs will be executed. Regardless of the module names specified, a spec that isn't marked as a test/benchmark will not be executed as such.
+Both commands allow **filtering** specs by module name, such as `module1.module2`. Only specs that are matched by one of the specified module names will be included. This includes the specs that are defined in submodules. For example, if a spec `S` is defined in module `m1.m2.m3`, and the module name is `m1.m2`, `S` is executed. When no module names are given, all specs will be executed. Regardless of the module names specified, a spec that isn't marked as a test/benchmark will not be executed as such.
 
 The `test` command executes all desired specs and for each spec, reports its name/description, execution time, and whether the test was successful or not. If unsuccessful, the error message of the failed assertion will be reported as well. In the future, failed tests will be accompanied by a stack trace. This is currently not possible, however, as the VM does not support stack traces yet.
 
