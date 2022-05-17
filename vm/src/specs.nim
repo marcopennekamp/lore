@@ -4,7 +4,8 @@ import std/terminal
 import definitions
 from evaluator import nil
 import imseqs
-from utils import with_frame_mem, timed, to_readable_time
+import time
+from utils import with_frame_mem
 
 type
   SpecAssertionError* = object of CatchableError

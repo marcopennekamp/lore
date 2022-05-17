@@ -1963,22 +1963,22 @@ proc stringify_open_properties(tpe: DeclaredType): string =
 ########################################################################################################################
 
 when is_main_module:
-  from utils import benchmark
+  import time
 
   let sum1 = new_sum_type([string_type, int_type, boolean_type])
   let sum2 = new_sum_type([string_type, int_type, boolean_type])
   let sum3 = new_sum_type([real_type, boolean_type])
 
   echo are_equal(sum1, sum1)
-  benchmark("sum1 == sum1", 100_000_000):
+  benchmark_and_print("sum1 == sum1"):
     discard are_equal(sum1, sum1)
 
   echo are_equal(sum1, sum2)
-  benchmark("sum1 == sum2", 50_000_000):
+  benchmark_and_print("sum1 == sum2"):
     discard are_equal(sum1, sum2)
 
   echo are_equal(sum1, sum3)
-  benchmark("sum1 == sum3", 100_000_000):
+  benchmark_and_print("sum1 == sum3"):
     discard are_equal(sum1, sum3)
 
   let tuple1 = new_tuple_type([
@@ -1994,10 +1994,10 @@ when is_main_module:
   ])
 
   echo are_equal(tuple1, tuple2)
-  benchmark("tuple1 == tuple2", 25_000_000):
+  benchmark_and_print("tuple1 == tuple2"):
     discard are_equal(tuple1, tuple2)
 
-  benchmark("tuple1 == tuple2 (+creation)", 10_000_000):
+  benchmark_and_print("tuple1 == tuple2 (+creation)"):
     let tuple1 = new_tuple_type([
       new_sum_type([string_type, int_type, boolean_type]),
       new_intersection_type([string_type, int_type, boolean_type]),
@@ -2015,7 +2015,7 @@ when is_main_module:
   # These two simplfication examples are equal to the ones in `test/types/simplification.nim`.
   let primitives2 = new_immutable_seq([int_type, real_type, new_intersection_type([int_type, string_type]), new_sum_type([boolean_type])])
 
-  benchmark("simplify sum of primitives", 10_000_000):
+  benchmark_and_print("simplify sum of primitives"):
     discard sum_simplified(primitives2)
 
   let tuples2569 = new_immutable_seq([
@@ -2029,5 +2029,5 @@ when is_main_module:
     new_tuple_type([int_type, int_type, int_type, real_type, int_type, int_type]),
   ])
 
-  benchmark("simplify sum of tuples", 1_000_000):
+  benchmark_and_print("simplify sum of tuples"):
     discard sum_simplified(tuples2569)
