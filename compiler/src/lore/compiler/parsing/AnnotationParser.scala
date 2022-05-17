@@ -24,7 +24,7 @@ class AnnotationParser(nameParser: NameParser)(implicit fragment: Fragment) {
     * If a simple annotation `@name` is present (without any additional elements) and `name` is valid according to
     * `allow`, this parser returns `name`.
     */
-  def simple[_: P](allow: P[Unit]): P[String] = P("@" ~~ allow.! ~~ Space.terminators)
+  def simple[_: P](allow: => P[Unit]): P[String] = P("@" ~~ allow.! ~~ Space.terminators)
 
   def where[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
     def parameters = {
