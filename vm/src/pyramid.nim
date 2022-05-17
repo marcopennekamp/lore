@@ -27,7 +27,7 @@ var error_symbol: TaggedValue = tag_reference(nil)
 proc get_error_symbol(): TaggedValue =
   ## Returns a symbol value `#error`, which is used by various intrinsics to communicate an error to Pyramid. We cannot
   ## use Option because it's not defined within the VM.
-  if is_nil_reference(error_symbol):
+  if error_symbol.is_nil_reference:
     error_symbol = new_symbol_value_tagged("error")
   error_symbol
 

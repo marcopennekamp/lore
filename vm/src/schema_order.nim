@@ -12,6 +12,8 @@ type
     ## The schema resolution order is computed using a topological sort.
     table: TableRef[string, HashSet[string]]
 
+  CycleError* = object of CatchableError
+
 proc new_schema_dependency_graph*(): SchemaDependencyGraph = SchemaDependencyGraph(table: new_table[string, HashSet[string]]())
 
 proc add_dependency*(graph: var SchemaDependencyGraph, dependant: string, dependency: string) =
@@ -48,7 +50,7 @@ proc sort_topological*(graph: SchemaDependencyGraph): seq[string] =
   # graph has a cycle, for which topological sort is not defined.
   if order.len != in_degree.len:
     raise new_exception(
-      ValueError,
+      CycleError,
       "The schema dependency graph has a cycle and thus cannot be sorted. A Lore compiler should not produce" &
         " bytecode with dependency cycles between schemas!",
     )

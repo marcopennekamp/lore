@@ -17,6 +17,9 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): T
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
 
+type NilValueError* = object of CatchableError
+  ## This error is raised when a
+
 ########################################################################################################################
 # Execution frames.                                                                                                    #
 ########################################################################################################################
@@ -344,7 +347,10 @@ proc set_global*(variable: GlobalVariable, value: TaggedValue) =
 
 template trace_return_value(value: TaggedValue) =
   when_debug:
-    echo "Return value: ", $value, " :: ", value.get_type, " (raw: ", cast[uint64](value), ")"
+    if value.is_nil_reference:
+      raise new_exception(NilValueError, "The return value of the poem function is nil, which is not allowed during bytecode evaluation.")
+    else:
+      echo "Return value: ", $value, " :: ", value.get_type, " (raw: ", cast[uint64](value), ")"
 
 ########################################################################################################################
 # Evaluate.                                                                                                            #
