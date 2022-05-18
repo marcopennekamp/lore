@@ -1,4 +1,5 @@
 // Objective: Transcribe DNA to RNA.
+module lessons.rna
 
 use lore.Enum._
 use lore.[String, Symbol]
@@ -17,9 +18,9 @@ func transcribe(#c): #g = #g
 
 func transcribe(dna: Dna): Rna = dna |> map(transcribe)
 
-func to_string(rna: Rna): String = rna |> String.concat_map(Symbol.name)
+func stringify(rna: Rna): String = rna |> String.concat_map(Symbol.name)
 
-func test(): [String] = do
+func main(): [String] = do
   let cases = [
     [#a],
     [#t],
@@ -27,6 +28,5 @@ func test(): [String] = do
     [#c],
     [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a],
   ]
-
-  cases |> map(transcribe) |> map(to_string)
+  cases |> map(transcribe) |> map(stringify)
 end

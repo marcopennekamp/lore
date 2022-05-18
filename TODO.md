@@ -12,6 +12,9 @@
     - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
     - Some tests should be moved into Pyramid itself.
     - Some tests such as `hello_name.lore` and `combat` should be marked as benchmarks. We could also add additional benchmarks.
+  - Consider adding module name overrides: `@root module lore.core do ... end` in any kind of module to define a module `lore.core`, not relative to the parent local module. Similarly, function names like `func lore.core.to_string` to define a multi-function name starting from the root module, not the local module.
+    - This is important so that certain lore files can be defined with a top module declaration, even if just a single function needs to be defined in modules such as `lore.core`. Especially `lore.core` will be defined very often for `to_string` and the comparison functions.
+    - Many `test/` sources suffer from this issue, so it would be smart to fix this in this phase.
   - Clear all `TODO (specs)` entries.
 - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
 - Fix map types and values:

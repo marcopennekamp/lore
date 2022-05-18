@@ -1,5 +1,6 @@
 // Objective: Calculate the lower and upper resistance range (in ohm) of a resistor according to the color codes
 //            described here: https://en.wikipedia.org/wiki/Electronic_color_code#Resistors.
+module lessons.resistor
 
 use lore.Enum.[flat_map, map, present?]
 use lore.number.[to_real, pow]
@@ -98,11 +99,11 @@ end
 
 // The `flat_map` maps the rating list to a list of resistances, alternating between low and high resistances. This
 // makes it easier for the test code to check the individual values.
-func test(): [Resistance] = [
+func main(): [Rating] = [
   Rating.of(Red,      Violet,   None,          Green,    Some(Gold)),
   Rating.of(Green,    Blue,     Some(Black),   Black,    Some(Brown)),
   Rating.of(Red,      Red,      None,          Orange,   Some(Blue)),
   Rating.of(Yellow,   Violet,   None,          Brown,    Some(Gold)),
   Rating.of(Blue,     Grey,     None,          Black,    Some(Orange)),
   Rating.of(Blue,     Blue,     Some(Blue),    Black,    None),
-] |> flat_map(rating => [rating.low, rating.high])
+]

@@ -36,9 +36,9 @@ You are welcome to clone the repository and make it work yourself, however. Here
 1. You will need [SBT](https://www.scala-sbt.org) to build and execute the compiler, and [Nim](https://nim-lang.org/install.html) to build the VM.
 2. In the project's `<root>` folder, execute the command `sbt`, which starts an SBT session. I'd suggest compiling the [test/lessons/hello_name.lore](test/lessons/hello_name.lore) example first, which is in many ways Lore's hello world. Inside the SBT console, execute the following command: `compiler/run compile test/lessons/hello_name.lore`. 
 3. The compilation should finish with a message `[info] Compilation was successful.`. The compiler will have created a file `lore_target/binary.poem`, which is the bytecode file that the VM can execute.
-4. `cd` to the folder `vm` and execute the following command: `./run.sh vm.nim ../lore_target/binary.poem test`. This executes the Lore program you just compiled.
+4. `cd` to the folder `vm` and execute the following command: `./run.sh vm.nim run ../lore_target/binary.poem lessons.hello_name.main`. This executes the Lore program you just compiled.
    - You might have to `chmod` the `run.sh` file for execution permissions. 
-   - The argument `test` specifies the entry multi-function for the VM, which is `test` for `hello_name.lore` and all other test programs.
+   - The argument `lessons.hello_name.main` specifies the entry multi-function for the VM, which is `*.main` for `hello_name.lore` and all other lessons.
 5. If everything goes well, the result reported by the VM should be: `[Hello, world., Hello, anonymous #5., Hello, marco., Hello, console., Hello, anonymous #42.] :: [String]`.
 6. From here on out, you might want to compile additional examples or write your own Lore programs. Here are some tips:
    - The compiler accepts multiple files and folders. For example, executing `compiler/run compile test/combat` in SBT will compile all `.lore` files of the `test/combat` example.

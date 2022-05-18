@@ -2,6 +2,7 @@
 // program, of course, but that doesn't use multiple dispatch. What kind of introduction would that be?
 // In "Hello, name", the idea is to greet someone by name. However, sometimes the one we want to greet is only known by
 // an ID number. In such cases, instead of "Hello, Walter.", the greeting becomes "Hello, anonymous #5."
+module lessons.hello_name
 
 use lore.Enum.map
 
@@ -9,4 +10,4 @@ func hello(String | Int): String
 func hello(name: String): String = 'Hello, $name.'
 func hello(id: Int): String = 'Hello, anonymous #$id.'
 
-func test(): [String] = ['world', 5, 'marco', 'console', 42] |> map(hello)
+func main(): [String] = ['world', 5, 'marco', 'console', 42] |> map(hello)

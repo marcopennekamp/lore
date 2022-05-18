@@ -1,4 +1,5 @@
 // Objective: Process a list of numbers, returning a status `#ok` or `#error` for each number.
+module lessons.status
 
 use lore.Enum._
 use lore.Tuple
@@ -17,4 +18,4 @@ end
 
 func stringify(result: (Status, String)): String = stringify(Tuple.first(result))
 
-func test(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(Tuple.first) |> map(stringify)
+func main(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(Tuple.first) |> map(stringify)
