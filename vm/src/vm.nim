@@ -5,7 +5,6 @@ from evaluator import nil
 import imseqs
 from poems import nil
 from specs import ModuleNameFilter, run_tests, run_benchmarks
-import time
 from types import `$`
 from universes import nil
 from utils import with_frame_mem
@@ -19,7 +18,6 @@ proc run_and_print*(function_instance: ptr FunctionInstance, frame_mem: pointer)
 # CLI.                                                                                                                 #
 ########################################################################################################################
 
-const run_benchmark = true
 const help =
   """
 Please run `vm.nim` with one of the following commands:
@@ -50,11 +48,7 @@ proc run_vm() =
     let universe = load_universe(param_str(2))
     let target = universe.get_multi_function(param_str(3)).get_single_monomorphic_function_instance
     with_frame_mem(proc (frame_mem: pointer) =
-      when not run_benchmark:
-        run_and_print(target, frame_mem)
-      else:
-        benchmark_and_print("Execution took"):
-          discard evaluator.evaluate(target, frame_mem)
+      run_and_print(target, frame_mem)
     )
   elif command == "test" or command == "bench":
     require_min_cli_arg_count(2)
