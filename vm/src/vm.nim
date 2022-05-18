@@ -4,7 +4,7 @@ import definitions
 from evaluator import nil
 import imseqs
 from poems import nil
-from specs import ModuleNameFilter, run_tests
+from specs import ModuleNameFilter, run_tests, run_benchmarks
 import time
 from types import `$`
 from universes import nil
@@ -56,14 +56,15 @@ proc run_vm() =
         benchmark_and_print("Execution took"):
           discard evaluator.evaluate(target, frame_mem)
     )
-  elif command == "test":
+  elif command == "test" or command == "bench":
     require_min_cli_arg_count(2)
     let universe = load_universe(param_str(2))
     let module_names = command_line_params()[2 ..< param_count()]
     let module_name_filter = ModuleNameFilter(new_immutable_seq[string](module_names))
-    universe.run_tests(module_name_filter)
-  elif command == "bench":
-    echo "`bench` is not yet implemented."
+    if command == "test":
+      universe.run_tests(module_name_filter)
+    else:
+      universe.run_benchmarks(module_name_filter)
   else:
     echo help
 

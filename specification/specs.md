@@ -64,7 +64,7 @@ Both commands allow **filtering** specs by module name, such as `module1.module2
 
 The `test` command executes all desired specs and for each spec, reports its name/description, execution time, and whether the test was successful or not. If unsuccessful, the error message of the failed assertion will be reported as well. In the future, failed tests will be accompanied by a stack trace. This is currently not possible, however, as the VM does not support stack traces yet.
 
-The `bench` command works similarly. Each benchmark spec is executed in a warmup phase for 2 seconds, during which the number of iterations per second is recorded. The benchmarking phase then executes the spec for a fixed number of iterations that roughly fit into 10 seconds. The actual time is recorded from start to finish, and the execution time per iteration is reported. If an assertion fails during this process, the benchmark will be marked as failed.
+The `bench` command works similarly. Each benchmark spec is executed in a warmup phase for 2 seconds, during which the number of iterations per second is recorded. The benchmarking phase then executes the spec for a fixed number of iterations that roughly fit into 8 seconds. The actual time is recorded from start to finish, and the execution time per iteration is reported. If an assertion fails during this process, the benchmark will be marked as failed.
 
 All specs in the same module are grouped under the module's full name when reporting test and benchmark results.
 

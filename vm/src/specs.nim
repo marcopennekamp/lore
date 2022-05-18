@@ -1,11 +1,13 @@
 import std/strutils
+import std/sugar
 import std/terminal
 
 import definitions
 from evaluator import nil
 import imseqs
 import time
-from utils import with_frame_mem
+from utils import with_frame_mem, get_terminal_padding_space
+import values
 
 type
   SpecAssertionError* = object of CatchableError
@@ -81,73 +83,127 @@ proc print_footer(spec_group: SpecGroup) =
   echo ""
 
 ########################################################################################################################
-# Tests.                                                                                                               #
+# Spec execution commons.                                                                                              #
 ########################################################################################################################
 
 type
-  SpecTestResult = ref object
+  SpecExecutionResult = ref object of RootObj
     spec: Spec
-    is_success: bool
+
+  SpecExecutionFailure = ref object of SpecExecutionResult
     error_message: string
 
-  SpecTestStats = ref object
-    total_tests: int
-    successful_tests: int
-    failed_tests: int
+  SpecTestSuccess = ref object of SpecExecutionResult
 
-proc new_test_success(spec: Spec): SpecTestResult =
-  SpecTestResult(spec: spec, is_success: true, error_message: "")
+  SpecBenchmarkSuccess = ref object of SpecExecutionResult
+    time_per_op: int64
+      ## The time taken per iteration in nanoseconds.
 
-proc new_test_failure(spec: Spec, error_message: string): SpecTestResult =
-  SpecTestResult(spec: spec, is_success: false, error_message: error_message)
+  SpecExecutionStats = ref object
+    total_specs: int
+    successful_specs: int
+    failed_specs: int
+    total_time: int64
+      ## The total time taken to run all specs in nanoseconds.
 
-proc print(result: SpecTestResult) =
-  if result.is_success:
-    styled_echo "- ", fg_green, "okay: ", reset_style, result.spec.description
-  else:
-    styled_echo "- ", fg_red, "fail: ", reset_style, result.spec.description
-    echo "    ", result.error_message.replace("\n", "\n    ")
+proc new_spec_failure(spec: Spec, error_message: string): SpecExecutionFailure =
+  SpecExecutionFailure(spec: spec, error_message: error_message)
 
-proc update(stats: SpecTestStats, result: SpecTestResult) =
-  stats.total_tests += 1
-  if result.is_success:
-    stats.successful_tests += 1
-  else:
-    stats.failed_tests += 1
+proc new_test_success(spec: Spec): SpecTestSuccess =
+  SpecTestSuccess(spec: spec)
 
-proc print_summary(stats: SpecTestStats, time_ns: int64) =
-  let color = if stats.failed_tests == 0: fg_green else: fg_red
-  styled_echo color, "Tests: total ", $stats.total_tests, ", ",
-              "succeeded ", $stats.successful_tests, ", ",
-              "failed ", $stats.failed_tests, " ",
-              "(completed in ", time_ns.to_readable_time, ")"
+proc new_benchmark_success(spec: Spec, time_per_op: int64): SpecBenchmarkSuccess =
+  SpecBenchmarkSuccess(spec: spec, time_per_op: time_per_op)
 
-proc run_test(spec: Spec, frame_mem: pointer): SpecTestResult =
+method is_success(res: SpecExecutionResult): bool {.base.} = false
+method is_success(res: SpecTestSuccess): bool = true
+method is_success(res: SpecBenchmarkSuccess): bool = true
+
+method print(res: SpecExecutionResult) {.base.} = quit("Cannot print base SpecExecutionResult.")
+
+method print(failure: SpecExecutionFailure) =
+  styled_echo "- ", fg_red, "fail: ", reset_style, failure.spec.description
+  echo "    ", failure.error_message.replace("\n", "\n    ")
+
+method print(success: SpecTestSuccess) =
+  styled_echo "- ", fg_green, "okay: ", reset_style, success.spec.description
+
+method print(success: SpecBenchmarkSuccess) =
+  # We're using the padding to right-align the "time per op" strings.
+  let time_per_op_string = format_time_per_op(success.time_per_op)
+  let padding = get_terminal_padding_space("- okay: ".len + success.spec.description.len, time_per_op_string.len)
+  styled_echo "- ", fg_green, "okay: ", reset_style, success.spec.description, padding, time_per_op_string
+
+proc update(stats: SpecExecutionStats, result: SpecExecutionResult) =
+  stats.total_specs += 1
+  if result.is_success: stats.successful_specs += 1
+  else: stats.failed_specs += 1
+
+proc print_summary(stats: SpecExecutionStats, purpose: SpecPurpose) =
+  let heading =
+    case purpose
+    of SpecPurpose.Test: "Tests:"
+    of SpecPurpose.Benchmark: "Benchmarks:"
+  let color = if stats.failed_specs == 0: fg_green else: fg_red
+  styled_echo color, heading, " ",
+              "total ", $stats.total_specs, ", ",
+              "succeeded ", $stats.successful_specs, ", ",
+              "failed ", $stats.failed_specs, " ",
+              "(completed in ", stats.total_time.to_readable_time, ")"
+
+template try_spec_run(code: untyped): SpecExecutionResult =
+  ## Wraps the spec execution in a `try`, catching assertion errors to produce `SpecExecutionFailures`. `code` should
+  ## produce a `SpecExecutionResult`.
   try:
-    discard evaluator.evaluate(addr spec.executable, frame_mem)
-    new_test_success(spec)
+    code
   except SpecAssertionError as e:
-    new_test_failure(spec, e.msg)
+    new_spec_failure(spec, e.msg)
   except:
-    new_test_failure(spec, "Nim exception: " & get_current_exception_msg())
+    new_spec_failure(spec, "Nim exception: " & get_current_exception_msg())
 
-proc run_tests*(universe: Universe, module_name_filter: ModuleNameFilter) =
-  var stats = SpecTestStats(total_tests: 0, successful_tests: 0, failed_tests: 0)
-  var time_ns: int64 = 0
+proc run_specs(
+  universe: Universe,
+  module_name_filter: ModuleNameFilter,
+  purpose: SpecPurpose,
+  run_spec: (spec: Spec, frame_mem: pointer) -> SpecExecutionResult,
+) =
+  ## `run_specs` is an implementation of both `run_tests` and `run_benchmarks`.
+  var stats = SpecExecutionStats(total_specs: 0, successful_specs: 0, failed_specs: 0, total_time: 0)
   with_frame_mem(proc (frame_mem: pointer) =
-    time_ns = timed:
-      for spec_group in universe.spec_groups(SpecPurpose.Test, module_name_filter):
+    stats.total_time = timed:
+      for spec_group in universe.spec_groups(purpose, module_name_filter):
         spec_group.print_header()
         for spec in spec_group.specs:
-          let result = run_test(spec, frame_mem)
-          stats.update(result)
-          result.print()
+          let res = run_spec(spec, frame_mem)
+          stats.update(res)
+          res.print()
         spec_group.print_footer()
   )
-  stats.print_summary(time_ns)
+  stats.print_summary(purpose)
+
+########################################################################################################################
+# Tests.                                                                                                               #
+########################################################################################################################
+
+proc run_test(spec: Spec, frame_mem: pointer): SpecExecutionResult =
+  try_spec_run:
+    discard evaluator.evaluate(addr spec.executable, frame_mem)
+    new_test_success(spec)
+
+proc run_tests*(universe: Universe, module_name_filter: ModuleNameFilter) =
+  run_specs(universe, module_name_filter, SpecPurpose.Test, run_test)
 
 ########################################################################################################################
 # Benchmarks.                                                                                                          #
 ########################################################################################################################
 
-# TODO (specs): Implement spec benchmarking.
+var benchmark_bucket: TaggedValue = tag_reference(nil)
+
+proc run_benchmark(spec: Spec, frame_mem: pointer): SpecExecutionResult =
+  try_spec_run:
+    let time_per_op = benchmark:
+      benchmark_bucket = evaluator.evaluate(addr spec.executable, frame_mem)
+    new_benchmark_success(spec, time_per_op)
+
+proc run_benchmarks*(universe: Universe, module_name_filter: ModuleNameFilter) =
+  run_specs(universe, module_name_filter, SpecPurpose.Benchmark, run_benchmark)

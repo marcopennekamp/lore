@@ -1,4 +1,6 @@
+import std/strutils
 import std/sugar
+import std/terminal
 
 const is_release* = defined(release) or defined(danger)
 
@@ -30,3 +32,12 @@ template call_if_any_exists*(function, arg0, default0, arg1, default1, default_r
   else: default_result
 
 template offset_addr*(value: untyped, offset: int): pointer = cast[pointer](cast[int](addr value) +% offset)
+
+proc calculate_terminal_padding*(left_length: int, right_length: int): int =
+  ## Calculates the available padding between two strings if both strings were printed to the terminal given its
+  ## current width. The padding will always be at least 1, even if the resulting line would exceed the terminal width.
+  max(terminal_width() - left_length - right_length, 1)
+
+proc get_terminal_padding_space*(left_length: int, right_length: int): string =
+  ## Calculates the required padding with `compute_terminal_padding` and returns a string of the exact length.
+  " ".repeat(calculate_terminal_padding(left_length, right_length))

@@ -38,12 +38,12 @@ template timed*(code: untyped): int64 =
 
 # All times are in seconds.
 const ideal_warmup_time: float64 = 2.0
-const ideal_benchmark_time: float64 = 10.0
+const ideal_benchmark_time: float64 = 8.0
 const warmup_iteration_interval = 250
 
 template benchmark*(code: untyped): int64 =
   ## Benchmarks `code` and returns the time per operation in nanoseconds. A benchmark is first executed in a warmup
-  ## phase for 2 seconds and then for a number of iterations that will roughly take 10 seconds.
+  ## phase for 2 seconds and then for a number of iterations that will roughly take 8 seconds.
   ##
   ## Note that this template is quite complex and thought should be given to code size when using it.
   var time_per_op: int64 = 0
@@ -64,8 +64,8 @@ template benchmark*(code: untyped): int64 =
 
     # We have to correct for the fact that the `while` loop might not catch the end time exactly when the `for` loop
     # terminates. For example, if the 250 iterations in the nested loop take for example 3.5 seconds, and we want to
-    # execute 10 seconds worth of iterations, we first correct 250 to 142.857 (for 2 seconds), and then muliply that up
-    # to 714 using the difference between the ideal benchmark and warmup times.
+    # execute 8 seconds worth of iterations, we first correct 250 to 142.857 (for 2 seconds), and then muliply that up
+    # to 571 using the difference between the ideal benchmark and warmup times.
     let warmup_correction_factor = warmup_time / ideal_warmup_time
     iterations = int64((float64(iterations) / warmup_correction_factor) * (ideal_benchmark_time / ideal_warmup_time))
 

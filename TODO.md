@@ -6,7 +6,7 @@
 
 - Implement specs:
   - Compiler: ~~Specs in the Registry~~, ~~parsing~~, ~~resolution~~, ~~constraints~~, ~~transformation~~, ~~assembly~~.
-  - VM: ~~Spec definitions~~, ~~poem reading and writing~~, ~~universe resolution~~, ~~`lore.test.assert` intrinsic~~, ~~`test`~~ and `bench` commands, ~~module name filtering~~.
+  - VM: ~~Spec definitions~~, ~~poem reading and writing~~, ~~universe resolution~~, ~~`lore.test.assert` intrinsic~~, ~~`test` and `bench` commands~~, ~~module name filtering~~.
   - Pyramid: ~~`lore.test` module with assertion functions~~.
   - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
     - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
