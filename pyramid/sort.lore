@@ -18,7 +18,7 @@ use lore.IO.println
 //            operations in general.
 
 /**
-  * Sorts `list` with a simple stable merge sort. The utilized comparison function is `lore.core.less_than?`.
+  * Sorts `list` with a simple stable merge sort, using `<` for comparisons.
   */
 @where A
 func merge_sort(list: [A]): [A] = do

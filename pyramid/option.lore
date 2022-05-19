@@ -39,26 +39,23 @@ module Option do
   object None extends Option[Nothing]
 
   /**
-    * Returns the option's value if it is something, or otherwise the alternative.
-    *
-    * TODO (pyramid): Maybe rename to `get_or_else` because `option |> get('alternative')` is confusing, as the
-    *                 alternative value isn't clearly marked.
+    * Returns the option's value if it is something, or otherwise the alternative value.
     */
   @where A, B
-  func get(Option[A], alternative: B): A | B
+  func get_or_else(Option[A], alternative: B): A | B
 
   @where A, B
-  func get(option: Some[A], B): A = option.value
+  func get_or_else(option: Some[A], B): A = option.value
 
   @where B
-  func get(None, alternative: B): B = alternative
+  func get_or_else(None, alternative: B): B = alternative
 
   /**
     * Returns the option's value if it is something, or otherwise an error.
     */
   func get!(Option[A]): A where A
   func get!(option: Some[A]): A where A = option.value
-  func get!(None): Nothing = panic('Tried to get! an `Option.None`.')
+  func get!(None): Nothing = panic('Tried to `get!` a `None`.')
 
   /**
     * Returns the option if it is something, or otherwise the lazy alternative.

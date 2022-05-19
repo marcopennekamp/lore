@@ -8,6 +8,11 @@ module List do
   use lore.sort.merge_sort
 
   /**
+    * Returns the length of `list` in constant time.
+    */
+  func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
+
+  /**
     * Returns the element at the given index. If `index` is out of range, `get!` panics.
     */
   @where A
@@ -32,40 +37,49 @@ module List do
     if index >= 0 && index < length(list) then Some(list |> get_unchecked!(index)) else None
   end
 
-  func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
-
-  @where A, B
-  func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
-
   /**
-    * Returns the first element of the list. Results in an error if the list is empty.
-    *
-    * TODO (pyramid): The default `head` should return an option. We can add a second function `head!` that throws an
-    *                 error instead.
+    * Returns the first element of `list`. Panics if the list is empty.
     */
   @where A
-  func head(list: [A]): A = get!(list, 0)
+  func head!(list: [A]): A = get!(list, 0)
 
   /**
-    * Returns the last element of the list. Results in an error if the list is empty.
-    *
-    * TODO (pyramid): The default `last` should return an option. We can add a second function `last!` that throws an
-    *                 error instead.
+    * Returns the first element of `list`, or `None` if the list is empty.
     */
   @where A
-  func last(list: [A]): A = get!(list, length(list) - 1)
+  func head(list: [A]): Option[A] = if length(list) == 0 then None else Some(get_unchecked!(list, 0))
 
   /**
-    * Returns a slice of `list` that includes all elements except for the last one.
+    * Returns the last element of `list`. Panics if the list is empty.
+    */
+  @where A
+  func last!(list: [A]): A = get!(list, length(list) - 1)
+
+  /**
+    * Returns the last element of the list, or `None` if the list is empty.
+    */
+  @where A
+  func last(list: [A]): Option[A] = if length(list) == 0 then None else Some(get_unchecked!(list, length(list) - 1))
+
+  /**
+    * Returns a slice of `list` that includes all elements except for the last one. If `list` is empty, the resulting
+    * list is also empty.
     */
   @where A
   func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
 
   /**
-    * Returns a slice of `list` that includes all elements except for the first one.
+    * Returns a slice of `list` that includes all elements except for the first one. If `list` is empty, the resulting
+    * list is also empty.
     */
   @where A
   func tail(list: [A]): [A] = slice(list, 1)
+
+  /**
+    * Concatenates `as` and `bs`, producing a new list.
+    */
+  @where A, B
+  func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
 
   /**
     * Creates a slice of `list` from index `start`, taking `length` elements if available.
@@ -74,7 +88,8 @@ module List do
   func slice(list: [A], start: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, start, length)
 
   /**
-    * Creates a slice of `list` from index `start` until the end of the list.
+    * Creates a slice of `list` from index `start` until the end of the list. If `start` is out of bounds, an empty
+    * list is returned.
     */
   @where A
   func slice(list: [A], start: Int): [A] = slice(list, start, length(list))
@@ -101,8 +116,7 @@ module List do
   end
 
   /**
-    * Sorts `list` with a stable sorting algorithm, currently a merge sort. The utilized comparison function is
-    * `lore.core.less_than?`.
+    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `<` for comparisons.
     */
   @where A
   func sort(list: [A]): [A] = merge_sort(list)

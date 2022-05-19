@@ -23,7 +23,7 @@ module Stack do
         return 0.0
       end
 
-      let result = List.last(stack.elements)
+      let result = List.last!(stack.elements)
       stack.elements = List.init(stack.elements)
       result
     end

@@ -91,7 +91,7 @@ module Rating do
       10 * Figure.of(figure1) + Figure.of(figure2)
     end
     let raw = base * Multiplier.of(multiplier_code)
-    let tolerance = tolerance_code |> map(Tolerance.of) |> Option.get(0.2)
+    let tolerance = tolerance_code |> map(Tolerance.of) |> Option.get_or_else(0.2)
     Rating(raw * (1 - tolerance), raw * (1 + tolerance))
   end
 end

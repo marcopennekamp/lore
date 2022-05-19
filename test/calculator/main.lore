@@ -9,4 +9,4 @@ func test(): [Real] = [
   '2 3 * 4 0 - - 9 + 7 5 * /',
 ] |> map(process)
 
-func process(term: String): Real = term |> Tokenizer.tokenize |> Option.get([]) |> Calculator.evaluate
+func process(term: String): Real = term |> Tokenizer.tokenize |> Option.get_or_else([]) |> Calculator.evaluate
