@@ -1,0 +1,38 @@
+module lore.Option
+
+use lore.Option
+use lore.Enum.[empty?, present?]
+use lore.test._
+
+spec '`get_or_else` should return a Some\'s value or the alternative value' do
+  let a: Option[String] = Some('test')
+  let b: Option[Int] = Some(42)
+  let c: Option[String] = None
+
+  assert_equal(get_or_else(a, 'fallback'), 'test')
+  assert_equal(get_or_else(b, 'fallback'), 42)
+  assert_equal(get_or_else(c, 'fallback'), 'fallback')
+end
+
+// TODO (pyramid): We should be able to test that `get!` panics when a None is encountered...
+spec '`get!` should return a Some\'s value' do
+  let a: Option[String] = Some('test')
+  let b: Option[Int] = Some(42)
+
+  assert_equal(get!(a), 'test')
+  assert_equal(get!(b), 42)
+end
+
+spec '`empty?` and `present?` should correctly report the absence/presence of a value' do
+  let a: Option[String] = Some('test')
+  let b: Option[Int] = Some(42)
+  let c: Option[String] = None
+
+  assert(!empty?(a))
+  assert(!empty?(b))
+  assert(empty?(c))
+
+  assert(present?(a))
+  assert(present?(b))
+  assert(!present?(c))
+end

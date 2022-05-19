@@ -183,5 +183,6 @@
 
 #### Specs
 
+- The biggest weakness of the current specs is the inability to define private global test data and test helpers. This is not an issue for tests like in the `test/` folder that are compiled independently, but for specs such as those compiled with Pyramid, for example, we cannot pollute the `lore._` namespace with test globals and functions. This needs to be remedied in one way or another. (e.g. private modules, spec-only globals and functions, or some other solution.)
 - Idea: Provide a module `lore.bench` with a global variable `lore.bench.bucket`. `bucket` is a struct with a single field `value: Any` that can be used to let a result escape from the benchmarking function, thereby negating compiler optimizations. This is currently not useful as unused expressions aren't optimized away, but might be in the future.
   - An obvious alternative to this is simply not performing these optimizations inside of specs. This might be the preferable solution, but might also be too tricky to implement, or come with unacceptable edge cases that I currently don't anticipate.
