@@ -40,7 +40,7 @@ class ExpressionAssembler(
 
   private def declare(variable: LocalVariable, position: Position): Poem.Register = {
     if (variableRegisterMap.contains(variable.uniqueKey)) {
-      throw CompilationException(s"The variable ${variable.name} at $position is already declared somewhere else.")
+      throw CompilationException(s"The variable `${variable.name}` at $position is already declared somewhere else.")
     }
 
     val register = registerProvider.fresh()

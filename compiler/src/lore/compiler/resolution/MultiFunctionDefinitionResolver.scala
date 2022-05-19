@@ -35,7 +35,7 @@ object MultiFunctionDefinitionResolver {
   }
 
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
-    override def message = s"The function ${definition.signature} is already declared somewhere else or has a type-theoretic duplicate."
+    override def message = s"The function `${definition.signature}` is already declared somewhere else or has a type-theoretic duplicate."
   }
 
   /**
