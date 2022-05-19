@@ -2,7 +2,7 @@ package lore.compiler.poem
 
 /**
   * A PoemIntrinsic models the name and arity of the intrinsics known by the VM. Virtual intrinsics are known only to
-  * the compiler and compiled to other poem instructions, such as `lore.list.get!` being compiled to `ListGet`.
+  * the compiler and compiled to other poem instructions, such as `lore.list.get` being compiled to `ListGet`.
   */
 case class PoemIntrinsic(name: String, arity: Int, isVirtual: Boolean = false)
 
@@ -31,18 +31,18 @@ object PoemIntrinsic {
     intr("lore.real.parse", 1),
 
     intr("lore.string.length", 1),
-    intr("lore.string.at!", 2),
-    intr("lore.string.at_index!", 2),
+    intr("lore.string.at", 2),
+    intr("lore.string.at_index", 2),
     intr("lore.string.byte_size", 1),
-    intr("lore.string.byte_at!", 2),
+    intr("lore.string.byte_at", 2),
     intr("lore.string.to_lower", 1),
     intr("lore.string.to_upper", 1),
 
     intr("lore.symbol.name", 1),
 
-    intr("lore.tuple.get!", 2, isVirtual = true),
+    intr("lore.tuple.get", 2, isVirtual = true),
 
-    intr("lore.list.get!", 2, isVirtual = true),
+    intr("lore.list.get", 2, isVirtual = true),
     intr("lore.list.length", 1, isVirtual = true),
     intr("lore.list.concat", 2),
     intr("lore.list.slice", 3),

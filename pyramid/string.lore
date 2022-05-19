@@ -51,8 +51,13 @@ module String do
     if !bounds_contain?(string, position)
       panic('Position out of bounds for `String.at!`: $position.')
     end
-    intrinsic[String]('lore.string.at!', string, position)
+    at_unchecked!(string, position)
   end
+
+  /**
+    * The same as `at!`, but without bounds checks.
+    */
+  func at_unchecked!(string: String, position: Int): String = intrinsic[String]('lore.string.at', string, position)
 
   /**
     * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, the result is
@@ -61,10 +66,7 @@ module String do
     * `at` runs in linear time due to its handling of code points.
     */
   func at(string: String, position: Int): Option[String] = do
-    if bounds_contain?(string, position)
-      // Using the intrinsic instead of `at!` avoids a second bounds check.
-      Some(intrinsic[String]('lore.string.at!', string, position))
-    else None
+    if bounds_contain?(string, position) then Some(at_unchecked!(string, position)) else None
   end
 
   /**
@@ -76,8 +78,13 @@ module String do
     if !byte_bounds_contain?(string, index)
       panic('Index out of bounds for `at_index!`: $index.')
     end
-    intrinsic[String]('lore.string.at_index!', string, index)
+    at_index_unchecked!(string, index)
   end
+
+  /**
+    * The same as `at_index!`, but without bounds checks.
+    */
+  func at_index_unchecked!(string: String, index: Int): String = intrinsic[String]('lore.string.at_index', string, index)
 
   /**
     * Returns the code point starting at the given byte `index`. If `index` is out of range, returns None.
@@ -85,10 +92,7 @@ module String do
     * `at_index` is used to get a full code point via a byte index *in constant time*.
     */
   func at_index(string: String, index: Int): Option[String] = do
-    if byte_bounds_contain?(string, index)
-      // Using the intrinsic instead of `at_index!` avoids a second bounds check.
-      Some(intrinsic[String]('lore.string.at_index!', string, index))
-    else None
+    if byte_bounds_contain?(string, index) then Some(at_index_unchecked!(string, index)) else None
   end
 
   /**
@@ -110,17 +114,19 @@ module String do
     if !byte_bounds_contain?(string, index)
       panic('Index out of bounds for `byte_at!`: $index.')
     end
-    intrinsic[Int]('lore.string.byte_at!', string, index)
+    byte_at_unchecked!(string, index)
   end
+
+  /**
+    * The same as `byte_at!`, but without bounds checks.
+    */
+  func byte_at_unchecked!(string: String, index: Int): Int = intrinsic[Int]('lore.string.byte_at', string, index)
 
   /**
     * Returns the byte at the given `index`. If `index` is out of range, returns `None`.
     */
   func byte_at(string: String, index: Int): Option[Int] = do
-    if byte_bounds_contain?(string, index)
-      // Using the intrinsic instead of `byte_at!` avoids a second bounds check.
-      Some(intrinsic[Int]('lore.string.byte_at!', string, index))
-    else None
+    if byte_bounds_contain?(string, index) then Some(byte_at_unchecked!(string, index)) else None
   end
 
   /**

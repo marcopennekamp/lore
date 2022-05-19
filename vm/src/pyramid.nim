@@ -247,10 +247,10 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.real.parse", real_parse, 1),
 
   intr("lore.string.length", string_length, 1),
-  intr("lore.string.at!", string_at, 2),
-  intr("lore.string.at_index!", string_at_index, 2),
+  intr("lore.string.at", string_at, 2),
+  intr("lore.string.at_index", string_at_index, 2),
   intr("lore.string.byte_size", string_byte_size, 1),
-  intr("lore.string.byte_at!", string_byte_at, 2),
+  intr("lore.string.byte_at", string_byte_at, 2),
   intr("lore.string.to_lower", string_to_lower, 1),
   intr("lore.string.to_upper", string_to_upper, 1),
 
