@@ -122,6 +122,25 @@ module List do
   func sort(list: [A]): [A] = merge_sort(list)
 
   /**
+    * Whether `list` is sorted, comparing elements with `<`.
+    */
+  @where A
+  func sorted?(list: [A]): Boolean = do
+    // TODO (syntax): Ranges, ranges, ranges...
+    // We could also use a sliding window here, but that would be better suited to an iterator than a function that
+    // produces a new intermediate data structure.
+    let mut i = 0
+    let len = length(list) - 1
+    while i < len
+      let e1 = list |> get_unchecked!(i)
+      let e2 = list |> get_unchecked!(i + 1)
+      if e2 < e1 then return false
+      i += 1
+    end
+    true
+  end
+
+  /**
     * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are
     * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
     * result.
