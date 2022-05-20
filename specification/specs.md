@@ -75,15 +75,19 @@ All specs in the same module are grouped under the module's full name when repor
 Lore currently provides the following **assertion functions** in the module `lore.test`:
 
 - `assert(condition: Boolean, message: String): Unit` fails with `message` if `condition` is false.
+- `assert(condition: Boolean, message: () => String): Unit` fails with `message()` if `condition` is false.
 - `assert(condition: Boolean): Unit` fails with a standard message if `condition` is false.
 - `assert_equal(actual: Any, expected: Any, message: String): Unit` fails with `message` if `a != b`.
+- `assert_equal(actual: Any, expected: Any, message: () => String): Unit` fails with `message()` if `a != b`.
 - `assert_equal(actual: Any, expected: Any): Unit` fails with a standard message if `a != b`.
 
 These assertions are regular multi-functions and may be used anywhere. As Lore currently doesn't support exceptions, assertion failures are implemented using the VM's native exceptions. These cannot be caught by Lore code, but are instead handled by the VM. If a spec throws an assertion exception, it causes an individual test/benchmark to fail.
 
-Assertions have an impact on benchmark performance. A spec that performs complex computations, but is verified using simple assertions, should not have any measurable assertion overhead, and can thus act both as a benchmark and a test. However, if a small piece of code or simple function should be benchmarked, it might be useful to split a spec into a test and a benchmark, the latter marked as `@bench_only`. 
+Both `assert` and `assert_equal` provide a function that accepts messages lazily. These functions defer the construction of the error message to the time the assertion fails. If you are building complex error messages, passing them lazily may improve test performance.
 
-You can try benchmarking an assertion call such as `assert_equal(a, b)`, where `a` and `b` are values you'd typically compare, to gauge the assertion overhead for a given benchmark. A large portion of the overhead comes from the function call to `assert`/`assert_equal`, the string construction of the error message (unless the message is constant), and the equality test in case of `assert_equal`.
+Assertions have an impact on benchmark performance. A spec that performs complex computations, but is verified using simple assertions, should not have any measurable assertion overhead (as long as complex error messages are passed lazily), and can thus act both as a benchmark and a test. However, if a small piece of code or simple function should be benchmarked, it might be useful to split a spec into a test and a benchmark, the latter marked as `@bench_only`. 
+
+You can try benchmarking an assertion call such as `assert_equal(a, b)`, where `a` and `b` are values you'd typically compare, to gauge the assertion overhead for a given benchmark. A large portion of the overhead comes from the function call to `assert`/`assert_equal`, construction of the error message (unless it's passed lazily), and the equality test in case of `assert_equal`.
 
 
 

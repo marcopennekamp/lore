@@ -218,11 +218,9 @@ proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   echo arg(0)
   values.unit_value_tagged
 
-proc test_assert(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## assert(condition: Boolean, message: String): Unit
-  if not arg_boolean(0):
-    raise new_exception(SpecAssertionError, arg_string(1))
-  values.unit_value_tagged
+proc test_raise_assertion_error(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## raise_assertion_error(message: String): Unit
+  raise new_exception(SpecAssertionError, arg_string(0))
 
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
   Intrinsic(name: name, function: function, arity: arity)
@@ -266,5 +264,5 @@ let intrinsics*: seq[Intrinsic] = @[
 
   intr("lore.io.println", io_println, 1),
 
-  intr("lore.test.assert", test_assert, 2),
+  intr("lore.test.raise_assertion_error", test_raise_assertion_error, 1),
 ]
