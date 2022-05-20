@@ -1,6 +1,6 @@
-trait Token
+module calculator do
+  trait Token
 
-module Token do
   struct Operand extends Token
     value: Real
   end
@@ -15,12 +15,11 @@ module Token do
 end
 
 module lore.core do
-  use Token._
-  use Token.Operator._
+  use calculator._
 
   func to_string(operand: Operand): String = 'Operand(${operand.value})'
-  func to_string(Add): String = 'Add'
-  func to_string(Sub): String = 'Sub'
-  func to_string(Mul): String = 'Mul'
-  func to_string(Div): String = 'Div'
+  func to_string(Operator.Add): String = 'Add'
+  func to_string(Operator.Sub): String = 'Sub'
+  func to_string(Operator.Mul): String = 'Mul'
+  func to_string(Operator.Div): String = 'Div'
 end

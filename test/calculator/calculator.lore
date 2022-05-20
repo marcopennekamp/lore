@@ -1,58 +1,30 @@
-module Calculator
+module calculator
 
-use lore.Enum.empty?
-use lore.List
+use Operator._
 
-use Token._
-use Token.Operator._
+module Calculator do
+  func evaluate(tokens: [Token]): Real = do
+    let stack = Stack([])
 
-struct Stack
-  mut elements: [Real]
-end
-
-module Stack do
-  domain stack: Stack
-    func push(value: Real): Unit = do
-      stack.elements = stack.elements :+ value
+    for token <- tokens
+      handle(token, stack)
     end
 
-    func pop(): Real = do
-      // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
-      // assume an endless well of zeroes.
-      if empty?(stack.elements)
-        return 0.0
-      end
-
-      let result = List.last!(stack.elements)
-      stack.elements = List.init(stack.elements)
-      result
-    end
-  end
-end
-
-func evaluate(tokens: [Token]): Real = do
-  let stack = Stack([])
-
-  for token <- tokens
-    handle(token, stack)
+    Stack.pop(stack)
   end
 
-  Stack.pop(stack)
-end
+  func handle(token: Token, stack: Stack): Unit
 
-func handle(token: Token, stack: Stack): Unit
+  func handle(operand: Operand, stack: Stack): Unit = Stack.push(stack, operand.value)
 
-func handle(operand: Operand, stack: Stack): Unit = do
-  Stack.push(stack, operand.value)
-end
+  func handle(Add, stack: Stack): Unit = apply_binary_operator((a, b) => a + b, stack)
+  func handle(Sub, stack: Stack): Unit = apply_binary_operator((a, b) => a - b, stack)
+  func handle(Mul, stack: Stack): Unit = apply_binary_operator((a, b) => a * b, stack)
+  func handle(Div, stack: Stack): Unit = apply_binary_operator((a, b) => a / b, stack)
 
-func handle(Add, stack: Stack): Unit = apply_binary_operator((a, b) => a + b, stack)
-func handle(Sub, stack: Stack): Unit = apply_binary_operator((a, b) => a - b, stack)
-func handle(Mul, stack: Stack): Unit = apply_binary_operator((a, b) => a * b, stack)
-func handle(Div, stack: Stack): Unit = apply_binary_operator((a, b) => a / b, stack)
-
-func apply_binary_operator(f: (Real, Real) => Real, stack: Stack): Unit = do
-  let a = Stack.pop(stack)
-  let b = Stack.pop(stack)
-  Stack.push(stack, f(a, b))
+  func apply_binary_operator(f: (Real, Real) => Real, stack: Stack): Unit = do
+    let a = Stack.pop(stack)
+    let b = Stack.pop(stack)
+    Stack.push(stack, f(a, b))
+  end
 end

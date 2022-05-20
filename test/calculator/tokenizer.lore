@@ -1,4 +1,4 @@
-module Tokenizer
+module calculator
 
 use lore.Enum.[map, empty?]
 use lore.IO.println
@@ -8,86 +8,97 @@ use lore.Option.[Some, None, or_else]
 use lore.String
 use lore.Tuple
 
-use Token.[Operand, Operator]
+use calculator.[Operand, Operator]
 
-type Position = Int
+module Tokenizer do
+  type Position = Int
 
-func tokenize(term: String): Option[[Token]] = do
-  let mut position = 0
-  let mut tokens: [Token] = []
-  let term_length = String.length(term)
+  /**
+    * Tokenizes `term` into a list of tokens, or `None` if a parsing error occurs.
+    */
+  func tokenize(term: String): Option[[Token]] = do
+    let mut position = 0
+    let mut tokens: [Token] = []
+    let term_length = String.length(term)
 
-  while position < term_length
-    position = skip_whitespace(term, position)
+    while position < term_length
+      position = skip_whitespace(term, position)
 
-    // Mutable variables like `position` cannot be captured in anonymous functions yet.
-    let current_position = position
-    let result_tuple_option =
-      try_operand(term, position)
-        |> or_else(() => try_operator(term, current_position))
+      // Mutable variables like `position` cannot be captured in anonymous functions yet.
+      let current_position = position
+      let result_tuple_option =
+        try_operand(term, position)
+          |> or_else(() => try_operator(term, current_position))
 
-    // TODO (case): This could be pattern-matched. Alternatively, we could support non-local returns in anonymous
-    //              functions and write `|> get_or_else(() => return None)`.
-    if empty?(result_tuple_option)
-      return None
+      // TODO (case): This could be pattern-matched. Alternatively, we could support non-local returns in anonymous
+      //              functions and write `|> get_or_else(() => return None)`.
+      if empty?(result_tuple_option)
+        return None
+      end
+
+      // TODO (case): This is a little awkward due to missing destruction of tuples.
+      // It could read: `(let token, position) = result` or `let (token, ^position) = result` without the assignment
+      // pattern matching.
+      let result_tuple = Option.get!(result_tuple_option)
+      let token = Tuple.first(result_tuple)
+      tokens = tokens :+ token
+      position = Tuple.second(result_tuple)
     end
 
-    // TODO (case): This is a little awkward due to missing destruction of tuples.
-    // It could read: `(let token, position) = result` or `let (token, ^position) = result` without the assignment
-    // pattern matching.
-    let result_tuple = Option.get!(result_tuple_option)
-    let token = Tuple.first(result_tuple)
-    tokens = tokens :+ token
-    position = Tuple.second(result_tuple)
+    Some(tokens)
   end
 
-  Some(tokens)
-end
-
-func skip_whitespace(term: String, position: Position): Position = do
-  let mut pos = position
-  let term_length = String.length(term)
-  while pos < term_length && String.at!(term, pos) |> String.all_whitespace?
-    pos += 1
-  end
-  pos
-end
-
-/**
-  * Tries to parse a real-value operand.
-  */
-func try_operand(term: String, position: Position): Option[(Operand, Position)] = do
-  let mut number_string = ''
-  let mut pos = position
-  let term_length = String.length(term)
-
-  while pos < term_length && String.at!(term, pos) |> String.all_digits?
-    number_string = String.concat(number_string, String.at!(term, pos))
-    pos += 1
+  /**
+    * Skips whitespace in `term` from `position` to a new position.
+    */
+  func skip_whitespace(term: String, position: Position): Position = do
+    let mut pos = position
+    let term_length = String.length(term)
+    while pos < term_length && String.at!(term, pos) |> String.all_whitespace?
+      pos += 1
+    end
+    pos
   end
 
-  // Mutable variables like `pos` cannot be captured in anonymous functions yet.
-  let result_pos = pos
+  /**
+    * Tries to parse a real-value operand.
+    */
+  func try_operand(term: String, position: Position): Option[(Operand, Position)] = do
+    let mut number_string = ''
+    let mut pos = position
+    let term_length = String.length(term)
 
-  // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.
-  // TODO (syntax): This is essentially a trailing lambda.
-  number_string |> Real.parse |> map(number => do
-    let operand = Operand(number)
-    (operand, result_pos)
-  end)
-end
+    while pos < term_length && String.at!(term, pos) |> String.all_digits?
+      number_string = String.concat(number_string, String.at!(term, pos))
+      pos += 1
+    end
 
-func try_operator(term: String, position: Position): Option[(Operator, Position)] = do
-  let char = String.at!(term, position)
+    // Mutable variables like `pos` cannot be captured in anonymous functions yet.
+    let result_pos = pos
 
-  // TODO (case): This could be a case expression.
-  let operator = cond
-    char == '+' => Operator.Add
-    char == '-' => Operator.Sub
-    char == '*' => Operator.Mul
-    char == '/' => Operator.Div
-    true        => return None
+    // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.
+    // TODO (syntax): This is essentially a trailing lambda.
+    number_string |> Real.parse |> map(number => do
+      let operand = Operand(number)
+      (operand, result_pos)
+    end)
   end
 
-  Some((operator, position + 1))
+  /**
+    * Tries to parse an operator symbol.
+    */
+  func try_operator(term: String, position: Position): Option[(Operator, Position)] = do
+    let char = String.at!(term, position)
+
+    // TODO (case): This could be a case expression.
+    let operator = cond
+      char == '+' => Operator.Add
+      char == '-' => Operator.Sub
+      char == '*' => Operator.Mul
+      char == '/' => Operator.Div
+      true        => return None
+    end
+
+    Some((operator, position + 1))
+  end
 end

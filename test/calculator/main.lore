@@ -1,12 +1,23 @@
+module calculator
+
 use lore.Enum.map
 use lore.Option
+use lore.test._
 
-func test(): [Real] = [
+func parse_and_evaluate(term: String): Real = term |> Tokenizer.tokenize |> Option.get_or_else([]) |> Calculator.evaluate
+
+func main(): [Real] = [
   '',
   '1 2 +',
   '1 2 3 * +',
   '3 30 / 5 /',
   '2 3 * 4 0 - - 9 + 7 5 * /',
-] |> map(process)
+] |> map(parse_and_evaluate)
 
-func process(term: String): Real = term |> Tokenizer.tokenize |> Option.get_or_else([]) |> Calculator.evaluate
+@bench
+spec '`calculator` parses and evaluates terms to the correct result' do
+  assert_equal(
+    main(),
+    [0.0, 3.0, 7.0, 0.5, -35.0],
+  )
+end

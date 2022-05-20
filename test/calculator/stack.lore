@@ -1,0 +1,28 @@
+module calculator
+
+use lore.Enum.empty?
+use lore.List
+
+struct Stack
+  mut elements: [Real]
+end
+
+module Stack do
+  domain stack: Stack
+    func push(value: Real): Unit = do
+      stack.elements = stack.elements :+ value
+    end
+
+    func pop(): Real = do
+      // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
+      // assume an endless well of zeroes.
+      if empty?(stack.elements)
+        return 0.0
+      end
+
+      let result = List.last!(stack.elements)
+      stack.elements = List.init(stack.elements)
+      result
+    end
+  end
+end
