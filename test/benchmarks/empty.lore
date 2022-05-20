@@ -1,3 +1,8 @@
 // This is the baseline benchmark that ensures that the VM doesn't have too much overhead for each benchmark run. The
-// run time of this benchmark should be below 20 nanoseconds.
-func test(): Int = 0
+// run time per operation of this benchmark should be below 20 nanoseconds.
+module benchmarks
+
+@bench_only
+spec '`empty`' do
+  ()
+end
