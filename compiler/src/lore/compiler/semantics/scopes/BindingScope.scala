@@ -13,7 +13,7 @@ trait BindingScope extends Scope[Binding] {
     resolveStatic(namePath, this, position)
   }
 
-  override def entryLabel: String = "variable, multi-function, struct constructor, or module"
+  override def entryLabel: String = "binding"
 }
 
 /**
