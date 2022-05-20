@@ -12,9 +12,8 @@
     - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
     - Some tests should be moved into Pyramid itself.
     - Some tests such as `hello_name.lore` and `combat` should be marked as benchmarks. We could also add additional benchmarks.
-  - Consider adding module name overrides: `@root module lore.core do ... end` in any kind of module to define a module `lore.core`, not relative to the parent local module. Similarly, function names like `func lore.core.to_string` to define a multi-function name starting from the root module, not the local module.
-    - This is important so that certain lore files can be defined with a top module declaration, even if just a single function needs to be defined in modules such as `lore.core`. Especially `lore.core` will be defined very often for `to_string` and the comparison functions.
-    - Many `test/` sources suffer from this issue, so it would be smart to fix this in this phase.
+  - Implement at-root module declarations. (See `modules.md`.)
+  - Remove the note about not being fully implemented at the top of `specs.md`.
   - Clear all `TODO (specs)` entries.
 - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
 - Fix map types and values:
@@ -32,6 +31,7 @@
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
   - Rename `act` to `proc`? This would be in line with `func`.
+  - Allow defining functions at the root module, not the local module, such as `func lore.core.to_string`. We might have to add an annotation such as `@root` for this so that name paths are consistently local by default, and only global via explicit annotation. (Compare `@root` in module declarations.)
   - Rename `Boolean` to `Bool`? Int is also abbreviated.
   - Implement implicit real conversions for integer literals standing in `Real` contexts.
     - A list like `[0, -2, 2.5, 6, 22]` should also be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.

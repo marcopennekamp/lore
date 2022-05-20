@@ -1,6 +1,6 @@
 # Modules
 
-**Modules** separate top-level definitions into logical units. Modules are *not* restricted to files or library bounds: you can declare a module anywhere, regardless of the source file's name. You can split a module across many files, and declare multiple modules in the same file. You can even extend a module first declared in a library (including Lore's standard library Pyramid) with additional specialized functions, types, global variables, and modules. Modules can be nested arbitrarily.
+**Modules** separate top-level definitions into logical units. Modules are *not* restricted to files or library bounds: you can declare a module anywhere, regardless of the source file's name. You can split a module across many files, and declare multiple modules in the same file. You can even extend a module first declared in a library (including Lore's standard library) with additional specialized functions, types, global variables, and modules. Modules can be nested arbitrarily.
 
 A module can be **declared** in two ways:
 
@@ -153,6 +153,39 @@ module Animal do
   func breed(mother: Animal, father: Animal): Option[Animal] = None
 end
 ```
+
+
+
+### At-Root Module Declarations
+
+Sometimes it is desirable to declare a nested module without it being a member of the outer module, but rather the root module. This is the case when overriding standard library functions such as `lore.core.to_string` and `lore.core.equal?`. Take the following incorrect code:
+
+```
+module culinary
+
+struct Glass(content: String)
+
+module lore.core
+  func to_string(glass: Glass): String = 'A fine glass of ${glass.content}.'
+end
+```
+
+The module `lore.core` will actually be `culinary.lore.core`. Even worse, if you're using an import such as `use lore.Enum.map`, the compiler will complain that `culinary.lore.Enum.map` does not exist! This is because you've declared a local module `lore` which takes precedence over the root `lore` module defined by the standard library.
+
+To avoid this pitfall, an **at-root module declaration** ignores the outer module name and inserts the defined module directly into the root module:
+
+```
+module culinary
+
+struct Glass(content: String)
+
+@root
+module lore.core do
+  func to_string(glass: Glass): String = 'A fine glass of ${glass.content}.'
+end
+```
+
+As the at-root module is not a child of the outer module, its name will not become part of the local module. In the example above, a normal module declaration would be known as `lore` inside the local module `culinary`. However, because `lore` is an at-root module, `culinary` does not hold a local declaration `lore`. Rather, `lore` will be referred to as a globally declared member of the root module (see "Name Resolution" above).
 
 
 
