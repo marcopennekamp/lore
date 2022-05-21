@@ -36,7 +36,7 @@ class FragmentParser(implicit fragment: Fragment) {
       case Parsed.Failure(_, _, extra) =>
         val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index, extra.index))
         reporter.error(error)
-        DeclNode.ModuleNode(NamePathNode.empty, Vector.empty, Vector.empty, Position(fragment, 0, 0))
+        DeclNode.ModuleNode(NamePathNode.empty, atRoot = false, Vector.empty, Vector.empty, Position(fragment, 0, 0))
 
       case Parsed.Success(result, _) => result
     }
@@ -45,7 +45,10 @@ class FragmentParser(implicit fragment: Fragment) {
   def fullFragment[_: P]: P[DeclNode.ModuleNode] = {
     def topModuleDeclaration = P(("module" ~~ Space.WS1 ~~ namePath ~~ Space.terminators).?).map(_.getOrElse(NamePathNode.empty))
     P(Space.WL ~~ Index ~~ topModuleDeclaration ~ moduleBody ~~ Index ~~ Space.WL ~~ End)
-      .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }
+      .map {
+        case (startIndex, modulePath, (imports, members), endIndex) =>
+          (startIndex, modulePath, false, imports, members, endIndex)
+      }
       .map(withPosition(DeclNode.ModuleNode))
   }
 
@@ -53,8 +56,12 @@ class FragmentParser(implicit fragment: Fragment) {
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def module[_: P]: P[DeclNode.ModuleNode] = {
-    P(Index ~~ "module" ~~ Space.WS1 ~~ namePath ~ "do" ~ moduleBody ~ "end" ~~ Index)
-      .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }
+    def atRoot = P(annotationParser.simple("root").?).map(_.isDefined)
+    P(atRoot ~ Index ~~ "module" ~~ Space.WS1 ~~ namePath ~ "do" ~ moduleBody ~ "end" ~~ Index)
+      .map {
+        case (atRoot, startIndex, modulePath, (imports, members), endIndex) =>
+          (startIndex, modulePath, atRoot, imports, members, endIndex)
+      }
       .map(withPosition(DeclNode.ModuleNode))
   }
 

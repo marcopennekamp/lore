@@ -35,7 +35,6 @@ case class NamePath(segments: Vector[String]) {
   lazy val parentOrEmpty: NamePath = parent.getOrElse(NamePath.empty)
 
   val isEmpty: Boolean = segments.isEmpty
-  val isRoot: Boolean = isEmpty
   val isSingle: Boolean = segments.length == 1
   val isMultiple: Boolean = segments.length > 1
 

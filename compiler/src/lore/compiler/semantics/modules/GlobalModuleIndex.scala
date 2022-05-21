@@ -1,10 +1,9 @@
 package lore.compiler.semantics.modules
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.DeclNode
-import lore.compiler.syntax.DeclNode.ModuleNode
-import lore.compiler.syntax.Node.NamePathNode
+import lore.compiler.syntax.DeclNode.{AliasNode, ModuleNode, SpecNode, StructNode}
+import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
 /**
   * The global module index contains a global module for each module name path. Such a module knows all of its members
@@ -14,57 +13,6 @@ class GlobalModuleIndex {
 
   private var index: Map[NamePath, GlobalModule] = Map.empty
 
-  /**
-    * Adds the given DeclNode to the indexed module identified by `modulePath`, while also adding all of its members if
-    * it's a module.
-    */
-  def add(node: DeclNode, modulePath: NamePath): Unit = this.synchronized {
-    val parentModule = getOrCreateModule(modulePath)
-    node match {
-      case node@DeclNode.ModuleNode(pathNode, imports, members, position) =>
-        // A nested module node `module Foo.Bar` has to be added to the global index such that both Foo and Bar are
-        // added as separate modules. Foo might not actually be defined anywhere else, so it's important that we
-        // de-nest here. The inner module (the right-most name) receives all the imports and declarations, while the
-        // outer modules simply get the nested module as the single member.
-        // For example, a declaration `module Foo.Bar.Baz` gives all imports and declarations to `Baz`, makes `Baz` a
-        // member of `Bar`, and `Bar` a member of `Foo`.
-        val denestedModuleNode = if (pathNode.segments.length > 1) {
-          val innerModuleNode = DeclNode.ModuleNode(
-            NamePathNode(Vector(pathNode.segments.last)),
-            imports,
-            members,
-            position
-          )
-
-          pathNode.segments.init.foldRight(innerModuleNode) {
-            case (segment, innerModuleNode) => ModuleNode(
-              NamePathNode(Vector(segment)),
-              Vector.empty,
-              Vector(innerModuleNode),
-              position
-            )
-          }
-        } else node
-
-        // The denested module node must be added to its parent module, UNLESS the module node is an implicit root
-        // module, which is the case when a fragment doesn't contain a top module declaration: the fragment's outer
-        // module node has the root name path then. This exception exists because we don't want to add the root module
-        // to the root module itself.
-        if (!node.namePath.isRoot) {
-          parentModule.add(denestedModuleNode)
-        }
-
-        // Although global modules are usually created implicitly when the first module member is added to the index,
-        // empty modules must be added to the index manually. This also allows us to add a "declared at" position to
-        // the module.
-        val denestedModulePath = modulePath ++ denestedModuleNode.namePath
-        val denestedModule = getOrCreateModule(denestedModulePath)
-        denestedModule.addModulePosition(position)
-        denestedModuleNode.members.foreach(add(_, denestedModulePath))
-
-      case _ => parentModule.add(node)
-    }
-  }
   // A global module index should always have its root module set. This simplifies various parts of resolution.
   getOrCreateModule(NamePath.empty)
 
@@ -115,27 +63,62 @@ class GlobalModuleIndex {
   }
 
   /**
-    * Finds a path to the module member with the given name, either in the module identified by `modulePath`, or in the
-    * root module. Returns None if the member cannot be found.
-    *
-    * For example, if we are requesting a member via the module path `foo.bar` and member name `baz`, but `baz` is
-    * actually a member of `foo`, `getPath` will return None. If `baz` is instead a member of the root, this function
-    * will return simply `baz`.
+    * Adds `node` to the given global module, while also adding all of `node`'s members to `node`'s global module. If
+    * `node` is an at-root module declaration, it will be added to the root module instead.
     */
-  def getPath(modulePath: NamePath, memberName: String, nameKind: NameKind): Option[NamePath] = {
-    def fallback: Option[NamePath] = {
-      root.filter(_.has(memberName, nameKind)).map(_ => NamePath(memberName))
+  def addNode(globalModule: GlobalModule, node: DeclNode): Unit = this.synchronized {
+    val (parentModule, nodes) = node match {
+      case node: ModuleNode if node.namePath.isEmpty =>
+        // A module with an empty name path can only exist in the form of an implicit root module, which is the case
+        // when a fragment doesn't contain a top module declaration. In such cases, the given module declaration has no
+        // parent module and its declarations must be added to the root module.
+        if (globalModule != root) {
+          throw CompilationException("A module with an empty name path should not be declared under a parent module" +
+            s" `${globalModule.name}`. The module declaration occurs at ${node.position}.")
+        }
+        root.addModulePosition(node.position)
+        (root, node.members)
+
+      case node: ModuleNode =>
+        val parentModule = node match {
+          case ModuleNode(_, true, _, _, _) => root
+          case _ => globalModule
+        }
+        (parentModule, Vector(node))
+
+      case node => (globalModule, Vector(node))
     }
 
-    index.get(modulePath) match {
-      case Some(globalModule) =>
-        if (globalModule.has(memberName, nameKind)) {
-          Some(modulePath + memberName)
-        } else fallback
+    nodes.foreach {
+      case node: ModuleNode =>
+        // A nested module node `module Foo.Bar.Baz` has to be added to the global index such that `Foo`, `Bar`, and
+        // `Baz` are added as separate modules. `Foo` and `Bar` might not actually be defined anywhere else, so it's
+        // important to have these global modules created in the index. The inner module receives all member names,
+        // while the outer modules simply have the nested module as their sole member. Given `module Foo.Bar.Baz`,
+        // `Foo` becomes a member of the root module, `Bar` a member of `Foo`, `Baz` a member of `Bar`, and all members
+        // are registered to `Baz`.
+        val innerModule = node.namePath.segments.foldLeft(parentModule) {
+          case (globalModule, simpleModuleName) =>
+            globalModule.add(simpleModuleName, node.position, NameKind.Binding)
+            val nestedModule = getOrCreateModule(globalModule.name + simpleModuleName)
+            nestedModule.addModulePosition(node.position)
+            nestedModule
+        }
+        node.members.foreach(addNode(innerModule, _))
 
-      case None => fallback
+      case node: StructNode => globalModule.add(node.simpleName, node.position)
+      case node: AliasNode if node.isStructAlias => globalModule.add(node.simpleName, node.position)
+      case node: BindingDeclNode => globalModule.add(node.simpleName, node.position, NameKind.Binding)
+      case node: TypeDeclNode => globalModule.add(node.simpleName, node.position, NameKind.Type)
+      case _: SpecNode =>
+        // Specs do not need to be added to the global module, because they cannot be referenced from Lore code.
     }
   }
+
+  /**
+    * Adds `node` to the root global module, while also adding all of `node`'s members to `node`'s global module.
+    */
+  def addNodeToRoot(node: DeclNode): Unit = addNode(root, node)
 
   /**
     * Adds the type or binding `name` to the proper global module directly.

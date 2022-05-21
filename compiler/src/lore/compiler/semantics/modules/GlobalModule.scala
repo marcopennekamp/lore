@@ -1,12 +1,8 @@
 package lore.compiler.semantics.modules
 
-import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.core.Position
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.DeclNode.{ModuleNode, SpecNode}
-import lore.compiler.syntax.Node.NamePathNode
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
 /**
   * A global module combines a module's definitions across all source fragments. It also represents modules as a
@@ -23,21 +19,6 @@ class GlobalModule(val name: NamePath) extends Binding {
 
   def addModulePosition(position: Position): Unit = {
     modulePositions = modulePositions :+ position
-  }
-
-  def add(node: DeclNode): Unit = {
-    node match {
-      case ModuleNode(NamePathNode(Vector(nameNode)), _, _, position) => add(nameNode.value, position, NameKind.Binding)
-      case node: ModuleNode => throw CompilationException(
-        s"Module nodes must be denested when being added to the GlobalModule. Module name: ${node.namePathNode}. Position: ${node.position}."
-      )
-      case node: DeclNode.StructNode => add(node.simpleName, node.position)
-      case node: DeclNode.AliasNode if node.isStructAlias => add(node.simpleName, node.position)
-      case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
-      case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)
-      case _: SpecNode =>
-        // Specs do not need to be added to the global module, because they can't be referenced from Lore code.
-    }
   }
 
   /**

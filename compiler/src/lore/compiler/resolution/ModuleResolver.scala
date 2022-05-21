@@ -5,7 +5,7 @@ import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.semantics.modules.LocalModule.ImportMap
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
+import lore.compiler.syntax.{BindingDeclNode, DeclNode, NamedDeclNode, TypeDeclNode}
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -15,12 +15,15 @@ object ModuleResolver {
     * Resolves a list of module nodes and produces LocalModules in the process. The function will also build a
     * GlobalModuleIndex. The imports of each local module are processed fully and can be accessed through each local
     * module's import map.
+    *
+    * Care should be taken to pass all existing module nodes to this function at once, as imports can only be resolved
+    * correctly if a complete understanding of global modules is built.
     */
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): (Vector[LocalModule], GlobalModuleIndex) = {
     // Step 1: Build the ModuleNodeIndex, which will be used to resolve name paths for imports and scopes.
     implicit val globalModuleIndex: GlobalModuleIndex = new GlobalModuleIndex
-    moduleNodes.foreach(globalModuleIndex.add(_, NamePath.empty))
     Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.addMember(tpe.name, NameKind.Type))
+    moduleNodes.foreach(globalModuleIndex.addNodeToRoot)
 
     // Step 2: Flatten module nodes and resolve imports.
     val localModules = moduleNodes.flatMap(resolve(_, None))
@@ -43,7 +46,12 @@ object ModuleResolver {
     moduleNode: DeclNode.ModuleNode,
     parent: Option[LocalModule],
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): Vector[LocalModule] = {
-    val modulePath = parent.map(_.modulePath).getOrElse(NamePath.empty) ++ moduleNode.namePath
+    val modulePath = if (moduleNode.atRoot) {
+      // At-root module declarations don't carry forward the names of their parents.
+      moduleNode.namePath
+    } else {
+      parent.map(_.modulePath).getOrElse(NamePath.empty) ++ moduleNode.namePath
+    }
 
     val localTypeNames: Set[String] = {
       moduleNode.members.filterType[TypeDeclNode].map(_.simpleName).toSet
@@ -51,7 +59,8 @@ object ModuleResolver {
 
     val localBindingNames: Set[String] = {
       moduleNode.members.flatMap {
-        case node: DeclNode.ModuleNode => Some(node.namePath.headName)
+        // At-root module declarations shouldn't be added as local bindings, per the specification.
+        case node: DeclNode.ModuleNode if !node.atRoot => Some(node.namePath.headName)
         // Structs always have a constructor or an object and thus also define binding names. The same applies to
         // struct aliases.
         case node: DeclNode.StructNode => Some(node.simpleName)

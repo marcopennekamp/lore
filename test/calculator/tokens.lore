@@ -1,22 +1,21 @@
-module calculator do
-  trait Token
+module calculator
 
-  struct Operand extends Token
-    value: Real
-  end
+trait Token
 
-  trait Operator extends Token
-  module Operator do
-    object Add extends Operator
-    object Sub extends Operator
-    object Mul extends Operator
-    object Div extends Operator
-  end
+struct Operand extends Token
+  value: Real
 end
 
-module lore.core do
-  use calculator._
+trait Operator extends Token
+module Operator do
+  object Add extends Operator
+  object Sub extends Operator
+  object Mul extends Operator
+  object Div extends Operator
+end
 
+@root
+module lore.core do
   func to_string(operand: Operand): String = 'Operand(${operand.value})'
   func to_string(Operator.Add): String = 'Add'
   func to_string(Operator.Sub): String = 'Sub'

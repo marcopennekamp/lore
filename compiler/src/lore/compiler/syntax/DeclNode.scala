@@ -56,6 +56,7 @@ object DeclNode {
 
   case class ModuleNode(
     namePathNode: NamePathNode,
+    atRoot: Boolean,
     imports: Vector[ImportNode],
     members: Vector[DeclNode],
     position: Position,
