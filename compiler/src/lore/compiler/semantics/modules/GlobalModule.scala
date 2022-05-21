@@ -1,6 +1,7 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.Position
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode.{ModuleNode, SpecNode}
@@ -40,17 +41,12 @@ class GlobalModule(val name: NamePath) extends Binding {
   }
 
   /**
-    * Adds both a type and a binding for the given name, e.g. for struct types and struct constructors/objects.
+    * Adds a type or binding `memberName` to the global module.
     */
-  def add(name: String, position: Position): Unit = {
-    add(name, position, NameKind.Type)
-    add(name, position, NameKind.Binding)
-  }
-
-  def add(name: String, position: Position, nameKind: NameKind): Unit = {
+  def add(memberName: String, position: Position, nameKind: NameKind): Unit = {
     val entries = entriesOf(nameKind)
-    val positions = entries.getOrElse(name, Vector.empty)
-    val updatedEntries = entries.updated(name, positions :+ position)
+    val positions = entries.getOrElse(memberName, Vector.empty)
+    val updatedEntries = entries.updated(memberName, positions :+ position)
     nameKind match {
       case NameKind.Type => types = updatedEntries
       case NameKind.Binding => bindings = updatedEntries
@@ -58,14 +54,32 @@ class GlobalModule(val name: NamePath) extends Binding {
   }
 
   /**
-    * Whether this module has a member named `name` given `nameKind`.
+    * Adds a type and a binding `memberName` to the global module, e.g. for struct types and struct
+    * constructors/objects.
     */
-  def has(name: String, nameKind: NameKind): Boolean = entriesOf(nameKind).contains(name)
+  def add(memberName: String, position: Position): Unit = {
+    add(memberName, position, NameKind.Type)
+    add(memberName, position, NameKind.Binding)
+  }
 
   /**
-    * Get all member positions for the member `name`. If the member doesn't exist, the empty list is returned.
+    * Whether this module has a member `memberName` of kind `nameKind`.
     */
-  def getMemberPositions(name: String, nameKind: NameKind): Vector[Position] = entriesOf(nameKind).getOrElse(name, Vector.empty)
+  def has(memberName: String, nameKind: NameKind): Boolean = entriesOf(nameKind).contains(memberName)
+
+  /**
+    * Returns an absolute name path if this module has a member `memberName` of kind `nameKind`, and `None` otherwise.
+    */
+  def getAbsolutePath(memberName: String, nameKind: NameKind): Option[NamePath] = {
+    if (has(memberName, nameKind)) Some(name + memberName) else None
+  }
+
+  /**
+    * Get all member positions for the member `memberName`. If the member doesn't exist, the empty list is returned.
+    */
+  def getMemberPositions(memberName: String, nameKind: NameKind): Vector[Position] = {
+    entriesOf(nameKind).getOrElse(memberName, Vector.empty)
+  }
 
   private def entriesOf(nameKind: NameKind): Map[String, Vector[Position]] = nameKind match {
     case NameKind.Type => types

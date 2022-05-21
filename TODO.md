@@ -135,6 +135,7 @@
 
 - Rename "sum types" to "union types" for better name duality with "intersection types".
 - Rename Node to SyntaxNode. DeclNode --> DeclarationSyntaxNode, TypeExprNode --> TypeSyntaxNode, etc.
+- Bindings should be called terms, while types and terms collectively should be called bindings. The current situation where value bindings are called bindings and types are not called bindings doesn't make sense.
 
 ##### Clean-Up
 

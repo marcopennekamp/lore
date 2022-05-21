@@ -19,8 +19,8 @@ object ModuleResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): (Vector[LocalModule], GlobalModuleIndex) = {
     // Step 1: Build the ModuleNodeIndex, which will be used to resolve name paths for imports and scopes.
     implicit val globalModuleIndex: GlobalModuleIndex = new GlobalModuleIndex
-    Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.add(tpe.name, NameKind.Type))
     moduleNodes.foreach(globalModuleIndex.add(_, NamePath.empty))
+    Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.addMember(tpe.name, NameKind.Type))
 
     // Step 2: Flatten module nodes and resolve imports.
     val localModules = moduleNodes.flatMap(resolve(_, None))
@@ -115,7 +115,7 @@ object ModuleResolver {
     // The head segment is the segment that we have to resolve to get the absolute import path. Because the head
     // segment must be a module to contain any meaningful members to import, we can avoid calling `getPath` with
     // `NameKind.Type`.
-    val absolutePath = localModule.getPath(importPath.headName, NameKind.Binding).map(prefix => prefix ++ importPath.tail) match {
+    val absolutePath = localModule.getAbsolutePath(importPath.headName, NameKind.Binding).map(prefix => prefix ++ importPath.tail) match {
       case Some(absolutePath) => absolutePath
       case None =>
         reporter.error(ModuleFeedback.Import.UnresolvedHeadSegment(importNode, importPath.headName))
@@ -139,7 +139,9 @@ object ModuleResolver {
         return localModule
       }
 
-      def pathsFor(nameKind: NameKind) = if (globalModuleIndex.has(absolutePath, nameKind)) Vector(absolutePath) else Vector.empty
+      def pathsFor(nameKind: NameKind) = {
+        if (globalModuleIndex.has(absolutePath, nameKind)) Vector(absolutePath) else Vector.empty
+      }
       (pathsFor(NameKind.Type), pathsFor(NameKind.Binding))
     }
 

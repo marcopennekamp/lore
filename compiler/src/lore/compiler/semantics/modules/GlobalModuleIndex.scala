@@ -7,11 +7,8 @@ import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.NamePathNode
 
 /**
-  * The GlobalModuleIndex contains, for each flat module name path, all of the module's members including nested
-  * modules as DeclNodes. The members come from all equally named ModuleNodes from across all fragments.
-  *
-  * The GlobalModuleIndex also provides quick access to all binding and type names declared within the module, for the
-  * purposes of resolving simple names and imports.
+  * The global module index contains a global module for each module name path. Such a module knows all of its members
+  * globally. The members come from all module declarations in all fragments.
   */
 class GlobalModuleIndex {
 
@@ -68,13 +65,14 @@ class GlobalModuleIndex {
       case _ => parentModule.add(node)
     }
   }
+  // A global module index should always have its root module set. This simplifies various parts of resolution.
+  getOrCreateModule(NamePath.empty)
 
   /**
-    * Adds the type or binding `name` to the proper indexed module. This is used to add predefined types to the root
-    * indexed module.
+    * The root module contains all members which aren't declared as part of a module themselves.
     */
-  def add(name: NamePath, kind: NameKind): Unit = {
-    getOrCreateModule(name.parentOrEmpty).add(name.simpleName, Position.unknown, kind)
+  val root: GlobalModule = {
+    index.getOrElse(NamePath.empty, throw new IllegalStateException("The root module must exist in a global module."))
   }
 
   /**
@@ -91,7 +89,7 @@ class GlobalModuleIndex {
     * Gets the global module with the given name if it exists, or creates a new one.
     */
   private def getOrCreateModule(modulePath: NamePath): GlobalModule = {
-    index.get(modulePath) match {
+    getModule(modulePath) match {
       case Some(globalModule) => globalModule
       case None =>
         val globalModule = new GlobalModule(modulePath)
@@ -116,8 +114,6 @@ class GlobalModuleIndex {
     has(name, NameKind.Type) || has(name, NameKind.Binding)
   }
 
-  def root: Option[GlobalModule] = index.get(NamePath.empty)
-
   /**
     * Finds a path to the module member with the given name, either in the module identified by `modulePath`, or in the
     * root module. Returns None if the member cannot be found.
@@ -139,6 +135,13 @@ class GlobalModuleIndex {
 
       case None => fallback
     }
+  }
+
+  /**
+    * Adds the type or binding `name` to the proper global module directly.
+    */
+  def addMember(name: NamePath, kind: NameKind): Unit = this.synchronized {
+    getOrCreateModule(name.parentOrEmpty).add(name.simpleName, Position.unknown, kind)
   }
 
 }

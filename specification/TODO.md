@@ -173,6 +173,7 @@
 
 #### Modules
 
+- Explicit imports should have precedence over wildcard imports. Specifically, a wildcard import should never override an explicit import, even if the wildcard import comes after the explicit import.
 - **Use anywhere:** The `use` declaration should be usable anywhere (inside expressions as a top-level expression) for more fine-grained control of names.
   - To support this, we can implement imports in *local scopes* as well.
 - **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.

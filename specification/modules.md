@@ -42,25 +42,38 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 
 **Name resolution** is the technique with which simple names are resolved to absolute name paths. A simple name refers to the last segment of a name path, e.g. `baz` in `foo.bar.baz`.
 
-##### Defaults
+Module members have access to certain other module members by their simple name. In general, a member is accessible by simple name if it is declared/imported in the current or a parent local module, or if it is part of the current or a parent local module's global counterpart. Local declaration/imports take precedence over global members, and an inner module takes precedence over an outer module. 
 
-**By default**, module members have access to certain other module members by their simple name. A member in a module `foo.bar` has default access to the following module members by simple name (and in this order):
+A **local module** refers to the module declaration that's syntactically placed around a declaration in a fragment. Because modules may be comprised of many module declarations sharing the same name across multiple fragments, local modules are a necessary contrast to **global modules**. Each declaration is part of exactly one local module.
 
-- Locally declared members in the same **local module**.
+A local module that is declared with a contracted name such as `module foo.bar` does not automatically admit access to `foo`'s global members by simple name, only `bar`'s global members. Any local module gives simple-name access to its global members even to nested local modules, simply because it's unintuitive if a local module can't access all members that its parent local module can also access. Contracted modules don't have this issue, as there is no code that lives in the `foo` part.
+
+Consider the following local module hierarchy:
+
+```
+module top
+
+module foo.bar do
+  module baz do
+    // ...
+  end
+end
+```
+
+A member in the local module `baz` has access to the following module members by simple name (and in this precedence):
+
+- Locally declared members of `baz`.
+- Imports of the local module `baz`.
+- Locally declared members of `foo.bar`.
 - Imports of the local module `foo.bar`.
-- Locally declared members in the surrounding local module `foo`.
-- Imports of the local module `foo`.
-- Locally declared members in the surrounding local root module. 
-  - Note: If a module is nested twice, the inner parent has precedence over the outer parent, and so on. In this case, `foo` has precedence over the local root module.
-- Imports of the local root module.
+- Locally declared members of `top`.
+- Imports of the local module `top`.
+- Globally declared members of `baz`.
 - Globally declared members of `foo.bar`.
+- Globally declared members of `top`.
 - Globally declared members of the root module.
 
-A **local module** in respect to e.g. a function declaration refers to the module declaration that's placed specifically around the function declaration in source code. Because modules may be comprised of many module declarations sharing the same name across multiple fragments, the term local module is a necessary contrast to global modules.
-
-Note that, given these precedence rules, the following situation occurs: If we access `baz` in a local module `foo.bar`, but `foo.bar.baz` is declared in a non-local module, and the current fragment has an import `use bin.ban.baz`, the import is preferred, so `baz` refers to `bin.ban.baz`. This is necessary so that adding a name to a module doesn't break existing code in other fragments.
-
-Also note that in the example above, globally declared members of the parent module `foo` *cannot* be referred to via simple name. They'd have to be imported manually.
+Note that, given these precedence rules, the following situation occurs: If we access `member` in a local module `foo.bar`, but `foo.bar.member` is declared in a non-local module, and the current fragment has an import `use a.b.member`, the import is preferred, so `member` refers to `a.b.member`. This is necessary so that adding a name to a module doesn't break existing code in other fragments.
 
 ###### Example
 

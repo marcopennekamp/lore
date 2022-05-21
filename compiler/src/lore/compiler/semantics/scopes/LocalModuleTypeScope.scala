@@ -12,7 +12,7 @@ case class LocalModuleTypeScope(
   types: Registry.Types,
 ) extends TypeScope {
   override protected def local(name: String): Option[NamedSchema] = {
-    localModule.getPath(name, NameKind.Type).flatMap(global)
+    localModule.getAbsolutePath(name, NameKind.Type).flatMap(global)
   }
 
   override def global(absolutePath: NamePath): Option[NamedSchema] = types.schemas.get(absolutePath)

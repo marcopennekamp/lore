@@ -20,7 +20,7 @@ import lore.compiler.syntax.DeclNode
   * different namespaces. This is the case with the String type, which as a basic type is placed in the root namespace,
   * and the corresponding module `lore.String`.
   *
-  * @param localTypeNames Even though these names can be derived from `members`, we don't want this set and
+  * @param localTypeNames Even though these names can be derived from `members`, we don't want `localTypeNames` and
   *                       `localBindingNames` to have to be recreated every time a LocalModule is copied (for
   *                       successively populating the import maps).
   */
@@ -35,20 +35,40 @@ case class LocalModule(
   position: Position,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
   /**
-    * Returns the full NamePath for the given simple name if it occurs in this local module, in one of the local
-    * module's parents, or globally as a module member of the current module or one of its parents.
+    * Returns an absolute name path for `memberName` if it occurs in this local module, in one of the local module's
+    * parents, or globally as a module member of the current local module or a parent local module. Per the
+    * specification, globally declared members of contracted module names (e.g. `foo` in `module foo.bar`) are not
+    * taken into account.
     *
     * To decide global membership, the [[GlobalModuleIndex]] is taken into consideration.
     */
-  def getPath(memberName: String, nameKind: NameKind): Option[NamePath] = {
+  def getAbsolutePath(memberName: String, nameKind: NameKind): Option[NamePath] = {
+    getAbsolutePathLocally(memberName, nameKind).orElse(getAbsolutePathGlobally(memberName, nameKind))
+  }
+
+  /**
+    * Returns an absolute name path for `memberName` if it occurs in this local module or a parent local module, either
+    * as a declaration or an import.
+    */
+  protected def getAbsolutePathLocally(memberName: String, nameKind: NameKind): Option[NamePath] = {
     if (namesOf(nameKind).contains(memberName)) {
       Some(modulePath + memberName)
     } else {
-      importMapOf(nameKind).get(memberName).orElse {
-        parent match {
-          case Some(parent) => parent.getPath(memberName, nameKind)
-          case None => globalModuleIndex.getPath(modulePath, memberName, nameKind)
-        }
+      importMapOf(nameKind).get(memberName).orElse(
+        parent.flatMap(_.getAbsolutePathLocally(memberName, nameKind))
+      )
+    }
+  }
+
+  /**
+    * Returns an absolute name path for `memberName` if it occurs in this local module's global definitions, or those
+    * of a parent local module or the root module.
+    */
+  protected def getAbsolutePathGlobally(memberName: String, nameKind: NameKind): Option[NamePath] = {
+    globalModuleIndex.getModule(modulePath).flatMap(_.getAbsolutePath(memberName, nameKind)).orElse {
+      parent match {
+        case Some(parent) => parent.getAbsolutePathGlobally(memberName, nameKind)
+        case None => globalModuleIndex.root.getAbsolutePath(memberName, nameKind)
       }
     }
   }
@@ -59,9 +79,9 @@ case class LocalModule(
     */
   def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
     if (!relativePath.isMultiple) {
-      getPath(relativePath.simpleName, NameKind.Type)
+      getAbsolutePath(relativePath.simpleName, NameKind.Type)
     } else {
-      getPath(relativePath.headName, NameKind.Binding)
+      getAbsolutePath(relativePath.headName, NameKind.Binding)
         .map(_ ++ relativePath.tail)
     }
   }
