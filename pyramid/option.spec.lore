@@ -28,11 +28,11 @@ spec '`empty?` and `present?` should correctly report the absence/presence of a 
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
 
-  assert(!empty?(a))
-  assert(!empty?(b))
+  assert_not(empty?(a))
+  assert_not(empty?(b))
   assert(empty?(c))
 
   assert(present?(a))
   assert(present?(b))
-  assert(!present?(c))
+  assert_not(present?(c))
 end

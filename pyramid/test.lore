@@ -16,6 +16,18 @@ act assert(condition: Boolean) do
   assert(condition, 'The condition is expected to be true.')
 end
 
+act assert_not(condition: Boolean, message: String) do
+  assert(!condition, message)
+end
+
+act assert_not(condition: Boolean, message: () => String) do
+  assert(!condition, message)
+end
+
+act assert_not(condition: Boolean) do
+  assert(!condition, 'The condition is expected to be false.')
+end
+
 act assert_equal(actual: Any, expected: Any, message: String) do
   assert(actual == expected, message)
 end

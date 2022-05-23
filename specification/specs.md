@@ -72,7 +72,7 @@ All specs in the same module are grouped under the module's full name when repor
 
 ### Assertions
 
-Lore currently provides the following **assertion functions** in the module `lore.test`:
+Lore provides the following **assertion functions** in the module `lore.test`:
 
 - `assert(condition: Boolean, message: String): Unit` fails with `message` if `condition` is false.
 - `assert(condition: Boolean, message: () => String): Unit` fails with `message()` if `condition` is false.
