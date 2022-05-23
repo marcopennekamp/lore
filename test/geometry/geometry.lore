@@ -1,3 +1,7 @@
+module geometry
+
+// TODO (specs): Maybe merge the geometry example into a single file and move it to the `examples` category.
+
 let pi: Real = 3.14159265359
 
 // Not to be confused with shape types and shape values. :)

@@ -1,0 +1,25 @@
+module geometry.areas
+
+use lore.Enum._
+use lore.test._
+
+use geometry._
+
+func main(): [Real] = do
+  let shapes = [
+    BoundingBox(0.0, 10.0, -5.0, 20.0),
+    Circle(0.0, 5.0, 2.7),
+    Rectangle(-5.0, -5.0, 20.0, 77.0),
+  ]
+  shapes |> map(area)
+end
+
+@root
+module geometry do
+  spec 'area: `area` calculates the correct area for various shapes' do
+    assert_equal(
+      main(),
+      [250.0, 22.902210444671102, 1540.0],
+    )
+  end
+end

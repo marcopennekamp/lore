@@ -1,5 +1,11 @@
-use lore.Enum._
+module geometry.comparison
 
+use lore.Enum._
+use lore.test._
+
+use geometry._
+
+@root
 module lore.core do
   func less_than?(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
   func less_than_equal?(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
@@ -26,7 +32,7 @@ func check(s1: Shape, s2: Shape): [String] = do
   result
 end
 
-func test(): [String] = do
+func main(): [String] = do
   let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
   let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
   let circle = Circle(0.0, 0.0, 5.0)
@@ -36,4 +42,14 @@ func test(): [String] = do
     check(rect, circle),
     check(box, circle),
   ] |> flatten
+end
+
+@root
+module geometry do
+  spec 'comparison: shape comparisons result in the correct relations between shapes' do
+    assert_equal(
+      main(),
+      ['rect <= box', 'box <= rect', 'rect < circle', 'rect <= circle', 'box < circle', 'box <= circle'],
+    )
+  end
 end
