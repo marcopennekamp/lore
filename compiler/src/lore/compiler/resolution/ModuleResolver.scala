@@ -60,7 +60,8 @@ object ModuleResolver {
     val localBindingNames: Set[String] = {
       moduleNode.members.flatMap {
         // At-root module declarations shouldn't be added as local bindings, per the specification.
-        case node: DeclNode.ModuleNode if !node.atRoot => Some(node.namePath.headName)
+        case node: DeclNode.ModuleNode if node.atRoot => None
+        case node: DeclNode.ModuleNode => Some(node.namePath.headName)
         // Structs always have a constructor or an object and thus also define binding names. The same applies to
         // struct aliases.
         case node: DeclNode.StructNode => Some(node.simpleName)
