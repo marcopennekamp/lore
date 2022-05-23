@@ -1,3 +1,5 @@
+module examples.savable
+
 use lore.Enum.flatten
 
 /**
@@ -25,12 +27,10 @@ use lore.Enum.flatten
 // Let's assume that ExternalPhysics is defined in an external library and cannot just extend Savable.
 struct ExternalPhysics()
 
-
 // The result of the save is currently a list of things. Obviously this would be more sensible in the "real world".
 trait Savable
 func save(Savable): [Any]
 func save(value: Real): [Any] = [value]
-
 
 // A standard 2D position that can be saved.
 struct Position(x: Real, y: Real) extends Savable
@@ -39,10 +39,8 @@ struct Position(x: Real, y: Real) extends Savable
 // Lore, of course, just an example. Just to be clear: we won't have a macro system for a while.
 func save(pos: Position): [Any] = [['Position'], save(pos.x), save(pos.y)] |> flatten
 
-
 // Assuming that ExternalPhysics isn't Savable, we define the following action.
 func save(ExternalPhysics): [Any] = ['ExternalPhysics', 42]
-
 
 struct Character extends Savable
   position: Position
@@ -51,5 +49,16 @@ end
 
 func save(char: Character): [Any] = [['Character'], save(char.position), save(char.physics)] |> flatten
 
+func main(): [Any] = save(Character(Position(1.5, 2.7), ExternalPhysics()))
 
-func test(): [Any] = save(Character(Position(1.5, 2.7), ExternalPhysics()))
+@root
+module examples do
+  use lore.test._
+
+  spec 'savable: saving a character should result in the correct list of values' do
+    assert_equal(
+      main(),
+      ['Character', 'Position', 1.5, 2.7, 'ExternalPhysics', 42],
+    )
+  end
+end

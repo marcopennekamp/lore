@@ -89,10 +89,10 @@ end
 // the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or both?
 // ---------------------------------------------------------------------------------------------------------------------
 
-func colorFactor(suspect: %{ hair_color: Color, clothes_color: Color }): Real = 0.8
-func colorFactor(suspect: %{ hair_color: Red, clothes_color: Color }): Real = 1.2
-func colorFactor(suspect: %{ hair_color: Color, clothes_color: Red }): Real = 1.2
-func colorFactor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
+func color_factor(suspect: %{ hair_color: Color, clothes_color: Color }): Real = 0.8
+func color_factor(suspect: %{ hair_color: Red, clothes_color: Color }): Real = 1.2
+func color_factor(suspect: %{ hair_color: Color, clothes_color: Red }): Real = 1.2
+func color_factor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been found
@@ -167,7 +167,7 @@ func character_factor(suspect: %{ profession: Entrepreneur, approach: Honest }):
 /**
   * For the given suspect, returns the likelihood of their guilt. There can only be a single murderer.
   */
-func compute_guilt(suspect: Suspect): Real = colorFactor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
+func compute_guilt(suspect: Suspect): Real = color_factor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
 
 /**
   * Returns the suspect which is deemed the most likely murderer.
