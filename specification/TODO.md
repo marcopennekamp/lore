@@ -18,6 +18,7 @@
   - Extension methods (example: adding functions to Pyramid)
 - **Multi-Calls:** A multi-function call that, Instead of calling exactly one function, calls *all* candidates in the min set.
   - Alternative: Introduce a `min` function that returns a list of all functions that *would* be called. Then the user can decide to call them right away or work with them in some other way.
+- Add a `@symmetric` macro for binary functions that defines two functions `f(a, b)` and `f(b, a)` from one function.
 
 
 #### Traits and Structs

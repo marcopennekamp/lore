@@ -3,6 +3,7 @@
 #### Features
 
 - Implement maps: Map values, append for maps.
+- Use `lore.core.to_string` when the VM's result is printed in `run_and_print`. This requires the VM to know about `lore.core.to_string` as a core function and, by logical extension, should also include the comparison functions such as `lore.core.equal?`. This would require the respective intrinsics, which currently accept the core functions as lambdas for callbacks, to grab the core functions instead of a lambda.
 - Support parallel execution.
   - Clear all `TODO (vm/parallel)` entries.
 - Clear all `TODO (vm)` entries.

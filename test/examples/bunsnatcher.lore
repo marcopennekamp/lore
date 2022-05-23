@@ -1,11 +1,14 @@
+module examples.bunsnatcher
+
 use lore.Enum.map
+use lore.List.[sort_by, last!]
+use lore.Tuple
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
 // are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
 // could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
 // ---------------------------------------------------------------------------------------------------------------------
-
 
 trait Color
 object Red extends Color
@@ -14,14 +17,12 @@ object Brown extends Color
 object Yellow extends Color
 object Blue extends Color
 
-
 trait Profession
 object Tailor extends Profession
 object Lawyer extends Profession
 object Entrepreneur extends Profession
 object Gardener extends Profession
 object Assassin extends Profession
-
 
 trait Tool
 object Scissors extends Tool
@@ -43,7 +44,6 @@ func sharpness(blunt_tool: Suitcase | Spade): Real = 0.0
 
 func bluntness(tool: Tool): Real = 1 - sharpness(tool)
 
-
 trait Relation
 trait Friendly extends Relation
 trait Neutral extends Relation
@@ -55,13 +55,11 @@ object Lovers extends Friendly, Hostile
 object Competing extends Hostile
 object Shunned extends Hostile
 
-
 trait Approach
 object Socialising extends Approach
 object Calculating extends Approach
 object Honest extends Approach
 object Indifferent extends Approach
-
 
 struct Suspect
   name: String
@@ -81,6 +79,10 @@ struct Suspect
   open relation: Relation
 end
 
+@root
+module lore.core do
+  func to_string(suspect: Suspect): String = suspect.name
+end
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
@@ -92,7 +94,6 @@ func colorFactor(suspect: %{ hair_color: Red, clothes_color: Color }): Real = 1.
 func colorFactor(suspect: %{ hair_color: Color, clothes_color: Red }): Real = 1.2
 func colorFactor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 // The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been found
 // and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the murder
@@ -101,7 +102,6 @@ func colorFactor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 // ---------------------------------------------------------------------------------------------------------------------
 
 func weapon_factor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life. Some were blessed
@@ -140,7 +140,6 @@ func motive_factor(suspect: %{ profession: Assassin }): Real = 0.2
 func motive_factor(suspect: %{ profession: Assassin, relation: Friendly }): Real = 1.5
 func motive_factor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 // "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
 // horrible crimes."
@@ -160,13 +159,20 @@ func character_factor(suspect: %{ profession: Lawyer, approach: Honest }): Real 
 func character_factor(suspect: %{ profession: Entrepreneur }): Real = 1.2
 func character_factor(suspect: %{ profession: Entrepreneur, approach: Honest }): Real = 1.3
 
+// ---------------------------------------------------------------------------------------------------------------------
+// "I know all about poisons, Watson. I've become an expert on all of them. But over the last few years, I've come to
+// understand that there is nothing on this earth so toxic as guilt." - Sherlock Holmes
+// ---------------------------------------------------------------------------------------------------------------------
 
 /**
   * For the given suspect, returns the likelihood of their guilt. There can only be a single murderer.
   */
-func guilt(suspect: Suspect): Real = colorFactor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
+func compute_guilt(suspect: Suspect): Real = colorFactor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
 
-func test(): [Real] = do
+/**
+  * Returns the suspect which is deemed the most likely murderer.
+  */
+func main(): Suspect = do
   let suspects = [
     Suspect('Rilam Ralam', Black, Yellow, Entrepreneur, Calculating, Competing),
     Suspect('Warren Warner', Black, Brown, Gardener, Honest, Cordial),
@@ -179,5 +185,21 @@ func test(): [Real] = do
     Suspect('Rooney Rudigiani', Black, Brown, Lawyer, Socialising, Lovers),
     Suspect('Goodman Niceman', Black, Black, Assassin, Honest, Cordial),
   ]
-  suspects |> map(guilt)
+
+  let guilty_candidate = suspects
+    |> map(suspect => (suspect, suspect |> compute_guilt))
+    |> sort_by(Tuple.second)
+    |> last!
+  Tuple.first(guilty_candidate)
+end
+
+@root
+module examples do
+  use lore.test._
+
+  @bench
+  spec 'bunsnatcher: Vichity Vichy should be selected as the most likely murderer' do
+    let suspect = main()
+    assert_equal(suspect.name, 'Vichity Vichy')
+  end
 end
