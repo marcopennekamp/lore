@@ -1,7 +1,5 @@
 module examples.geometry
 
-use lore.test._
-
 // Not to be confused with shape types and shape values. :)
 trait Shape
 
@@ -58,33 +56,38 @@ func name(Rectangle): String = 'rect'
 func name(BoundingBox): String = 'box'
 func name(Circle): String = 'circle'
 
-spec 'area: area calculations are correct for various shapes' do
-  let box = BoundingBox(0.0, 10.0, -5.0, 20.0)
-  let circle = Circle(0.0, 5.0, 2.7)
-  let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
+@root
+module examples do
+  use lore.test._
 
-  assert_equal(area(box), 250.0)
-  assert_equal(area(circle), 22.902210444671102)
-  assert_equal(area(rect), 1540.0)
-end
+  spec 'geometry: area calculations are correct for various shapes' do
+    let box = BoundingBox(0.0, 10.0, -5.0, 20.0)
+    let circle = Circle(0.0, 5.0, 2.7)
+    let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
 
-spec 'comparison: shapes are correctly compared by area' do
-  let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
-  let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
-  let circle = Circle(0.0, 0.0, 5.0)
+    assert_equal(area(box), 250.0)
+    assert_equal(area(circle), 22.902210444671102)
+    assert_equal(area(rect), 1540.0)
+  end
 
-  assert_not(rect < box)
-  assert(rect <= box)
-  assert_not(box < rect)
-  assert(box <= rect)
+  spec 'geometry: shapes are correctly ordered by area' do
+    let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
+    let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
+    let circle = Circle(0.0, 0.0, 5.0)
 
-  assert(rect < circle)
-  assert(rect <= circle)
-  assert_not(circle < rect)
-  assert_not(circle <= rect)
+    assert_not(rect < box)
+    assert(rect <= box)
+    assert_not(box < rect)
+    assert(box <= rect)
 
-  assert(box < circle)
-  assert(box <= circle)
-  assert_not(circle < box)
-  assert_not(circle <= box)
+    assert(rect < circle)
+    assert(rect <= circle)
+    assert_not(circle < rect)
+    assert_not(circle <= rect)
+
+    assert(box < circle)
+    assert(box <= circle)
+    assert_not(circle < box)
+    assert_not(circle <= box)
+  end
 end

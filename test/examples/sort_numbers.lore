@@ -3,17 +3,21 @@
 module examples.sort_numbers
 
 use lore.List._
-use lore.test._
 
 func main(): [Int] = sort(numbers)
 
-spec '`List.sort` should correctly sort a list of numbers' do
-  assert(sorted?(sort(numbers)), 'The numbers in the list aren\'t sorted.')
-end
+@root
+module examples do
+  use lore.test._
 
-@bench_only
-spec 'sort a list of 1000 random integers' do
-  sort(numbers)
+  spec 'sort_numbers: `List.sort` should correctly sort a list of numbers' do
+    assert(sorted?(main()), 'The numbers in the list aren\'t sorted.')
+  end
+
+  @bench_only
+  spec 'sort_numbers: sort a list of 1000 random integers' do
+    sort(numbers)
+  end
 end
 
 let numbers: [Int] = [
