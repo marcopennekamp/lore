@@ -1,0 +1,90 @@
+module examples.geometry
+
+use lore.test._
+
+// Not to be confused with shape types and shape values. :)
+trait Shape
+
+domain shape: Shape
+  // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
+  func width(): Real
+  func height(): Real
+
+  func area(): Real = width(shape) * height(shape)
+end
+
+@root
+module lore.core do
+  func less_than?(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
+  func less_than_equal?(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+end
+
+struct BoundingBox extends Shape
+  x: Real, x_end: Real
+  y: Real, y_end: Real
+end
+
+domain box: BoundingBox
+  func width(): Real = box.x_end - box.x
+  func height(): Real = box.y_end - box.y
+end
+
+let pi: Real = 3.14159265359
+
+struct Circle extends Shape
+  x: Real, y: Real
+  radius: Real
+end
+
+domain circle: Circle
+  func width(): Real = circle.radius
+  func height(): Real = circle.radius
+
+  func area(): Real = circle.radius * circle.radius * pi
+end
+
+struct Rectangle extends Shape
+  x: Real, y: Real
+  width: Real, height: Real
+end
+
+domain rect: Rectangle
+  func width(): Real = rect.width
+  func height(): Real = rect.height
+end
+
+func name(Shape): String
+func name(Rectangle): String = 'rect'
+func name(BoundingBox): String = 'box'
+func name(Circle): String = 'circle'
+
+spec 'area: area calculations are correct for various shapes' do
+  let box = BoundingBox(0.0, 10.0, -5.0, 20.0)
+  let circle = Circle(0.0, 5.0, 2.7)
+  let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
+
+  assert_equal(area(box), 250.0)
+  assert_equal(area(circle), 22.902210444671102)
+  assert_equal(area(rect), 1540.0)
+end
+
+spec 'comparison: shapes are correctly compared by area' do
+  let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
+  let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
+  let circle = Circle(0.0, 0.0, 5.0)
+
+  assert_not(rect < box)
+  assert(rect <= box)
+  assert_not(box < rect)
+  assert(box <= rect)
+
+  assert(rect < circle)
+  assert(rect <= circle)
+  assert_not(circle < rect)
+  assert_not(circle <= rect)
+
+  assert(box < circle)
+  assert(box <= circle)
+  assert_not(circle < box)
+  assert_not(circle <= box)
+end
