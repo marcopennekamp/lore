@@ -122,6 +122,23 @@ module List do
   func sort(list: [A]): [A] = merge_sort(list)
 
   /**
+    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `lt?` for comparisons. `lt?` should
+    * be a function that signifies whether the left argument is less than the right argument.
+    */
+  @where A, B >: A
+  func sort(list: [A], lt?: (B, B) => Boolean): [A] = merge_sort(list, lt?)
+
+  /**
+    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `by` to map the list's elements to
+    * values that are compared with `<`. `by` may be called multiple times for the same element.
+    *
+    * TODO (pyramid): Ensure that `by` is only called once per element so that `by` can be an expensive computation.
+    *                 This simplifies some use cases where otherwise intermediate structures would have to be created.
+    */
+  @where A, B >: A, C
+  func sort_by(list: [A], by: B => C): [A] = sort(list, (x, y) => by(x) < by(y))
+
+  /**
     * Whether `list` is sorted, comparing elements with `<`.
     */
   @where A

@@ -16,12 +16,24 @@ use lore.IO.println
 //            good real-world example of how lists would be handled in normal Lore code. Perhaps we can profile the
 //            execution of `test/pyramid/sort/numbers.lore` and see where the VM spends the most time to improve list
 //            operations in general.
+// TODO (pyramid): `lt?`'s type has no bearing on the dispatch decision, even when specializing sorting algorithms, so
+//                 if possible we could restrict dispatch to the first argument, mostly to improve performance.
 
 /**
   * Sorts `list` with a simple stable merge sort, using `<` for comparisons.
   */
 @where A
-func merge_sort(list: [A]): [A] = do
+func merge_sort(list: [A]): [A] = merge_sort(list, lore.core.less_than? :: (Any, Any) => Boolean)
+
+// TODO (pyramid): `merge_sort_by` and `merge` should be defined as a `static/def` function (no multiple dispatch, no
+//                 run-time type parameter assignments) as there is no need for type variable voodoo at run time.
+
+/**
+  * Sorts `list` with a simple stable merge sort, using `lt?` for comparisons. `lt?` should be a function that
+  * signifies whether the left argument is less than the right argument.
+  */
+@where A, B >: A
+func merge_sort(list: [A], lt?: (B, B) => Boolean): [A] = do
   if length(list) <= 1
     return list
   end
@@ -29,15 +41,15 @@ func merge_sort(list: [A]): [A] = do
   // TODO (case): Goddamn it, this needs pattern matching! It could be (with tuple mapping):
   //                let (left, right) = split(list) |> map(merge_sort)
   let split_lists = split(list)
-  let left = first(split_lists) |> merge_sort
-  let right = second(split_lists) |> merge_sort
+  let left = first(split_lists) |> merge_sort(lt?)
+  let right = second(split_lists) |> merge_sort(lt?)
 
-  merge(left, right)
+  merge(left, right, lt?)
 end
 
 // TODO (pyramid): Should be a private function.
-@where A, B
-func merge(list1: [A], list2: [B]): [A | B] = do
+@where A, B, C >: A | B
+func merge(list1: [A], list2: [B], lt?: (C, C) => Boolean): [A | B] = do
   let mut result: [A | B] = []
 
   let mut i1 = 0
@@ -48,10 +60,10 @@ func merge(list1: [A], list2: [B]): [A | B] = do
     let e1 = get!(list1, i1)
     let e2 = get!(list2, i2)
 
-    // We're using `<` with flipped operands instead of `<=`, as it can be generally assumed that `<` will be faster,
-    // due to the default implementation of `lore.core.less_than_equal?`. If `e1` and `e2` are equal, the elements will
-    // still be merged stably.
-    if e2 < e1
+    // We're using `lt` with flipped operands instead of an `lte`, as it can be generally assumed that `lt` will be
+    // faster, due to the default implementation of `lore.core.less_than_equal?`. If `e1` and `e2` are equal, the
+    // elements will still be merged stably.
+    if lt?(e2, e1)
       result = result :+ e2
       i2 += 1
     else
