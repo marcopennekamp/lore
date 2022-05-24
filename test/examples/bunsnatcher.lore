@@ -1,7 +1,7 @@
 module examples.bunsnatcher
 
 use lore.Enum.map
-use lore.List.[sort_by, last!]
+use lore.List.max_by!
 use lore.Tuple
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -186,11 +186,10 @@ func main(): Suspect = do
     Suspect('Goodman Niceman', Black, Black, Assassin, Honest, Cordial),
   ]
 
-  let guilty_candidate = suspects
+  suspects
     |> map(suspect => (suspect, suspect |> compute_guilt))
-    |> sort_by(Tuple.second)
-    |> last!
-  Tuple.first(guilty_candidate)
+    |> max_by!(Tuple.second)
+    |> Tuple.first
 end
 
 @root
