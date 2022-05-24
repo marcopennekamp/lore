@@ -1,14 +1,13 @@
 package lore.compiler.typing.checker
 
-import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.feedback._
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{TupleType, Type}
 import lore.compiler.typing.InferenceVariable.Assignments
-import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.typing.synthesizer.ArgumentSynthesizer
 import lore.compiler.typing.synthesizer.ArgumentSynthesizer.KnownArgumentTypes
-import lore.compiler.typing.unification.Unification
+import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
 object MultiFunctionCallChecker {
@@ -107,19 +106,9 @@ object MultiFunctionCallChecker {
     assignments: Assignments,
   )(implicit checker: Checker): (Option[ArgumentCandidate], Vector[Feedback]) = {
     val (typeParameterAssignments, parameterTypes) = ArgumentSynthesizer.prepareParameterTypes(function.signature)
-
-    // As mentioned in the documentation comment, if we have an expected (output) type, we can unify this type
-    // with the candidate's output type to potentially assign type arguments right away.
-    // TODO: Because sum/intersection type unification cannot be resolved yet, we can't rule out that the
-    //       candidate can't be chosen if the unification fails, here. If that is resolved, there's a good chance
-    //       that we can optimize here: if the output type and expected types cannot be unified, the
-    //       multi-function cannot be chosen.
-    val outputTypeAssignments = expectedType match {
-      case Some(expectedType) =>
-        val outputType = Type.substitute(function.signature.outputType, typeParameterAssignments)
-        Unification.unifySubtypes(outputType, expectedType, assignments).getOrElse(assignments)
-
-      case None => assignments
+    val outputType = {
+      if (expectedType.isDefined) Some(Type.substitute(function.signature.outputType, typeParameterAssignments))
+      else None
     }
 
     implicit val reporter: MemoReporter = MemoReporter()
@@ -129,7 +118,9 @@ object MultiFunctionCallChecker {
       parameterTypes,
       expression.arguments,
       knownArgumentTypes,
-      outputTypeAssignments,
+      outputType,
+      expectedType,
+      assignments,
       expression,
     ).map { result =>
       val tpe = InferenceVariable.instantiateCandidate(

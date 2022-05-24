@@ -112,7 +112,13 @@ object ArgumentSynthesizer {
     //   1. It checks that each argument type fits the parameter type.
     //   2. It assigns type arguments to type parameters.
     val assignments2 = Unification.unifyFits(argumentTypes, parameterTypes, assignments).getOrElse {
-      reporter.error(TypingFeedback.Functions.IllegalArgumentTypes(argumentTypes, parameterTypes, context))
+      reporter.error(
+        TypingFeedback.Functions.IllegalArgumentTypes(
+          InferenceVariable.instantiateCandidate(argumentTypes, assignments),
+          InferenceVariable.instantiateCandidate(parameterTypes, assignments),
+          context,
+        )
+      )
       return None
     }
 
@@ -130,11 +136,18 @@ object ArgumentSynthesizer {
   /**
     * Infers the argument types of a function call. The `typeParameterAssignments` and `parameterTypes` should be
     * prepared with [[prepareParameterTypes]] and `knownArgumentTypes` should be prepared with [[preprocessArguments]].
-    * The difference to the first `inferArgumentTypes` is that this function takes `knownArgumentTypes` into account,
-    * which allows
     *
     * If the argument count doesn't match the arity of the function, or if the inferred argument types don't fit into
     * the parameter types, `inferArgumentTypes` reports appropriate errors and returns None.
+    *
+    * If an expected output type is given, it informs the function call's type parameter assignments <i>after</i> known
+    * argument types have been processed. This is important for error reporting when a function call's output type and
+    * the expected output type don't match, even if the function call itself is well typed. Processing the expected
+    * output type first creates a confusing error that assumes the known argument type to be incorrect, instead of the
+    * output type itself being reported as incorrect. For example, in one case, an error that a `max_by!` call didn't
+    * return the expected type `A` but rather `(A, B)` was reported as "`[(Foo, Bar)]` does not fit into `[Foo]`",
+    * because the expected type was applied first. The correct error would be "Expected `Foo`, but got `(Foo, Bar)`",
+    * which is the error reported after fixing this issue.
     *
     * Inference variables contained in `typeParameterAssignments` are cleaned from the [[Result]] assignments.
     */
@@ -144,6 +157,8 @@ object ArgumentSynthesizer {
     parameterTypes: Vector[Type],
     arguments: Vector[Expression],
     knownArgumentTypes: KnownArgumentTypes,
+    outputType: Option[Type],
+    expectedOutputType: Option[Type],
     assignments: Assignments,
     context: Positioned,
   )(implicit checker: Checker, reporter: Reporter): Option[Result] = {
@@ -170,16 +185,31 @@ object ArgumentSynthesizer {
       return None
     }
 
+    // If we have an expected output type, we can unify this type with the function's output type to potentially assign
+    // additional type arguments. As mentioned above, the known argument types have to be checked first.
+    val assignments3 = (outputType, expectedOutputType) match {
+      case (Some(outputType), Some(expectedOutputType)) =>
+        Unification.unifySubtypes(outputType, expectedOutputType, assignments2).getOrElse(assignments2)
+      case _ => assignments2
+    }
+
     // (2) With maximum type variable information at hand, we can `check` the untyped arguments from left to right.
     //     In the process, we have to attempt unification for each newly typed argument to further narrow down the type
     //     arguments, and also bounds processing to allow changes in type variable assignments to carry across bounds.
     //     The unification also ensures that the argument type fits the parameter type, which until this point had only
     //     been established for known argument types.
-    val assignments3 = knownArgumentTypes.zip(arguments).zip(parameterTypes).foldSome(assignments2) {
-      case (innerAssignments, ((None, argument), parameterType)) => handleUntypedArgument(argument, parameterType, typeParameters, typeParameterAssignments, innerAssignments)
+    val assignments4 = knownArgumentTypes.zip(arguments).zip(parameterTypes).foldSome(assignments3) {
+      case (innerAssignments, ((None, argument), parameterType)) =>
+        handleUntypedArgument(argument, parameterType, typeParameters, typeParameterAssignments, innerAssignments)
       case (innerAssignments, ((Some(_), _), _)) => Some(innerAssignments)
     }.getOrElse {
-      reporter.error(TypingFeedback.Functions.IllegalArgumentTypes(arguments.map(_.tpe), parameterTypes, context))
+      reporter.error(
+        TypingFeedback.Functions.IllegalArgumentTypes(
+          InferenceVariable.instantiateCandidate(arguments.map(_.tpe), assignments3),
+          InferenceVariable.instantiateCandidate(parameterTypes, assignments3),
+          context,
+        )
+      )
       return None
     }
 
@@ -189,7 +219,7 @@ object ArgumentSynthesizer {
     // no assignment to the type parameter `C` yet, meaning it has to be instantiated as the most general type. Only
     // after checking the anonymous function `x => x + 1` do we know that the argument's actual type is
     // `Number => Number` and therefore `C = Number`.
-    Some(instantiateResult(assignments3, typeParameterAssignments))
+    Some(instantiateResult(assignments4, typeParameterAssignments))
   }
 
   private def handleUntypedArgument(

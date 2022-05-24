@@ -48,6 +48,8 @@ object ConstructorCallSynthesizer {
       parameterTypes,
       expression.arguments,
       knownArgumentTypes,
+      None,
+      None,
       assignments,
       expression
     ).flatMap { argumentCandidate =>
