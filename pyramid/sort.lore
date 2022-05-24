@@ -25,9 +25,6 @@ use lore.IO.println
 @where A
 func merge_sort(list: [A]): [A] = merge_sort(list, lore.core.less_than?)
 
-// TODO (pyramid): `merge_sort_by` and `merge` should be defined as a `static/def` function (no multiple dispatch, no
-//                 run-time type parameter assignments) as there is no need for type variable voodoo at run time.
-
 /**
   * Sorts `list` with a simple stable merge sort, using `lt?` ("less than") for comparisons.
   */
@@ -38,19 +35,12 @@ func merge_sort(list: [A], lt?: (B, B) => Boolean): [A] = do
   end
 
   // TODO (case): Goddamn it, this needs pattern matching! It could be (with tuple mapping):
-  //                let (left, right) = split(list) |> map(merge_sort)
+  //                let (left, right) = split(list) |> map(merge_sort(_, lt?))
   let split_lists = split(list)
-  let left = first(split_lists) |> merge_sort(lt?)
-  let right = second(split_lists) |> merge_sort(lt?)
+  let list1 = first(split_lists) |> merge_sort(lt?)
+  let list2 = second(split_lists) |> merge_sort(lt?)
 
-  merge(left, right, lt?)
-end
-
-// TODO (pyramid): Should be a private function.
-@where A, B, C >: A | B
-func merge(list1: [A], list2: [B], lt?: (C, C) => Boolean): [A | B] = do
-  let mut result: [A | B] = []
-
+  let mut result: [A] = []
   let mut i1 = 0
   let mut i2 = 0
   let len1 = length(list1)
