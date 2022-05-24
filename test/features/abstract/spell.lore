@@ -1,4 +1,3 @@
-// This case tests how the totality constraint treats complex type arguments.
 module features.abstract.spell
 
 use lore.number.max
@@ -48,6 +47,7 @@ func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_da
 module features.abstract do
   use lore.test._
 
+  // This test verifies how the totality constraint treats complex type arguments.
   spec 'spell: `damage_of` results in the correct damage values' do
     assert_equal(damage_of(IceSpike, 0), 10)
     assert_equal(damage_of(NeedleIceSpike, 0), 12)

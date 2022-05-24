@@ -1,13 +1,25 @@
+module features.assembly.nested_lambda
+
 use lore.Enum.map
 
-// This test verifies that nested lambdas with captured variables are correctly assembled.
-//
-// Expected output: `[0, -20, 20, 60, 220]`.
-func test(): [Int] = do
+func get_numbers(): [Int] = do
   let factor1 = 5
   let factor2 = 2
   [0, -2, 2, 6, 22] |> map(x => do
     let foo: (Int, Int) => Int = (a, b) => a * b * factor1
     foo(x, factor2)
   end)
+end
+
+@root
+module features.assembly do
+  use lore.test._
+
+  // This test verifies that nested lambdas with captured variables are correctly assembled.
+  spec 'nested_lambda: nested lambdas with captured variables are correctly assembled' do
+    assert_equal(
+      get_numbers(),
+      [0, -20, 20, 60, 220],
+    )
+  end
 end
