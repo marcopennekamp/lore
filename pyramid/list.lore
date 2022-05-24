@@ -47,7 +47,7 @@ module List do
     * Returns the first element of `list`, or `None` if the list is empty.
     */
   @where A
-  func head(list: [A]): Option[A] = if length(list) == 0 then None else Some(get_unchecked!(list, 0))
+  func head(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, 0)) else None
 
   /**
     * Returns the last element of `list`. Panics if the list is empty.
@@ -59,7 +59,7 @@ module List do
     * Returns the last element of the list, or `None` if the list is empty.
     */
   @where A
-  func last(list: [A]): Option[A] = if length(list) == 0 then None else Some(get_unchecked!(list, length(list) - 1))
+  func last(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, length(list) - 1)) else None
 
   /**
     * Returns a slice of `list` that includes all elements except for the last one. If `list` is empty, the resulting
@@ -116,14 +116,122 @@ module List do
   end
 
   /**
+    * Finds the smallest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
+    */
+  @where A
+  func min(list: [A]): Option[A] = if present?(list) then Some(min!(list)) else None
+
+  /**
+    * Finds the smallest element in `list`, using `<` for comparisons. Panics if `list` is empty.
+    */
+  @where A
+  func min!(list: [A]): A = extremum!(list, lore.core.less_than?)
+
+  /**
+    * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
+    * empty.
+    */
+  @where A, B >: A
+  func min(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(min!(list, lt?)) else None
+
+  /**
+    * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
+    */
+  @where A, B >: A
+  func min!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, lt?)
+
+  // TODO (pyramid): For `min_by`/`max_by`, ensure that `by` is only called once per element so that `by` can be an
+  //                 expensive computation. This simplifies some use cases where otherwise intermediate structures
+  //                 would have to be created.
+
+  /**
+    * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Returns `None` if
+    * `list` is empty.
+    *
+    *
+    */
+  @where A, B >: A, C
+  func min_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(min_by!(list, by)) else None
+
+  /**
+    * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Panics if `list` is
+    * empty.
+    */
+  @where A, B >: A, C
+  func min_by!(list: [A], by: B => C): A = min!(list, (x, y) => by(x) < by(y))
+
+  /**
+    * Finds the largest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
+    */
+  @where A
+  func max(list: [A]): Option[A] = if present?(list) then Some(max!(list)) else None
+
+  /**
+    * Finds the largest element in `list`, using `<` for comparisons. Panics if `list` is empty.
+    */
+  @where A
+  func max!(list: [A]): A = extremum!(list, (x, y) => x > y)
+
+  /**
+    * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
+    * empty.
+    */
+  @where A, B >: A
+  func max(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(max!(list, lt?)) else None
+
+  /**
+    * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
+    */
+  @where A, B >: A
+  func max!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, (x, y) => lt?(y, x))
+
+  /**
+    * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Returns `None` if
+    * `list` is empty.
+    */
+  @where A, B >: A, C
+  func max_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(max_by!(list, by)) else None
+
+  /**
+    * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Panics if `list` is
+    * empty.
+    */
+  @where A, B >: A, C
+  func max_by!(list: [A], by: B => C): A = max!(list, (x, y) => by(x) < by(y))
+
+  /**
+    * Finds the extremum in `list` given a comparison function `ex?`. `ex?` should return true if the left argument is
+    * more extreme than the other argument. Panics if `list` is empty.
+    *
+    * TODO (pyramid): This can be a private function, as it's mostly meant to be an implementation.
+    */
+  @where A, B >: A
+  func extremum!(list: [A], ex?: (B, B) => Boolean): A = do
+    if empty?(list)
+      panic('Cannot call `List.extremum!` on an empty list.')
+    end
+
+    let mut result = get!(list, 0)
+    let mut i = 1
+    let len = length(list)
+    while i < len
+      let candidate = get!(list, i)
+      if ex?(candidate, result)
+        result = candidate
+      end
+      i += 1
+    end
+    result
+  end
+
+  /**
     * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `<` for comparisons.
     */
   @where A
   func sort(list: [A]): [A] = merge_sort(list)
 
   /**
-    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `lt?` for comparisons. `lt?` should
-    * be a function that signifies whether the left argument is less than the right argument.
+    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `lt?` ("less than") for comparisons.
     */
   @where A, B >: A
   func sort(list: [A], lt?: (B, B) => Boolean): [A] = merge_sort(list, lt?)
@@ -200,8 +308,8 @@ module Enum do
 
   func size(list: [Any]): Int = List.length(list)
 
-  func empty?(list: [Any]): Boolean = size(list) == 0
-  func present?(list: [Any]): Boolean = !empty?(list)
+  func empty?(list: [Any]): Boolean = List.length(list) == 0
+  func present?(list: [Any]): Boolean = List.length(list) > 0
 
   @where A
   func flatten(lists: [[A]]): [A] = intrinsic[[A]]('lore.list.flatten', lists)

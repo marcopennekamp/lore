@@ -23,14 +23,13 @@ use lore.IO.println
   * Sorts `list` with a simple stable merge sort, using `<` for comparisons.
   */
 @where A
-func merge_sort(list: [A]): [A] = merge_sort(list, lore.core.less_than? :: (Any, Any) => Boolean)
+func merge_sort(list: [A]): [A] = merge_sort(list, lore.core.less_than?)
 
 // TODO (pyramid): `merge_sort_by` and `merge` should be defined as a `static/def` function (no multiple dispatch, no
 //                 run-time type parameter assignments) as there is no need for type variable voodoo at run time.
 
 /**
-  * Sorts `list` with a simple stable merge sort, using `lt?` for comparisons. `lt?` should be a function that
-  * signifies whether the left argument is less than the right argument.
+  * Sorts `list` with a simple stable merge sort, using `lt?` ("less than") for comparisons.
   */
 @where A, B >: A
 func merge_sort(list: [A], lt?: (B, B) => Boolean): [A] = do
