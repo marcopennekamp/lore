@@ -1,3 +1,5 @@
+module features.abstract.partial_specialization
+
 trait A
 object A1 extends A
 object A2 extends A
@@ -10,4 +12,14 @@ func f(A, B): String
 func f(A1, B): String = 'A1,B'
 func f(A2, B): String = 'A2,B'
 
-func test(): [String] = [f(A1, B1), f(A1, B2), f(A2, B1), f(A2, B2)]
+@root
+module features.abstract do
+  use lore.test._
+
+  spec 'partial_specialization: dispatch should return the correct strings' do
+    assert_equal(f(A1, B1), 'A1,B')
+    assert_equal(f(A1, B2), 'A1,B')
+    assert_equal(f(A2, B1), 'A2,B')
+    assert_equal(f(A2, B2), 'A2,B')
+  end
+end

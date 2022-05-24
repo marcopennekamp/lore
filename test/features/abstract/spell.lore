@@ -1,4 +1,6 @@
 // This case tests how the totality constraint treats complex type arguments.
+module features.abstract.spell
+
 use lore.number.max
 
 trait Element
@@ -18,12 +20,10 @@ trait Penetrating extends Specialty
 type Defense = Int
 type Damage = Int
 
-
 trait Spell[+E <: Element, +C <: Cost]
 
 func raw_damage(Spell[Element, Cost]): Damage
 func damage_of(Spell[Element, Cost], Defense): Damage
-
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
 object IceSpike extends Spike[Ice, Freezing, #ice_spike]
@@ -44,15 +44,19 @@ end
 
 func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_damage - defense, 0)
 
+@root
+module features.abstract do
+  use lore.test._
 
-func test(): [Damage] = [
-  damage_of(IceSpike, 0),
-  damage_of(NeedleIceSpike, 0),
-  damage_of(EarthSpike, 0),
-  damage_of(IceSpike, 5),
-  damage_of(NeedleIceSpike, 5),
-  damage_of(EarthSpike, 5),
-  damage_of(IceSpike, 12),
-  damage_of(NeedleIceSpike, 12),
-  damage_of(EarthSpike, 12),
-]
+  spec 'spell: `damage_of` results in the correct damage values' do
+    assert_equal(damage_of(IceSpike, 0), 10)
+    assert_equal(damage_of(NeedleIceSpike, 0), 12)
+    assert_equal(damage_of(EarthSpike, 0), 8)
+    assert_equal(damage_of(IceSpike, 5), 5)
+    assert_equal(damage_of(NeedleIceSpike, 5), 10)
+    assert_equal(damage_of(EarthSpike, 5), 6)
+    assert_equal(damage_of(IceSpike, 12), 0)
+    assert_equal(damage_of(NeedleIceSpike, 12), 6)
+    assert_equal(damage_of(EarthSpike, 12), 2)
+  end
+end

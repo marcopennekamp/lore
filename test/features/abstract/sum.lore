@@ -1,14 +1,16 @@
+module features.abstract.sum
+
 trait A
 trait X
 trait Y extends X
 
-struct A1() extends A
-struct A2() extends A
-struct A3() extends A, Y
-struct B()
-struct C()
-struct D() extends Y
-struct E() extends X
+object A1 extends A
+object A2 extends A
+object A3 extends A, Y
+object B
+object C
+object D extends Y
+object E extends X
 
 func f(A | B | C): Int
 func f(A): Int
@@ -19,4 +21,17 @@ func f(A2): Int = 4
 func f(A3): Int = 4
 func f(B | C): Int = 5
 
-func test(): [Int] = [f(A1()), f(A2()), f(A3()), f(B()), f(C()), f(D()), f(E())]
+@root
+module features.abstract do
+  use lore.test._
+
+  spec 'sum: dispatch with sum types should return the correct values' do
+    assert_equal(f(A1), 3)
+    assert_equal(f(A2), 4)
+    assert_equal(f(A3), 4)
+    assert_equal(f(B), 5)
+    assert_equal(f(C), 5)
+    assert_equal(f(D), 1)
+    assert_equal(f(E), 2)
+  end
+end
