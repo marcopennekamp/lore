@@ -1,3 +1,6 @@
+func plus(a: Int, b: Int): Int = a + b
+func minus(a: Int, b: Int): Int = a - b
+
 func test(): [Int | Real | Boolean] = do
   let a = 10
   let b = 5
@@ -5,6 +8,7 @@ func test(): [Int | Real | Boolean] = do
   let b1 = true
   let b2 = false
   let b3 = false
+  let f = () => 7
 
   [
     a + b,
@@ -13,6 +17,15 @@ func test(): [Int | Real | Boolean] = do
     a + -b,
     a * b + b * 3.5,
     a / b,
+
+    a plus b,
+    a plus b minus c,
+    a - b minus 1,
+    a * b plus b * c,
+    f() plus 3,
+
+    5 |> plus(2),
+    5 |> minus(2),
 
     a < b,
     a <= 10,
@@ -23,7 +36,7 @@ func test(): [Int | Real | Boolean] = do
 
     b1 || b2 || b3,
     b1 && b2 && b3,
-    !(a == 10) || (-b < a) && (!b1 == b2),
+    !(a == 10) || -b < a && !b1 == b2,
     b1 && !b2 && c < -a * -b,
   ]
 end

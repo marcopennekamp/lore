@@ -16,14 +16,14 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
 
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
+    val operatorMeta = Map(
+      "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
+      "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
+      "=>" -> XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction),
+    )
     PrecedenceParser.parser(
-      operator = StringIn("|", "&", "=>"),
+      operator = StringIn("|", "&", "=>").!.map(operatorMeta),
       operand = atom,
-      operatorMeta = Map(
-        "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
-        "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
-        "=>" -> XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction),
-      ),
     )
   }
 

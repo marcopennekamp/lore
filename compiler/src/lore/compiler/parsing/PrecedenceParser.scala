@@ -34,15 +34,12 @@ object PrecedenceParser {
     * Parses a complete sequence of operands and operations into a single "operand", for example an expression node.
     * Also easily handles the case where no operators even exist and there is only a single operand.
     *
-    * @param operator Although the operators are already defined in `operatorMeta`, we need to supply a direct parser
-    *                 to fastparse, since it can't take the keys from the run-time map. This should use StringIn or
-    *                 similar parsers for the best performance.
+    * @param operator A parser that should return an [[Operator]] instance based on the operator that was parsed.
     */
   def parser[Operand <: Node, _: P](
-    operator: => P[Unit],
+    operator: => P[Operator[Operand]],
     operand: => P[Operand],
-    operatorMeta: Map[String, Operator[Operand]],
-  )(implicit whitespace: P[Any] => P[Unit]): P[Operand] = P(operand ~ (operator.! ~ operand).rep).map { case (left, ops) =>
+  )(implicit whitespace: P[Any] => P[Unit]): P[Operand] = P(operand ~~ (Space.WS ~~ operator ~ operand).repX).map { case (left, ops) =>
     var operandStack = List[Operand](left)
     var operatorStack = List[Operator[Operand]]()
 
@@ -89,9 +86,8 @@ object PrecedenceParser {
 
     // Process the expression piece by piece. We handle two iterations of the standard shunting-yard algorithm in one.
     // Due to the order of the input, we first handle the operator case and then the operand case.
-    for ((operatorString, operand) <- ops) {
+    for ((operator, operand) <- ops) {
       // Handle operator case.
-      val operator = operatorMeta(operatorString)
       while (
         operatorStack.nonEmpty && (
           // With xary operators, we only apply them if their precedence is higher than what comes next, and hence

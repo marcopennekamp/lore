@@ -215,6 +215,13 @@ object ExprNode {
     }
   }
 
+  /**
+    * Constructs a SimpleCallNode from an infix function call.
+    */
+  def infixFunctionCall(functionName: NameNode)(a1: ExprNode, a2: ExprNode, position: Position): ExprNode = {
+    SimpleCallNode(NamePathNode(functionName), Vector(a1, a2), position)
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

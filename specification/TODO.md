@@ -19,6 +19,12 @@
 - **Multi-Calls:** A multi-function call that, Instead of calling exactly one function, calls *all* candidates in the min set.
   - Alternative: Introduce a `min` function that returns a list of all functions that *would* be called. Then the user can decide to call them right away or work with them in some other way.
 - Add a `@symmetric` macro for binary functions that defines two functions `f(a, b)` and `f(b, a)` from one function.
+- Functions used in infix notation should be marked with `@infix`:
+  ```
+  An **infix function** is a binary function marked with an `@infix` annotation. Infix functions may be used in infix function calls, as laid out in [expressions](expressions.md).
+
+  If a function is marked as `@infix`, all functions in the multi-function must be infix functions. The infix status of a function is not currently used to disambiguate parsing, but may be used as such in the future.
+  ```
 
 
 #### Traits and Structs

@@ -412,6 +412,16 @@ String.join(
 )
 ```
 
+##### Infix Notation
+
+A binary function may be called with the **infix notation**:
+
+```
+a1 op a2
+```
+
+`op` must be a simply named, binary multi-function, while `a1` and `a2` must be expressions. Similarly to pipes, the infix notation is a syntactic construct. Infix functions might be confusing to read in more complex expressions and should be used with measure.
+
 
 
 ### Multi-Function Values
@@ -596,11 +606,12 @@ The **operator precedence** is defined as follows, from lowest to highest preced
 < <= > >=
 |>
 :+
+id (infix function)
 + -
 * /
 ::
 ! - (unary)
-atoms (including function application)
+atom
 ```
 
 Note that we don't view assignments as operators. **Complex expressions** such as conditionals or blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:

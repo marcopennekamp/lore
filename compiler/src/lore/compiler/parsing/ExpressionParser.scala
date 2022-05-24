@@ -128,25 +128,38 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
+
+    val operatorMeta = Map(
+      "||" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
+      "&&" -> XaryOperator[ExprNode](2, ExprNode.ConjunctionNode),
+      "==" -> BinaryOperator[ExprNode](3, ExprNode.EqualsNode),
+      "!=" -> BinaryOperator[ExprNode](3, ExprNode.NotEqualsNode),
+      "<" -> BinaryOperator[ExprNode](4, ExprNode.LessThanNode),
+      "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
+      ">" -> BinaryOperator[ExprNode](4, ExprNode.greaterThan),
+      ">=" -> BinaryOperator[ExprNode](4, ExprNode.greaterThanEquals),
+      "|>" -> BinaryOperator[ExprNode](5, ExprNode.pipe),
+      ":+" -> BinaryOperator[ExprNode](6, ExprNode.AppendNode),
+      "+" -> BinaryOperator[ExprNode](8, ExprNode.AdditionNode),
+      "-" -> BinaryOperator[ExprNode](8, ExprNode.SubtractionNode),
+      "*" -> BinaryOperator[ExprNode](9, ExprNode.MultiplicationNode),
+      "/" -> BinaryOperator[ExprNode](9, ExprNode.DivisionNode),
+    )
+    def simple = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", "|>", ":+", "+", "-", "*", "/")
+    def infixFunction = P(
+      nameParser.name.map { functionName =>
+        BinaryOperator[ExprNode](7, ExprNode.infixFunctionCall(functionName))
+      }
+    )
+
+    // Operators must follow their preceding operand on the same line to minimize parsing ambiguities, especially in
+    // relation to infix functions. Pipes are an exception because we want to allow the most readable style of one pipe
+    // per line.
+    def pipeContinuation = P(Space.WL ~~ "|>").map(_ => operatorMeta("|>"))
+
     PrecedenceParser.parser(
-      operator = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", "|>", ":+", "+", "-", "*", "/"),
+      operator = P(simple.!.map(operatorMeta) | infixFunction | pipeContinuation),
       operand = ascripted,
-      operatorMeta = Map(
-        "||" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
-        "&&" -> XaryOperator[ExprNode](2, ExprNode.ConjunctionNode),
-        "==" -> BinaryOperator[ExprNode](3, ExprNode.EqualsNode),
-        "!=" -> BinaryOperator[ExprNode](3, ExprNode.NotEqualsNode),
-        "<" -> BinaryOperator[ExprNode](4, ExprNode.LessThanNode),
-        "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
-        ">" -> BinaryOperator[ExprNode](4, ExprNode.greaterThan),
-        ">=" -> BinaryOperator[ExprNode](4, ExprNode.greaterThanEquals),
-        "|>" -> BinaryOperator[ExprNode](5, ExprNode.pipe),
-        ":+" -> BinaryOperator[ExprNode](6, ExprNode.AppendNode),
-        "+" -> BinaryOperator[ExprNode](7, ExprNode.AdditionNode),
-        "-" -> BinaryOperator[ExprNode](7, ExprNode.SubtractionNode),
-        "*" -> BinaryOperator[ExprNode](8, ExprNode.MultiplicationNode),
-        "/" -> BinaryOperator[ExprNode](8, ExprNode.DivisionNode),
-      ),
     )
   }
 
