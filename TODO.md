@@ -20,7 +20,7 @@
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
-  - Change the map syntax to avoid clashing with hash sets.
+  - Change the map type syntax to `#[K, V]` which is more convenient to type. The literal syntax should keep the `k -> v` syntax because the alternative `k: v` signals to the programmer that `k` is a name, not a value. So if we write `#[foo: bar]`, the programmer might assume that `'foo'` is the key with which the value is accessed, even when in reality `foo` is defined `let foo = 15`.
   - Update `runtime-types.md`.
   - Clear all `TODO (maps)` entries.
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
@@ -30,18 +30,56 @@
 - Syntax changes:
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
-  - Rename `act` to `proc`? This would be in line with `func`.
-  - Allow defining functions at the root module, not the local module, such as `func lore.core.to_string`. We might have to add an annotation such as `@root` for this so that name paths are consistently local by default, and only global via explicit annotation. (Compare `@root` in module declarations.)
-  - Rename `Boolean` to `Bool`? Int is also abbreviated.
+    - One difficulty here is that the user would expect `b` to only be evaluated once. If we parse this naively, `b` will be evaluated twice, causing potential side effects. So it's very likely that a chained comparison would have to use intermediate values for each operand.
+  - Rename `act` to `proc`. This would be in line with `func`.
+    - `act` could also be confused with `actor` (actor models, etc.), leading someone new to the language to think that the function somehow supports or enables concurrency via the actor model.
+  - Rename `Boolean` to `Bool`. Int is also abbreviated.
   - Implement implicit real conversions for integer literals standing in `Real` contexts.
     - A list like `[0, -2, 2.5, 6, 22]` should also be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
   - Provide a means to directly access tuple elements, such as `._1`.
     - Also consider adding default element names again, i.e. `tuple.a` for a tuple `(A, B)` referring to the first element. Might still be a slippery slope.
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
-  - Trailing lambdas.
+  - Trailing lambdas (`map(things) do thing => thing.name end`).
+    - Take care that the syntax doesn't require a `do..end` after `thing =>`, e.g. `map(things) do thing => do ... end end` would be unfortunate.
   - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.Symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
   - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
   - Consider adding `func`, `type`, `spec` etc. to the list of keywords. While the grammar might not be ambiguous now, it might become ambiguous later, and I'd like to avoid a design deadlock where adding e.g. `type` as a keyword isn't possible without breaking user code.
+  - Change comments from `//` and `/* */` to `#` and `#[ ]#`? This is way more visually consistent for documentation comments, because the `/** * */` style eats up two lines of code for every documentation comment, while `///` or `//*` adds THREE characters of visual noise to each line. `##` documentation comments clearly separate their intent from regular `#` comments, while being easy to type and only having moderate visual noise.
+    - The `#` comment syntax would be unfortunate for symbols and collection types/literals. Using the hashtag for symbols is visually very consistent with a lower-case identifier (e.g. `#name` or `#bear`), as it lines up very well with the top and bottom of most lower-case letters. Here is a table of syntax changes that would be required to introduce `#` comments:
+      ```
+                  // comments                                     # comments
+      Symbols:    #name                                           $name, %name, &name, ~name, \name
+      Sets:       #[x, y] :: #[X]                                 {x, y} :: {X}
+      Maps:       #['foo' -> x, 'bar' -> y] :: #[String, X]       %['foo' -> x, 'bar' -> y] :: %[String, X]
+      ```
+      The `{...}` set syntax is arguably better, but using `#` for comments would at least take away the option of using the `#[...]` syntax. The map syntax seems fine either way. However, as explained above, the symbol syntax would suffer from this change, as in my subjective view none of the other suggestions made in the table above are of comparable syntactic quality.
+    - An alternative comment syntax might be `--`, which seems visually leaner than `//`. However, documentation comments would likely also be `--` when placed above a definition without any separating blank lines between the comment and the definition. This doesn't carry the same, clear separation of intent that is present with `#` and `##`. `--` also has a less obvious block comment syntax than the other variants, because `[- -]` cannot be used in Lore as `[-10]` is a valid list literal.
+    - We could also use `;` for comments, but I want to reserve the semicolon as an inline statement separator. Lisps can use `;` for comments because they don't have the same statement separation issue.
+    - Another consideration are dividers in files:
+      ```
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Divider heading                                                                                              //
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      // ------------------------------------------------------------------------------------------------------------ //
+      // Divider heading                                                                                              //
+      // ------------------------------------------------------------------------------------------------------------ //
+
+      ##################################################################################################################
+      # Divider heading                                                                                                #
+      ##################################################################################################################
+
+      ------------------------------------------------------------------------------------------------------------------
+      -- Divider heading                                                                                              --
+      ------------------------------------------------------------------------------------------------------------------
+
+      ------------------------------------------------ Divider heading -------------------------------------------------
+
+      -- ---------------------------------------------------------------------------------------------------------------
+      -- Divider heading (Haskell style)
+      ```
+      Dividers are important in Lore code because functions aren't defined inside "classes", but OOP-like structures might often be designed. This depends on the specific architecture of a piece of code, but generally dividers will be used in at least some areas to improve visual clarity in source files. All variants above provide good visual clarity. It's worth mentioning that `--` produces very nice dividers without headings, as a full-width line of `----` provides good separation at low visual cost.
+    - Also keep in mind that `//` and `#` style comments would use up the least novelty budget. Languages with `do..end` such as Ruby, Crystal, and Elixir generally use `#` style comments, so that comment style might be least surprising for most developers coming into Lore. `--` would likely use up the most novelty budget, but a majority of developers should acclimate quickly.
   - Clear all `TODO (syntax)` entries.
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
@@ -57,7 +95,7 @@
   - Are transducers applicable here? (I think they're quite hard to put into a language with a static type system, but we should explore this idea more.)
 - Implement a new backend for lists.
   - Clear all `TODO (lists)` entries.
-- Add immutable (hash) sets with a syntax `#[A]`.
+- Add immutable (hash) sets with a syntax `#[A]` or `{A}`.
 - Provide an easy way to update immutable structs and shapes. For example, Scala's case class `copy` function.
 - Allow inherited shape type properties to reference declared types placed lower in the resolution order. The reasoning for this is simple: Struct properties are immune to the resolution order, because they are resolved in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
   - The VM already handles this correctly.
