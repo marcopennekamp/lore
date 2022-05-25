@@ -15,8 +15,7 @@ end
 module features.assembly do
   use lore.test._
 
-  // This test verifies that nested lambdas with captured variables are correctly assembled.
-  spec 'nested_lambda: nested lambdas with captured variables are correctly assembled' do
+  spec 'nested_lambda: the compiler supports nested lambdas with captured variables' do
     get_numbers() should_eq [0, -20, 20, 60, 220]
   end
 end

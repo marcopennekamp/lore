@@ -4,7 +4,7 @@ use lore.Option
 use lore.Enum.[empty?, present?]
 use lore.test._
 
-spec '`get_or_else` should return a Some\'s value or the alternative value' do
+spec '`get_or_else` returns a Some\'s value or the alternative value for None' do
   let a: Option[String] = Some('test')
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
@@ -15,7 +15,7 @@ spec '`get_or_else` should return a Some\'s value or the alternative value' do
 end
 
 // TODO (pyramid): We should be able to test that `get!` panics when a None is encountered...
-spec '`get!` should return a Some\'s value' do
+spec '`get!` returns a Some\'s value' do
   let a: Option[String] = Some('test')
   let b: Option[Int] = Some(42)
 
@@ -23,7 +23,7 @@ spec '`get!` should return a Some\'s value' do
   get!(b) should_eq 42
 end
 
-spec '`empty?` and `present?` should correctly report the absence/presence of a value' do
+spec '`empty?` and `present?` report the absence/presence of a value' do
   let a: Option[String] = Some('test')
   let b: Option[Int] = Some(42)
   let c: Option[String] = None

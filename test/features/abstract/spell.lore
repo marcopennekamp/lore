@@ -48,7 +48,7 @@ module features.abstract do
   use lore.test._
 
   // This test verifies how the totality constraint treats complex type arguments.
-  spec 'spell: `damage_of` results in the correct damage values' do
+  spec 'spell: `damage_of` calculates damage values' do
     damage_of(IceSpike, 0) should_eq 10
     damage_of(NeedleIceSpike, 0) should_eq 12
     damage_of(EarthSpike, 0) should_eq 8

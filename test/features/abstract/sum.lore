@@ -25,7 +25,7 @@ func f(B | C): Int = 5
 module features.abstract do
   use lore.test._
 
-  spec 'sum: dispatch with sum types should return the correct values' do
+  spec 'sum: dispatch with sum types results in the expected values' do
     f(A1) should_eq 3
     f(A2) should_eq 4
     f(A3) should_eq 4

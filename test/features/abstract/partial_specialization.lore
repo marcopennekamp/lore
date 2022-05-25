@@ -16,7 +16,7 @@ func f(A2, B): String = 'A2,B'
 module features.abstract do
   use lore.test._
 
-  spec 'partial_specialization: dispatch should return the correct strings' do
+  spec 'partial_specialization: dispatch results in the expected values' do
     f(A1, B1) should_eq 'A1,B'
     f(A1, B2) should_eq 'A1,B'
     f(A2, B1) should_eq 'A2,B'

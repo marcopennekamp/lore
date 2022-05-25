@@ -5,11 +5,11 @@ use lore.test._
 use lessons.hello_name.hello
 use lessons.resistor.Rating
 
-spec 'adventurer_order: `main` should return the adventurers in the correct order' do
+spec 'adventurer_order: `main` orders adventurers' do
   adventurer_order.main() should_eq ['Abby(2)', 'Eliza(5)', 'Lancelot(3)', 'Ser Oncewas(4)', 'Steve(0)', 'Steve(1)']
 end
 
-spec 'fibonacci: `fib(10)` should be 55' do
+spec 'fibonacci: `fib(10)` is 55' do
   fibonacci.fib(10) should_eq 55
 end
 
@@ -18,7 +18,7 @@ spec 'fibonacci' do
   fibonacci.fib(10)
 end
 
-spec 'hello_name: `main` should build the correct greetings' do
+spec 'hello_name: `main` builds greetings' do
   hello_name.main() should_eq [
     'Hello, world.',
     'Hello, anonymous #5.',
@@ -43,7 +43,7 @@ spec 'hello_name: direct `hello` calls' do
 end
 
 // TODO (specs): This needs approximate equality...
-spec 'resistor: `main` should calculate the correct resistance ratings' do
+spec 'resistor: `main` calculates resistance ratings' do
   resistor.main() should_eq [
     Rating(2565000.0, 2835000.0),
     Rating(554.4, 565.6),
@@ -54,10 +54,10 @@ spec 'resistor: `main` should calculate the correct resistance ratings' do
   ]
 end
 
-spec 'rna: `main` should transcribe the correct RNA strings' do
+spec 'rna: `main` transcribes RNA strings' do
   rna.main() should_eq ['u', 'a', 'c', 'g', 'ugcaccagaauu']
 end
 
-spec 'status: `main` should build the correct status strings' do
+spec 'status: `main` builds status strings' do
   status.main() should_eq ['Success!', 'Failure!', 'Success!', 'Failure!', 'Success!']
 end

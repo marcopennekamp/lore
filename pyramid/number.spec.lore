@@ -3,7 +3,7 @@ module lore.number
 
 use lore.test._
 
-spec '`min` and `max` should return the correct minimum/maximum numbers' do
+spec '`min` and `max` return their minimum/maximum arguments' do
   min(-5, 0) should_eq -5
   max(-5, 0) should_eq 0
   min(1.8, 1.0) should_eq 1.0

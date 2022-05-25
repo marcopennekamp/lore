@@ -60,7 +60,7 @@ func name(Circle): String = 'circle'
 module examples do
   use lore.test._
 
-  spec 'geometry: area calculations are correct for various shapes' do
+  spec 'geometry: `area` calculates the area of various shapes' do
     let box = BoundingBox(0.0, 10.0, -5.0, 20.0)
     let circle = Circle(0.0, 5.0, 2.7)
     let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
@@ -70,7 +70,7 @@ module examples do
     area(rect) should_eq 1540.0
   end
 
-  spec 'geometry: shapes are correctly ordered by area' do
+  spec 'geometry: shapes are ordered by area' do
     let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
     let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
     let circle = Circle(0.0, 0.0, 5.0)

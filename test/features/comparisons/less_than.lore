@@ -167,7 +167,7 @@ spec 'structs: custom order' do
   pers4 should     be_lt(pers3)
 end
 
-spec 'structs: type parameters should not be taken into account in default order' do
+spec 'structs: type parameters aren\'t taken into account in default order' do
   let prm1 = Parameterized[#foo](5)
   let prm2 = Parameterized[#bar](6)
   let prm3 = Parameterized[#foo](7)

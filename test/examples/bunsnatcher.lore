@@ -197,7 +197,7 @@ module examples do
   use lore.test._
 
   @bench
-  spec 'bunsnatcher: Vichity Vichy should be selected as the most likely murderer' do
+  spec 'bunsnatcher: Vichity Vichy is the most likely murderer' do
     let suspect = main()
     suspect.name should_eq 'Vichity Vichy'
   end

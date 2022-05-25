@@ -55,7 +55,7 @@ func main(): [Any] = save(Character(Position(1.5, 2.7), ExternalPhysics()))
 module examples do
   use lore.test._
 
-  spec 'savable: saving a character should result in the correct list of values' do
+  spec 'savable: `main` saves a character' do
     main() should_eq ['Character', 'Position', 1.5, 2.7, 'ExternalPhysics', 42]
   end
 end

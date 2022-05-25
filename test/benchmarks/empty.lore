@@ -3,6 +3,6 @@ module benchmarks
 // This is the baseline benchmark that ensures that the VM doesn't have too much overhead for each benchmark run. The
 // run time per operation of this benchmark should be below 20 nanoseconds.
 @bench_only
-spec '`empty`' do
+spec 'empty' do
   ()
 end

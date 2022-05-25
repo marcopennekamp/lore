@@ -166,7 +166,7 @@ spec 'structs: custom equality' do
   pers2 should_eq     pers5
 end
 
-spec 'structs: type parameters should not be taken into account in default equality' do
+spec 'structs: type parameters aren\'t taken into account in default equality' do
   let prm1 = Parameterized[#foo](5)
   let prm2 = Parameterized[#bar](5)
   let prm3 = Parameterized[#foo](7)

@@ -65,7 +65,7 @@ func f10(X3): String = 'X3'
 module features.abstract do
   use lore.test._
 
-  spec 'intersection: dispatch with intersection types should return the correct values' do
+  spec 'intersection: dispatch with intersection types results in the expected values' do
     let a = A('Ada')
     let b = B
     let c = C('Cone')

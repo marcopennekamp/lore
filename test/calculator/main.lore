@@ -15,6 +15,6 @@ func main(): [Real] = [
 ] |> map(parse_and_evaluate)
 
 @bench
-spec '`calculator` parses and evaluates terms to the correct result' do
+spec '`main` parses and evaluates the example terms' do
   main() should_eq [0.0, 3.0, 7.0, 0.5, -35.0]
 end

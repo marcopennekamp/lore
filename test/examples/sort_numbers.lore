@@ -10,7 +10,7 @@ func main(): [Int] = sort(numbers)
 module examples do
   use lore.test._
 
-  spec 'sort_numbers: `List.sort` should correctly sort a list of numbers' do
+  spec 'sort_numbers: `List.sort` sorts a list of numbers' do
     sorted?(main()) should be_true
   end
 
