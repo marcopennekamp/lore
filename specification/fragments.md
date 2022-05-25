@@ -46,14 +46,14 @@ domain zombie: Zombie
 end
 
 spec identity do
-  assert_equal(identity(5), 5)
-  assert_equal(identity('foo'), 'foo')
+  identity(5) should_eq 5
+  identity('foo') should_eq 'foo'
 end
 
 spec zombie_attack do
   let zombie = Zombie(20)
   damage(zombie, 7)
-  assert_equal(zombie.health, 13)
+  zombie.health should_eq 13
 end
 ```
 

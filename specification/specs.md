@@ -8,7 +8,7 @@ Lore supports built-in testing and benchmarking via **specs**. They are first-cl
 
 ### Spec Declarations
 
-A **spec** is declared with the `spec` keyword, a string description, and a body. The body usually contains assertions. If no assertions fail during the execution of the spec, the execution is successful. Importing or otherwise referring to specs within Lore code is impossible, as they must be executed using the VM's `test` and `bench` commands.
+A **spec** is declared with the `spec` keyword, a string description, and a body. The body usually contains `should` and `should_not` assertions. If no assertions fail during the execution of the spec, the execution is successful. Importing or otherwise referring to specs within Lore code is impossible, as they must be executed using the VM's `test` and `bench` commands.
 
 By default, a spec will only be executed as a test. A spec can optionally be marked as a `@bench` to include it in the suite of benchmarks. If the spec makes no contribution to testing, the spec may be marked as `@bench_only` to include it in the suite of benchmarks, but exclude it from the suite of tests. 
 
@@ -40,13 +40,13 @@ module lore.number
 use lore.test._
 
 spec 'simple min/max' do
-  assert_equal(min(-1, 1), -1)
-  assert_equal(max(-1, 1), 1)
+  min(-1, 1) should_eq -1
+  max(-1, 1) should_eq 1
 end
 
 spec 'min should return the smaller integer' do
-  assert_equal(min(4, 8), 4)
-end 
+  min(4, 8) should_eq 4
+end
 
 @bench_only
 spec `benchmark min/max' do
@@ -62,7 +62,7 @@ Specs can be executed directly by the VM as **tests** or as **benchmarks**. The 
 
 Both commands allow **filtering** specs by module name, such as `module1.module2`. Only specs that are matched by one of the specified module names will be included. This includes the specs that are defined in submodules. For example, if a spec `S` is defined in module `m1.m2.m3`, and the module name is `m1.m2`, `S` is executed. When no module names are given, all specs will be executed. Regardless of the module names specified, a spec that isn't marked as a test/benchmark will not be executed as such.
 
-The `test` command executes all desired specs and for each spec, reports its name/description, execution time, and whether the test was successful or not. If unsuccessful, the error message of the failed assertion will be reported as well. In the future, failed tests will be accompanied by a stack trace. This is currently not possible, however, as the VM does not support stack traces yet.
+The `test` command executes all desired specs and for each spec, reports its name/description, execution time, and whether the test was successful or not. If unsuccessful, the error message of the failed expectation will be reported as well. In the future, failed tests will be accompanied by a stack trace. This is currently not possible, however, as the VM does not support stack traces yet.
 
 The `bench` command works similarly. Each benchmark spec is executed in a warmup phase for 2 seconds, during which the number of iterations per second is recorded. The benchmarking phase then executes the spec for a fixed number of iterations that roughly fit into 8 seconds. The actual time is recorded from start to finish, and the execution time per iteration is reported. If an assertion fails during this process, the benchmark will be marked as failed.
 
@@ -70,24 +70,29 @@ All specs in the same module are grouped under the module's full name when repor
 
 
 
-### Assertions
+### Assertions and Expectations
 
 Lore provides the following **assertion functions** in the module `lore.test`:
 
-- `assert(condition: Boolean, message: String): Unit` fails with `message` if `condition` is false.
-- `assert(condition: Boolean, message: () => String): Unit` fails with `message()` if `condition` is false.
-- `assert(condition: Boolean): Unit` fails with a standard message if `condition` is false.
-- `assert_equal(actual: Any, expected: Any, message: String): Unit` fails with `message` if `a != b`.
-- `assert_equal(actual: Any, expected: Any, message: () => String): Unit` fails with `message()` if `a != b`.
-- `assert_equal(actual: Any, expected: Any): Unit` fails with a standard message if `a != b`.
+- `should(actual_value: Any, expectation: Expectation): Unit` succeeds if `actual_value` matches the expectation.
+- `should_not(actual_value: Any, expectation: Expectation): Unit` succeeds if `actual_value` *does not* match the expectation.
+- `should_eq(actual_value: Any, expected_value: Any): Unit` is syntactic sugar for `actual_value should eq(expected_value)`.
+- `should_not_eq(actual_value: Any, expected_value: Any): Unit` is syntactic sugar for `actual_value should_not eq(expected_value)`.
 
-These assertions are regular multi-functions and may be used anywhere. As Lore currently doesn't support exceptions, assertion failures are implemented using the VM's native exceptions. These cannot be caught by Lore code, but are instead handled by the VM. If a spec throws an assertion exception, it causes an individual test/benchmark to fail.
+The module `lore.test.expectation` defines **expectations**, which either do or do not match a value. `lore.test` defines corresponding shorthands such as `be_true`, `be_false`, and `eq(expected_value)`. These expectations are used with `should` and `should_not` to verify facts about values. 
 
-Both `assert` and `assert_equal` provide a function that accepts messages lazily. These functions defer the construction of the error message to the time the assertion fails. If you are building complex error messages, passing them lazily may improve test performance.
+Assertions are regular multi-functions and may be used anywhere. It's recommended to use `should` and `should_not` in infix notation:
 
-Assertions have an impact on benchmark performance. A spec that performs complex computations, but is verified using simple assertions, should not have any measurable assertion overhead (as long as complex error messages are passed lazily), and can thus act both as a benchmark and a test. However, if a small piece of code or simple function should be benchmarked, it might be useful to split a spec into a test and a benchmark, the latter marked as `@bench_only`. 
+```
+length([1, 2]) should eq(2)
+person.is_cool should be_true
+```
 
-You can try benchmarking an assertion call such as `assert_equal(a, b)`, where `a` and `b` are values you'd typically compare, to gauge the assertion overhead for a given benchmark. A large portion of the overhead comes from the function call to `assert`/`assert_equal`, construction of the error message (unless it's passed lazily), and the equality test in case of `assert_equal`.
+As Lore currently doesn't support exceptions, assertion failures are implemented using the VM's native exceptions. These cannot be caught by Lore code, but are instead handled by the VM. If a spec throws an assertion exception, it causes an individual test/benchmark to fail.
+
+Assertions have an impact on benchmark performance. A spec that performs complex computations, but is verified using simple assertions, should not have any measurable assertion overhead, and can thus act both as a benchmark and a test. However, if a small piece of code or simple function should be benchmarked, it might be useful to split a spec into a test and a benchmark, the latter marked as `@bench_only`. Note that failure messages are constructed lazily, so a complex failure message should have no bearing on benchmark performance.
+
+You can try benchmarking an assertion such as `a should_eq b`, where `a` and `b` are values you'd typically compare, to gauge the assertion overhead for a given benchmark. A large portion of the overhead comes from the function call to `should`/`should_not`, construction of the expectation object, and the expectation's matching (such as comparing for equality).
 
 
 
@@ -99,10 +104,10 @@ Here are some **advantages** that have motivated this decision:
 
 - Tests that are part of the language are seamless to use for a veteran and easy to pick up for a newcomer. There is no need to include a third-party library, or to set up and maintain a testing toolchain.
 - Instead of adding specs to separate test files and folders, they *can* be placed directly beside functions and types. This close relationship promotes writing tests and benchmarks, and makes them easier to find. The latter is important for specs that are suitable usage examples. They are only useful if they're easy to find.
-- Lore itself needs a testing framework to execute language tests. Instead of building an internal solution that isn't suitable to use outside the language implementation, we've set out to build a solution that works as a base for everyone.
+- The implementation of Lore needs a testing framework to execute language tests. Instead of building an internal solution that isn't suitable to use outside the language implementation, we've set out to build a solution that works as a base for everyone.
 - Given that Lore doesn't have macros (yet), a comparable third-party testing framework would have to use a more verbose syntax for defining tests. Built-in tests can be implemented with custom syntax.
-- As the language evolves, so can the test framework. In fact, it *must* evolve with the language, which forces us, the language designers, to take testing into account when we expand or change the language.
+- As the language evolves, so can the test framework. In fact, it *must* evolve with the language, which forces us as language designers to take testing into account when expanding or changing the language.
 
 Now, all this isn't meant to exclude community testing or benchmarking frameworks. We want specs to work as a **baseline** that frameworks can build upon. This isn't currently the case, as there's no way to hook into specs, but it's a goal for the future. 
 
-Given that the built-in testing solution should work as a baseline, we have to provide a conservative lowest common denominator. This comes with some limitations. In particular, Lore does not implement or otherwise prescribe object mocking, dependency injection, a specific DSL for testing, or any other features supported by more complex testing frameworks.
+Given that the built-in testing solution should work as a baseline, we have to provide a conservative lowest common denominator. This comes with some limitations. In particular, Lore does not implement or otherwise prescribe object mocking, dependency injection, remote test execution, fuzzing, or any other features supported by more complex testing frameworks.

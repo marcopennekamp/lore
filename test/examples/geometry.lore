@@ -65,9 +65,9 @@ module examples do
     let circle = Circle(0.0, 5.0, 2.7)
     let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
 
-    assert_equal(area(box), 250.0)
-    assert_equal(area(circle), 22.902210444671102)
-    assert_equal(area(rect), 1540.0)
+    area(box) should_eq 250.0
+    area(circle) should_eq 22.902210444671102
+    area(rect) should_eq 1540.0
   end
 
   spec 'geometry: shapes are correctly ordered by area' do
@@ -75,19 +75,19 @@ module examples do
     let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
     let circle = Circle(0.0, 0.0, 5.0)
 
-    assert_not(rect < box)
-    assert(rect <= box)
-    assert_not(box < rect)
-    assert(box <= rect)
+    rect should_not be_lt(box)
+    rect should be_lte(box)
+    box should_not be_lt(rect)
+    box should be_lte(rect)
 
-    assert(rect < circle)
-    assert(rect <= circle)
-    assert_not(circle < rect)
-    assert_not(circle <= rect)
+    rect should be_lt(circle)
+    rect should be_lte(circle)
+    circle should_not be_lt(rect)
+    circle should_not be_lte(rect)
 
-    assert(box < circle)
-    assert(box <= circle)
-    assert_not(circle < box)
-    assert_not(circle <= box)
+    box should be_lt(circle)
+    box should be_lte(circle)
+    circle should_not be_lt(box)
+    circle should_not be_lte(box)
   end
 end

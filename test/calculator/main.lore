@@ -16,8 +16,5 @@ func main(): [Real] = [
 
 @bench
 spec '`calculator` parses and evaluates terms to the correct result' do
-  assert_equal(
-    main(),
-    [0.0, 3.0, 7.0, 0.5, -35.0],
-  )
+  main() should_eq [0.0, 3.0, 7.0, 0.5, -35.0]
 end

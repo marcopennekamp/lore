@@ -199,6 +199,6 @@ module examples do
   @bench
   spec 'bunsnatcher: Vichity Vichy should be selected as the most likely murderer' do
     let suspect = main()
-    assert_equal(suspect.name, 'Vichity Vichy')
+    suspect.name should_eq 'Vichity Vichy'
   end
 end

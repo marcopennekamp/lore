@@ -70,20 +70,20 @@ module features.abstract do
     let b = B
     let c = C('Cone')
 
-    assert_equal(f1(a), 'A')
-    assert_equal(f1(c), 'C')
-    assert_equal(f2(b), 'B')
-    assert_equal(f2(c), 'C')
-    assert_equal(f3(c), 'C')
-    assert_equal(f4(b), 'B')
-    assert_equal(f4(c), 'C')
-    assert_equal(f5(b), 'B')
-    assert_equal(f5(c), 'C')
-    assert_equal(f6(b), 'B')
-    assert_equal(f7(a), 'A')
-    assert_equal(f8(c), 'C')
-    assert_equal(f10(X1()), 'X1|X2')
-    assert_equal(f10(X2()), 'X1|X2')
-    assert_equal(f10(X3()), 'X3')
+    f1(a) should_eq 'A'
+    f1(c) should_eq 'C'
+    f2(b) should_eq 'B'
+    f2(c) should_eq 'C'
+    f3(c) should_eq 'C'
+    f4(b) should_eq 'B'
+    f4(c) should_eq 'C'
+    f5(b) should_eq 'B'
+    f5(c) should_eq 'C'
+    f6(b) should_eq 'B'
+    f7(a) should_eq 'A'
+    f8(c) should_eq 'C'
+    f10(X1()) should_eq 'X1|X2'
+    f10(X2()) should_eq 'X1|X2'
+    f10(X3()) should_eq 'X3'
   end
 end

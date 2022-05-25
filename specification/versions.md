@@ -9,7 +9,7 @@ The **first version** of Lore, which is still in development, includes or will i
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
 - **Expressions:** Literals and value constructors (numbers, booleans, strings, symbols, tuples, anonymous functions, multi-function values, lists, maps, shapes, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
 - **Modules:** Module declarations, imports and name resolution, companion modules.
-- **Specs:** Spec declarations, basic assertions, `test` and `bench` VM commands.
+- **Specs:** Spec declarations, assertions and expectations, `test` and `bench` VM commands.
 - **Miscellaneous:** Global constants, `domain` blocks.
 
 The language will also be accompanied by a standard library called **Pyramid**, which will include the following features:

@@ -59,12 +59,9 @@ module examples do
   use lore.test._
 
   spec 'airborne: equal airbornes are correctly reported by name' do
-    assert_equal(
-      main(),
-      [
-        'Raven == Raven', 'Raven == Model Plane', 'Dragon == Dragon', 'Dragon == Cessna', 'Crow == Crow',
-        'Crow == Model Plane', 'B-2 Spirit == B-2 Spirit', 'Cessna == Cessna', 'Model Plane == Model Plane',
-      ],
-    )
+    main() should_eq [
+      'Raven == Raven', 'Raven == Model Plane', 'Dragon == Dragon', 'Dragon == Cessna', 'Crow == Crow',
+      'Crow == Model Plane', 'B-2 Spirit == B-2 Spirit', 'Cessna == Cessna', 'Model Plane == Model Plane',
+    ]
   end
 end

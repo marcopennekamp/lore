@@ -219,7 +219,7 @@ proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   values.unit_value_tagged
 
 proc test_raise_assertion_error(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## raise_assertion_error(message: String): Unit
+  ## raise_assertion_error(message: String): Nothing
   raise new_exception(SpecAssertionError, arg_string(0))
 
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =

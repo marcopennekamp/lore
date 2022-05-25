@@ -6,14 +6,11 @@ use lessons.hello_name.hello
 use lessons.resistor.Rating
 
 spec 'adventurer_order: `main` should return the adventurers in the correct order' do
-  assert_equal(
-    adventurer_order.main(),
-    ['Abby(2)', 'Eliza(5)', 'Lancelot(3)', 'Ser Oncewas(4)', 'Steve(0)', 'Steve(1)'],
-  )
+  adventurer_order.main() should_eq ['Abby(2)', 'Eliza(5)', 'Lancelot(3)', 'Ser Oncewas(4)', 'Steve(0)', 'Steve(1)']
 end
 
 spec 'fibonacci: `fib(10)` should be 55' do
-  assert_equal(fibonacci.fib(10), 55)
+  fibonacci.fib(10) should_eq 55
 end
 
 @bench_only
@@ -22,16 +19,13 @@ spec 'fibonacci' do
 end
 
 spec 'hello_name: `main` should build the correct greetings' do
-  assert_equal(
-    hello_name.main(),
-    [
-      'Hello, world.',
-      'Hello, anonymous #5.',
-      'Hello, marco.',
-      'Hello, console.',
-      'Hello, anonymous #42.'
-    ],
-  )
+  hello_name.main() should_eq [
+    'Hello, world.',
+    'Hello, anonymous #5.',
+    'Hello, marco.',
+    'Hello, console.',
+    'Hello, anonymous #42.'
+  ]
 end
 
 @bench_only
@@ -50,29 +44,20 @@ end
 
 // TODO (specs): This needs approximate equality...
 spec 'resistor: `main` should calculate the correct resistance ratings' do
-  assert_equal(
-    resistor.main(),
-    [
-      Rating(2565000.0, 2835000.0),
-      Rating(554.4, 565.6),
-      Rating(21945.0, 22055.0),
-      Rating(446.5, 493.5),
-      Rating(67.966, 68.034),
-      Rating(532.8, 799.2),
-    ],
-  )
+  resistor.main() should_eq [
+    Rating(2565000.0, 2835000.0),
+    Rating(554.4, 565.6),
+    Rating(21945.0, 22055.0),
+    Rating(446.5, 493.5),
+    Rating(67.966, 68.034),
+    Rating(532.8, 799.2),
+  ]
 end
 
 spec 'rna: `main` should transcribe the correct RNA strings' do
-  assert_equal(
-    rna.main(),
-    ['u', 'a', 'c', 'g', 'ugcaccagaauu'],
-  )
+  rna.main() should_eq ['u', 'a', 'c', 'g', 'ugcaccagaauu']
 end
 
 spec 'status: `main` should build the correct status strings' do
-  assert_equal(
-    status.main(),
-    ['Success!', 'Failure!', 'Success!', 'Failure!', 'Success!'],
-  )
+  status.main() should_eq ['Success!', 'Failure!', 'Success!', 'Failure!', 'Success!']
 end

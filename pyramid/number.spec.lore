@@ -4,10 +4,10 @@ module lore.number
 use lore.test._
 
 spec '`min` and `max` should return the correct minimum/maximum numbers' do
-  assert_equal(min(-5, 0), -5)
-  assert_equal(max(-5, 0), 0)
-  assert_equal(min(1.8, 1.0), 1.0)
-  assert_equal(max(1.8, 1.0), 1.8)
-  assert_equal(max(min(2.0, 1.2), -1.0), 1.2)
-  assert_equal(max(min(max(0, 2), 1), min(-2, 2)), 1)
+  min(-5, 0) should_eq -5
+  max(-5, 0) should_eq 0
+  min(1.8, 1.0) should_eq 1.0
+  max(1.8, 1.0) should_eq 1.8
+  max(min(2.0, 1.2), -1.0) should_eq 1.2
+  max(min(max(0, 2), 1), min(-2, 2)) should_eq 1
 end

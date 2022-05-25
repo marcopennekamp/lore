@@ -1,0 +1,107 @@
+module lore.test.expectation
+
+/**
+  * An expectation towards a value. For a given value, the expectation will either match the value or not. This is
+  * used in assertions such as `should` and `should_not` to verify values.
+  *
+  * In case of an expectation mismatch, the expectation provides a failure message that may be reported to the user.
+  */
+trait Expectation
+
+/**
+  * Whether `actual_value` matches the `expectation`.
+  */
+func matches?(expectation: Expectation, actual_value: Any): Boolean
+
+/**
+  * Builds a message for a failed `expectation` given the `actual_value` which was expected to succeed.
+  */
+func failure_message(expectation: Expectation, actual_value: Any): String
+
+/**
+  * Builds a message for a successful `expectation` given the `actual_value` which was expected to fail.
+  */
+func negated_failure_message(expectation: Expectation, actual_value: Any): String
+
+// ------------------------------------------------------------------------------------------------------------------ //
+// Truth                                                                                                              //
+// ------------------------------------------------------------------------------------------------------------------ //
+
+struct BooleanExpectation(expected_value: Boolean) extends Expectation
+
+domain expectation: BooleanExpectation
+  func matches?(actual_value: Any): Boolean = actual_value == expectation.expected_value
+
+  func failure_message(actual_value: Any): String = do
+    'Expected `$actual_value` to be ${expectation.expected_value}'
+  end
+
+  func negated_failure_message(actual_value: Any): String = do
+    'Expected `$actual_value` to be ${!expectation.expected_value}'
+  end
+end
+
+// ------------------------------------------------------------------------------------------------------------------ //
+// Equality                                                                                                           //
+// ------------------------------------------------------------------------------------------------------------------ //
+
+struct EqualityExpectation(expected_value: Any) extends Expectation
+
+domain expectation: EqualityExpectation
+  func matches?(actual_value: Any): Boolean = actual_value == expectation.expected_value
+
+  func failure_message(actual_value: Any): String = do
+    'Expected the following values to be equal:\n  - Actual:   $actual_value\n  - Expected: ${expectation.expected_value}'
+  end
+
+  func negated_failure_message(actual_value: Any): String = do
+    'Expected the following values NOT to be equal:\n  - Actual:   $actual_value\n  - Expected: ${expectation.expected_value}'
+  end
+end
+
+// ------------------------------------------------------------------------------------------------------------------ //
+// Inequality                                                                                                         //
+// ------------------------------------------------------------------------------------------------------------------ //
+
+struct InequalityExpectation(relation: InequalityRelation, threshold_value: Any) extends Expectation
+
+trait InequalityRelation
+module InequalityRelation do
+  object LessThan extends InequalityRelation
+  object LessThanEqual extends InequalityRelation
+  object GreaterThan extends InequalityRelation
+  object GreaterThanEqual extends InequalityRelation
+
+  // TODO (pyramid): The function definitions have a lot of visual noise. Maybe we can use "reverse" domains or
+  //                 introduce some other syntactic sugar that would make the intent clearer. Pattern matching would be
+  //                 possible as well.
+  func matches?(relation: InequalityRelation, actual_value: Any, threshold_value: Any): Boolean
+  func matches?(LessThan, actual_value: Any, threshold_value: Any): Boolean = actual_value < threshold_value
+  func matches?(LessThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value <= threshold_value
+  func matches?(GreaterThan, actual_value: Any, threshold_value: Any): Boolean = actual_value > threshold_value
+  func matches?(GreaterThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value >= threshold_value
+
+  // TODO (pyramid): Again, lots of visual noise. Maybe pattern matching or some kind of syntactic sugar for function
+  //                 definition clusters.
+  func label(relation: InequalityRelation): String
+  func label(LessThan): String = 'less than'
+  func label(LessThanEqual): String = 'less than or equal to'
+  func label(GreaterThan): String = 'greater than'
+  func label(GreaterThanEqual): String = 'greater than or equal to'
+end
+
+domain expectation: InequalityExpectation
+  func relation_label(): String = InequalityRelation.label(expectation.relation)
+
+  func matches?(actual_value: Any): Boolean = do
+    InequalityRelation.matches?(expectation.relation, actual_value, expectation.threshold_value)
+  end
+
+  func failure_message(actual_value: Any): String = do
+    'Expected `$actual_value` to be ${relation_label(expectation)} `${expectation.threshold_value}`.'
+  end
+
+  func negated_failure_message(actual_value: Any): String = do
+    'Expected `$actual_value` NOT to be ${relation_label(expectation)} `${expectation.threshold_value}`.'
+  end
+end

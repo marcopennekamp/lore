@@ -26,12 +26,12 @@ module features.abstract do
   use lore.test._
 
   spec 'sum: dispatch with sum types should return the correct values' do
-    assert_equal(f(A1), 3)
-    assert_equal(f(A2), 4)
-    assert_equal(f(A3), 4)
-    assert_equal(f(B), 5)
-    assert_equal(f(C), 5)
-    assert_equal(f(D), 1)
-    assert_equal(f(E), 2)
+    f(A1) should_eq 3
+    f(A2) should_eq 4
+    f(A3) should_eq 4
+    f(B) should_eq 5
+    f(C) should_eq 5
+    f(D) should_eq 1
+    f(E) should_eq 2
   end
 end

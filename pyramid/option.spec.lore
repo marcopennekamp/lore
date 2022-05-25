@@ -9,9 +9,9 @@ spec '`get_or_else` should return a Some\'s value or the alternative value' do
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
 
-  assert_equal(get_or_else(a, 'fallback'), 'test')
-  assert_equal(get_or_else(b, 'fallback'), 42)
-  assert_equal(get_or_else(c, 'fallback'), 'fallback')
+  get_or_else(a, 'fallback') should_eq 'test'
+  get_or_else(b, 'fallback') should_eq 42
+  get_or_else(c, 'fallback') should_eq 'fallback'
 end
 
 // TODO (pyramid): We should be able to test that `get!` panics when a None is encountered...
@@ -19,8 +19,8 @@ spec '`get!` should return a Some\'s value' do
   let a: Option[String] = Some('test')
   let b: Option[Int] = Some(42)
 
-  assert_equal(get!(a), 'test')
-  assert_equal(get!(b), 42)
+  get!(a) should_eq 'test'
+  get!(b) should_eq 42
 end
 
 spec '`empty?` and `present?` should correctly report the absence/presence of a value' do
@@ -28,11 +28,11 @@ spec '`empty?` and `present?` should correctly report the absence/presence of a 
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
 
-  assert_not(empty?(a))
-  assert_not(empty?(b))
-  assert(empty?(c))
+  empty?(a) should be_false
+  empty?(b) should be_false
+  empty?(c) should be_true
 
-  assert(present?(a))
-  assert(present?(b))
-  assert_not(present?(c))
+  present?(a) should be_true
+  present?(b) should be_true
+  present?(c) should be_false
 end

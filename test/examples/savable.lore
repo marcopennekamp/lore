@@ -56,9 +56,6 @@ module examples do
   use lore.test._
 
   spec 'savable: saving a character should result in the correct list of values' do
-    assert_equal(
-      main(),
-      ['Character', 'Position', 1.5, 2.7, 'ExternalPhysics', 42],
-    )
+    main() should_eq ['Character', 'Position', 1.5, 2.7, 'ExternalPhysics', 42]
   end
 end

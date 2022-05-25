@@ -11,7 +11,7 @@ module examples do
   use lore.test._
 
   spec 'sort_numbers: `List.sort` should correctly sort a list of numbers' do
-    assert(sorted?(main()), 'The numbers in the list aren\'t sorted.')
+    sorted?(main()) should be_true
   end
 
   @bench_only
