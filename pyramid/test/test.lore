@@ -23,7 +23,7 @@ end
   */
 func should_not(actual_value: Any, expectation: Expectation): Unit = do
   if matches?(expectation, actual_value)
-    fail(failure_message(expectation, actual_value))
+    fail(negated_failure_message(expectation, actual_value))
   end
 end
 
