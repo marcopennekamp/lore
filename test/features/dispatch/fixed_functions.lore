@@ -1,3 +1,5 @@
+module features.dispatch.fixed_functions
+
 use lore.String
 
 trait A
@@ -28,11 +30,16 @@ func stringify(e: E): String = do
   String.concat('E', super)
 end
 
-func test(): [String] = [
-  stringify(C),
-  stringify(E),
-  stringify.fixed[B](C),
-  stringify.fixed[D](E),
-  stringify.fixed[A](C),
-  stringify.fixed[A](E),
-]
+@root
+module features.dispatch do
+  use lore.test._
+
+  spec 'fixed: calls to `stringify.fixed` result in the expected values' do
+    stringify(C) should_eq 'ABC'
+    stringify(E) should_eq 'EABD'
+    stringify.fixed[B](C) should_eq 'AB'
+    stringify.fixed[D](E) should_eq 'ABD'
+    stringify.fixed[A](C) should_eq 'A'
+    stringify.fixed[A](E) should_eq 'A'
+  end
+end

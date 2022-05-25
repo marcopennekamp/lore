@@ -1,5 +1,6 @@
-struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
+module features.dispatch.movable
 
+struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
 
 // TODO: Make it so that we can work directly on +Position instead of having to declare a Movable trait. This
 //       would require shape types to support mutable properties, though.
@@ -16,7 +17,6 @@ domain movable: Movable
   end
 end
 
-
 struct Zombie extends Movable
   name: String
   mut position: Position = Position { }
@@ -29,7 +29,6 @@ domain zombie: Zombie
   end
 end
 
-
 func update(a: A): A where A = a
 
 // This is essentially a way to test that the compiler and runtime correctly handle returning an argument that doesn't
@@ -40,8 +39,13 @@ func update(a: A): A = do
   a
 end
 
-func test(): Zombie = do
-  let zombie = Zombie { name = 'Fred', position = Position(0.0, 1.0, 0.5) }
-  let updated_zombie = update(zombie)
-  updated_zombie
+@root
+module features.dispatch do
+  use lore.test._
+
+  spec 'movable: `update` moves the zombie' do
+    let zombie = Zombie { name = 'Fred', position = Position(0.0, 1.0, 0.5) }
+    let updated_zombie = update(zombie)
+    updated_zombie.position should_eq Position(1.7, 2.5, 0.5)
+  end
 end

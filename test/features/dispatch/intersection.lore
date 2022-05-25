@@ -1,3 +1,5 @@
+module features.dispatch.intersection
+
 trait X
 trait Y
 trait Z
@@ -30,14 +32,19 @@ func f(Y, Z & L): String = 'Y,Z&L'
 func f(Y, Z & L1): String = 'Y,Z&L1'
 func f(Y, Z & L2): String = 'Y,Z&L2'
 
-func test(): [String] = [
-  f(A, B),
-  f(D, D),
-  f(F, C),
-  f(G, C),
-  f(B, D),
-  f(E, D),
-  f(F, D),
-  f(G, F),
-  f(D, A),
-]
+@root
+module features.dispatch do
+  use lore.test._
+
+  spec 'intersection: `f` returns the expected values' do
+    f(A, B) should_eq 'X&W,Y&L2'
+    f(D, D) should_eq 'X,Y'
+    f(F, C) should_eq 'Y,Z&L1'
+    f(G, C) should_eq 'Z,W&L1'
+    f(B, D) should_eq 'Y&L,X&Y'
+    f(E, D) should_eq 'Y&L1,X&Y'
+    f(F, D) should_eq 'Y&W&L1,X&Y'
+    f(G, F) should_eq 'Z,W&L1'
+    f(D, A) should_eq 'T1,T2'
+  end
+end
