@@ -1,6 +1,9 @@
 // This test ensures that the default implementation of `less_than?` is correct and calls back into `lore.core.less_than?`.
+module features.comparisons.less_than
+
 use lore.IO.println
 use lore.String
+use lore.test._
 
 trait Position
 struct Position2(x: Real, y: Real) extends Position
@@ -12,14 +15,30 @@ struct Person(name: IgnoreCase, age: Int)
 
 struct Parameterized[A](value: Int)
 
+@root
 module lore.core do
   func less_than?(a: IgnoreCase, b: IgnoreCase): Boolean = String.to_lower(a.string) < String.to_lower(b.string)
   func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
 end
 
-func test(): [Boolean] = do
-  // We have to use `Any` as a type so that the compiler doesn't generate the direct comparison operations for
-  // primitives.
+// We have to use `Any` as a type for the variables so that the compiler doesn't generate the direct comparison
+// operations for primitives.
+let str1: Any = 'hello'
+let str2: Any = 'helloo'
+let str3: Any = 'bar'
+let str4: Any = 'baz'
+
+let tpl1: Any = (str1, str2)
+let tpl2: Any = (str2, str1)
+let tpl3: Any = (str1, str2, str3)
+let tpl4: Any = (str1, str2, str4)
+
+let pers1: Person = Person(IgnoreCase('john'), 25)
+let pers2: Person = Person(IgnoreCase('JOHNNY'), 30)
+let pers3: Person = Person(IgnoreCase('jOhn'), 35)
+let pers4: Person = Person(IgnoreCase('aMy'), 25)
+
+spec 'integers and reals: default order' do
   let x1: Any = 7
   let x2: Any = 5
   let x3: Any = 10
@@ -27,163 +46,177 @@ func test(): [Boolean] = do
   let x5: Any = 5.0
   let x6: Any = 10.0
 
+  x1 should_not be_lt(x2)
+  x1 should     be_lt(x3)
+  x2 should     be_lt(x3)
+  x4 should_not be_lt(x5)
+  x4 should     be_lt(x6)
+  x5 should     be_lt(x6)
+  x1 should_not be_lt(x5)
+  x1 should     be_lt(x6)
+end
+
+spec 'booleans: default order' do
   let tru: Any = true
   let fls: Any = false
 
-  let str1: Any = 'hello'
-  let str2: Any = 'helloo'
-  let str3: Any = 'bar'
-  let str4: Any = 'baz'
+  tru should_not be_lt(fls)
+  fls should     be_lt(tru)
+end
 
+spec 'strings: default order' do
+  str1 should     be_lt(str2)
+  str2 should_not be_lt(str1)
+  str1 should_not be_lt(str3)
+  str3 should     be_lt(str1)
+  str3 should     be_lt(str4)
+  str4 should_not be_lt(str3)
+end
+
+spec 'symbols: default order' do
   let sym1: Any = #bar
   let sym2: Any = #foo
 
-  let tpl1 = (str1, str2)
-  let tpl2 = (str2, str1)
-  let tpl3 = (str1, str2, str3)
-  let tpl4 = (str1, str2, str4)
+  sym1 should     be_lt(sym2)
+  sym2 should_not be_lt(sym1)
+end
 
+spec 'tuples: default order' do
+  tpl1 should_not be_lt(tpl1)
+  tpl1 should     be_lt(tpl2)
+  tpl2 should_not be_lt(tpl1)
+  tpl3 should_not be_lt(tpl2)  // Ensures that lexicographic ordering takes tuple size into account.
+  tpl3 should     be_lt(tpl4)
+  tpl4 should_not be_lt(tpl3)
+end
+
+spec 'tuples: default order with custom element order' do
+  (pers1, pers4) should be_lt((pers3, pers2))
+  (pers3, pers4, pers2) should_not be_lt((pers3, pers4, pers1))
+end
+
+spec 'functions: default order' do
   let fun1 = () => println('Hello')
   let fun2 = () => println('Hello')
 
+  fun1 should_not be_lt(fun2)
+  fun2 should_not be_lt(fun1)
+end
+
+spec 'lists: default order' do
   let list1 = []
   let list2 = [str1, str2]
   let list3 = [str2, str1]
   let list4 = [tpl1, tpl2]
   let list5 = [tpl1, tpl2, tpl3]
 
+  list1 should_not be_lt([])
+  []    should_not be_lt(list1)
+  []    should     be_lt(list2)
+  list2 should     be_lt(list3)
+  list3 should_not be_lt(list2)
+  list3 should     be_lt(list4)
+  list4 should_not be_lt(list3)
+  list4 should     be_lt(list5)
+  list5 should_not be_lt(list4)
+end
+
+spec 'lists: default order with custom element order' do
+  [pers1, pers4] should be_lt([pers3, pers2])
+end
+
+spec 'shapes: default order' do
   let shp1 = %{ }
   let shp2 = %{ name: 'kodo' }
   let shp3 = %{ age: 20 }
   let shp4 = %{ name: 'bar', age: 15 }
   let shp5 = %{ name: 'foo', age: 15 }
 
+  shp1 should     be_lt(shp2)
+  shp2 should_not be_lt(shp1)
+  shp2 should_not be_lt(shp3)
+  shp3 should     be_lt(shp2)  // shp3 is less than shp2, as the incompatible shape properties are compared by name.
+  shp2 should     be_lt(shp4)
+  shp4 should_not be_lt(shp2)
+  shp3 should     be_lt(shp4)
+  shp4 should     be_lt(shp5)
+  shp5 should_not be_lt(shp4)
+end
+
+spec 'structs: default order' do
   let pos1 = Position2(5.0, 7.0)
   let pos2 = Position2(5.0, 9.0)
   let pos3 = Position2(5.0, 5.0)
   let pos4 = Position3(5.0, 7.0, 1.0)
   let pos5 = Position3(5.0, 7.0, 10.0)
 
-  let pers1 = Person(IgnoreCase('john'), 25)
-  let pers2 = Person(IgnoreCase('JOHNNY'), 30)
-  let pers3 = Person(IgnoreCase('jOhn'), 35)
-  let pers4 = Person(IgnoreCase('aMy'), 25)
+  pos1 should     be_lt(pos2)
+  pos2 should_not be_lt(pos1)
+  pos1 should_not be_lt(pos3)
+  pos3 should     be_lt(pos1)
+  pos4 should     be_lt(pos5)
+  pos5 should_not be_lt(pos4)
+end
 
+spec 'structs: custom order' do
+  pers1 should     be_lt(pers2)
+  pers2 should_not be_lt(pers1)
+  pers1 should     be_lt(pers3)
+  pers3 should_not be_lt(pers1)
+  pers3 should_not be_lt(pers4)
+  pers4 should     be_lt(pers3)
+end
+
+spec 'structs: type parameters should not be taken into account in default order' do
   let prm1 = Parameterized[#foo](5)
   let prm2 = Parameterized[#bar](6)
   let prm3 = Parameterized[#foo](7)
   let prm4 = Parameterized[#foo](2)
 
-  [
-    // Integers and Reals (note that Ints are coerced to Reals)
-    x1 < x2,  // false
-    x1 < x3,  // true
-    x2 < x3,  // true
-    x4 < x5,  // false
-    x4 < x6,  // true
-    x5 < x6,  // true
-    x1 < x5,  // false
-    x1 < x6,  // true
+  prm1 should     be_lt(prm2)
+  prm1 should     be_lt(prm3)
+  prm1 should_not be_lt(prm4)
+  prm4 should     be_lt(prm1)
+end
 
-    // Booleans
-    tru < fls,  // false
-    fls < tru,  // true
+spec 'default kind order' do
+  let int = 7
+  let real = 7.0
+  let bool = true
+  let str = 'string'
+  let sym = #sym
+  let tpl = (1, 2)
+  let fun = () => 5
+  let lst = [1, 2]
+  let shp = %{ }
+  let obj = Position2(0.0, 0.0)
 
-    // Strings
-    str1 < str2,  // true
-    str2 < str1,  // false
-    str1 < str3,  // false
-    str3 < str1,  // true
-    str3 < str4,  // true
-    str4 < str3,  // false
+  int should_not be_lt(real)
+  real should_not be_lt(int)
 
-    // Symbols
-    sym1 < sym2,  // true
-    sym2 < sym1,  // false
+  int should be_lt(bool)
+  bool should_not be_lt(int)
+  real should be_lt(bool)
+  bool should_not be_lt(real)
 
-    // Tuples
-    tpl1 < tpl1,  // false
-    tpl1 < tpl2,  // true
-    tpl2 < tpl1,  // false
-    tpl3 < tpl2,  // false (ensures that lexicographic ordering takes tuple size into account)
-    tpl3 < tpl4,  // true
-    tpl4 < tpl3,  // false
+  bool should be_lt(str)
+  str should_not be_lt(bool)
 
-    // Tuples: Ensure that the default implementation calls back into `lore.core.less_than?`.
-    (pers1, pers4) < (pers3, pers2),  // true
-    (pers3, pers4, pers2) < (pers3, pers4, pers1),  // false
+  str should be_lt(sym)
+  sym should_not be_lt(str)
 
-    // Functions
-    fun1 < fun2,  // false
-    fun2 < fun1,  // false
+  sym should be_lt(tpl)
+  tpl should_not be_lt(sym)
 
-    // Lists
-    list1 < [],     // false
-    [] < list1,     // false
-    [] < list2,     // true
-    list2 < list3,  // true
-    list3 < list2,  // false
-    list3 < list4,  // true
-    list4 < list3,  // false
-    list4 < list5,  // true
-    list5 < list4,  // false
+  tpl should be_lt(fun)
+  fun should_not be_lt(tpl)
 
-    // Lists: Ensure that the default implementation calls back into `lore.core.less_than?`.
-    [pers1, pers4] < [pers3, pers2],  // true
+  fun should be_lt(lst)
+  lst should_not be_lt(fun)
 
-    // Shapes
-    shp1 < shp2,  // true
-    shp2 < shp1,  // false
-    shp2 < shp3,  // false
-    shp3 < shp2,  // true, because the incompatible shape properties are compared by name.
-    shp2 < shp4,  // true
-    shp4 < shp2,  // false
-    shp3 < shp4,  // true
-    shp4 < shp5,  // true
-    shp5 < shp4,  // false
+  lst should be_lt(shp)
+  shp should_not be_lt(lst)
 
-    // Structs
-    pos1 < pos2,  // true
-    pos2 < pos1,  // false
-    pos1 < pos3,  // false
-    pos3 < pos1,  // true
-    pos4 < pos5,  // true
-    pos5 < pos4,  // false
-
-    // Structs: Ensure that the default implementation calls back into `lore.core.less_than?`.
-    pers1 < pers2,  // true
-    pers2 < pers1,  // false
-    pers1 < pers3,  // true
-    pers3 < pers1,  // false
-    pers3 < pers4,  // false
-    pers4 < pers3,  // true
-
-    // Structs: Ensure that type parameters are not taken into account under default comparison.
-    prm1 < prm2,  // true
-    prm1 < prm3,  // true
-    prm1 < prm4,  // false
-    prm4 < prm1,  // true
-
-    // Default kind order.
-    x1 < x4,       // false
-    x4 < x1,       // false
-    x1 < tru,      // true
-    tru < x1,      // false
-    x4 < tru,      // true
-    tru < x4,      // false
-    tru < str1,    // true
-    str1 < tru,    // false
-    str1 < sym1,   // true
-    sym1 < str1,   // false
-    sym1 < tpl1,   // true
-    tpl1 < sym1,   // false
-    tpl1 < fun1,   // true
-    fun1 < tpl1,   // false
-    fun1 < list1,  // true
-    list1 < fun1,  // false
-    list1 < shp1,  // true
-    shp1 < list1,  // false
-    shp1 < pos1,   // true
-    pos1 < shp1,   // false
-  ]
+  shp should be_lt(obj)
+  obj should_not be_lt(shp)
 end
