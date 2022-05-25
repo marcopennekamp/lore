@@ -31,7 +31,7 @@ template resolve_many(universe, sequence): untyped = sequence.map(o => universe.
 template resolve_many(universe, sequence, argument): untyped = sequence.map(o => universe.resolve(o, argument))
 
 # Post-construction initialization
-proc finalize(mf: MultiFunction)
+proc ensure_function_uniqueness(mf: MultiFunction)
 proc attach_constants(poem_function: PoemFunction, universe: Universe)
 proc attach_instructions(poem_function: PoemFunction, universe: Universe)
 
@@ -54,6 +54,8 @@ proc resolve*(poems: seq[Poem]): Universe =
   ##    variables.
   ##  - Global variables are resolved after functions, because lazy global variables point to a Function initializer.
   ##  - Specs are resolved after functions, because specs point to a Function executable.
+  ##  - Dispatch hierarchies must be built before function constants are attached so that dispatch for fixed function
+  ##    constants can be performed.
   ##  - Constants tables and instructions for all functions are resolved after schemas, multi-functions, and global
   ##    variables due to their dependency on these entities. Instructions depend on the constants table and are thus
   ##    resolved immediately after.
@@ -85,15 +87,16 @@ proc resolve*(poems: seq[Poem]): Universe =
     for poem_spec in poem.specs:
       universe.specs.add(universe.resolve(poem_spec))
 
-  # Step 5: Attach constants and instructions to each function.
+  # Step 5: Finalize multi-functions.
+  for mf in universe.multi_functions.values:
+    mf.ensure_function_uniqueness()
+    mf.attach_dispatch_hierarchy(mf.build_dispatch_hierarchy())
+
+  # Step 6: Attach constants and instructions to each function.
   for poem in poems:
     for poem_function in poem.functions:
       attach_constants(poem_function, universe)
       attach_instructions(poem_function, universe)
-
-  # Step 6: Finalize each multi-function.
-  for mf in universe.multi_functions.values:
-    finalize(mf)
 
   # Step 7: Sort specs by module name. This is important for test and benchmark reporting.
   universe.specs.sort do (a: Spec, b: Spec) -> int:
@@ -285,12 +288,10 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
     )
   universe.multi_functions[name]
 
-proc finalize(mf: MultiFunction) =
-  ## Ensures that all functions of the multi-function are unique (none are equally specific) and builds the dispatch
-  ## hierarchy.
+proc ensure_function_uniqueness(mf: MultiFunction) =
+  ## Ensures that all functions of the multi-function are unique (none are equally specific).
   if not mf.are_functions_unique:
     quit(fmt"The multi-function `{mf.name}` has two or more functions that are equally specific. Your bytecode is incorrect or you might have loaded bytecode from two conflicting compiler sources.")
-  mf.attach_dispatch_hierarchy(mf.build_dispatch_hierarchy())
 
 ########################################################################################################################
 # Constants.                                                                                                           #
