@@ -1,3 +1,7 @@
+module features.numbers.naivemethic
+
+// TODO: Maybe this should be moved to `examples` or somewhere else. This isn't really a focused feature test.
+
 func add(a: Int, b: Int): Int = do
   let mut result = a
   let mut remaining = b
@@ -32,4 +36,11 @@ func mul(a: Int, b: Int): Int = do
   if negative? then -result else result
 end
 
-func test(): Int = mul(12, 5)
+@root
+module features.numbers do
+  use lore.test._
+
+  spec 'naivemethic: `mul(12, 5)` evaluates to 60' do
+    mul(12, 5) should_eq 60
+  end
+end

@@ -1,0 +1,21 @@
+module features.assembly.large_integers
+
+func big_one(): Int = 720000
+
+@root
+module features.assembly do
+  use lore.core.to_string
+  use lore.test._
+
+  // Objective: Ensures that Lore properly handles large integers, mainly aimed at the difference between constant
+  // integers introduced with the `IntConst` and `IntConst64` instructions.
+  spec 'large_integers: calculations with large integer constants lead to the expected values' do
+    to_string(84000000 + big_one()) should_eq '84720000'
+    to_string(84000000 * big_one()) should_eq '60480000000000'
+    to_string(84000000 / big_one()) should_eq '116'
+    to_string(32768 + 32767) should_eq '65535'
+    to_string(32768 * 32767) should_eq '1073709056'
+    to_string(7200000 / big_one()) should_eq '10'
+    to_string(2 * 3 * 4 * 5 * 100000 * 6 * 7 * 8 * 9 * 100000) should_eq '3628800000000000'
+  end
+end
