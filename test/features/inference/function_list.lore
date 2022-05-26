@@ -1,12 +1,15 @@
-use lore.Enum.map
+module features.inference
 
-func test(): [String] = do
+use lore.Enum.map
+use lore.test._
+
+spec 'function_list: map a list of functions, applying each one to a value' do
   map(
     [
       (v: %{ foo: String }) => v.foo,
       (v: %{ bar: String }) => v.bar,
       (v: %{ foo: String, bar: String }) => '!${v.foo}${v.bar}!',
     ],
-    f => f(%{ foo: 'foo', bar: 'bar' })
-  )
+    f => f(%{ foo: 'foo', bar: 'bar' }),
+  ) should_eq ['foo', 'bar', '!foobar!']
 end

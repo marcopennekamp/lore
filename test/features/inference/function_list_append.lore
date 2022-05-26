@@ -1,9 +1,11 @@
+module features.inference.function_list_append
+
 use lore.Enum.[flat_map, map]
 use lore.Function
 
 struct Thing(x: Real)
 
-func test(): [Boolean] = do
+func map_things(): [Boolean] = do
   let fs1: [Thing => Boolean] = [v => v.x == 4.0]
   let fs2 = fs1 :+ (v => v.x < 3.4)
   let data = [
@@ -12,5 +14,14 @@ func test(): [Boolean] = do
     Thing(5.0),
     Thing(-2.0),
   ]
-  data |> flat_map(t => fs2 |> map(f => f(t)))
+  data |> flat_map(thing => fs2 |> map(f => f(thing)))
+end
+
+@root
+module features.inference do
+  use lore.test._
+
+  spec 'function_list_append: append an anonymous function with an inferred argument type to a list of functions, then map the functions over a list of structs' do
+    map_things() should_eq [false, true, true, false, false, false, false, true]
+  end
 end

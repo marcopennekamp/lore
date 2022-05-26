@@ -1,18 +1,26 @@
+module features.inference.sum_list
+
 use lore.core.to_string
 use lore.Enum.map
 
 trait Animal
-struct Cat() extends Animal
-struct Dog() extends Animal
+object Cat extends Animal
+object Dog extends Animal
 
+@root
 module lore.core do
   func to_string(Cat): String = 'cat'
   func to_string(Dog): String = 'dog'
 end
 
-// The objective of this test is to ensure that a list `[Cat(), Dog(), Cat()]` is typed as `[Cat | Dog]` and not
-// `[Animal]` if the type context requires this more specific type.
-func test(): [String] = do
-  let result: [Cat | Dog] = [Cat(), Dog(), Cat()]
-  result |> map(to_string)
+@root
+module features.inference do
+  use lore.test._
+
+  // Objective: Ensure that a list `[Cat(), Dog(), Cat()]` is typed as `[Cat | Dog]` and not `[Animal]` if the type
+  // context requires this more specific type.
+  spec 'sum_list: map a list of cats and dogs to strings`' do
+    let animals: [Cat | Dog] = [Cat, Dog, Cat]
+    map(animals, to_string) should_eq ['cat', 'dog', 'cat']
+  end
 end

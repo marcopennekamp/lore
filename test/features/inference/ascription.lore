@@ -1,23 +1,28 @@
+module features.inference.ascription
+
 use lore.core.to_string
 use lore.Option
 use lore.Option.Some
 
 trait Animal
-struct Fox() extends Animal
-struct Mouse() extends Animal
+object Fox extends Animal
+object Mouse extends Animal
 
+@root
 module lore.core do
   func to_string(Fox): String = 'fox'
   func to_string(Mouse): String = 'mouse'
 end
 
+@root
+module features.inference do
+  use lore.test._
 
-func test(): String = do
-  let stringify = (option => to_string(option)) :: Option[Animal] => String
-
-  // The `option` should have the type `Option[Animal]` so that it can be reassigned with `Some(Mouse())`. Without the
-  // type ascription, `option`'s type would be `Option[Fox]`.
-  let mut option = Option.some(Fox() :: Animal)
-  option = Some(Mouse())
-  stringify(option)
+  spec 'ascription: assign an option\'s type with type ascription, then reassign and stringify it' do
+    // The `option` should have the type `Option[Animal]` so that it can be reassigned with `Some(Mouse())`. Without
+    // the type ascription, `option`'s type would be `Option[Fox]`.
+    let mut option = Option.some(Fox :: Animal)
+    option = Some(Mouse)
+    to_string(option) should_eq 'Some(mouse)'
+  end
 end
