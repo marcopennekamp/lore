@@ -154,7 +154,7 @@ module String do
     if Enum.empty?(list) then return ''
     concat(
       List.init(list) |> concat_map(a => '$a$separator'),
-      List.last(list) |> to_string
+      List.last!(list) |> to_string,
     )
   end
 
