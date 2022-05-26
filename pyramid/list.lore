@@ -82,6 +82,17 @@ module List do
   func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
 
   /**
+    * Checks whether `predicate` is true for all elements of the list.
+    */
+  @where A, B >: A
+  func all?(list: [A], predicate: B => Boolean): Boolean = do
+    for e <- list
+      if !predicate(e) then return false
+    end
+    true
+  end
+
+  /**
     * Creates a slice of `list` from index `start`, taking `length` elements if available.
     */
   @where A
@@ -147,8 +158,6 @@ module List do
   /**
     * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Returns `None` if
     * `list` is empty.
-    *
-    *
     */
   @where A, B >: A, C
   func min_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(min_by!(list, by)) else None
