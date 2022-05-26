@@ -1,0 +1,29 @@
+module features.lists.concat_print
+
+use lore.List.concat
+
+// Note that list types are *not* necessarily following their actual elements. The list's type may be wider than it
+// would be if newly constructed. Hence, the `print` function is ultimately unreliable and shouldn't be used in a real
+// world scenario. For this test it is fine, however.
+
+func print(list: [A]): String where A = 'Generic list: $list'
+func print(list: [Int]): String = 'Int list: $list'
+func print(list: [String | Int]): String = 'String/Int list: $list'
+func print(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
+
+@root
+module features.lists do
+  use lore.test._
+
+  spec 'concat_print: build a list by concatenating lists of different types to it, each time printing the list dependent on its type' do
+    let list = [10]
+    let list2 = concat(list, ['test'])
+    let list3 = concat(list2, [true, 'wow'])
+    let list4 = concat(list3, [15])
+
+    print(list) should_eq 'Int list: [10]'
+    print(list2) should_eq 'String/Int list: [10, test]'
+    print(list3) should_eq 'String/Int/Boolean list: [10, test, true, wow]'
+    print(list4) should_eq 'String/Int/Boolean list: [10, test, true, wow, 15]'
+  end
+end

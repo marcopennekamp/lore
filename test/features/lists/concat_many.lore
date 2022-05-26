@@ -1,15 +1,34 @@
-use lore.List
+module features.lists.concat_many
 
-func test(): [Int] = do
+use lore.List
+use lore.List._
+
+func main(): [Int] = do
   let part = List.repeat(42, 50)
 
   let mut result: [Int] = []
   let mut i = 0
 
   while i < 100
-    result = List.concat(result, part)
+    result = concat(result, part)
     i += 1
   end
 
   result
+end
+
+@root
+module features.lists do
+  use lore.test._
+
+  spec 'concat_many: `main` concatenates 100 lists of 50 elements each' do
+    let result = main()
+    length(result) should_eq 5000
+    all?(result, n => n == 42) should be_true
+  end
+
+  @bench_only
+  spec 'concat_many: concatenate 100 lists of 50 elements each' do
+    main()
+  end
 end

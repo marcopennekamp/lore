@@ -1,4 +1,6 @@
-func test(): [Int] = do
+module features.lists.append_many
+
+func main(): [Int] = do
   let mut result: [Int] = []
   let mut i = 0
 
@@ -8,4 +10,25 @@ func test(): [Int] = do
   end
 
   result
+end
+
+@root
+module features.lists do
+  use lore.List._
+  use lore.number.sum
+  use lore.test._
+
+  spec 'append_many: `main` appends 1000 numbers to a list' do
+    let numbers = main()
+    length(numbers) should_eq 1000
+    head!(numbers) should_eq 0
+    last!(numbers) should_eq 999
+    sum(numbers) should_eq 499500
+    sorted?(numbers) should be_true
+  end
+
+  @bench_only
+  spec 'append_many: individually append 1000 numbers to a list' do
+    main()
+  end
 end

@@ -1,0 +1,29 @@
+module features.lists.default_to_string
+
+use lore.core.to_string
+use lore.Option._
+
+struct Person(name: String, age: Int)
+
+@root
+module lore.core do
+  func to_string(person: Person): String = '${person.name} is ${person.age} years old'
+end
+
+func main(): String = do
+  to_string([
+    Some(5),
+    None,
+    Person('joe', 32),
+    Some([5.0, #hello, Person('amy', 25)]),
+  ])
+end
+
+@root
+module features.lists do
+  use lore.test._
+
+  spec 'default_to_string: the default implementation of `to_string` for lists recursively calls `to_string` on its elements' do
+    main() should_eq '[Some(5), None, joe is 32 years old, Some([5.0, #hello, amy is 25 years old])]'
+  end
+end
