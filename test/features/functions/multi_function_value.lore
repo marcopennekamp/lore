@@ -32,7 +32,7 @@ module features.functions do
   // this requires a refactoring of the typing algorithm so that we can differentiate a legitimate error and a "context
   // missing" error.)
 
-  spec 'multi_function_value: `coolness` calculates the coolness factor of cats and dogs when passed as a multi-function value to `map`' do
+  spec 'multi_function_value: passed as a multi-function value to `map`, `coolness` calculates the expected values' do
     map([Cat(1.2), Dog(5.0), Dog(3.50), Cat(7.7)], coolness) should_eq [6.0, 15.0, 10.5, 38.5]
   end
 end

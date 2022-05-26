@@ -1,9 +1,10 @@
+module features.modules.companions
+
 trait Animal
 
 module Animal do
   let id: Int = 0
 end
-
 
 struct Fox extends Animal
   id: Int = 1
@@ -13,7 +14,6 @@ module Fox do
   let id: Int = 2
 end
 
-
 object Garfield extends Animal do
   id: Int = 3
 end
@@ -21,7 +21,6 @@ end
 module Garfield do
   let id2: Int = 4
 end
-
 
 module complex do
   struct Container()
@@ -46,8 +45,7 @@ module complex do
   end
 end
 
-
-func test(): [Int] = [
+func main(): [Int] = [
   Animal.id,
   (Fox { }).id,
   Fox.id,
@@ -57,3 +55,12 @@ func test(): [Int] = [
   complex.Container.Box.Container.Box.id,
   complex.Container.Box.Container.Box.id2,
 ]
+
+@root
+module features.modules do
+  use lore.test._
+
+  spec 'companions: members of companion modules are resolved correctly and result in the expected values' do
+    main() should_eq [0, 1, 2, 3, 4, 5, 6, 7]
+  end
+end

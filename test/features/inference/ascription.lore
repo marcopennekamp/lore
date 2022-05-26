@@ -18,7 +18,7 @@ end
 module features.inference do
   use lore.test._
 
-  spec 'ascription: assign an option\'s type with type ascription, then reassign and stringify it' do
+  spec 'ascription: type ascription types a mutable variable correctly' do
     // The `option` should have the type `Option[Animal]` so that it can be reassigned with `Some(Mouse())`. Without
     // the type ascription, `option`'s type would be `Option[Fox]`.
     let mut option = Option.some(Fox :: Animal)

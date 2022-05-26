@@ -1,3 +1,5 @@
+module features.modules.homonymous_nested
+
 module Foo do
   func foo(): String = 'Foo'
 
@@ -11,4 +13,11 @@ module Foo do
   ]
 end
 
-func test(): [String | Int] = Foo.test()
+@root
+module features.modules do
+  use lore.test._
+
+  spec 'homonymous_nested: nested module members with the same name are resolved correctly and result in the expected values' do
+    Foo.test() should_eq ['Foo', 17]
+  end
+end

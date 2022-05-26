@@ -1,3 +1,5 @@
+module features.modules.mutual_import
+
 module abc do
   use A.fuz
   use B.bar
@@ -17,4 +19,11 @@ module abc do
   func c(): Int = fuz() + bar()
 end
 
-func test(): Int = abc.c()
+@root
+module features.modules do
+  use lore.test._
+
+  spec 'mutual_import: mutual imports between modules result in the expected values' do
+    abc.c() should_eq 12
+  end
+end

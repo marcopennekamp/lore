@@ -21,7 +21,7 @@ end
 module features.inference do
   use lore.test._
 
-  spec 'function_list_append: append an anonymous function with an inferred argument type to a list of functions, then map the functions over a list of structs' do
+  spec 'function_list_append: the parameter type of an anonymous function is inferred when the anonymous function is added to a typed list of functions' do
     map_things() should_eq [false, true, true, false, false, false, false, true]
   end
 end

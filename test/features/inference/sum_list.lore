@@ -17,9 +17,7 @@ end
 module features.inference do
   use lore.test._
 
-  // Objective: Ensure that a list `[Cat(), Dog(), Cat()]` is typed as `[Cat | Dog]` and not `[Animal]` if the type
-  // context requires this more specific type.
-  spec 'sum_list: map a list of cats and dogs to strings`' do
+  spec 'sum_list: a list of cats and dogs is typed as `[Cat | Dog]` and not `[Animal]` if the type context requires it' do
     let animals: [Cat | Dog] = [Cat, Dog, Cat]
     map(animals, to_string) should_eq ['cat', 'dog', 'cat']
   end

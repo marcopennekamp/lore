@@ -3,7 +3,7 @@ module features.inference
 use lore.Enum.map
 use lore.test._
 
-spec 'function_list: map a list of functions, applying each one to a value' do
+spec 'function_list: apply a list of functions to a value' do
   map(
     [
       (v: %{ foo: String }) => v.foo,
