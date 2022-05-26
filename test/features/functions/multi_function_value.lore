@@ -1,3 +1,5 @@
+module features.functions.multi_function_value
+
 use lore.Enum.map
 
 trait Animal
@@ -5,8 +7,8 @@ struct Cat(fame: Real) extends Animal
 struct Dog(fame: Real) extends Animal
 
 trait Vehicle
-struct Car() extends Vehicle
-struct Bicycle() extends Vehicle
+object Car extends Vehicle
+object Bicycle extends Vehicle
 
 func coolness(Real): Real = 3.14
 
@@ -18,12 +20,19 @@ func coolness(Vehicle): Real
 func coolness(Car): Real = 2.7
 func coolness(Bicycle): Real = 5.2
 
-// TODO (inference): Writing `[Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)] |> map(coolness)` (notice the integer in Dog)
-//                   results in an error that `map` has an empty fit for the argument types `([Any], Any)`. However, we
-//                   know not only that the list cannot be synthesized, but it actually has typing errors which should
-//                   be reported instead. (The problem is that `preprocessArgument` cannot differentiate between a
-//                   typing error that occurred because the argument cannot be inferred without context, and a typing
-//                   error that occurred due to a legitimate error. I think this requires a refactoring of the typing
-//                   algorithm so that we can differentiate a legitimate error and a "context missing" error.)
+@root
+module features.functions do
+  use lore.test._
 
-func test(): [Real] = [Cat(1.2), Dog(5.0), Dog(3.50), Cat(7.7)] |> map(coolness)
+  // TODO (inference): Writing `[Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)] |> map(coolness)` (notice the integer in Dog)
+  // results in an error that `map` has an empty fit for the argument types `([Any], Any)`. However, we know not only
+  // that the list cannot be synthesized, but it actually has typing errors which should be reported instead. (The
+  // problem is that `preprocessArgument` cannot differentiate between a typing error that occurred because the
+  // argument cannot be inferred without context, and a typing error that occurred due to a legitimate error. I think
+  // this requires a refactoring of the typing algorithm so that we can differentiate a legitimate error and a "context
+  // missing" error.)
+
+  spec 'multi_function_value: `coolness` calculates the coolness factor of cats and dogs when passed as a multi-function value to `map`' do
+    map([Cat(1.2), Dog(5.0), Dog(3.50), Cat(7.7)], coolness) should_eq [6.0, 15.0, 10.5, 38.5]
+  end
+end

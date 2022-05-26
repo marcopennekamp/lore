@@ -1,11 +1,24 @@
+module features.functions.greet
+
+use lore.Enum.map
+
 func greet(name: String, title: String): String = 'Hello, $title $name.'
 
-func test(): [String] = do
+func greetings(): [String] = do
   // Note that it would be technically possible to infer the argument type of `v` from the context, but this is such a
   // niche feature that we haven't implemented this yet.
   let f = (v: %{ name: String, title: String }) => greet(v.name, v.title)
   [
-    f(%{ name: 'Smith', title: 'Mr.' }),
-    f(%{ name: 'Chang', title: 'Ms.' }),
-  ]
+    %{ name: 'Smith', title: 'Mr.' },
+    %{ name: 'Chang', title: 'Ms.' },
+  ] |> map(f)
+end
+
+@root
+module features.functions do
+  use lore.test._
+
+  spec 'greet: `greet` returns greetings when called from an anonymous function wrapper' do
+    greetings() should_eq ['Hello, Mr. Smith.', 'Hello, Ms. Chang.']
+  end
 end
