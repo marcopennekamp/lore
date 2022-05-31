@@ -1,21 +1,17 @@
+module features.structs.objects
+
 use lore.core.to_string
 use lore.Enum.map
 
 struct IntBox(value: Int)
 
-module lore.core do
-  func to_string(box: IntBox): String = to_string(box.value)
-end
-
 object Empty
-
-module lore.core do
-  func to_string(Empty): String = 'empty'
-end
 
 object Mutable do
   mut level: Int = 1
 end
+
+struct MutableAlias = Mutable
 
 object LazyEmpty do
   empty: Empty = Empty
@@ -30,31 +26,23 @@ object LazyLazy do
   lazyBox: LazyBox = LazyBox
 end
 
-object Mindfunc do
-  func: String = 'func'
-end
+@root
+module features.structs do
+  use lore.test._
 
-struct MutableAlias = Mutable
+  spec 'objects: various objects are mutated and accessed' do
+    Mutable.level should_eq 1
+    Mutable.level += 1
+    Mutable.level should_eq 2
+    Mutable.level += Mutable.level
+    Mutable.level should_eq 4
+    MutableAlias.level should_eq 4
+    Mutable.level = 1
+    MutableAlias.level should_eq 1
 
-
-func test(): [String] = do
-  let mutable1 = Mutable.level
-  Mutable.level += 1
-  let mutable2 = Mutable.level
-  Mutable.level += Mutable.level
-  let mutable3 = Mutable.level
-  Mutable.level = 1
-
-  [
-    Empty,
-    mutable1,
-    mutable2,
-    mutable3,
-    LazyEmpty.empty,
-    LazyBox.box,
-    LazyLazy.lazyEmpty.empty,
-    LazyLazy.lazyBox.box,
-    Mindfunc.func,
-    MutableAlias.level,
-  ] |> map(to_string)
+    LazyEmpty.empty should_eq Empty
+    LazyBox.box should_eq IntBox(5)
+    LazyLazy.lazyEmpty.empty should_eq Empty
+    LazyLazy.lazyBox.box should_eq IntBox(5)
+  end
 end
