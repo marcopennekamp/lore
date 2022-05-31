@@ -1,18 +1,37 @@
+module features.shapes.barks
+
 type Animal = %{ name: String, breed: String }
 type Options = %{ show_teeth?: Boolean, volume: Real }
 
-func bark(animal: Animal, options: Options): String = 'Your ${animal.breed} ${animal.name} barks at a ${volume_meaning(options.volume)} volume${showing_teeth(options.show_teeth?)}!'
+func bark(animal: Animal, options: Options): String = do
+  'Your ${animal.breed} ${animal.name} barks at a ${volume_meaning(options.volume)} volume${showing_teeth(options.show_teeth?)}.'
+end
 
 func volume_meaning(volume: Real): String = cond
   volume < 50.0 => 'real quiet'
   volume < 60.0 => 'pretty normal'
   volume < 70.0 => 'quite loud'
   volume < 80.0 => 'wall-banging'
-  true        => 'MADNESS-INDUCING'
+  true          => 'MADNESS-INDUCING'
 end
 
 func showing_teeth(show_teeth?: Boolean): String = do
   if show_teeth? then ' showing sharp teeth' else ''
 end
 
-func test(): String = bark(%{ name: 'Raider', breed: 'dog' }, %{ show_teeth?: true, volume: 81.7 })
+@root
+module features.shapes do
+  use lore.test._
+
+  spec 'barks: `bark` produces sentences from animal and options shapes' do
+    let duck = %{ name: 'Poppy', breed: 'duck' }
+    let dog = %{ name: 'Raider', breed: 'dog' }
+    let mild = %{ show_teeth?: false, volume: 49.2 }
+    let aggressive = %{ show_teeth?: true, volume: 81.7 }
+
+    bark(duck, mild) should_eq 'Your duck Poppy barks at a real quiet volume.'
+    bark(duck, aggressive) should_eq 'Your duck Poppy barks at a MADNESS-INDUCING volume showing sharp teeth.'
+    bark(dog, mild) should_eq 'Your dog Raider barks at a real quiet volume.'
+    bark(dog, aggressive) should_eq 'Your dog Raider barks at a MADNESS-INDUCING volume showing sharp teeth.'
+  end
+end

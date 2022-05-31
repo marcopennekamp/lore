@@ -1,0 +1,26 @@
+module features.shapes.mutable
+
+struct Thing
+  mut counter: Int
+end
+
+func get(shape: %{ counter: Int }): Int = shape.counter
+
+act increment(thing: Thing) do
+  thing.counter += 1
+end
+
+@root
+module features.shapes do
+  use lore.test._
+
+  spec 'mutable: `increment` increments a mutable counter, while `get` returns the counter value from a shape view' do
+    let thing = Thing(0)
+    get(thing) should_eq 0
+    increment(thing)
+    get(thing) should_eq 1
+    increment(thing)
+    increment(thing)
+    get(thing) should_eq 3
+  end
+end
