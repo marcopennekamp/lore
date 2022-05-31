@@ -1,3 +1,5 @@
+module features.schemas.array
+
 use lore.List
 
 trait Array[+A]
@@ -15,7 +17,6 @@ domain Array[A]
   act remove_first()
   act remove_last()
 end
-
 
 struct NaiveArray[A] extends Array[A]
   mut underlying: [A]
@@ -47,15 +48,24 @@ domain array: NaiveArray[A]
   end
 end
 
+@root
+module features.schemas do
+  use lore.test._
 
-func test(): [Int] = do
-  let array = NaiveArray([1, 2])
-  append(array, 3)
-  append(array, 4)
-  append(array, 5)
-  prepend(array, 0)
-  remove_last(array)
-  remove_first(array)
-  remove_first(array)
-  array.underlying
+  spec 'array: elements can be added and removed from NaiveArrays' do
+    let array = NaiveArray([1, 2])
+
+    append(array, 3)
+    append(array, 4)
+    append(array, 5)
+    array.underlying should_eq [1, 2, 3, 4, 5]
+
+    prepend(array, 0)
+    array.underlying should_eq [0, 1, 2, 3, 4, 5]
+
+    remove_last(array)
+    remove_first(array)
+    remove_first(array)
+    array.underlying should_eq [2, 3, 4]
+  end
 end

@@ -1,5 +1,6 @@
+module features.schemas.open_properties
+
 use lore.core.to_string
-use lore.Enum.map
 
 struct Box[+A]
   open value: A
@@ -10,6 +11,7 @@ object Juice extends Content
 object Berry extends Content
 object Hammer extends Content
 
+@root
 module lore.core do
   func to_string(Box[Juice]): String = 'juice box'
   func to_string(Box[Berry]): String = 'berry box'
@@ -17,13 +19,15 @@ module lore.core do
   func to_string(thing: %{ value: Hammer }): String = 'thing with hammer'
 end
 
-// This verifies that struct types with open properties are correctly interned. Open property types should be taken
-// into account.
-func test(): [String] = do
-  let boxes = [
-    Box[Content](Juice),
-    Box[Content](Berry),
-    Box[Content](Hammer),
-  ]
-  boxes |> map(to_string)
+@root
+module features.schemas do
+  use lore.test._
+
+  // Once struct types are interned, this verifies that struct types with open properties are correctly interned. Open
+  // property types must be taken into account.
+  spec 'open_properties: stringify boxes with an open property type using shape types for dispatch' do
+    to_string(Box[Content](Juice)) should_eq 'thing with content'
+    to_string(Box[Content](Berry)) should_eq 'thing with content'
+    to_string(Box[Content](Hammer)) should_eq 'thing with hammer'
+  end
 end

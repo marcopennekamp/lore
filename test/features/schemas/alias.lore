@@ -1,4 +1,5 @@
-use lore.core.to_string
+module features.schemas.alias
+
 use lore.Enum.map
 use lore.String
 
@@ -11,18 +12,23 @@ struct StringFunction[A] = Function[A, String]
 struct IntConsumer[B] = Function[Int, B]
 struct Int2IntFunction = Function[Int, Int]
 
+@root
+module features.schemas do
+  use lore.test._
 
-func test(): [String] = do
-  let f1 = StringFunction((x: Int) => 'hey int $x')
-  let f2 = StringFunction((list: [Int]) => list |> map(f1.f) |> String.join(', '))
-  let f3 = IntConsumer(x => x * 0.4)
-  let f4 = Int2IntFunction(x => x + 2)
+  spec 'alias: create various Function objects from struct aliases and apply them to data' do
+    let f1 = StringFunction((x: Int) => 'hey int $x')
+    let f2 = StringFunction((list: [Int]) => list |> map(f1.f) |> String.join(', '))
+    let f3 = IntConsumer(x => x * 0.4)
+    let f4 = Int2IntFunction(x => x + 2)
 
-  let data = [
-    apply(f1, 5), apply(f1, 2),
-    apply(f2, []), apply(f2, [1, 2, 3]),
-    apply(f3, 5), apply(f3, 2),
-    apply(f4, 2), apply(f4, -1),
-  ]
-  data |> map(to_string)
+    apply(f1, 5) should_eq 'hey int 5'
+    apply(f1, 2) should_eq 'hey int 2'
+    apply(f2, []) should_eq ''
+    apply(f2, [1, 2, 3]) should_eq 'hey int 1, hey int 2, hey int 3'
+    apply(f3, 5) should_eq 2.0
+    apply(f3, 2) should_eq 0.8
+    apply(f4, 2) should_eq 4
+    apply(f4, -1) should_eq 1
+  end
 end

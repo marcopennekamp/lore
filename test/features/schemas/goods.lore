@@ -1,4 +1,4 @@
-use lore.Enum.map
+module features.schemas.goods
 
 struct Box[+A](content: A)
 
@@ -17,12 +17,14 @@ func price(Box[Metal[HighPrice]]): Real = 48.5
 func price(Box[Metal[MediumPrice]]): Real = 17.2
 func price(Box[Metal[LowPrice]]): Real = 1.6
 
+@root
+module features.schemas do
+  use lore.test._
 
-func test(): [Real] = do
-  let boxes = [
-    Box(Gold),
-    Box(Silver),
-    Box(Iron),
-  ]
-  boxes |> map(price)
+  // The spec ensures that nested type arguments are taken into account correctly during dispatch.
+  spec 'price: `price` calculates the price of different metals in boxes based on their type arguments' do
+    price(Box(Gold)) should_eq 48.5
+    price(Box(Silver)) should_eq 17.2
+    price(Box(Iron)) should_eq 1.6
+  end
 end

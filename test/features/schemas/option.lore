@@ -1,3 +1,5 @@
+module features.schemas.option
+
 use lore.core.to_string
 use lore.Enum.map
 use lore.Option.[Some, None]
@@ -7,6 +9,7 @@ object Bird extends AerialPhenomenon
 object Plane extends AerialPhenomenon
 object Dragon extends AerialPhenomenon
 
+@root
 module lore.core do
   func to_string(Some[Bird]): String = 'It\'s just a bird.'
   func to_string(Some[Plane]): String = 'My gosh, the pollution up there!'
@@ -14,12 +17,25 @@ module lore.core do
   func to_string(Some[[Dragon]]): String = 'They\'re everywhere!'
 end
 
-func test(): [String] = do
-  let none = None
-  let string = Some('Hello, world!')
-  let list = Some([1, 2, 3])
-  let aerials = [Some(Bird), Some(Plane), Some(Dragon)]
-  let dragons = Some { value = [Dragon, Dragon, Dragon] }
+@root
+module features.schemas do
+  use lore.test._
 
-  [none, string, list, aerials, dragons] |> map(to_string)
+  spec 'option: stringify options based on their open type argument' do
+    let options = [
+      None,
+      Some('Hello, world!'),
+      Some([1, 2, 3]),
+      [Some(Bird), Some(Plane), Some(Dragon)],
+      Some { value = [Dragon, Dragon, Dragon] },
+    ]
+
+    map(options, to_string) should_eq [
+      'None',
+      'Some(Hello, world!)',
+      'Some([1, 2, 3])',
+      '[It\'s just a bird., My gosh, the pollution up there!, Oh shit, it\'s a dragon!]',
+      'They\'re everywhere!',
+    ]
+  end
 end

@@ -1,3 +1,5 @@
+module features.schemas.extract
+
 use lore.core.to_string
 
 trait Crate[+A]
@@ -12,9 +14,13 @@ func extract(crate: ListCrate[A]): [A] where A = crate.list
 object TobyCrate extends Crate[String]
 func extract(TobyCrate): String = 'I am a crate and my name is Toby!'
 
+@root
+module features.schemas do
+  use lore.test._
 
-func test(): [String] = [
-  IntCrate(5) |> extract |> to_string,
-  ListCrate([1, 2, 3]) |> extract |> to_string,
-  TobyCrate |> extract,
-]
+  spec 'extract: extract values from crates of different types' do
+    extract(IntCrate(5)) should_eq 5
+    extract(ListCrate([1, 2, 3])) should_eq [1, 2, 3]
+    extract(TobyCrate) should_eq 'I am a crate and my name is Toby!'
+  end
+end

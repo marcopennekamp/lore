@@ -1,4 +1,5 @@
-use lore.Enum.map
+module features.schemas.fluxify
+
 use lore.Option
 use lore.Option.[Some, None]
 use lore.Tuple
@@ -21,14 +22,15 @@ func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-func perexonate(option: Option[Int]): Int = Option.get(option, 0)
+func perexonate(option: Option[Int]): Int = Option.get_or_else(option, 0)
 
+@root
+module features.schemas do
+  use lore.test._
 
-func test(): [Int] = do
-  let boxes = [
-    Box((3, Little, 0.2), Some(8)),
-    Box((1, Several, 0.5), None),
-    Box((0, Many, 0.1), Some(2)),
-  ]
-  boxes |> map(fluxify)
+  spec 'fluxify: construct boxes of different types and dispatch `fluxify` based on the Box\'s open type arguments' do
+    fluxify(Box((3, Little, 0.2), Some(8))) should_eq 13
+    fluxify(Box((1, Several, 0.5), None)) should_eq 8
+    fluxify(Box((0, Many, 0.1), Some(2))) should_eq 19
+  end
 end
