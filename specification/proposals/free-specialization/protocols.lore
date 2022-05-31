@@ -52,6 +52,11 @@ action test() do
   yes?(c, d)  // This must dispatch, at run time, such that the FIRST implementation of `yes?` is chosen.
 end
 
+// NOTE TO SELF: This isn't true, because when we remove `Equality` from the subtyping considerations, `yes?(Any, Any)`
+// and `yes?(A, B)` are equally specific. So there is still a chance that protocols can overall be limited to being a
+// compile-time construct.
+
+
 // In particular, the type `(A, B)` with protocol `Equality[A, B]` must be a subtype of `(Any, Any)`, but not vice
 // versa. This complicates the type system further, though not necessarily to the detriment of performance.
 // Checking at run time whether types implement a protocol is also only needed during dispatch when a protocol is
