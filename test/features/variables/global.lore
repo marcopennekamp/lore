@@ -1,3 +1,5 @@
+module features.variables.global
+
 use lore.core.to_string
 use lore.Enum._
 
@@ -18,7 +20,11 @@ end
 
 let crazy_variable: [String | [Int]] = [default_name, complex_lazy_variable, lazy_variable]
 
+@root
+module features.variables do
+  use lore.test._
 
-func test(): [String] = do
-  crazy_variable |> map(to_string)
+  spec 'global: access complex global variables lazily' do
+    map(crazy_variable, to_string) should_eq ['John Doe', '[2, 3, 4]', '[3, 4]']
+  end
 end
