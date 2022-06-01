@@ -2,7 +2,7 @@
 
 **Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming.
 
-To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some of the examples in the `tests` folder, such as [hello_name.lore](test/lessons/hello_name.lore).
+To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some examples in the `test` folder, such as [hello_name.lore](test/lessons/hello_name.lore).
 
 
 
@@ -14,16 +14,14 @@ This repository is divided into the following parts:
 - **Compiler:** The compiler, written in Scala, translates a Lore program to Poem bytecode, which is the custom bytecode format of the Lore VM.
 - **VM:** The VM executes Poem bytecode produced by the compiler. Crucially, the VM also implements Lore's type system, which is required for run-time multiple dispatch. It supports multi-functions natively and is thus a multiple dispatch VM.
 - **Pyramid:** This is the Lore standard library, which defines core functions expected by the compiler, functions to work with values such as lists, maps and strings, and additional types such as Options. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of (religious) lore in the world.
-- **Test:** Functional tests, which are comprised of many smaller Lore programs. This is the de-facto place to look at existing Lore code, such as [test/lessons](test/lessons) and [test/combat](test/combat).
+- **Test:** Functional tests, which are comprised of many smaller Lore programs. This is the de-facto place to look at existing Lore code, but especially [test/lessons](test/lessons).
 - **LSP:** An LSP language server and VSCode extension. Neither are currently up-to-date as Lore evolves, but they will be supported in the future to offer native IDE integration.
 
 
 
 ### State of the Project
 
-I've been working on Lore originally since 2017, more actively since April 2020, and full-time since June 2021. A first milestone version of the language is almost ready, with only a handful of features missing and some minor design choices to be reconsidered. 
-
-Lately, I've been in the process of replacing the Javascript/Typescript runtime with a custom virtual machine written in Nim. The VM is feature-complete, barring some important optimizations, and can already execute all functional tests in the `test` folder correctly. My next goals are to clear any outstanding TODOs around the change and to automate functional tests again, as they are still assuming a Typescript runtime.
+I've been working on Lore originally since 2017, more actively since April 2020, and full-time since June 2021. A first milestone version of the language is almost ready, with only a handful of features missing and some minor design choices to be reconsidered.
 
 
 
@@ -51,19 +49,17 @@ I have only tested this workflow on Linux and you might run into additional prob
 
 ### Functional Tests
 
-*Note: Functional test automation is not currently up-to-date, as it hasn't been updated for the VM changes.*
+One part of this project is Lore's functional testing solution. In the folder `test` (a direct child of the project root), you will find Lore programs contained in single files or across multiple files in some cases (`test/calculator` and `test/combat`). You can compile and run all tests by executing `test.sh`.
 
-One part of this project is Lore's functional testing solution. In the folder `test` (a direct child of the project root), you will find Lore programs contained in single files or across multiple files in some cases (`test/calculator` and `test/combat`). Each test program can additionally use types and function from Pyramid.
+Each test program defines a number of specs which can be executed by the Lore VM as tests and as benchmarks (depending on whether the spec is marked as a test, benchmark, or both). These specs use assertions to ensure that each test results in the expected outcome. Each file can additionally use types and functions from Pyramid.
 
-Each Lore program in this folder defines a function `test()`, which may return any kind of value. Additionally, we define Deno tests that compile the programs, execute the test functions, and verify the return values. When running `test.sh` (in the project root), the Lore compiler is freshly assembled into a native image for compilation speed (from a JAR) and subsequently all Deno tests (`*.test.ts`) in the `test` folder are executed.
-
-This solution allows us to automate "real-world" testing of Lore programs. By adding such test programs, we can ensure that specific features of the language and compiler work as intended. It helps to find software regressions (as long as tests are added when fixing an issue) and keeps the language stable. As each test requires the work of the compiler and runtime, our functional tests are whole-system tests.
+This solution allows us to automate "real-world" testing of Lore programs. By adding specs, we can ensure that specific features of the language, compiler, and VM work as intended. It helps to find software regressions (as long as tests are added when fixing an issue) and keeps the language stable. As each test requires the work of the compiler and VM, Lore's functional tests are whole-system tests.
 
 
 
 ### Native Image
 
-A native executable version of the Lore compiler can be built from an assembled JAR using GraalVM native-image. See `test.sh` for a sample use of the command.
+A native executable version of the Lore compiler can be built from an assembled JAR using GraalVM native-image.
 
 To generate new versions of the `compiler/native-image/*` configuration files, execute the following command from a folder that contains a `lore.build.json` file:
 

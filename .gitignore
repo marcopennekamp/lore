@@ -23,9 +23,6 @@ project/project/target
 lore_target
 test/lore.jar
 
-# Deno
-test/target
-
 # Language Server
 lsp/client/node_modules/
 lsp/client/out/

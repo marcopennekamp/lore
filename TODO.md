@@ -5,18 +5,10 @@
 ##### Minimum Viable Language
 
 - Implement specs:
-  - Compiler: ~~Specs in the Registry~~, ~~parsing~~, ~~resolution~~, ~~constraints~~, ~~transformation~~, ~~assembly~~.
-  - VM: ~~Spec definitions~~, ~~poem reading and writing~~, ~~universe resolution~~, ~~`lore.test.assert` intrinsic~~, ~~`test` and `bench` commands~~, ~~module name filtering~~.
-  - Pyramid: ~~`lore.test` module with assertion functions~~.
-  - Functional tests in `test` should all be compiled into one binary. To that end, each test must be correctly wrapped in its own module.
-    - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
-    - Some tests should be moved into Pyramid itself.
-    - Some tests such as `hello_name.lore` and `combat` should be marked as benchmarks. We could also add additional benchmarks.
-    - Rename `features` tests into `language` tests.
+  - Rename `features` tests into `language` tests.
   - VM: 
     - Sort specs alphabetically by description to achieve a consistent test execution order.
     - Break words in reported spec descriptions according to the terminal size and indent them after the `okay`/`fail` to improve readability of test/benchmark results.
-  - Remove the note about not being fully implemented at the top of `specs.md`.
   - Clear all `TODO (specs)` entries.
 - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
 - Fix map types and values:
