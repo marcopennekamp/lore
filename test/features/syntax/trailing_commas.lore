@@ -1,3 +1,5 @@
+module features.syntax.trailing_commas
+
 // TODO (maps): Needs map support.
 
 use lore.core.to_string
@@ -33,24 +35,23 @@ func get_shape(): %{ name: String, level: Int, } = %{
   level: 100,
 }
 
-func test(): [String] = do
-  let ahoo = Ahoo[String,](
-    'foo',
-    'bar',
-  )
-  let ahoo2 = Ahoo[Int,] {
-    ah = 'boo',
-    woo = 12,
-  }
-  let tuple = get_tuple(1, 'hello')
-  //let dict = get_map()
-  let shape = get_shape()
+@root
+module features.syntax do
+  use lore.test._
 
-  [
-    ahoo.woo,
-    ahoo2.ah,
-    Tuple.second(tuple),
-    //Map.get!(dict, 'Harbingers') |> to_string,
-    shape.name,
-  ]
+  spec 'trailing_commas: the compiler can parse trailing commas' do
+    let ahoo = Ahoo[String,](
+      'foo',
+      'bar',
+    )
+    let ahoo2 = Ahoo[Int,] {
+      ah = 'boo',
+      woo = 12,
+    }
+
+    ahoo.woo should_eq 'bar'
+    ahoo2.ah should_eq 'boo'
+    Tuple.second(get_tuple(1, 'hello')) should_eq 'hello'
+    get_shape().name should_eq 'Aurifana'
+  end
 end

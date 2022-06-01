@@ -1,9 +1,9 @@
+module features.syntax
+
 use lore.String
+use lore.test._
 
-// This ensures that function types are parsed with right associativity.
-func function_associativity(): Int = do
+spec 'associativity: function types are parsed with right associativity' do
   let f: Int => String => Int = n => s => n + String.length(s)
-  f(5)('associativity')
+  f(5)('associativity') should_eq 18
 end
-
-func test(): Int = function_associativity()

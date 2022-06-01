@@ -12,6 +12,7 @@
     - This allows the compiler to run once, removing the need to create a native image from the compiler JAR. The VM would also need to be run only once using the `test` command, achieving further test performance gains.
     - Some tests should be moved into Pyramid itself.
     - Some tests such as `hello_name.lore` and `combat` should be marked as benchmarks. We could also add additional benchmarks.
+    - Rename `features` tests into `language` tests.
   - VM: 
     - Sort specs alphabetically by description to achieve a consistent test execution order.
     - Break words in reported spec descriptions according to the terminal size and indent them after the `okay`/`fail` to improve readability of test/benchmark results.

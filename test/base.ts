@@ -20,8 +20,8 @@ export const LoreTest = {
    * Compiles a given test file to `<lore root>/lore-program.js` and asserts that the compilation was successful.
    *
    * @param paths All paths to the test files or directories, with `<lore root>/test` as the base directory. For
-   *              example, giving 'features/syntax/return.lore' as the test path would result in
-   *              `<lore root>/test/features/syntax/return.lore`.
+   *              example, giving 'features/syntax/returns.lore' as the test path would result in
+   *              `<lore root>/test/features/syntax/returns.lore`.
    * @param outputFile The unique Javascript file that the generated code is written to.
    */
   async compile(paths: string[], outputFile: string): Promise<void> {

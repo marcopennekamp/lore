@@ -1,9 +1,17 @@
-// Argument whitespace has to be handled manually so that the beginning of function call parentheses doesn't stretch
-// to the next line.
+module features.syntax.call_line_stretching
 
-// If not parsed correctly, Lore would try to compile a multi-function call x().
-act test() do
+// If `test` is parsed incorrectly, the last two lines will be parsed as `let y = x(8)`.
+func test(): Int = do
   let x = 5
   let y = x
-  ()
+  (8)
+end
+
+@root
+module features.syntax do
+  use lore.test._
+
+  spec 'call_line_stretching: the first parenthesis in a function call is only parsed if it\'s on the same line as the function name' do
+    test() should_eq 8
+  end
 end

@@ -1,3 +1,5 @@
+module features.syntax.conditionals
+
 func low_increment(n: Int): Int = if n < 25 then n + 1 else n
 
 func towards_25(n: Int): Int = cond
@@ -28,24 +30,34 @@ func dangle2(condition1: Boolean, condition2: Boolean): Int = do
   3
 end
 
-func test(): [Boolean | Int] = [
-  if true then false else true,
-  abc(true, false, true),
-  abc(false, false, true),
+@root
+module features.syntax do
+  use lore.test._
 
-  low_increment(20),
-  low_increment(25),
-  towards_25(25),
-  towards_25(23),
-  towards_25(30),
+  spec 'conditionals: the compiler can parse simple `if` expressions' do
+    (if true then false else true) should be_false
+    abc(true, false, true) should be_false
+    abc(false, false, true) should be_true
 
-  dangle(true, true),
-  dangle(true, false),
-  dangle(false, true),
-  dangle(false, false),
+    low_increment(20) should_eq 21
+    low_increment(25) should_eq 25
+  end
 
-  dangle2(true, true),
-  dangle2(true, false),
-  dangle2(false, true),
-  dangle2(false, false),
-]
+  spec 'conditionals: the compiler can parse `cond` expressions' do
+    towards_25(25) should_eq 25
+    towards_25(23) should_eq 24
+    towards_25(30) should_eq 29
+  end
+
+  spec 'conditionals: the compiler can parse dangling `else` expressions' do
+    dangle(true, true) should_eq 1
+    dangle(true, false) should_eq 2
+    dangle(false, true) should_eq 3
+    dangle(false, false) should_eq 3
+
+    dangle2(true, true) should_eq 1
+    dangle2(true, false) should_eq 3
+    dangle2(false, true) should_eq 2
+    dangle2(false, false) should_eq 2
+  end
+end

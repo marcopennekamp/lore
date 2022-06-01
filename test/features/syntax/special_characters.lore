@@ -1,3 +1,5 @@
+module features.syntax.special_characters
+
 trait Foo?
 struct Bar?(yes?: Boolean) extends Foo?
 
@@ -6,9 +8,14 @@ func truly?(bar?: Bar?): Boolean = bar?.yes?
 
 func truly?(shape: %{ no?: Boolean }): Boolean = !shape.no?
 
-func test(): [Boolean] = [
-  truly?(Bar?(true)),
-  truly?(Bar?(false)),
-  truly?(%{ no?: true }),
-  truly?(%{ no?: false }),
-]
+@root
+module features.syntax do
+  use lore.test._
+
+  spec 'special_characters: the compiler can parse special characters in type and variable identifiers' do
+    truly?(Bar?(true)) should be_true
+    truly?(Bar?(false)) should be_false
+    truly?(%{ no?: true }) should be_false
+    truly?(%{ no?: false }) should be_true
+  end
+end
