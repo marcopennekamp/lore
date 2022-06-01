@@ -18,7 +18,7 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
 
 type NilValueError* = object of CatchableError
-  ## This error is raised when a
+  ## This error is raised when a `nil` Value is encountered, which constitutes an illegal VM state.
 
 ########################################################################################################################
 # Execution frames.                                                                                                    #
