@@ -80,11 +80,13 @@ type
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
 
-  ShapeValue* {.pure, shallow.} = ref object of Value
+  ShapeValue* = ref ShapeValueObj
+  ShapeValueObj {.pure, shallow.} = object of Value
     meta*: MetaShape
     property_values*: UncheckedArray[TaggedValue]
 
-  StructValue* {.pure, shallow.} = ref object of Value
+  StructValue* = ref StructValueObj
+  StructValueObj {.pure, shallow.} = object of Value
     property_values*: UncheckedArray[TaggedValue]
 
   IntrospectionTypeValue* {.pure.} = ref object of Value
@@ -123,7 +125,7 @@ proc `$`*(value: Value): string
 # Tags.                                                                                                                #
 ########################################################################################################################
 
-proc get_tag*(value: TaggedValue): uint64 = value.uint and TagMask
+proc get_tag*(value: TaggedValue): uint64 = cast[uint64](value) and TagMask
 
 proc is_reference*(value: TaggedValue): bool = get_tag(value) == TagReference
 proc is_int*(value: TaggedValue): bool = get_tag(value) == TagInt
@@ -229,7 +231,7 @@ proc property_count*(shape: ShapeValue): int = shape.meta.property_names.len
 proc alloc_shape_value(meta_shape: MetaShape): ShapeValue =
   ## Allocates a new shape value with the correct number of property values, which must be initialized after. The
   ## value's type also must be set!
-  let shape_value = cast[ShapeValue](alloc0(sizeof(ShapeValue) + meta_shape.property_names.len * sizeof(TaggedValue)))
+  let shape_value = cast[ShapeValue](alloc0(sizeof(ShapeValueObj) + meta_shape.property_names.len * sizeof(TaggedValue)))
   shape_value.meta = meta_shape
   shape_value
 
@@ -274,7 +276,7 @@ proc get_open_property_types*(schema: StructSchema, property_values: open_array[
 proc alloc_struct_value(schema: StructSchema): StructValue =
   ## Allocates a new struct value with the correct number of property values, which must be initialized after. The
   ## value's type also must be set!
-  cast[StructValue](alloc0(sizeof(StructValue) + schema.property_count * sizeof(TaggedValue)))
+  cast[StructValue](alloc0(sizeof(StructValueObj) + schema.property_count * sizeof(TaggedValue)))
 
 proc copy_struct_properties(value: StructValue, schema: StructSchema, property_values: open_array[TaggedValue]) =
   ## Copies the given property values into the struct value.

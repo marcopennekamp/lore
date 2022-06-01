@@ -17,7 +17,8 @@ type
     ## behavior. The `has_property` operation should be used instead.
     root: IndexNode
 
-  IndexNode = ref object
+  IndexNode = ref IndexNodeObj
+  IndexNodeObj = object
     ## The internal representation of a property index consists of a series of nodes which decide a path to follow for
     ## a given string. Each node exploits a critical difference between two or more strings in a single byte at some
     ## byte `position`.
@@ -134,7 +135,7 @@ proc get_interned_property_index*(names: open_array[string]): PropertyIndex =
 
 proc alloc_index_node(position: uint16, edge_count: uint16): IndexNode =
   ## Allocates an IndexNode with space reserved for `edge_count` edges.
-  let node = cast[IndexNode](alloc0(sizeof(IndexNode) + cast[int](edge_count) * sizeof(IndexEdge)))
+  let node = cast[IndexNode](alloc0(sizeof(IndexNodeObj) + cast[int](edge_count) * sizeof(IndexEdge)))
   node.position = position
   node.edge_count = edge_count
   node
