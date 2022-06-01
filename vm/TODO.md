@@ -27,7 +27,6 @@
   - Best intern declared types as weak references so that they can be reclaimed if no values use the types.
   - Clear all `TODO (vm/intern)` entries.
 - Implement symbol type/value interning.
-  - Symbols can be represented by an integer into a symbol table that is resolved with the universe. We can use one of the unused tag bit patterns to avoid any allocations.
 - Consider interning all types. This is a very aggressive strategy, but might actually speed up most common programs, especially those that use a dispatch cache. It would also trivialize subtyping tests for equal types. At the very least, intern constant types.
   - Interning all types will only be useful if multiple dispatch uses a dispatch cache, because the hash code would have to be computed for the cache anyway, so hashing the type for interning is "free". (This is not quite true because dispatch cache hashing could happen lazily, but the point stands anyway.) If the VM does not use a dispatch cache, full type caching would probably not be worth it, since type equality will be checked relatively rarely. The performance benefit to subtyping of equal types will probably not be larger than hashing and interning every single new type. In that case, interning constant types should be the way to go.
   - Of course, regardless of this, declared types should be interned always, as the benefits are too large to ignore. This proposal is talking about function types and tuple types and such, for which the benefit is harder to prove.
@@ -41,6 +40,8 @@
 - We can flatten many `ImSeq`s into `UncheckedArray`s or `ImSeqObj`s for types and values (especially tuples, shapes, sum/intersection types, etc.). This will save allocations when creating values, but also make the VM's code a bit more complicated. We'll either have to pass around these embedded ImSeqObj as pointers, or write some glue code here and there.
 - Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization.
   - This is probably not an optimization we want to implement as long as the language is still immature.
+- Implement a "last type" optimization for `StructPoly` instructions: The instruction remembers the last type that an object was instantiated with. If the type arguments and open property types are the same, use that last type. This could save a lot of hash table lookups once declared types are interned, assuming that structs of the exact same type are usually constructed one after another.
+  - This is similar to a method call optimization often found in VMs for dynamically typed languages. The checking burden for `StructPoly` might be comparatively more expensive, though, and this optimization might not translate well. In any case, we'll have to benchmark this optimization carefully, if we add it. 
 
 ##### Dispatch Optimization
 

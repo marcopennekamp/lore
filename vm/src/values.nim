@@ -570,9 +570,12 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
   of Kind.Shape:
     let shape = cast[ShapeValue](value)
     var properties = new_seq[string]()
-    for i in 0 ..< shape.property_count:
-      properties.add(shape.meta.property_names[i] & ": " & rec(shape.property_values[i]))
-    "%{ " & properties.join(", ") & " }"
+    if shape.property_count == 0:
+      "%{ }"
+    else:
+      for i in 0 ..< shape.property_count:
+        properties.add(shape.meta.property_names[i] & ": " & rec(shape.property_values[i]))
+      "%{ " & properties.join(", ") & " }"
   of Kind.Struct:
     let struct = cast[StructValue](value)
     let schema = struct.get_schema
