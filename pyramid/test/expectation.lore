@@ -1,5 +1,8 @@
 module lore.test.expectation
 
+use lore.Option
+use lore.Option.[Some, None]
+
 /**
   * An expectation towards a value. For a given value, the expectation will either match the value or not. This is
   * used in assertions such as `should` and `should_not` to verify values.
@@ -32,13 +35,8 @@ struct BooleanExpectation(expected_value: Boolean) extends Expectation
 domain expectation: BooleanExpectation
   func matches?(actual_value: Any): Boolean = actual_value == expectation.expected_value
 
-  func failure_message(actual_value: Any): String = do
-    'Expected `$actual_value` to be ${expectation.expected_value}'
-  end
-
-  func negated_failure_message(actual_value: Any): String = do
-    'Expected `$actual_value` to be ${!expectation.expected_value}'
-  end
+  func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be ${expectation.expected_value}'
+  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to be ${!expectation.expected_value}'
 end
 
 // ------------------------------------------------------------------------------------------------------------------ //
@@ -104,4 +102,27 @@ domain expectation: InequalityExpectation
   func negated_failure_message(actual_value: Any): String = do
     'Expected `$actual_value` NOT to be ${relation_label(expectation)} `${expectation.threshold_value}`.'
   end
+end
+
+// ------------------------------------------------------------------------------------------------------------------ //
+// Options                                                                                                            //
+// ------------------------------------------------------------------------------------------------------------------ //
+
+object SomeOptionExpectation extends Expectation
+object NoneOptionExpectation extends Expectation
+
+domain expectation: SomeOptionExpectation
+  func matches?(Any): Boolean = false
+  func matches?(Some[Any]): Boolean = true
+
+  func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be a `Some`.'
+  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to NOT be a `Some`.'
+end
+
+domain expectation: NoneOptionExpectation
+  func matches?(Any): Boolean = false
+  func matches?(None): Boolean = true
+
+  func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be `None`.'
+  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to NOT be `None`.'
 end

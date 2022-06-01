@@ -41,5 +41,8 @@ func be_lte(threshold_value: Any): Expectation = InequalityExpectation(Inequalit
 func be_gt(threshold_value: Any): Expectation = InequalityExpectation(InequalityRelation.GreaterThan, threshold_value)
 func be_gte(threshold_value: Any): Expectation = InequalityExpectation(InequalityRelation.GreaterThanEqual, threshold_value)
 
+let be_some: Expectation = SomeOptionExpectation
+let be_none: Expectation = NoneOptionExpectation
+
 func should_eq(actual_value: Any, expected_value: Any): Unit = actual_value should eq(expected_value)
 func should_not_eq(actual_value: Any, expected_value: Any): Unit = actual_value should_not eq(expected_value)
