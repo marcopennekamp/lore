@@ -1,11 +1,36 @@
+module combat
+
+use lore.Option
+use lore.Option.Some
+use lore.test._
 use lore.Tuple
 
+use combat.combatants.Combatant
 use combat.Scenario
 use combat.Simulation
+use combat.Simulation.Result
 
-func test(): [Simulation.Result] = do
-  let scenarios = [Scenario.kaladin_vs_voidbringer(), Scenario.sadeas_vs_dalinar()]
-  for scenario <- scenarios
-    Simulation.simulate(Tuple.first(scenario), Tuple.second(scenario))
-  end
+func simulate_scenario(scenario: (Combatant, Combatant)): Simulation.Result = do
+  Simulation.simulate(Tuple.first(scenario), Tuple.second(scenario))
+end
+
+spec 'Kaladin wins against the Voidbringer' do
+  // TODO (case): This needs pattern matching so that we can write (with the syntax not being final):
+  //    result should_match do
+  //      Victory(winner) => winner.name should_eq 'Kaladin'
+  //    end
+  let scenario = Scenario.kaladin_vs_voidbringer()
+  let kaladin = Tuple.first(scenario)
+  let result = simulate_scenario(scenario)
+  let winner = Result.winner(result)
+
+  winner should be_some
+  Combatant.name(Option.get!(winner)) should_eq 'Kaladin' // Should be equivalent to `winner.get!.name`...
+end
+
+spec 'Sadeas and Dalinar have a stalemate' do
+  // TODO (case): Also needs pattern matching, as the function `stalemate?` is superfluous. See above.
+  let result = simulate_scenario(Scenario.sadeas_vs_dalinar())
+
+  Result.stalemate?(result) should be_true // Should be equivalent to `result.stalemate?`...
 end

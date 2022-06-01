@@ -2,6 +2,8 @@ module combat.Simulation
 
 use lore.IO.println
 use lore.number.[min, max]
+use lore.Option
+use lore.Option.[Some, None]
 
 use combat.combatants.Combatant
 use combat.effects._
@@ -18,6 +20,12 @@ module Result do
   act log(result: Stalemate) do
     combat.Simulation.log('We have a stalemate between ${Combatant.name(result.left)} and ${Combatant.name(result.right)}!')
   end
+
+  func winner(Result): Option[Combatant] = None
+  func winner(result: Victory): Option[Combatant] = Some(result.winner)
+
+  func stalemate?(Result): Boolean = false
+  func stalemate?(result: Stalemate): Boolean = true
 end
 
 struct CombatantState
