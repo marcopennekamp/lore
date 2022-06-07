@@ -6,7 +6,11 @@
 
 - Implement specs:
   - Clear all `TODO (specs)` entries.
-- What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
+- Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
+  - Update the specification: `modules.md` and `multi-functions.md` should both mention this compile-time disambiguation.
+  - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
+  - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
+    - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
@@ -14,10 +18,6 @@
   - Change the map type syntax to `#[K, V]` which is more convenient to type. The literal syntax should keep the `k -> v` syntax because the alternative `k: v` signals to the programmer that `k` is a name, not a value. So if we write `#[foo: bar]`, the programmer might assume that `'foo'` is the key with which the value is accessed, even when in reality `foo` is defined `let foo = 15`.
   - Update `runtime-types.md`.
   - Clear all `TODO (maps)` entries.
-- Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
-  - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
-  - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
-    - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
 - Syntax changes:
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
@@ -75,6 +75,7 @@
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
 - Refactor Pyramid and add more types and functions.
+  - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
   - Clear all `TODO (pyramid)` entries.
 
 ##### MVL improvements
