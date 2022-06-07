@@ -1,0 +1,17 @@
+module language.functions.constructor
+
+struct Person(name: String, age: Int)
+struct Company(name: String, worth: Int)
+
+@where A
+func apply(create: (String, Int) => A): A = create('Victor', 21)
+
+@root
+module language.functions do
+  use lore.test._
+
+  spec 'constructor: `apply` creates persons and companies from their constructor functions' do
+    apply(Person) should_eq Person('Victor', 21)
+    apply(Company) should_eq Company('Victor', 21)
+  end
+end

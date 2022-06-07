@@ -1,0 +1,53 @@
+module language.syntax.operators
+
+let a: Int = 10
+let b: Int = 5
+let c: Int = 40
+let b1: Boolean = true
+let b2: Boolean = false
+let b3: Boolean = false
+let f: () => Int = () => 7
+
+func plus(a: Int, b: Int): Int = a + b
+func minus(a: Int, b: Int): Int = a - b
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'operators: the compiler can parse arithmetic operators' do
+    a + b           should_eq 15
+    a + (do b end)  should_eq 15
+    a - b           should_eq 5
+    a + -b          should_eq 5
+    a * b + b * 3.5 should_eq 67.5
+    a / b           should_eq 2
+  end
+
+  spec 'operators: the compiler can parse infix function calls and pipes' do
+    a plus b         should_eq 15
+    a plus b minus c should_eq -25
+    a - b minus 1    should_eq 4
+    a * b plus b * c should_eq 250
+    f() plus 3       should_eq 10
+
+    (5 |> plus(2))  should_eq 7
+    (5 |> minus(2)) should_eq 3
+  end
+
+  spec 'operators: the compiler can parse comparison operators' do
+    (a < b)   should be_false
+    (a <= 10) should be_true
+    (a > b)   should be_true
+    (a >= b)  should be_true
+    (a == b)  should be_false
+    (a != b)  should be_true
+  end
+
+  spec 'operators: the compiler can parse boolean operators' do
+    (b1 || b2 || b3) should be_true
+    (b1 && b2 && b3) should be_false
+    (!(a == 10) || -b < a && !b1 == b2) should be_true
+    (b1 && !b2 && c < -a * -b) should be_true
+  end
+end

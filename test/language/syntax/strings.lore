@@ -1,0 +1,31 @@
+module language.syntax.strings
+
+let x: String = 'X'
+let my_long_variable: String = 'my long variable'
+let some: String = 'SOME'
+let that: String = 'THAT'
+
+func apples(person: %{ name: String }, count: Int): String = do
+  '${person.name}, you have $count apples. Please claim your ${if count < 10 then 'free' else '1000\$'} apple at the reception.'
+end
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'strings: the compiler can parse strings with escaped characters' do
+    '' should_eq ''
+    '   ' should_eq '   '
+    '\n' should_eq '\n'
+    '\n\t\r\'\$\\' should_eq '\n\t\r\'\$\\'
+  end
+
+  spec 'strings: the compiler can parse interpolated strings' do
+    'test $x\n\t\u0394' should_eq 'test X\n\t\u0394'
+    '$my_long_variable' should_eq 'my long variable'
+    '${x} ${my_long_variable}' should_eq 'X my long variable'
+    '\${quite} $some \$confusion in ${that} string' should_eq '\${quite} SOME \$confusion in THAT string'
+    apples(%{ name: 'John' }, 11) should_eq 'John, you have 11 apples. Please claim your 1000\$ apple at the reception.'
+    apples(%{ name: 'Martin' }, 5) should_eq 'Martin, you have 5 apples. Please claim your free apple at the reception.'
+  end
+end

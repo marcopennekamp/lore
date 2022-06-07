@@ -1,0 +1,64 @@
+module language.schemas.constructor
+
+use lore.core.to_string
+use lore.Enum.map
+
+trait Content
+object Cereal extends Content
+object Blood extends Content
+object Pudding extends Content
+
+@root
+module lore.core do
+  func to_string(Content): String
+  func to_string(Cereal): String = 'cereal'
+  func to_string(Blood): String = 'blood'
+  func to_string(Pudding): String = 'pudding'
+end
+
+trait Container[+C]
+
+struct Bowl[+C <: Content] extends Container[C]
+  content: C
+  taste: Int
+end
+
+struct Cup[+C <: Content] extends Container[C]
+  content: C
+  exclusivity: Int
+end
+
+@root
+module lore.core do
+  func to_string(bowl: Bowl[Content]): String = '${bowl.content} bowl'
+  func to_string(cup: Cup[Content]): String = 'cup of ${cup.content}'
+end
+
+func cereal(container: (Cereal, Int) => A): A where A = container(Cereal, 4)
+func blood(container: (Blood, Int) => A): A where A = container(Blood, 1)
+func pudding(container: (Pudding, Int) => A): A where A = container(Pudding, 9)
+
+// This function creates a constructor value dependent on the function's type arguments, which is different than the
+// other constructor values created in the spec. In real world code, `bowl_constructor` is basically an identity
+// function and `Bowl` should be used directly.
+@where A <: Content
+func bowl_constructor(content: A): (A, Int) => Bowl[A] = Bowl
+
+@root
+module language.schemas do
+  use lore.test._
+
+  spec 'constructor: higher-order constructor functions build filled containers' do
+    let containers = [
+      cereal(Bowl), cereal(Cup), bowl_constructor(Cereal)(Cereal, 2),
+      blood(Bowl), blood(Cup), bowl_constructor(Blood)(Blood, 0),
+      pudding(Bowl), pudding(Cup), bowl_constructor(Pudding)(Pudding, 6),
+    ]
+
+    map(containers, to_string) should_eq [
+      'cereal bowl', 'cup of cereal', 'cereal bowl',
+      'blood bowl', 'cup of blood', 'blood bowl',
+      'pudding bowl', 'cup of pudding', 'pudding bowl',
+    ]
+  end
+end

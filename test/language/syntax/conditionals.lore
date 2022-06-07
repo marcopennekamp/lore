@@ -1,0 +1,63 @@
+module language.syntax.conditionals
+
+func low_increment(n: Int): Int = if n < 25 then n + 1 else n
+
+func towards_25(n: Int): Int = cond
+  n < 25 => n + 1
+  n > 25 => n - 1
+  true   => n
+end
+
+func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = do
+  if a
+    return b
+  else
+    return c
+  end
+end
+
+func dangle(flag: Boolean, flag2: Boolean): Int = do
+  if flag then if flag2 then return 1 else return 2
+  3
+end
+
+func dangle2(condition1: Boolean, condition2: Boolean): Int = do
+  if condition1
+    if condition2 then return 1
+  else
+    return 2
+  end
+  3
+end
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'conditionals: the compiler can parse simple `if` expressions' do
+    (if true then false else true) should be_false
+    abc(true, false, true) should be_false
+    abc(false, false, true) should be_true
+
+    low_increment(20) should_eq 21
+    low_increment(25) should_eq 25
+  end
+
+  spec 'conditionals: the compiler can parse `cond` expressions' do
+    towards_25(25) should_eq 25
+    towards_25(23) should_eq 24
+    towards_25(30) should_eq 29
+  end
+
+  spec 'conditionals: the compiler can parse dangling `else` expressions' do
+    dangle(true, true) should_eq 1
+    dangle(true, false) should_eq 2
+    dangle(false, true) should_eq 3
+    dangle(false, false) should_eq 3
+
+    dangle2(true, true) should_eq 1
+    dangle2(true, false) should_eq 3
+    dangle2(false, true) should_eq 2
+    dangle2(false, false) should_eq 2
+  end
+end

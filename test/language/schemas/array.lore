@@ -1,0 +1,71 @@
+module language.schemas.array
+
+use lore.List
+
+trait Array[+A]
+
+@where A
+domain Array[A]
+  func at(index: Int): A
+
+  @where E <: A
+  act prepend(element: E)
+
+  @where E <: A
+  act append(element: E)
+
+  act remove_first()
+  act remove_last()
+end
+
+struct NaiveArray[A] extends Array[A]
+  mut underlying: [A]
+end
+
+// TODO: Given these functions, the compiler should not allow `NaiveArray` to extend a covariant `Array[A]`. But can we
+//       deduce this? Right now, trying to add a Real to a NaiveArray[Int] via an Array[Real] interface leads to a
+//       run-time error. This is acceptable, but might not be good enough.
+@where A
+domain array: NaiveArray[A]
+  func at(index: Int): A = List.get!(array.underlying, index)
+
+  @where E <: A
+  act prepend(element: E) do
+    array.underlying = List.concat([element], array.underlying)
+  end
+
+  @where E <: A
+  act append(element: E) do
+    array.underlying = array.underlying :+ element
+  end
+
+  act remove_first() do
+    array.underlying = List.tail(array.underlying)
+  end
+
+  act remove_last() do
+    array.underlying = List.init(array.underlying)
+  end
+end
+
+@root
+module language.schemas do
+  use lore.test._
+
+  spec 'array: elements can be added and removed from NaiveArrays' do
+    let array = NaiveArray([1, 2])
+
+    append(array, 3)
+    append(array, 4)
+    append(array, 5)
+    array.underlying should_eq [1, 2, 3, 4, 5]
+
+    prepend(array, 0)
+    array.underlying should_eq [0, 1, 2, 3, 4, 5]
+
+    remove_last(array)
+    remove_first(array)
+    remove_first(array)
+    array.underlying should_eq [2, 3, 4]
+  end
+end

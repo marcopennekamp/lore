@@ -1,0 +1,45 @@
+module language.introspection.subtyping
+
+use lore.core._
+
+trait Animal
+
+struct Ox extends Animal
+  name: String
+  weight: Real
+end
+
+struct Crane extends Animal
+  name: String
+  height: Real
+end
+
+@root
+module language.introspection do
+  use lore.test._
+
+  spec 'subtyping: `subtype?` checks subtyping relationships between primitive values' do
+    subtype?(type_of(1), type_of(2)) should be_true
+    subtype?(type_of(1), type_of(1.0)) should be_false
+    subtype?(type_of(1.0), type_of(2.0)) should be_true
+    subtype?(type_of(false), type_of(true)) should be_true
+    subtype?(type_of('foo'), type_of('bar')) should be_true
+    subtype?(type_of(#sym), type_of(#sym)) should be_true
+    subtype?(type_of(#foo), type_of(#bar)) should be_false
+  end
+
+  spec 'subtyping: `subtype?` checks subtyping relationships between structs and shapes' do
+    let niuzao: Ox = Ox('Niuzao', 387.23)
+    let chiji: Crane = Crane('Chi-Ji', 5.51)
+    let shape: %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
+
+    // TODO: How to get the Animal trait type for introspection? We would have to add compiler support.
+    //       One idea would be to add a `TypeOf[A]` struct that extends Type and is handled by the runtime such
+    //       that the specified type argument `A` is taken as the run-time type.
+    //subtype?(niuzao, Animal) should be_true
+    subtype?(type_of(niuzao), type_of(chiji)) should be_false
+    subtype?(type_of(chiji), type_of(niuzao)) should be_false
+    subtype?(type_of(niuzao), type_of(shape)) should be_true
+    subtype?(type_of(chiji), type_of(shape)) should be_false
+  end
+end

@@ -26,7 +26,7 @@ Please run `vm.nim` with one of the following commands:
 - specs:
   - `test`: Execute test specs contained in a poem file. `test` expects a `.poem` file as the first argument. Additional arguments are interpreted as module names (see below). (Usage: `vm test binary.poem`)
   - `bench`: Execute benchmark specs contained in a poem file. `bench` expects a `.poem` file as the first argument. Additional arguments are interpreted as module names (see below). (Usage: `vm bench binary.poem`)
-  - Any additional arguments to `test` and `bench` are interpreted as module names. If no module names are specified, all specs will be run. If at least one module name is specified, only specs whose module is one of the specified modules (or a sub-module) will be run. (Usage: `vm test binary.poem lessons features.dispatch`)
+  - Any additional arguments to `test` and `bench` are interpreted as module names. If no module names are specified, all specs will be run. If at least one module name is specified, only specs whose module is one of the specified modules (or a sub-module) will be run. (Usage: `vm test binary.poem lessons language.dispatch`)
   """
 
 proc load_universe(poem_file_path: string): Universe =

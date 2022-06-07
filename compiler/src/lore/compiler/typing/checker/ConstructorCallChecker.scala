@@ -41,7 +41,7 @@ object ConstructorCallChecker {
 
       // Given that we have an expected struct type, we must unify the expected constructor's parameters with the
       // actual parameter types so that any inference variables already known can be preassigned. For example, let's
-      // say we have an expected struct type `Wrapper[Int, Any]` from the test case `features/inference/wrapper.lore`.
+      // say we have an expected struct type `Wrapper[Int, Any]` from the test case `language/inference/wrapper.lore`.
       // That is, we know the input type of the wrapper's function property. The expected constructor parameter is thus
       // typed as `Int => Any`. The unification takes care that the inference variable for `A` is assigned `Int` as an
       // upper bound.

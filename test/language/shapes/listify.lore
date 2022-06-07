@@ -1,0 +1,36 @@
+module language.shapes.listify
+
+struct Position2D(x: Real, y: Real)
+struct Position3D(x: Real, y: Real, z: Real)
+
+func listify(shape: %{ }): [Real] = []
+func listify(shape: %{ x: Real, y: Real }): [Real] = [shape.x, shape.y]
+func listify(shape: %{ x: Real, y: Real, z: Real }): [Real] = [shape.x, shape.y, shape.z]
+
+// We have to separate the generic functions for shapes so that we cannot trip up with run-time dispatch.
+@where X, Y
+func generic_listify_2D(shape: %{ x: X, y: Y }): [X | Y] = [shape.x, shape.y]
+
+@where X, Y, Z
+func generic_listify_3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] = [shape.x, shape.y, shape.z]
+
+@root
+module language.shapes do
+  use lore.test._
+
+  spec 'listify: `listify` unpacks struct and shape positions into a list' do
+    let pos_2D = Position2D(1.2, 5.0)
+    let pos_3D = Position3D(0.0, 5.1, 4.8)
+    let pos_2D_shape = %{ x: 1.2, y: 5.0 }
+    let pos_3D_shape = %{ x: 0.0, y: 5.1, z: 4.8 }
+
+    listify(pos_2D) should_eq [1.2, 5]
+    listify(pos_3D) should_eq [0, 5.1, 4.8]
+    generic_listify_2D(pos_2D) should_eq [1.2, 5]
+    generic_listify_3D(pos_3D) should_eq [0, 5.1, 4.8]
+    listify(pos_2D_shape) should_eq [1.2, 5]
+    listify(pos_3D_shape) should_eq [0, 5.1, 4.8]
+    generic_listify_2D(pos_2D_shape) should_eq [1.2, 5]
+    generic_listify_3D(pos_3D_shape) should_eq [0, 5.1, 4.8]
+  end
+end

@@ -1,0 +1,44 @@
+module language.syntax.returns
+
+func f1(): Int = do
+  if 'x' == 'y' then return 5 else return 10
+end
+
+func f2(): Int = do
+  return if true then 1 else 2
+end
+
+func f3(): Int = do
+  let list = [1, 2, 3]
+  for x <- list
+    if x == 2
+      return 5
+    end
+  end
+  0
+end
+
+// TODO: Implement this test once non-local returns have been added.
+//func f4(): Int = do
+//  let lambda = () => do
+//    return 10
+//  end
+//  lambda()
+//  5
+//end
+
+let v1: Int = do
+  if 'x' != 'y' then return 5 else return 10
+end
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'returns: the compiler can parse `return` expressions' do
+    f1() should_eq 10
+    f2() should_eq 1
+    f3() should_eq 5
+    v1   should_eq 5
+  end
+end

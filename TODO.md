@@ -5,10 +5,6 @@
 ##### Minimum Viable Language
 
 - Implement specs:
-  - Rename `features` tests into `language` tests.
-  - VM: 
-    - Sort specs alphabetically by description to achieve a consistent test execution order.
-    - Break words in reported spec descriptions according to the terminal size and indent them after the `okay`/`fail` to improve readability of test/benchmark results.
   - Clear all `TODO (specs)` entries.
 - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
 - Fix map types and values:
@@ -153,10 +149,12 @@
 
 #### Testing
 
-- We should ideally invest in a system that can test the parts that are replicated in both the compiler and the VM with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs.
-  - Idea: The system can be implemented on the compiler side. It would have two parts: (1) immediately executing the typing tests with the compiler subtyping, equality, and fit functions. (2) Compiling the typing tests to poem binaries and using the runtime subtyping, equality, and fit functions. This would allow us to reuse the existing type parser even for the runtime tests and also allow us to parse the custom test format using fastparse. 
+- Spec execution (VM):
+  - Sort specs alphabetically by description to achieve a consistent test execution order.
+  - Break words in reported spec descriptions according to the terminal size and indent them after the `okay`/`fail` to improve readability of test/benchmark results.
+- We should invest in a system that can test type system functions in both the compiler and the VM with the same values.
+  - This system could read types from a `.lore` file and then a type relationship specification from a text file. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs to both implementations.
   - Such a system is only advisable once we have the compiler written in Lore. Otherwise we're duplicating work which doesn't directly go towards building the compiler in Lore.
-  - The system has a low priority in general because there are so many other areas to improve first.
 
 
 #### Code Quality

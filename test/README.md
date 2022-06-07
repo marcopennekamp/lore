@@ -4,7 +4,7 @@ This folder contains test cases, ranging from the practical to focused language 
 
 Here is an **overview** of the most important top-level directories:
 
-- [Features](features): Lore language feature tests, focused on testing specific areas of the language. The code that has to be written for these tests often doesn't follow best practices. Hence, these tests aren't idiomatic examples and best ignored outside of language development.
+- [Language](language): Lore language tests, focused on testing specific areas of the language. The code that has to be written for these tests often doesn't follow best practices. Hence, these tests aren't idiomatic examples and best ignored outside of language development.
 - [Lessons](lessons): Single-file, simple Lore programs that follow a specific objective.
 - [Examples](examples): Other single-file Lore programs, without the level of focus of a lesson.
 

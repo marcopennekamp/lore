@@ -1,0 +1,85 @@
+module language.syntax.literals
+
+use lore.core.to_string
+use lore.Enum.map
+
+func c(): String = 'man'
+
+func all_literals(): [Any] = [
+  0,
+  -15,
+
+  0.0,
+  1.5,
+  -1.5,
+
+  true,
+  false,
+
+  'hello',
+  'world!',
+  'is ${c()} or is ${c()} not?',
+
+  #error,
+
+  (),
+  (0, 'hello', true),
+  (1 + 2, 2 * 3, 3 < 5.3),
+
+  [],
+  [1, 2, 3],
+  [(1, 2), (3, 4)],
+  [1 + 2, 2 * 3, 5.3 < 3],
+  [[1, 2], ['test', 'me', 'well ${c()}'], ['container']],
+
+  // TODO (maps): Needs map support.
+  /*
+  #[],
+  #['john' -> 11, 'martin' -> 5],
+  #[1 -> #['test' -> 'me'], 2 -> #['test' -> 'well ${c()}', 'test2' -> 'abc']],
+  #[1 -> 1 + 2, 5 -> 2 * 3, 10 -> 5.3 <= 5.3],
+  */
+
+  %{ },
+  %{ name: 'John', occupation: 'Salaryman' },
+  %{ part1: %{ a: 1, b: 2 }, part2: %{ c: 3, a: 'hello' } },
+]
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'literals: the compiler can parse literals' do
+    (all_literals() |> map(to_string)) should_eq [
+      '0',
+      '-15',
+
+      '0.0',
+      '1.5',
+      '-1.5',
+
+      'true',
+      'false',
+
+      'hello',
+      'world!',
+      'is man or is man not?',
+
+      '#error',
+
+      '()',
+      '(0, hello, true)',
+      '(3, 6, true)',
+
+      '[]',
+      '[1, 2, 3]',
+      '[(1, 2), (3, 4)]',
+      '[3, 6, false]',
+      '[[1, 2], [test, me, well man], [container]]',
+
+      '%{ }',
+      '%{ name: John, occupation: Salaryman }',
+      '%{ part1: %{ a: 1, b: 2 }, part2: %{ a: hello, c: 3 } }',
+    ]
+  end
+end

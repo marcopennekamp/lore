@@ -38,7 +38,7 @@ object MultiFunctionCallChecker {
     * If `expectedType` is available, it may inform the assignment of type parameters via unification with the output
     * type of each function candidate. This does not mean that the output type becomes relevant in the multiple
     * dispatch decision: After all argument types have been inferred, multiple dispatch will be simulated to ensure
-    * that the call is correct. The test case `test/features/functions/filter-curried.lore` demonstrates how this
+    * that the call is correct. The test case `test/language/functions/filter-curried.lore` demonstrates how this
     * output-directed inference is useful.
     */
   def handle(

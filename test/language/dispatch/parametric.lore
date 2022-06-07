@@ -1,0 +1,23 @@
+module language.dispatch.parametric
+
+func foo(X, Y): Int where X, Y = 1
+func foo(A, A): Int where A = 2
+func foo(String, A): Int where A = 3
+func foo(String, String): Int = 4
+
+object Block
+
+@root
+module language.dispatch do
+  use lore.test._
+
+  spec 'parametric: `foo` returns the expected values' do
+    foo(Block, 'Code') should_eq 1
+    foo('Art', 5) should_eq 3
+    foo(5, 5) should_eq 2
+    foo(4.5, 5.0) should_eq 2
+    foo('Code', Block) should_eq 3
+    foo(Block, Block) should_eq 2
+    foo('Hello', 'World') should_eq 4
+  end
+end

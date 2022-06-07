@@ -1,0 +1,46 @@
+module language.syntax.loops
+
+use lore.number.to_real
+
+func divide_by_2(a: Int, b: Int): Real = do
+  let mut r = to_real(a)
+  while r > b yield r /= 2
+  r
+end
+
+func repeat(v: Int, n: Int): [Int] = do
+  let mut i = 0
+  while i < n
+    i += 1
+    v
+  end
+end
+
+func increment_all(values: [Int]): [Int] = for v <- values yield v + 1
+
+func add_pairs(as: [Int], bs: [Int]): [Int] = do
+  for a <- as, b <- bs
+    a + b
+  end
+end
+
+// This ensures that extractor variables and collections are correctly scoped. `xs` is shadowed intentionally.
+func scoped_extractors(xs: [[Int]]): [Int] = for xs <- xs, xs <- xs yield xs
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'loops: the compiler can parse `while` loops' do
+    divide_by_2(10, 20) should_eq 10
+    divide_by_2(40, 20) should_eq 20
+    divide_by_2(234, 45) should_eq 29.25
+    repeat(15, 3) should_eq [15, 15, 15]
+  end
+
+  spec 'loops: the compiler can parse `for` loops' do
+    increment_all([10, 3, 40, -2, 15]) should_eq [11, 4, 41, -1, 16]
+    add_pairs([1, 2], [3, 4]) should_eq [4, 5, 5, 6]
+    scoped_extractors([[1, 2], [3, 4]]) should_eq [1, 2, 3, 4]
+  end
+end

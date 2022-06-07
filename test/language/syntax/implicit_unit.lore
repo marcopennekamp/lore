@@ -1,0 +1,17 @@
+module language.syntax.implicit_unit
+
+use lore.List
+
+// Even though concat returns a list, the compiler should recognize that the action implicitly returns a unit value.
+act test() do
+  List.concat([12], [15])
+end
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'implicit_unit: `test` returns unit' do
+    test() should_eq ()
+  end
+end

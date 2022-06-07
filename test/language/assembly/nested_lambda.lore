@@ -1,0 +1,21 @@
+module language.assembly.nested_lambda
+
+use lore.Enum.map
+
+func get_numbers(): [Int] = do
+  let factor1 = 5
+  let factor2 = 2
+  [0, -2, 2, 6, 22] |> map(x => do
+    let foo: (Int, Int) => Int = (a, b) => a * b * factor1
+    foo(x, factor2)
+  end)
+end
+
+@root
+module language.assembly do
+  use lore.test._
+
+  spec 'nested_lambda: the compiler supports nested lambdas with captured variables' do
+    get_numbers() should_eq [0, -20, 20, 60, 220]
+  end
+end

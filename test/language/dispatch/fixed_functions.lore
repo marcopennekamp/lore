@@ -1,0 +1,45 @@
+module language.dispatch.fixed_functions
+
+use lore.String
+
+trait A
+trait B extends A
+object C extends B
+trait D extends B
+object E extends D
+
+func stringify(a: A): String = 'A'
+
+func stringify(b: B): String = do
+  let super = stringify.fixed[A](b)
+  String.concat(super, 'B')
+end
+
+func stringify(c: C): String = do
+  let super = stringify.fixed[B](c)
+  String.concat(super, 'C')
+end
+
+func stringify(d: D): String = do
+  let super = stringify.fixed[B](d)
+  String.concat(super, 'D')
+end
+
+func stringify(e: E): String = do
+  let super = stringify.fixed[D](e)
+  String.concat('E', super)
+end
+
+@root
+module language.dispatch do
+  use lore.test._
+
+  spec 'fixed: calls to `stringify.fixed` result in the expected values' do
+    stringify(C) should_eq 'ABC'
+    stringify(E) should_eq 'EABD'
+    stringify.fixed[B](C) should_eq 'AB'
+    stringify.fixed[D](E) should_eq 'ABD'
+    stringify.fixed[A](C) should_eq 'A'
+    stringify.fixed[A](E) should_eq 'A'
+  end
+end

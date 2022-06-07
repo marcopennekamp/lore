@@ -1,0 +1,178 @@
+// This test ensures that the default implementation of equality is correct and calls back into `lore.core.equal?`.
+module language.comparisons.equal
+
+use lore.IO.println
+use lore.String
+use lore.test._
+
+trait Position
+struct Position2(x: Real, y: Real) extends Position
+struct Position3(x: Real, y: Real, z: Real) extends Position
+
+// IgnoreCase wraps a string and redefines string equality as lower-case equality.
+struct IgnoreCase(string: String)
+struct Person(name: IgnoreCase, age: Int)
+
+trait Material
+object Leather extends Material
+object Cloth extends Material
+
+struct Bag(open material: Material)
+
+struct Parameterized[A](value: Int)
+
+@root
+module lore.core do
+  func equal?(a: IgnoreCase, b: IgnoreCase): Boolean = String.to_lower(a.string) == String.to_lower(b.string)
+  func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
+end
+
+// We have to use `Any` as a type for the variables so that the compiler doesn't generate the direct comparison
+// operations for primitives.
+let str1: Any = 'Hello'
+let str2: Any = 'bar'
+let str3: Any = 'Hello'
+
+let tpl1: Any = (str1, str2)
+let tpl2: Any = (str1, str2, str3)
+let tpl3: Any = (str3, str2, str1)
+
+let pers1: Any = Person(IgnoreCase('john'), 25)
+let pers2: Any = Person(IgnoreCase('JOHN'), 30)
+let pers3: Any = Person(IgnoreCase('jOhn'), 25)
+let pers4: Any = Person(IgnoreCase('aMy'), 25)
+let pers5: Any = Person(IgnoreCase('johN'), 30)
+
+let bag1: Any = Bag(Leather)
+let bag2: Any = Bag(Cloth)
+let bag3: Any = Bag(Leather)
+
+spec 'integers and reals: default equality' do
+  let x1: Any = 7
+  let x2: Any = 5
+  let x3: Any = 5
+  let x4: Any = 7.0
+  let x5: Any = 5.0
+  let x6: Any = 5.0
+
+  x1 should_not_eq x2
+  x1 should_not_eq x3
+  x2 should_eq     x3
+  x4 should_not_eq x5
+  x4 should_not_eq x6
+  x5 should_eq     x6
+  x3 should_eq     x6
+end
+
+spec 'booleans: default equality' do
+  let tru1: Any = true
+  let tru2: Any = true
+  let fls1: Any = false
+  let fls2: Any = false
+
+  tru1 should_eq     tru2
+  fls1 should_eq     fls2
+  tru1 should_not_eq fls1
+end
+
+spec 'strings: default equality' do
+  str1 should_not_eq str2
+  str1 should_eq     str3
+  str2 should_not_eq str3
+end
+
+spec 'symbols: default equality' do
+  let sym1: Any = #name
+  let sym2: Any = #name
+  let sym3: Any = #foo
+  let sym4: Any = #bar
+
+  sym1 should_eq     sym2
+  sym3 should_not_eq sym4
+end
+
+spec 'tuples: default equality' do
+  tpl1 should_not_eq tpl2
+  tpl1 should_not_eq tpl3
+  tpl2 should_eq     tpl3
+end
+
+spec 'tuples: default equality with custom element equality' do
+  (pers1, pers2) should_eq (pers3, pers5)
+  (pers1, pers2, pers3) should_not_eq (pers3, pers4, pers5)
+end
+
+spec 'functions: default equality' do
+  let fun1 = () => println('Hello')
+  let fun2 = () => println('Hello')
+
+  fun1 should_eq     fun1
+  fun2 should_eq     fun2
+  fun1 should_not_eq fun2
+end
+
+spec 'lists: default equality' do
+  let list1 = []
+  let list2 = [str1, str2, str3]
+  let list3 = [str3, str2, str1]
+  let list4 = [tpl1, tpl2, tpl3]
+  let list5 = [tpl1, tpl3, tpl2]
+
+  list1 should_not_eq list2
+  list2 should_eq     list3
+  list3 should_not_eq list4
+  list4 should_eq     list5
+end
+
+spec 'lists: default equality with custom element equality' do
+  [pers1, pers2] should_eq [pers3, pers5]
+  [bag1, bag3] should_eq [bag3, bag1]
+end
+
+spec 'shapes: default equality' do
+  let shp1 = %{ x: 5.0, y: 7.0 }
+  let shp2 = %{ x: 5.0, y: 7.0, z: 1.0 }
+  let shp3 = %{ x: 5.0, y: 9.0 }
+  let shp4 = %{ x: 5.0, y: 7.0, z: 1.0 }
+  let shp5 = %{ x: 5.0, y: 7.0 }
+
+  shp1 should_not_eq shp2
+  shp1 should_not_eq shp3
+  shp1 should_eq     shp5
+  shp2 should_eq     shp4
+  shp2 should_not_eq shp5
+end
+
+spec 'structs: default equality' do
+  let pos1 = Position2(5.0, 7.0)
+  let pos2 = Position3(5.0, 7.0, 1.0)
+  let pos3 = Position2(5.0, 9.0)
+  let pos4 = Position3(5.0, 7.0, 1.0)
+  let pos5 = Position2(5.0, 7.0)
+
+  pos1 should_not_eq pos2
+  pos1 should_not_eq pos3
+  pos1 should_eq     pos5
+  pos2 should_eq     pos4
+  pos2 should_not_eq pos5
+  bag1 should_not_eq bag2
+  bag1 should_eq     bag3
+end
+
+spec 'structs: custom equality' do
+  pers1 should_not_eq pers2
+  pers1 should_eq     pers3
+  pers1 should_not_eq pers4
+  pers2 should_eq     pers5
+end
+
+spec 'structs: type parameters aren\'t taken into account in default equality' do
+  let prm1 = Parameterized[#foo](5)
+  let prm2 = Parameterized[#bar](5)
+  let prm3 = Parameterized[#foo](7)
+  let prm4 = Parameterized[#foo](5)
+
+  prm1 should_eq     prm2
+  prm1 should_not_eq prm3
+  prm1 should_eq     prm4
+end

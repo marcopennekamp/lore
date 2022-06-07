@@ -1,0 +1,24 @@
+module language.dispatch.implicit_sum
+
+func foo(String): Int = 0
+func foo(Int): Int = 1
+func foo(Boolean): Int = 2
+
+@root
+module language.dispatch do
+  use lore.test._
+
+  spec 'implicit_sum: `foo` is called with arguments having sum types (not implemented yet)' do
+    let a: String | Int = 2
+    let b: Boolean | Int = 3
+    let c: String | Boolean = 'Boom'
+
+    // TODO: These calls should compile. The basic idea is that, yes, we have a sum type that `foo` doesn't directly
+    //       declare as being a parameter. However, if there is a value with type `A | B` and we have both `foo(A): C`
+    //       and `foo(B): D`, then we can be SURE that the function will be callable with the given value. The result
+    //       of the function will be `C | D`.
+//  foo(a) should_eq 1
+//  foo(b) should_eq 1
+//  foo(c) should_eq 0
+  end
+end

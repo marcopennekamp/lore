@@ -1,0 +1,24 @@
+module language.functions.map_lists
+
+use lore.Enum.map
+
+func numbers(): [Int] = [1, 2, 3, 4, 5] |> map(v => v + 3)
+
+func names(): [String] = [
+  %{ name: 'Alpha', foo: 23, baz: 10 },
+  %{ name: 'Beta', foo: 5, bar: 34 },
+  %{ name: 'Gamma', foo: 7, bar: 12, baz: 12 },
+] |> map(thing => thing.name)
+
+@root
+module language.functions do
+  use lore.test._
+
+  spec 'map_lists: `numbers` maps a list of numbers' do
+    numbers() should_eq [4, 5, 6, 7, 8]
+  end
+
+  spec 'map_lists: `names` maps a list of shapes to their names' do
+    names() should_eq ['Alpha', 'Beta', 'Gamma']
+  end
+end

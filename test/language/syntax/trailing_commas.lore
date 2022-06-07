@@ -1,0 +1,57 @@
+module language.syntax.trailing_commas
+
+// TODO (maps): Needs map support.
+
+use lore.core.to_string
+//use lore.Map
+use lore.Tuple
+
+trait Thing[A, B,]
+type Thing2[C,] = Thing[C, C,]
+
+struct Ahoo[A](
+  ah: String,
+  woo: A,
+)
+
+func get_tuple(
+  a: A,
+  b: B,
+): (A, B,) where A, B = (
+  a,
+  b,
+)
+
+/*
+func get_map(): #[String -> Int] = #[
+  'Hieronymus' -> 5,
+  'Homunculus' -> 10,
+  'Harbingers' -> 3,
+]
+*/
+
+func get_shape(): %{ name: String, level: Int, } = %{
+  name: 'Aurifana',
+  level: 100,
+}
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'trailing_commas: the compiler can parse trailing commas' do
+    let ahoo = Ahoo[String,](
+      'foo',
+      'bar',
+    )
+    let ahoo2 = Ahoo[Int,] {
+      ah = 'boo',
+      woo = 12,
+    }
+
+    ahoo.woo should_eq 'bar'
+    ahoo2.ah should_eq 'boo'
+    Tuple.second(get_tuple(1, 'hello')) should_eq 'hello'
+    get_shape().name should_eq 'Aurifana'
+  end
+end
