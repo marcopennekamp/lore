@@ -1,6 +1,4 @@
-module language.numbers.combinations
-
-// TODO (specs): Maybe this should be moved to `language/lists` or somewhere else. This isn't really a numbers test.
+module language.lists.combinations
 
 func combinations(list: [Int]): [(Int, Int)] = do
   for a <- list, b <- list yield (a, b)

@@ -1,6 +1,4 @@
-module language.numbers.naivemethic
-
-// TODO (specs): Maybe this should be moved to `examples` or somewhere else. This isn't really a focused feature test.
+module examples.naivemethic
 
 func add(a: Int, b: Int): Int = do
   let mut result = a
@@ -37,7 +35,7 @@ func mul(a: Int, b: Int): Int = do
 end
 
 @root
-module language.numbers do
+module examples do
   use lore.test._
 
   spec 'naivemethic: `mul(12, 5)` evaluates to 60' do
