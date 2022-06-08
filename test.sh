@@ -1,5 +1,7 @@
 #!/bin/bash
-sbt "compiler/run compile test"
+if ! sbt "compiler/run compile test"; then
+  exit 1
+fi
 
 printf "\n"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
