@@ -213,6 +213,11 @@ proc list_filter(frame: FramePtr, arguments: Arguments): TaggedValue =
   let elements = list.elements.filter_it(untag_boolean(evaluator.evaluate_function_value(predicate, frame, it)))
   new_list_value_tagged(elements, list.tpe)
 
+proc math_sqrt(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## sqrt(x: Real): Real
+  let x = arg_real(0)
+  new_real_value_tagged(math.sqrt(x))
+
 proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## println(value: Any): Unit
   echo arg(0)
@@ -261,6 +266,8 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.list.flat_map", list_flat_map, 2),
   intr("lore.list.each", list_each, 2),
   intr("lore.list.filter", list_filter, 2),
+
+  intr("lore.math.sqrt", math_sqrt, 1),
 
   intr("lore.io.println", io_println, 1),
 

@@ -2,4 +2,4 @@ module lore.Math
 
 let pi: Real = 3.14159265359
 
-// TODO (pyramid): Add a `sqrt` function.
+func sqrt(x: Real): Real = intrinsic[Real]('lore.math.sqrt', x)

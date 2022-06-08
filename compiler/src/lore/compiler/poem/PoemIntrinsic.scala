@@ -52,6 +52,8 @@ object PoemIntrinsic {
     intr("lore.list.each", 2),
     intr("lore.list.filter", 2),
 
+    intr("lore.math.sqrt", 1),
+
     intr("lore.io.println", 1),
 
     intr("lore.test.raise_assertion_error", 1),
