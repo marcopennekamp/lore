@@ -3,6 +3,12 @@ module lore.number
 
 use lore.test._
 
+spec '`inf?` recognizes `Real.pos_inf` and `Real.neg_inf`' do
+  inf?(Real.pos_inf) should be_true
+  inf?(Real.neg_inf) should be_true
+  inf?(0.0) should be_false
+end
+
 spec '`min` and `max` return their minimum/maximum arguments' do
   min(-5, 0) should_eq -5
   max(-5, 0) should_eq 0

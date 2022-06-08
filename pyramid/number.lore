@@ -15,20 +15,26 @@ use lore.Option
 use lore.Option.[Some, None]
 
 /**
-  * Whether `value` is even.
+  * Whether `x` is even.
   */
-func even?(value: Int): Boolean = remainder(value, 2) == 0
+func even?(x: Int): Boolean = rem(x, 2) == 0
 
 /**
-  * Whether `value` is odd.
+  * Whether `x` is odd.
   */
-func odd?(value: Int): Boolean = remainder(value, 2) == 1
+func odd?(x: Int): Boolean = rem(x, 2) == 1
 
 /**
-  * Whether `value` is not a number.
+  * Whether `x` is not a number.
   */
-func nan?(value: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', value)
-func nan?(value: Int): Boolean = false
+func nan?(x: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', x)
+func nan?(x: Int): Boolean = false
+
+/**
+  * Whether `x` is either positive or negative infinity.
+  */
+func inf?(x: Real): Boolean = x == Real.pos_inf || x == Real.neg_inf
+func inf?(x: Int): Boolean = false
 
 /**
   * Converts `value` to Real.
@@ -43,37 +49,37 @@ func to_int(value: Real): Int = intrinsic[Int]('lore.real.to_int', value)
 func to_int(value: Int): Int = value
 
 /**
-  * Computes the integer remainder of `a` and `b`.
+  * Computes the integer remainder of `x` and `y`.
   */
-func remainder(a: Int, b: Int): Int = intrinsic[Int]('lore.int.remainder', a, b)
+func rem(x: Int, y: Int): Int = intrinsic[Int]('lore.int.rem', x, y)
 
 /**
-  * Increments `value` by 1.
+  * Increments `x` by 1.
   */
-func increment(value: Int): Int = value + 1
+func inc(x: Int): Int = x + 1
 
 /**
-  * Decrements `value` by 1.
+  * Decrements `x` by 1.
   */
-func decrement(value: Int): Int = value - 1
+func dec(x: Int): Int = x - 1
 
 /**
-  * Returns the minimum of `a` or `b`.
+  * Returns the minimum of `x` or `y`.
   */
-func min(a: Int, b: Int): Int = if a < b then a else b
-func min(a: Real, b: Real): Real = if a < b then a else b
+func min(x: Int, y: Int): Int = if x < y then x else y
+func min(x: Real, y: Real): Real = if x < y then x else y
 
 /**
-  * Returns the maximum of `a` or `b`.
+  * Returns the maximum of `x` or `y`.
   */
-func max(a: Int, b: Int): Int = if a > b then a else b
-func max(a: Real, b: Real): Real = if a > b then a else b
+func max(x: Int, y: Int): Int = if x > y then x else y
+func max(x: Real, y: Real): Real = if x > y then x else y
 
 /**
-  * Computes the absolute value of `value`.
+  * Computes the absolute value of `x`.
   */
-func absolute(value: Int): Int = if value < 0 then -value else value
-func absolute(value: Real): Real = if value < 0 then -value else value
+func abs(x: Int): Int = if x < 0 then -x else x
+func abs(x: Real): Real = if x < 0 then -x else x
 
 /**
   * Computes `base` to the power of `exponent`.
@@ -122,6 +128,16 @@ module Int do
 end
 
 module Real do
+  /**
+    * The IEEE floating point value of positive infinity.
+    */
+  let pos_inf: Real = intrinsic[Real]('lore.real.pos_inf')
+
+  /**
+    * The IEEE floating point value of negative infinity.
+    */
+  let neg_inf: Real = intrinsic[Real]('lore.real.neg_inf')
+
   /**
     * Parses `string` as a Real value. If `string` cannot be parsed as such, `None` is returned. The case-insensitive
     * constants `'nan'`, `'inf'`, and `'-inf'` are supported as well.

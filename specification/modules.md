@@ -32,7 +32,7 @@ The requirement for the `do` when declaring module `Name2` is purely due to pars
 ###### Example (Access)
 
 ```
-lore.Enum.map([1, 2, 3], lore.Math.increment)      // --> [2, 3, 4]
+lore.Enum.map([1, 2, 3], lore.number.inc)          // --> [2, 3, 4]
 lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 ```
 
@@ -130,12 +130,12 @@ The `use` declaration can only be placed at the beginning of a module declaratio
 ```
 // Simple:
 use lore.Enum.map
-use lore.number.increment
-[1, 2, 3] |> map(increment)
+use lore.number.inc
+[1, 2, 3] |> map(inc)
 
 // Multiple:
 use lore.[Enum, number]
-[1, 2, 3] |> Enum.map(number.increment)
+[1, 2, 3] |> Enum.map(number.inc)
 
 // Wildcard:
 use lore.number._

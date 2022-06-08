@@ -1,7 +1,7 @@
 module language.functions.filter_curried
 
 use lore.Enum.[filter, map]
-use lore.number.remainder
+use lore.number.rem
 
 @where A
 func filter_curried(f: A => Boolean): [A] => [A] = do
@@ -21,7 +21,7 @@ module language.functions do
       [],
       [1, 1, 1, 1, 1],
     ]
-    let filtered_data = data |> map(filter_curried(x => remainder(x, 2) == 0))
+    let filtered_data = data |> map(filter_curried(x => rem(x, 2) == 0))
     filtered_data should_eq [[2, 4], [4, 8, 6], [], []]
   end
 end

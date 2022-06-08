@@ -19,9 +19,11 @@ object PoemIntrinsic {
     intr("lore.core.subtype?", 2),
     intr("lore.core.panic", 1),
 
-    intr("lore.int.remainder", 2),
+    intr("lore.int.rem", 2),
     intr("lore.int.to_real", 1),
 
+    intr("lore.real.pos_inf", 0),
+    intr("lore.real.neg_inf", 0),
     intr("lore.real.nan?", 1),
     intr("lore.real.to_int", 1),
     intr("lore.real.floor", 1),

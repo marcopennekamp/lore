@@ -78,14 +78,22 @@ proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## panic(message: String): Nothing
   quit(fmt"Panic: {arg(0)}")
 
-proc int_remainder(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## remainder(a: Int, b: Int): Int
+proc int_rem(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## rem(a: Int, b: Int): Int
   tag_int(arg_int(0) mod arg_int(1))
 
 proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_real(value: Int): Real
   let value = arg_int(0)
   new_real_value_tagged(float64(value))
+
+proc real_pos_inf(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## pos_inf(): Real
+  new_real_value_tagged(Inf)
+
+proc real_neg_inf(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## neg_inf(): Real
+  new_real_value_tagged(NegInf)
 
 proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## nan?(value: Real): Boolean
@@ -238,9 +246,11 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.core.subtype?", core_subtype, 2),
   intr("lore.core.panic", core_panic, 1),
 
-  intr("lore.int.remainder", int_remainder, 2),
+  intr("lore.int.rem", int_rem, 2),
   intr("lore.int.to_real", int_to_real, 1),
 
+  intr("lore.real.pos_inf", real_pos_inf, 0),
+  intr("lore.real.neg_inf", real_neg_inf, 0),
   intr("lore.real.nan?", real_is_nan, 1),
   intr("lore.real.to_int", real_to_int, 1),
   intr("lore.real.floor", real_floor, 1),
