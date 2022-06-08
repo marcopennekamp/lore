@@ -3,6 +3,7 @@ module lore
 module List do
   use lore.core.panic
   use lore.Enum._
+  use lore.number
   use lore.number.odd?
   use lore.Option._
   use lore.sort.merge_sort
@@ -123,6 +124,22 @@ module List do
       split(list, length(list) / 2 + 1)
     else
       split(list, length(list) / 2)
+    end
+  end
+
+  /**
+    * Zips elements from `as` and `bs` into a list of tuples. Spare elements of the longer list are ignored.
+    */
+  @where A, B
+  func zip(as: [A], bs: [B]): [(A, B)] = do
+    // TODO (multi-import): `number.min` should be usable as `min`.
+    let mut i = 0
+    let len = number.min(length(as), length(bs))
+    while i < len
+      let a = get_unchecked!(as, i)
+      let b = get_unchecked!(bs, i)
+      i += 1
+      (a, b)
     end
   end
 
