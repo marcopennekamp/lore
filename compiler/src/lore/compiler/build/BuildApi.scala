@@ -16,15 +16,19 @@ object BuildApi {
 
   val buildFile: Path = Path.of("lore.build.json")
 
-  def build(options: BuildOptions): Unit = {
+  /**
+    * Builds the Lore program according to `options` and returns whether the compilation was successful.
+    */
+  def build(options: BuildOptions): Boolean = {
     implicit val reporter: MemoReporter = MemoReporter()
 
     val compilationStartTime = System.nanoTime()
     val (_, bytecode) = compile(options)
+    bytecode.foreach(writeResult(_)(options))
     val compilationEndTime = System.nanoTime()
 
     logCompilationFeedback(reporter, compilationStartTime, compilationEndTime)(options.compilerOptions)
-    bytecode.foreach(writeResult(_)(options))
+    !reporter.hasErrors
   }
 
   /**
