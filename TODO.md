@@ -4,8 +4,6 @@
 
 ##### Minimum Viable Language
 
-- Implement specs:
-  - Clear all `TODO (specs)` entries.
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
   - Update the specification: `modules.md` and `multi-functions.md` should both mention this compile-time disambiguation.
   - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
@@ -75,6 +73,7 @@
   - Clear all `TODO (syntax)` entries.
 - Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
+- Allow calling a function `f` with an argument `v: A | B` if both `v: A` and `v: B` can be successfully dispatched. This essentially removes the need to declare superfunctions such as `hello(String | Int)`, not only bringing a benefit in succinctness, but also making extending existing library functions easier. It also makes working with sum types easier.
 - Refactor Pyramid and add more types and functions.
   - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
   - Clear all `TODO (pyramid)` entries.
