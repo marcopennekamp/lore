@@ -1,5 +1,8 @@
 module lore.test.expectation
 
+use lore.Function
+use lore.List.[all?, zip]
+use lore.number
 use lore.Option
 use lore.Option.[Some, None]
 
@@ -54,6 +57,35 @@ domain expectation: EqualityExpectation
 
   func negated_failure_message(actual_value: Any): String = do
     'Expected the following values NOT to be equal:\n  - Actual:   $actual_value\n  - Expected: ${expectation.expected_value}'
+  end
+end
+
+// ------------------------------------------------------------------------------------------------------------------ //
+// Approximate equality                                                                                                           //
+// ------------------------------------------------------------------------------------------------------------------ //
+
+struct ApproximateEqualityExpectation(expected_value: ApproximateEqualityExpectation.ExpectedValue) extends Expectation
+
+module ApproximateEqualityExpectation do
+  // Because approximate equality needs to be passed down recursively to the Real values buried in any structure, we
+  // cannot just inject approximate equality into the default `lore.core.equal?`. Hence, the approximate equality
+  // expectation only accepts reals and lists of reals for now.
+  type ExpectedValue = Real | [Real]
+
+  func approx?(x: Any, y: ExpectedValue): Boolean = false
+  func approx?(x: Real, y: Real): Boolean = number.approx?(x, y)
+  func approx?(xs: [Real], ys: [Real]): Boolean = zip(xs, ys) |> all?(Function.tupled(approx?))
+end
+
+domain expectation: ApproximateEqualityExpectation
+  func matches?(actual_value: Any): Boolean = ApproximateEqualityExpectation.approx?(actual_value, expectation.expected_value)
+
+  func failure_message(actual_value: Any): String = do
+    'Expected the following values to be approximately equal:\n  - Actual:   $actual_value\n  - Expected: ${expectation.expected_value}'
+  end
+
+  func negated_failure_message(actual_value: Any): String = do
+    'Expected the following values NOT to be approximately equal:\n  - Actual:   $actual_value\n  - Expected: ${expectation.expected_value}'
   end
 end
 

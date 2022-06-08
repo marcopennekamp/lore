@@ -35,6 +35,7 @@ let be_true: Expectation = BooleanExpectation(true)
 let be_false: Expectation = BooleanExpectation(false)
 
 func eq(expected_value: Any): Expectation = EqualityExpectation(expected_value)
+func approx_eq(expected_value: ApproximateEqualityExpectation.ExpectedValue): Expectation = ApproximateEqualityExpectation(expected_value)
 
 func be_lt(threshold_value: Any): Expectation = InequalityExpectation(InequalityRelation.LessThan, threshold_value)
 func be_lte(threshold_value: Any): Expectation = InequalityExpectation(InequalityRelation.LessThanEqual, threshold_value)
