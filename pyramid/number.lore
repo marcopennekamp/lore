@@ -11,6 +11,7 @@ module lore.number
 // TODO (pyramid): Implement `even?` and `odd?` with bitwise operations.
 
 use lore.Enum.fold
+use lore.Math.sqrt
 use lore.Option
 use lore.Option.[Some, None]
 
@@ -35,6 +36,31 @@ func nan?(x: Int): Boolean = false
   */
 func inf?(x: Real): Boolean = x == Real.pos_inf || x == Real.neg_inf
 func inf?(x: Int): Boolean = false
+
+/**
+  * Whether `x` and `y` are approximately equal. The calculation uses a relative tolerance measure with `Real.epsilon`
+  * as a base. NaN values cannot be approximately equal. Infinite values can only be exactly equal.
+  *
+  * The relative tolerance measure is defined as `sqrt(Real.epsilon)`, which requires equality of about half the
+  * significand bits (`Real.epsilon` would require equality of all but the least significand bit). This is a good
+  * choice for approximation if domain knowledge about the computation is lacking.
+  *
+  * `abs(x - y)` is compared to an absolute tolerance, which is computed from the relative tolerance scaled with
+  * `max(abs(x), abs(y))`. Scaling the relative tolerance ensures that rounding errors are taken into account
+  * independent of the exponents of `x` and `y`, as rounding errors occur in the significand bits.
+  *
+  * See:
+  *   - https://github.com/apple/swift-evolution/blob/main/proposals/0259-approximately-equal.md
+  *   - https://github.com/JuliaLang/julia/blob/b5871eb1b5def4b6ef6be15a8ef53cfb8e4fe309/base/floatfuncs.jl#L304
+  */
+func approx?(x: Real, y: Real): Boolean = do
+  if x == y then return true
+  if nan?(x) || nan?(y) || inf?(x) || inf?(y) then return false
+
+  let tolerance = sqrt(Real.epsilon)
+  let scale = max(abs(x), abs(y))
+  abs(x - y) <= tolerance * scale
+end
 
 /**
   * Converts `value` to Real.
@@ -137,6 +163,12 @@ module Real do
     * The IEEE floating point value of negative infinity.
     */
   let neg_inf: Real = intrinsic[Real]('lore.real.neg_inf')
+
+  /**
+    * The machine epsilon value for double-precision floating point values (Reals). Used in `lore.number.approx?` to
+    * calculate approximate equality of reals.
+    */
+  let epsilon: Real = 0.00000000000000022204460492503131
 
   /**
     * Parses `string` as a Real value. If `string` cannot be parsed as such, `None` is returned. The case-insensitive

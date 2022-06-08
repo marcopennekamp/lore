@@ -9,6 +9,32 @@ spec '`inf?` recognizes `Real.pos_inf` and `Real.neg_inf`' do
   inf?(0.0) should be_false
 end
 
+spec '`approx?` calculates approximate equality of positive and negative numbers' do
+  approx?(25.253084843001, 25.253084843) should be_true
+  approx?(25.253084843001, 24.385738722382) should be_false
+  approx?(-25.253084843001, -25.253084843) should be_true
+  approx?(-25.253084843001, -24.385738722382) should be_false
+  approx?(25.253084843001, -25.253084843) should be_false
+  approx?(-25.253084843001, 25.253084843) should be_false
+end
+
+spec '`approx?` considers edge cases (0, epsilon, infinities)' do
+  approx?(0.0, 0.0) should be_true
+  approx?(Real.epsilon, Real.epsilon) should be_true
+
+  approx?(1.0, 1.0 + 2 * Real.epsilon) should be_true
+  approx?(1.0, 1.0 - 2 * Real.epsilon) should be_true
+  approx?(-1.0, -1.0 + 2 * Real.epsilon) should be_true
+  approx?(-1.0, -1.0 - 2 * Real.epsilon) should be_true
+  approx?(1.0, -1.0 + 2 * Real.epsilon) should be_false
+  approx?(-1.0, 1.0 - 2 * Real.epsilon) should be_false
+
+  approx?(Real.pos_inf, Real.pos_inf) should be_true
+  approx?(Real.neg_inf, Real.neg_inf) should be_true
+  approx?(Real.pos_inf, Real.neg_inf) should be_false
+  approx?(Real.neg_inf, Real.pos_inf) should be_false
+end
+
 spec '`min` and `max` return their minimum/maximum arguments' do
   min(-5, 0) should_eq -5
   max(-5, 0) should_eq 0
