@@ -2,10 +2,10 @@ package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.bindings.{LocalVariable, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression._
-import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor, ExpressionVisitor}
+import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable.Assignments
 
@@ -96,7 +96,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     )
   }
 
-  private def instantiateBinding(binding: TypedBinding): TypedBinding = binding match {
+  private def instantiateBinding(binding: TypedTermBinding): TypedTermBinding = binding match {
     case variable: LocalVariable => instantiateVariable(variable)
     case v => v
   }

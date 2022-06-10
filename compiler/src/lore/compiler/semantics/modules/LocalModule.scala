@@ -2,7 +2,7 @@ package lore.compiler.semantics.modules
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.modules.LocalModule.ImportMap
-import lore.compiler.semantics.{NameKind, NamePath}
+import lore.compiler.semantics.{BindingKind, NamePath}
 import lore.compiler.syntax.DeclNode
 
 /**
@@ -16,22 +16,22 @@ import lore.compiler.syntax.DeclNode
   * their connection to the other local declarations. It also requires us to create a parent/child relationship between
   * nested local modules.
   *
-  * Import maps are separated by name kind because some types and their corresponding modules may be placed in
+  * Import maps are separated by binding kind because some types and their corresponding modules may be placed in
   * different namespaces. This is the case with the String type, which as a basic type is placed in the root namespace,
   * and the corresponding module `lore.String`.
   *
   * @param localTypeNames Even though these names can be derived from `members`, we don't want `localTypeNames` and
-  *                       `localBindingNames` to have to be recreated every time a LocalModule is copied (for
-  *                       successively populating the import maps).
+  *                       `localTermNames` to have to be recreated every time a LocalModule is copied (for successively
+  *                       populating the import maps).
   */
 case class LocalModule(
   modulePath: NamePath,
   parent: Option[LocalModule],
   members: Vector[DeclNode],
   localTypeNames: Set[String],
-  localBindingNames: Set[String],
+  localTermNames: Set[String],
   typeImportMap: ImportMap,
-  bindingImportMap: ImportMap,
+  termImportMap: ImportMap,
   position: Position,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
   /**
@@ -42,20 +42,20 @@ case class LocalModule(
     *
     * To decide global membership, the [[GlobalModuleIndex]] is taken into consideration.
     */
-  def getAbsolutePath(memberName: String, nameKind: NameKind): Option[NamePath] = {
-    getAbsolutePathLocally(memberName, nameKind).orElse(getAbsolutePathGlobally(memberName, nameKind))
+  def getAbsolutePath(memberName: String, bindingKind: BindingKind): Option[NamePath] = {
+    getAbsolutePathLocally(memberName, bindingKind).orElse(getAbsolutePathGlobally(memberName, bindingKind))
   }
 
   /**
     * Returns an absolute name path for `memberName` if it occurs in this local module or a parent local module, either
     * as a declaration or an import.
     */
-  protected def getAbsolutePathLocally(memberName: String, nameKind: NameKind): Option[NamePath] = {
-    if (namesOf(nameKind).contains(memberName)) {
+  protected def getAbsolutePathLocally(memberName: String, bindingKind: BindingKind): Option[NamePath] = {
+    if (namesOf(bindingKind).contains(memberName)) {
       Some(modulePath + memberName)
     } else {
-      importMapOf(nameKind).get(memberName).orElse(
-        parent.flatMap(_.getAbsolutePathLocally(memberName, nameKind))
+      importMapOf(bindingKind).get(memberName).orElse(
+        parent.flatMap(_.getAbsolutePathLocally(memberName, bindingKind))
       )
     }
   }
@@ -64,11 +64,11 @@ case class LocalModule(
     * Returns an absolute name path for `memberName` if it occurs in this local module's global definitions, or those
     * of a parent local module or the root module.
     */
-  protected def getAbsolutePathGlobally(memberName: String, nameKind: NameKind): Option[NamePath] = {
-    globalModuleIndex.getModule(modulePath).flatMap(_.getAbsolutePath(memberName, nameKind)).orElse {
+  protected def getAbsolutePathGlobally(memberName: String, bindingKind: BindingKind): Option[NamePath] = {
+    globalModuleIndex.getModule(modulePath).flatMap(_.getAbsolutePath(memberName, bindingKind)).orElse {
       parent match {
-        case Some(parent) => parent.getAbsolutePathGlobally(memberName, nameKind)
-        case None => globalModuleIndex.root.getAbsolutePath(memberName, nameKind)
+        case Some(parent) => parent.getAbsolutePathGlobally(memberName, bindingKind)
+        case None => globalModuleIndex.root.getAbsolutePath(memberName, bindingKind)
       }
     }
   }
@@ -79,21 +79,21 @@ case class LocalModule(
     */
   def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
     if (!relativePath.isMultiple) {
-      getAbsolutePath(relativePath.simpleName, NameKind.Type)
+      getAbsolutePath(relativePath.simpleName, BindingKind.Type)
     } else {
-      getAbsolutePath(relativePath.headName, NameKind.Binding)
+      getAbsolutePath(relativePath.headName, BindingKind.Term)
         .map(_ ++ relativePath.tail)
     }
   }
 
-  private def namesOf(nameKind: NameKind): Set[String] = nameKind match {
-    case NameKind.Type => localTypeNames
-    case NameKind.Binding => localBindingNames
+  private def namesOf(bindingKind: BindingKind): Set[String] = bindingKind match {
+    case BindingKind.Type => localTypeNames
+    case BindingKind.Term => localTermNames
   }
 
-  private def importMapOf(nameKind: NameKind): ImportMap = nameKind match {
-    case NameKind.Type => typeImportMap
-    case NameKind.Binding => bindingImportMap
+  private def importMapOf(bindingKind: BindingKind): ImportMap = bindingKind match {
+    case BindingKind.Type => typeImportMap
+    case BindingKind.Term => termImportMap
   }
 }
 

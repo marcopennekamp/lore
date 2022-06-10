@@ -1,4 +1,4 @@
-package lore.compiler.semantics.scopes
+package lore.compiler.semantics.bindings
 
 import lore.compiler.core.UniqueKey
 import lore.compiler.types.Type
@@ -30,7 +30,7 @@ case class LocalVariable(
   name: String,
   tpe: Type,
   override val isMutable: Boolean,
-) extends TypedBinding {
+) extends TypedTermBinding {
   override def equals(obj: Any): Boolean = obj match {
     case other: LocalVariable => this.uniqueKey == other.uniqueKey
     case _ => false

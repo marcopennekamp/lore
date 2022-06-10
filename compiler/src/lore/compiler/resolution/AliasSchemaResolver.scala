@@ -7,9 +7,9 @@ import lore.compiler.types._
 
 object AliasSchemaResolver {
 
-  def resolve(node: DeclNode.AliasNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): AliasSchema = {
+  def resolve(node: DeclNode.AliasNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): AliasSchema = {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
-      implicit typeScope => implicit bindingScope => typeParameters =>
+      implicit typeScope => implicit termScope => typeParameters =>
         val originalType = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
         new AliasSchema(node.fullName, typeParameters, originalType)
     }

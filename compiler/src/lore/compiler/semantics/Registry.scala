@@ -1,5 +1,6 @@
 package lore.compiler.semantics
 
+import lore.compiler.semantics.bindings.StructBinding
 import lore.compiler.semantics.core.CoreDefinitions
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
@@ -15,7 +16,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   */
 case class Registry(
   types: Registry.Types,
-  bindings: Registry.Bindings,
+  terms: Registry.Terms,
   specs: Registry.Specs,
   core: CoreDefinitions,
   schemaResolutionOrder: Registry.SchemaResolutionOrder,
@@ -41,8 +42,8 @@ case class Registry(
     */
   def definitionsIterator: Iterator[Definition] = {
     schemaDefinitionsInOrder.iterator ++
-      bindings.globalVariables.valuesIterator ++
-      bindings.multiFunctions.valuesIterator ++
+      terms.globalVariables.valuesIterator ++
+      terms.multiFunctions.valuesIterator ++
       specs.iterator
   }
 
@@ -52,9 +53,9 @@ case class Registry(
   def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = types.scope(localModule)
 
   /**
-    * Creates a binding scope that represents the Registry. Name resolution requires the presence of a local module.
+    * Creates a term scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getBindingScope(localModule: LocalModule): LocalModuleBindingScope = bindings.scope(localModule)
+  def getTermScope(localModule: LocalModule): LocalModuleTermScope = terms.scope(localModule)
 
 }
 
@@ -74,13 +75,13 @@ object Registry {
   type MultiFunctions = Map[NamePath, MultiFunctionDefinition]
   type StructBindings = Map[NamePath, StructBinding]
 
-  case class Bindings(
+  case class Terms(
     modules: Modules,
     globalVariables: GlobalVariables,
     multiFunctions: MultiFunctions,
     structBindings: StructBindings,
   ) {
-    def scope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, this)
+    def scope(localModule: LocalModule): LocalModuleTermScope = LocalModuleTermScope(localModule, this)
   }
 
   type Specs = Vector[SpecDefinition]

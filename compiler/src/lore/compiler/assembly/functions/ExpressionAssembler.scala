@@ -7,10 +7,10 @@ import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}
-import lore.compiler.semantics.scopes.LocalVariable
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -136,7 +136,7 @@ class ExpressionAssembler(
 
   private def handle(expression: Block): Chunk = Chunk.concat(generate(expression.expressions))
 
-  private def handle(expression: BindingAccess): Chunk = TypedBindingAssembler.generate(expression.binding)
+  private def handle(expression: BindingAccess): Chunk = TypedTermBindingAssembler.generate(expression.binding)
 
   private def handle(expression: MemberAccess): Chunk = {
     val target = registerProvider.fresh()

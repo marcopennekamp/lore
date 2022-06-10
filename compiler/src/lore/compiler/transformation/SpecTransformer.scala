@@ -12,7 +12,7 @@ object SpecTransformer {
       spec.bodyNode,
       TupleType.UnitType,
       registry.getTypeScope(spec.localModule),
-      registry.getBindingScope(spec.localModule),
+      registry.getTermScope(spec.localModule),
       s"spec ${spec.localModule.modulePath} '${spec.description}'",
     )
   }

@@ -3,7 +3,7 @@ package lore.compiler.transformation
 import lore.compiler.feedback.{MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
+import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.Type
@@ -22,11 +22,11 @@ object ExpressionTransformer {
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
-    bindingScope: BindingScope,
+    termScope: TermScope,
     label: String,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     MemoReporter.nested(reporter) { implicit reporter =>
-      val visitor = new ExpressionTransformationVisitor(typeScope, bindingScope)
+      val visitor = new ExpressionTransformationVisitor(typeScope, termScope)
       val expression = TopLevelExprVisitor.visit(visitor)(node)
 
       // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might

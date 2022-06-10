@@ -3,7 +3,7 @@ package lore.compiler.transformation
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.scopes.FunctionBindingScope
+import lore.compiler.semantics.scopes.FunctionTermScope
 
 object FunctionTransformer {
 
@@ -18,7 +18,7 @@ object FunctionTransformer {
           node,
           function.signature.outputType,
           function.getTypeScope,
-          function.getBindingScope,
+          function.getTermScope,
           function.name.toString,
         )
       )

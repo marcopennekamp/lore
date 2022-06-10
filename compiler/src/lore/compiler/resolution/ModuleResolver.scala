@@ -4,8 +4,8 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.semantics.modules.LocalModule.ImportMap
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
-import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, NamedDeclNode, TypeDeclNode}
+import lore.compiler.semantics.{BindingKind, NamePath}
+import lore.compiler.syntax.{TermDeclNode, DeclNode, NamedDeclNode, TypeDeclNode}
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -22,7 +22,7 @@ object ModuleResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): (Vector[LocalModule], GlobalModuleIndex) = {
     // Step 1: Build the ModuleNodeIndex, which will be used to resolve name paths for imports and scopes.
     implicit val globalModuleIndex: GlobalModuleIndex = new GlobalModuleIndex
-    Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.addMember(tpe.name, NameKind.Type))
+    Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.addMember(tpe.name, BindingKind.Type))
     moduleNodes.foreach(globalModuleIndex.addNodeToRoot)
 
     // Step 2: Flatten module nodes and resolve imports.
@@ -57,7 +57,7 @@ object ModuleResolver {
       moduleNode.members.filterType[TypeDeclNode].map(_.simpleName).toSet
     }
 
-    val localBindingNames: Set[String] = {
+    val localTermNames: Set[String] = {
       moduleNode.members.flatMap {
         // At-root module declarations shouldn't be added as local bindings, per the specification.
         case node: DeclNode.ModuleNode if node.atRoot => None
@@ -66,7 +66,7 @@ object ModuleResolver {
         // struct aliases.
         case node: DeclNode.StructNode => Some(node.simpleName)
         case node: DeclNode.AliasNode if node.isStructAlias => Some(node.simpleName)
-        case node: BindingDeclNode => Some(node.simpleName)
+        case node: TermDeclNode => Some(node.simpleName)
         case _ => None
       }.toSet
     }
@@ -76,7 +76,7 @@ object ModuleResolver {
       parent,
       moduleNode.members,
       localTypeNames,
-      localBindingNames,
+      localTermNames,
       Map.empty,
       Map.empty,
       moduleNode.namePathNode.position
@@ -124,8 +124,8 @@ object ModuleResolver {
 
     // The head segment is the segment that we have to resolve to get the absolute import path. Because the head
     // segment must be a module to contain any meaningful members to import, we can avoid calling `getPath` with
-    // `NameKind.Type`.
-    val absolutePath = localModule.getAbsolutePath(importPath.headName, NameKind.Binding).map(prefix => prefix ++ importPath.tail) match {
+    // `BindingKind.Type`.
+    val absolutePath = localModule.getAbsolutePath(importPath.headName, BindingKind.Term).map(prefix => prefix ++ importPath.tail) match {
       case Some(absolutePath) => absolutePath
       case None =>
         reporter.error(ModuleFeedback.Import.UnresolvedHeadSegment(importNode, importPath.headName))
@@ -135,24 +135,24 @@ object ModuleResolver {
     // The second step depends on whether the import is a wildcard import. If it is, we can get the global module for
     // the absolute path, as a wildcard import path describes a module. If the import is single, we must verify that
     // the absolute path is valid.
-    val (importedTypes, importedBindings) = if (importNode.isWildcard) {
+    val (importedTypes, importedTerms) = if (importNode.isWildcard) {
       val globalModule = globalModuleIndex.getModule(absolutePath).getOrElse {
         reporter.error(ModuleFeedback.Import.Wildcard.NotFound(importNode, absolutePath))
         return localModule
       }
 
       def pathsFor(names: Set[String]) = names.toVector.map(absolutePath + _)
-      (pathsFor(globalModule.typeNames), pathsFor(globalModule.bindingNames))
+      (pathsFor(globalModule.typeNames), pathsFor(globalModule.termNames))
     } else {
       if (!globalModuleIndex.has(absolutePath)) {
         reporter.error(ModuleFeedback.Import.NotFound(importNode, absolutePath))
         return localModule
       }
 
-      def pathsFor(nameKind: NameKind) = {
-        if (globalModuleIndex.has(absolutePath, nameKind)) Vector(absolutePath) else Vector.empty
+      def pathsFor(bindingKind: BindingKind) = {
+        if (globalModuleIndex.has(absolutePath, bindingKind)) Vector(absolutePath) else Vector.empty
       }
-      (pathsFor(NameKind.Type), pathsFor(NameKind.Binding))
+      (pathsFor(BindingKind.Type), pathsFor(BindingKind.Term))
     }
 
     def updateImportMap(importMap: ImportMap, namePaths: Vector[NamePath]): ImportMap = {
@@ -163,7 +163,7 @@ object ModuleResolver {
 
     localModule.copy(
       typeImportMap = updateImportMap(localModule.typeImportMap, importedTypes),
-      bindingImportMap = updateImportMap(localModule.bindingImportMap, importedBindings),
+      termImportMap = updateImportMap(localModule.termImportMap, importedTerms),
     )
   }
 

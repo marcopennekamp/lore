@@ -11,7 +11,7 @@ object GlobalVariableTransformer {
       variable.valueNode,
       variable.tpe,
       registry.getTypeScope(variable.localModule),
-      registry.getBindingScope(variable.localModule),
+      registry.getTermScope(variable.localModule),
       variable.name.toString,
     )
   }

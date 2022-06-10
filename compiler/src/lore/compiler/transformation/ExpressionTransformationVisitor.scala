@@ -5,6 +5,7 @@ import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Report
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, StructObjectBinding, TermBinding, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
@@ -23,16 +24,16 @@ class ExpressionTransformationVisitor(
   typeScope: TypeScope,
 
   /**
-    * The binding scope of the surrounding code, such as a function scope.
+    * The term scope of the surrounding code, such as a function's term scope.
     */
-  bindingScope: BindingScope,
+  termScope: TermScope,
 )(implicit registry: Registry, reporter: Reporter) extends TopLevelExprVisitor[Expression, Id] {
 
   import ExprNode._
   import TopLevelExprNode._
 
-  val scopeContext = new ScopeContext(bindingScope)
-  implicit def currentScope: BindingScope = scopeContext.currentScope
+  val scopeContext = new ScopeContext(termScope)
+  implicit def currentScope: TermScope = scopeContext.currentScope
   implicit val typeScopeImplicit: TypeScope = typeScope
 
   override def visitLeaf(node: LeafNode): Expression = node match {
@@ -196,14 +197,14 @@ class ExpressionTransformationVisitor(
         Expression.Call(CallTarget.Value(target), expressions, new InferenceVariable, position)
       }
 
-      def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
+      def handleSingleBinding(binding: TermBinding): Option[Expression.Call] = {
         binding match {
           case mf: MultiFunctionDefinition => Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
           case structBinding: StructConstructorBinding => Some(Expression.Call(CallTarget.Constructor(structBinding), expressions, new InferenceVariable, position))
           case structObject: StructObjectBinding =>
             reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
             None
-          case binding: TypedBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
+          case binding: TypedTermBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
         }
       }
 

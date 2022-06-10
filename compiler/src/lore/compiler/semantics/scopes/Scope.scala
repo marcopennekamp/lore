@@ -53,15 +53,13 @@ trait Scope[A] {
 
   /**
     * Resolves an entry that is either plainly named with a simple name, or belongs to a module. In the latter case,
-    * the head segment of the name path must refer to a module name.
+    * the initial segments of the name path must refer to modules. `resolveStatic` should be used in cases where
+    * members of other bindings (such as struct object properties) should be explicitly excluded. In other words, only
+    * <i>static</i> terms and types are considered.
     *
-    * This function should be used in cases where members of other bindings (such as struct properties) should be
-    * explicitly excluded. In other words, only <i>static</i> bindings and types are considered.
+    * To use this function from outside the scope, use the `resolveStatic` functions in Term and TypeScope.
     *
-    * To use this function from outside the scope, please use the `resolveStatic` functions in BindingScope and
-    * TypeScope.
-    *
-    * To resolve the correct module, this function requires a [[BindingScope]]. Supplying a LocalModule is not
+    * To resolve the correct module, this function requires a [[TermScope]]. Supplying a LocalModule is not
     * sufficient, because module names are shadowed by e.g. local variable names. Code such as this should not compile:
     *
     * <pre>
@@ -73,14 +71,18 @@ trait Scope[A] {
     * `foo` should refer to the local variable here, not the module. Hence, using a LocalModule is not sufficient for
     * module name resolution.
     */
-  protected def resolveStatic(namePath: NamePath, bindingScope: BindingScope, position: Position)(implicit reporter: Reporter): Option[A] = {
+  protected def resolveStatic(
+    namePath: NamePath,
+    termScope: TermScope,
+    position: Position,
+  )(implicit reporter: Reporter): Option[A] = {
     // If the name path only contains a single segment, we don't need to resolve any module paths.
     if (!namePath.isMultiple) {
       return resolve(namePath.simpleName, position)
     }
 
-    // To get the correct binding which we can jump off of, we have to search with the name path's head name.
-    bindingScope.get(namePath.headName) match {
+    // To get the correct term which we can jump off of, we have to search with the name path's head name.
+    termScope.get(namePath.headName) match {
       case Some(binding) => binding match {
         case module: GlobalModule => resolveGlobal(module.name ++ namePath.tail, position)
         case _ =>

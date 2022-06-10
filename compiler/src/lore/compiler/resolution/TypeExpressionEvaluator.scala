@@ -2,7 +2,7 @@ package lore.compiler.resolution
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
+import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVectorExtension}
@@ -22,10 +22,10 @@ object TypeExpressionEvaluator {
   }
 
   /**
-    * @param bindingScope The binding scope is required to properly resolve modules containing types, for qualified
-    *                     type names.
+    * @param termScope The term scope is required to properly resolve modules containing types, for qualified type
+    *                  names.
     */
-  def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Option[Type] = {
+  def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): Option[Type] = {
     expression match {
       case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolveStatic(node.namePath, position).map {
         case tpe: NamedType => tpe
@@ -57,7 +57,7 @@ object TypeExpressionEvaluator {
     }
   }
 
-  private def evaluateShape(expression: TypeExprNode.ShapeNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): ShapeType = {
+  private def evaluateShape(expression: TypeExprNode.ShapeNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): ShapeType = {
     ShapeType(
       expression.properties
         .filterDuplicates(_.name, DuplicateProperty)
@@ -65,7 +65,7 @@ object TypeExpressionEvaluator {
     )
   }
 
-  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): ShapeType.Property = {
+  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): ShapeType.Property = {
     val tpe = evaluate(expression.tpe).getOrElse(BasicType.Any)
     ShapeType.Property(expression.name, tpe)
   }

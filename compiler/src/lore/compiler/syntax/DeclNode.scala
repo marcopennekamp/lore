@@ -41,9 +41,9 @@ sealed trait PathNamedDeclNode extends NamedDeclNode {
 }
 
 /**
-  * Top-level binding declarations.
+  * Top-level term declarations.
   */
-sealed trait BindingDeclNode extends NamedDeclNode
+sealed trait TermDeclNode extends NamedDeclNode
 
 /**
   * Top-level type declarations.
@@ -60,7 +60,7 @@ object DeclNode {
     imports: Vector[ImportNode],
     members: Vector[DeclNode],
     position: Position,
-  ) extends BindingDeclNode with PathNamedDeclNode
+  ) extends TermDeclNode with PathNamedDeclNode
 
   case class ImportNode(
     namePathNode: NamePathNode,
@@ -73,7 +73,7 @@ object DeclNode {
     tpe: TypeExprNode,
     value: ExprNode,
     position: Position,
-  ) extends BindingDeclNode with SimpleNamedDeclNode
+  ) extends TermDeclNode with SimpleNamedDeclNode
 
   /**
     * Function declarations. These include action declarations, which are resolved as syntactic sugar by the parser.
@@ -88,7 +88,7 @@ object DeclNode {
     typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode],
     position: Position,
-  ) extends BindingDeclNode with SimpleNamedDeclNode {
+  ) extends TermDeclNode with SimpleNamedDeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 

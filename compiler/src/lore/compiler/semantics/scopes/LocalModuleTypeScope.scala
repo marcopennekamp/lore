@@ -1,7 +1,7 @@
 package lore.compiler.semantics.scopes
 
 import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.semantics.{NameKind, NamePath, Registry}
+import lore.compiler.semantics.{BindingKind, NamePath, Registry}
 import lore.compiler.types.NamedSchema
 
 /**
@@ -12,7 +12,7 @@ case class LocalModuleTypeScope(
   types: Registry.Types,
 ) extends TypeScope {
   override protected def local(name: String): Option[NamedSchema] = {
-    localModule.getAbsolutePath(name, NameKind.Type).flatMap(global)
+    localModule.getAbsolutePath(name, BindingKind.Type).flatMap(global)
   }
 
   override def global(absolutePath: NamePath): Option[NamedSchema] = types.schemas.get(absolutePath)

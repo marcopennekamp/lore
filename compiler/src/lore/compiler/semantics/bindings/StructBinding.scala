@@ -1,10 +1,10 @@
-package lore.compiler.semantics.scopes
+package lore.compiler.semantics.bindings
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.bindings.StructConstructorBinding.InstantiationSchema
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.scopes.StructConstructorBinding.InstantiationSchema
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
@@ -12,14 +12,14 @@ import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 // TODO: We could roll StructObjectBindings into GlobalVariableDefinitions, that is, generating a semantic global
 //       variable for each struct object. This might simplify the whole StructBinding business.
 
-sealed trait StructBinding extends Binding {
+sealed trait StructBinding extends TermBinding {
   def definition: StructDefinition
 }
 
 /**
-  * A struct constructor binding represents constructors as bindings and allows instantiating a specific underlying
-  * struct type and its constructor. The instantiation may require a type parameter list that is different from the
-  * struct schema's original type parameters. This is due to the ability of (parameterized) type aliases to be used as
+  * A struct constructor binding represents constructors as terms and allows instantiating a specific underlying struct
+  * type and its constructor. The instantiation may require a type parameter list that is different from the struct
+  * schema's original type parameters. This is due to the ability of (parameterized) type aliases to be used as
   * constructor names.
   */
 case class StructConstructorBinding(
@@ -62,6 +62,6 @@ object StructConstructorBinding {
 
 }
 
-case class StructObjectBinding(name: NamePath, tpe: StructType) extends StructBinding with TypedBinding {
+case class StructObjectBinding(name: NamePath, tpe: StructType) extends StructBinding with TypedTermBinding {
   override val definition: StructDefinition = tpe.schema.definition
 }

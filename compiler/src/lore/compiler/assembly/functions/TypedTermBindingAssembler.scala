@@ -2,12 +2,12 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
 import lore.compiler.poem.PoemInstruction
-import lore.compiler.semantics.scopes.{LocalVariable, StructObjectBinding, TypedBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, StructObjectBinding, TypedTermBinding}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 
-object TypedBindingAssembler {
+object TypedTermBindingAssembler {
 
-  def generate(binding: TypedBinding)(
+  def generate(binding: TypedTermBinding)(
     implicit registerProvider: RegisterProvider,
     variableRegisterMap: VariableRegisterMap,
     capturedVariableMap: CapturedVariableMap,

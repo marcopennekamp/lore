@@ -1,10 +1,10 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.Positioned
+import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.scopes.StructConstructorBinding
 import lore.compiler.types.{DeclaredType, FunctionType, TupleType, Type}
 
 object TypingFeedback {

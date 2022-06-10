@@ -18,7 +18,7 @@ object StructTransformer {
           node,
           property.tpe,
           struct.schema.getTypeScope(registry.getTypeScope(struct.localModule)),
-          registry.getBindingScope(struct.localModule),
+          registry.getTermScope(struct.localModule),
           s"${struct.name}.${property.name}",
         )
       }

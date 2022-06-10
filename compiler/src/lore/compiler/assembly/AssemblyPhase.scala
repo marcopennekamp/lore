@@ -36,13 +36,13 @@ object AssemblyPhase {
       case _ =>
     }
 
-    registry.bindings.globalVariables.values.foreach { global =>
+    registry.terms.globalVariables.values.foreach { global =>
       val (poemGlobalVariable, poemInitializerFunctions) = GlobalVariableAssembler.generate(global)
       poemGlobalVariables :+= poemGlobalVariable
       poemFunctions ++= poemInitializerFunctions
     }
 
-    registry.bindings.multiFunctions.values.foreach { mf =>
+    registry.terms.multiFunctions.values.foreach { mf =>
       mf.functions.foreach { function =>
         poemFunctions ++= FunctionAssembler.generate(function)
       }

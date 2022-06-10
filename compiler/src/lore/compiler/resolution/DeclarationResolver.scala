@@ -1,8 +1,8 @@
 package lore.compiler.resolution
 
 import lore.compiler.feedback._
-import lore.compiler.semantics.Registry.Bindings
-import lore.compiler.semantics.scopes.{StructConstructorBinding, StructObjectBinding}
+import lore.compiler.semantics.Registry.Terms
+import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.semantics.{Definition, NamePath, NamedDefinition, Registry}
@@ -26,7 +26,7 @@ object DeclarationResolver {
     val moduleDefinitions = globalModuleIndex.modules.map {
       module => module.name -> module
     }.toMap
-    val bindings1: Registry.Bindings = Registry.Bindings(moduleDefinitions, Map.empty, Map.empty, Map.empty)
+    val terms1: Registry.Terms = Registry.Terms(moduleDefinitions, Map.empty, Map.empty, Map.empty)
 
     val allDeclarations = localModules.flatMap(_.members)
     val typeDeclNodes = allDeclarations.filterType[TypeDeclNode]
@@ -39,24 +39,24 @@ object DeclarationResolver {
     }
     val schemaResolutionOrder = TypeDependencies.resolve(typeDeclarations)
 
-    val schemas = resolveSchemasInOrder(typeDeclarations, schemaResolutionOrder)(bindings1, reporter)
-    val schemaDefinitions = resolveSchemaDefinitionsInOrder(typeDeclarations, schemaResolutionOrder, schemas)(bindings1, reporter)
+    val schemas = resolveSchemasInOrder(typeDeclarations, schemaResolutionOrder)(terms1, reporter)
+    val schemaDefinitions = resolveSchemaDefinitionsInOrder(typeDeclarations, schemaResolutionOrder, schemas)(terms1, reporter)
     implicit val types: Registry.Types = Registry.Types(schemas, schemaDefinitions)
 
-    val globalVariables = resolveGlobalVariables(globalVariableDeclarations)(types, bindings1, reporter)
-    val bindings2 = bindings1.copy(globalVariables = globalVariables)
+    val globalVariables = resolveGlobalVariables(globalVariableDeclarations)(types, terms1, reporter)
+    val terms2 = terms1.copy(globalVariables = globalVariables)
 
-    val multiFunctions = resolveMultiFunctions(multiFunctionDeclarations)(types, bindings2, reporter)
-    val bindings3 = bindings2.copy(multiFunctions = multiFunctions)
+    val multiFunctions = resolveMultiFunctions(multiFunctionDeclarations)(types, terms2, reporter)
+    val terms3 = terms2.copy(multiFunctions = multiFunctions)
 
-    val structBindings = resolveStructBindings()(types, bindings3, reporter)
-    val bindings4 = bindings3.copy(structBindings = structBindings)
+    val structBindings = resolveStructBindings()(types, terms3, reporter)
+    val terms4 = terms3.copy(structBindings = structBindings)
 
-    verifyBindingsUnique(bindings4)
+    verifyTermsUnique(terms4)
 
-    val specs = resolveSpecs(specDeclarations)(types, bindings4, reporter)
-    val coreDefinitions = CoreDefinitionsResolver.resolve()(types, bindings4, reporter)
-    Registry(types, bindings4, specs, coreDefinitions, schemaResolutionOrder)
+    val specs = resolveSpecs(specDeclarations)(types, terms4, reporter)
+    val coreDefinitions = CoreDefinitionsResolver.resolve()(types, terms4, reporter)
+    Registry(types, terms4, specs, coreDefinitions, schemaResolutionOrder)
   }
 
   private def processTypeDeclaration(declaration: TypeDeclNode, declarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarations = {
@@ -75,7 +75,7 @@ object DeclarationResolver {
   private def resolveSchemasInOrder(
     typeDeclarations: TypeDeclarations,
     schemaResolutionOrder: Registry.SchemaResolutionOrder,
-  )(implicit bindings: Bindings, reporter: Reporter): Registry.Schemas = {
+  )(implicit terms: Terms, reporter: Reporter): Registry.Schemas = {
     schemaResolutionOrder.foldLeft(Type.predefinedTypes: Registry.Schemas) {
       case (schemas, name) =>
         implicit val types: Registry.Types = Registry.Types(schemas, Map.empty)
@@ -95,7 +95,7 @@ object DeclarationResolver {
     typeDeclarations: TypeDeclarations,
     schemaResolutionOrder: Registry.SchemaResolutionOrder,
     schemas: Registry.Schemas,
-  )(implicit bindings: Registry.Bindings, reporter: Reporter): Registry.SchemaDefinitions = {
+  )(implicit terms: Registry.Terms, reporter: Reporter): Registry.SchemaDefinitions = {
     schemaResolutionOrder.foldLeft(Map.empty: Registry.SchemaDefinitions) {
       case (schemaDefinitions, name) =>
         implicit val types: Registry.Types = Registry.Types(schemas, schemaDefinitions)
@@ -110,7 +110,7 @@ object DeclarationResolver {
 
   private def resolveGlobalVariables(
     globalVariableDeclarations: Vector[DeclNode.GlobalVariableNode],
-  )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.GlobalVariables = {
+  )(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): Registry.GlobalVariables = {
     resolveUniqueDefinitions[DeclNode.GlobalVariableNode, GlobalVariableDefinition](
       GlobalVariableDefinitionResolver.resolve(_),
       GlobalVariableFeedback.AlreadyExists,
@@ -119,7 +119,7 @@ object DeclarationResolver {
 
   private def resolveMultiFunctions(
     multiFunctionDeclarations: Map[NamePath, Vector[DeclNode.FunctionNode]],
-  )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.MultiFunctions = {
+  )(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): Registry.MultiFunctions = {
     multiFunctionDeclarations.map {
       case (name, nodes) => name -> MultiFunctionDefinitionResolver.resolve(nodes)
     }
@@ -131,7 +131,7 @@ object DeclarationResolver {
     * In case of type aliases representing a struct type, the struct binding will be able to instantiate the struct
     * with the correct struct type given the type alias's type parameters.
     */
-  def resolveStructBindings()(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.StructBindings = {
+  def resolveStructBindings()(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): Registry.StructBindings = {
     types.schemas.flatMap {
       case (name, schema: StructSchema) =>
         if (schema.definition.isObject) {
@@ -155,24 +155,25 @@ object DeclarationResolver {
 
   /**
     * This function ensures that modules, global variables, and multi-functions don't share names. We don't have to
-    * remove these entities from the Registry because the shadowing order is well defined. A multi-function will have
-    * priority over a global variable with the same name, while the latter will have priority over a module.
+    * remove erroneous entities from the Registry because the shadowing order is well defined and analysis can thus
+    * continue even in the event of an error. A multi-function will have priority over a global variable with the same
+    * name, while the latter will have priority over a module.
     */
-  private def verifyBindingsUnique(bindings: Bindings)(implicit reporter: Reporter): Unit = {
-    bindings.modules.values.foreach { module =>
-      if (bindings.globalVariables.contains(module.name) || bindings.multiFunctions.contains(module.name)) {
+  private def verifyTermsUnique(terms: Terms)(implicit reporter: Reporter): Unit = {
+    terms.modules.values.foreach { module =>
+      if (terms.globalVariables.contains(module.name) || terms.multiFunctions.contains(module.name)) {
         reporter.error(ModuleFeedback.NameTaken(module))
       }
     }
 
-    bindings.globalVariables.values.foreach { variable =>
-      if (bindings.modules.contains(variable.name) || bindings.multiFunctions.contains(variable.name)) {
+    terms.globalVariables.values.foreach { variable =>
+      if (terms.modules.contains(variable.name) || terms.multiFunctions.contains(variable.name)) {
         reporter.error(GlobalVariableFeedback.NameTaken(variable))
       }
     }
 
-    bindings.multiFunctions.values.foreach { mf =>
-      if (bindings.modules.contains(mf.name) || bindings.globalVariables.contains(mf.name)) {
+    terms.multiFunctions.values.foreach { mf =>
+      if (terms.modules.contains(mf.name) || terms.globalVariables.contains(mf.name)) {
         reporter.error(MultiFunctionFeedback.NameTaken(mf))
       }
     }
@@ -180,7 +181,7 @@ object DeclarationResolver {
 
   private def resolveSpecs(
     specDeclarations: Vector[DeclNode.SpecNode],
-  )(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.Specs = {
+  )(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): Registry.Specs = {
     specDeclarations.map(SpecDefinitionResolver.resolve)
   }
 

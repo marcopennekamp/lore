@@ -168,7 +168,6 @@
 
 - Rename "sum types" to "union types" for better name duality with "intersection types".
 - Rename Node to SyntaxNode. DeclNode --> DeclarationSyntaxNode, TypeExprNode --> TypeSyntaxNode, etc.
-- Bindings should be called terms, while types and terms collectively should be called bindings. The current situation where value bindings are called bindings and types are not called bindings doesn't make sense.
 
 ##### Clean-Up
 
@@ -183,7 +182,7 @@
 - Implement the following features:
   - Find usages (LSP: references).
   - Rename symbol (LSP: rename, prepareRename).
-  - Highlight bindings and types at cursor position (document-wide highlighting of that exact entity).
+  - Highlight bindings at cursor position (document-wide highlighting of that exact entity).
   - Show type of expression (or at least of a variable).
 - Go to definition:
   - The current implementation is very naive, as it can only list global definitions and disregards scopes and shadowing entirely. This is fine for now, but should be improved at some point.

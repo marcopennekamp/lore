@@ -1,6 +1,8 @@
 # Scopes
 
-Lore supports **lexical scoping** for both bindings (variables, multi-functions, struct constructors, etc.) and types. This document outlines the various kinds of scopes and how they interact.
+Lore supports **lexical scoping** for both terms (variables, multi-functions, etc.) and types, collectively called bindings. This document outlines the various kinds of scopes and how they interact.
+
+Also check **name resolution** in [modules.md](modules.md).
 
 
 
@@ -8,27 +10,26 @@ Lore supports **lexical scoping** for both bindings (variables, multi-functions,
 
 Currently, there are four kinds of **type scopes** in Lore:
 
-- The **registry type scope** contains all global named types, including all traits, structs, and type aliases. It also contains top-level modules.
-- A **module type scope** contains named types declared in a specific module, as well as nested modules.
-- A **function type scope** contains the type variables declared in a function's `@where` annotation. 
+- The **root type scope** contains all named types declared in the root module.
+- A **module type scope** contains named types declared in a module.
+- A **function type scope** contains the type variables declared in a function's `where` clause. 
 - A **trait/struct type scope** contains the type parameters of a trait or struct.
 
-These scopes **shadow** each other, with the last mentioned scope having the highest priority. For example, if you declare a type variable `Apple` in a function, any type named `Apple` in the registry type scope won't be accessible from that function.
+These scopes **shadow** each other as they nest. For example, if you declare a type variable `Apple` in a function, any type named `Apple` in the registry type scope won't be accessible from that function.
 
 If a type `A` and its **companion module** share a name, a type access `A` resolves to the type, but any types declared in the module will still be accessible: `A.Foo`.
 
 
 
-### Binding Scopes
+### Term Scopes
 
-Bindings are local and global variables, multi-function, and struct constructors. Currently, there are four kinds of **binding scopes** in Lore:
+Terms are global variables, multi-functions, struct constructors/objects, modules, and local variables. Currently, there are four kinds of **term scopes** in Lore:
 
-- The **registry binding scope** contains all global multi-functions, struct constructors, and modules. If a multi-function and struct constructor share the same name, the multi-function is preferred. Module names have the least priority.
-- A **module binding scope** contains multi-functions and struct constructors declared in the module, as well as nested modules. If a multi-function and struct constructor share the same name, the multi-function is preferred.
-- The **function binding scope** contains the parameters declared in the function's parameter list.
-- **Block binding scopes** contain all local variables declared in the given block. Block binding scopes nest indefinitely.
+- The **root term scope** contains all terms declared in the root module.
+- A **module term scope** contains terms declared in a module, as well as nested modules.
+- A **function term scope** contains the parameters declared in a function's parameter list.
+- A **block term scope** contains all local variables declared in a block. Block scopes nest indefinitely.
 
-These scopes **shadow** each other, with the block binding scope being the most preferred scope.
+These scopes **shadow** each other as they nest. 
 
-
-
+If a multi-function or global variable share a name with a struct, the multi-function or global variable is preferred over the struct's constructor/object. Struct constructors/objects and their companion modules are accessible simultaneously.

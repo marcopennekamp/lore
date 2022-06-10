@@ -1,9 +1,9 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.semantics.{NameKind, NamePath}
+import lore.compiler.semantics.{BindingKind, NamePath}
 import lore.compiler.syntax.DeclNode.{AliasNode, ModuleNode, SpecNode, StructNode}
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
+import lore.compiler.syntax.{TermDeclNode, DeclNode, TypeDeclNode}
 
 /**
   * The global module index contains a global module for each module name path. Such a module knows all of its members
@@ -47,19 +47,19 @@ class GlobalModuleIndex {
   }
 
   /**
-    * Whether the index has a binding or type with the exact name path.
+    * Whether the index has a binding with the exact name path.
     */
-  def has(name: NamePath, nameKind: NameKind): Boolean = {
+  def has(name: NamePath, bindingKind: BindingKind): Boolean = {
     index
       .get(name.parentOrEmpty)
-      .exists(m => m.has(name.simpleName, nameKind))
+      .exists(m => m.has(name.simpleName, bindingKind))
   }
 
   /**
-    * Whether the index has a binding and/or type with the exact name path.
+    * Whether the index has a binding with the exact name path.
     */
   def has(name: NamePath): Boolean = {
-    has(name, NameKind.Type) || has(name, NameKind.Binding)
+    has(name, BindingKind.Type) || has(name, BindingKind.Term)
   }
 
   /**
@@ -99,7 +99,7 @@ class GlobalModuleIndex {
         // are registered to `Baz`.
         val innerModule = node.namePath.segments.foldLeft(parentModule) {
           case (globalModule, simpleModuleName) =>
-            globalModule.add(simpleModuleName, node.position, NameKind.Binding)
+            globalModule.add(simpleModuleName, node.position, BindingKind.Term)
             val nestedModule = getOrCreateModule(globalModule.name + simpleModuleName)
             nestedModule.addModulePosition(node.position)
             nestedModule
@@ -108,8 +108,8 @@ class GlobalModuleIndex {
 
       case node: StructNode => globalModule.add(node.simpleName, node.position)
       case node: AliasNode if node.isStructAlias => globalModule.add(node.simpleName, node.position)
-      case node: BindingDeclNode => globalModule.add(node.simpleName, node.position, NameKind.Binding)
-      case node: TypeDeclNode => globalModule.add(node.simpleName, node.position, NameKind.Type)
+      case node: TermDeclNode => globalModule.add(node.simpleName, node.position, BindingKind.Term)
+      case node: TypeDeclNode => globalModule.add(node.simpleName, node.position, BindingKind.Type)
       case _: SpecNode =>
         // Specs do not need to be added to the global module, because they cannot be referenced from Lore code.
     }
@@ -121,9 +121,9 @@ class GlobalModuleIndex {
   def addNodeToRoot(node: DeclNode): Unit = addNode(root, node)
 
   /**
-    * Adds the type or binding `name` to the proper global module directly.
+    * Adds the binding `name` to the proper global module directly.
     */
-  def addMember(name: NamePath, kind: NameKind): Unit = this.synchronized {
+  def addMember(name: NamePath, kind: BindingKind): Unit = this.synchronized {
     getOrCreateModule(name.parentOrEmpty).add(name.simpleName, Position.unknown, kind)
   }
 

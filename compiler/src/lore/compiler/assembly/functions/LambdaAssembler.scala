@@ -28,7 +28,7 @@ object LambdaAssembler {
     // We can't just map captured variables to registers, because some variables may actually themselves be captured
     // variables, which have to be loaded with `LambdaLocal`. Instead, we have to properly assemble the variables as
     // bindings, just like the ExpressionAssembler does.
-    val capturedVariableChunks = capturedVariables.map(TypedBindingAssembler.generate)
+    val capturedVariableChunks = capturedVariables.map(TypedTermBindingAssembler.generate)
 
     // We need to be careful with the name, because any function called `signature.name` can have lambdas which will
     // be global to the VM's universe. For example, we can't simply call these functions `lambda0`, `lambda1`, etc.,

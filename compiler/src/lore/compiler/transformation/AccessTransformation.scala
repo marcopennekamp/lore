@@ -2,6 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
+import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding, TermBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes._
@@ -21,12 +22,12 @@ object AccessTransformation {
     * invoked to handle the resulting full member access expression.
     */
   def transform(
-    processSingle: Binding => Option[Expression],
-    processInstance: Binding => Option[Expression],
+    processSingle: TermBinding => Option[Expression],
+    processInstance: TermBinding => Option[Expression],
     processAccessed: Expression => Option[Expression],
-  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, reporter: Reporter): Option[Expression] = {
+  )(namePathNode: NamePathNode)(implicit termScope: TermScope, reporter: Reporter): Option[Expression] = {
     val headNameNode = namePathNode.segments.head
-    bindingScope.resolve(headNameNode.value, headNameNode.position).flatMap { initialBinding =>
+    termScope.resolve(headNameNode.value, headNameNode.position).flatMap { initialBinding =>
       resolveAccessInstance(initialBinding, namePathNode.segments.tail, headNameNode.position).flatMap {
         case (binding, memberNames) =>
           if (memberNames.isEmpty) processSingle(binding)
@@ -43,10 +44,10 @@ object AccessTransformation {
     * starts.
     */
   private def resolveAccessInstance(
-    binding: Binding,
+    binding: TermBinding,
     remaining: Vector[NameNode],
     position: Position,
-  )(implicit bindingScope: BindingScope, reporter: Reporter): Option[(Binding, Vector[NameNode])] = {
+  )(implicit termScope: TermScope, reporter: Reporter): Option[(TermBinding, Vector[NameNode])] = {
     if (remaining.isEmpty) {
       return binding match {
         case module: GlobalModule =>
@@ -59,7 +60,7 @@ object AccessTransformation {
     val nameNode = remaining.head
 
     def handleModule(module: GlobalModule) = {
-      bindingScope
+      termScope
         .resolveGlobal(module.name + nameNode.value, nameNode.position)
         .flatMap(resolveAccessInstance(_, remaining.tail, nameNode.position))
     }
@@ -91,8 +92,8 @@ object AccessTransformation {
   }
 
   def transform(
-    process: Binding => Option[Expression],
-  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, reporter: Reporter): Option[Expression] = {
+    process: TermBinding => Option[Expression],
+  )(namePathNode: NamePathNode)(implicit termScope: TermScope, reporter: Reporter): Option[Expression] = {
     transform(process, process, Some(_))(namePathNode)
   }
 

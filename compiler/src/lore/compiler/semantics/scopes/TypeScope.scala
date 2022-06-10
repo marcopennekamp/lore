@@ -9,8 +9,11 @@ import lore.compiler.types._
   * A scope that provides access to type schemas.
   */
 trait TypeScope extends Scope[NamedSchema] {
-  def resolveStatic(namePath: NamePath, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[NamedSchema] = {
-    resolveStatic(namePath, bindingScope, position)
+  def resolveStatic(
+    namePath: NamePath,
+    position: Position,
+  )(implicit termScope: TermScope, reporter: Reporter): Option[NamedSchema] = {
+    resolveStatic(namePath, termScope, position)
   }
 
   override def entryLabel: String = "type"

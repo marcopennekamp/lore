@@ -10,7 +10,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): MultiFunctionDefinition = {
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): MultiFunctionDefinition = {
     if (!functionNodes.allEqual(_.fullName)) {
       val uniqueNames = functionNodes.map(_.fullName).distinct
       throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names: ${uniqueNames.mkString(", ")}.")
@@ -24,9 +24,9 @@ object MultiFunctionDefinitionResolver {
     multiFunction
   }
 
-  private def resolveFunction(node: DeclNode.FunctionNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): FunctionDefinition = {
+  private def resolveFunction(node: DeclNode.FunctionNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): FunctionDefinition = {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
-      implicit typeScope => implicit bindingScope => typeParameters =>
+      implicit typeScope => implicit termScope => typeParameters =>
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
         val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
         val signature = FunctionSignature(node.fullName, typeParameters, parameters, outputType, node.nameNode.position)

@@ -11,9 +11,9 @@ object TraitSchemaResolver {
     override def message = s"The trait ${node.fullName} does not extend a trait or shape but some other type."
   }
 
-  def resolve(node: DeclNode.TraitNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): TraitSchema = {
+  def resolve(node: DeclNode.TraitNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): TraitSchema = {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
-      implicit typeScope => implicit bindingScope => typeParameters =>
+      implicit typeScope => implicit termScope => typeParameters =>
         val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, TraitIllegalExtends(node))
         new TraitSchema(node.fullName, typeParameters, supertypes)
     }

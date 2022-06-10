@@ -8,9 +8,9 @@ import lore.compiler.types.BasicType
 
 object GlobalVariableDefinitionResolver {
 
-  def resolve(node: DeclNode.GlobalVariableNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): GlobalVariableDefinition = {
+  def resolve(node: DeclNode.GlobalVariableNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): GlobalVariableDefinition = {
     Resolver.withRegistryScopes(node.localModule) {
-      implicit typeScope => implicit bindingScope =>
+      implicit typeScope => implicit termScope =>
         val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Nothing)
         new GlobalVariableDefinition(node.fullName, tpe, node.value, node.localModule, node.position)
     }

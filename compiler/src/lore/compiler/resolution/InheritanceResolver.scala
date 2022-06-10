@@ -1,7 +1,7 @@
 package lore.compiler.resolution
 
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
+import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.{IntersectionType, ShapeType, TraitType, Type}
 
@@ -24,7 +24,7 @@ object InheritanceResolver {
   def resolveInheritedTypes(
     nodes: Vector[TypeExprNode],
     error: => Feedback.Error,
-  )(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Vector[Type] = {
+  )(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): Vector[Type] = {
     def extract(tpe: Type): Vector[Type] = tpe match {
       case supertrait: TraitType => Vector(supertrait)
       case shape: ShapeType => Vector(shape)

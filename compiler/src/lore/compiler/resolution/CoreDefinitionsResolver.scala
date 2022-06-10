@@ -9,9 +9,9 @@ object CoreDefinitionsResolver {
 
   /**
     * Resolves all core definitions. If some definitions cannot be found, the resolver reports appropriate errors. They
-    * are still added to CoreDefinitions, just without their underlying schema or binding.
+    * are still added to CoreDefinitions, just without their underlying binding.
     */
-  def resolve()(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): CoreDefinitions = {
+  def resolve()(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): CoreDefinitions = {
     val inputAny = TupleType(BasicType.Any)
     val inputAnyAny = TupleType(BasicType.Any, BasicType.Any)
 
@@ -48,9 +48,9 @@ object CoreDefinitionsResolver {
     simpleName: String,
     expectedInputType: TupleType,
     expectedOutputType: Type,
-  )(implicit bindings: Registry.Bindings, reporter: Reporter): CoreMultiFunction = {
+  )(implicit terms: Registry.Terms, reporter: Reporter): CoreMultiFunction = {
     val name = CoreDefinitions.modulePath + simpleName
-    val mf = bindings.multiFunctions.get(name) match {
+    val mf = terms.multiFunctions.get(name) match {
       case Some(mf) =>
         val min = mf.min(expectedInputType)
         if (min.isEmpty) {

@@ -1,7 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned, UniqueKey}
-import lore.compiler.semantics.scopes.LocalVariable
+import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.types.Type
 
 /**

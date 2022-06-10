@@ -2,7 +2,7 @@ package lore.compiler.constraints
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Reporter, StructFeedback}
-import lore.compiler.semantics.{NameKind, Registry}
+import lore.compiler.semantics.{BindingKind, Registry}
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
@@ -146,8 +146,8 @@ object StructConstraints {
   private def verifyObjectCompanionNames(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
     definition.companionModule.foreach { module =>
       definition.properties.foreach { property =>
-        if (module.has(property.name, NameKind.Binding)) {
-          val positions = module.getMemberPositions(property.name, NameKind.Binding)
+        if (module.has(property.name, BindingKind.Term)) {
+          val positions = module.getMemberPositions(property.name, BindingKind.Term)
           positions.foreach { position =>
             reporter.error(StructFeedback.Object.MemberNameTaken(definition, property.name, position))
           }

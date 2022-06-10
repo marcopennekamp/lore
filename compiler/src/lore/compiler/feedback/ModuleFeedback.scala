@@ -18,7 +18,7 @@ object ModuleFeedback {
 
     case class UnresolvedHeadSegment(node: ImportNode, headSegment: String) extends Feedback.Error(node) {
       override def message: String = s"The import of `${node.namePathNode.namePath}` cannot be resolved:" +
-        s" `$headSegment` is not a type or binding."
+        s" `$headSegment` is not a binding."
     }
 
     case class NotFound(node: ImportNode, absolutePath: NamePath) extends Feedback.Error(node) {

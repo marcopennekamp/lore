@@ -2,10 +2,10 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned, UniqueKey}
 import lore.compiler.semantics.analysis.CapturedVariables
+import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, StructConstructorBinding, TypedBinding}
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable
@@ -74,8 +74,8 @@ object Expression {
   // Access expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * A cross-cutting node trait signifying the possible access of a variable/property and thus the target
-    * of an assignment.
+    * A cross-cutting trait signifying the possible access of a variable/property and thus the potential target of an
+    * assignment.
     */
   sealed trait Access extends Expression {
     def label: String
@@ -83,7 +83,7 @@ object Expression {
     override def toString: String = label
   }
 
-  case class BindingAccess(binding: TypedBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
+  case class BindingAccess(binding: TypedTermBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
     override val label: String = binding.toString
     override val isMutable: Boolean = binding.isMutable
   }

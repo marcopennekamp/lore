@@ -1,18 +1,18 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.scopes.{BindingScope, BlockBindingScope}
+import lore.compiler.semantics.scopes.{TermScope, BlockTermScope}
 
 /**
   * A local variable scope context for expression transformation passes.
   */
-class ScopeContext(parentScope: BindingScope) {
-  private var scopes = Vector(new BlockBindingScope(parentScope))
+class ScopeContext(parentScope: TermScope) {
+  private var scopes = Vector(new BlockTermScope(parentScope))
 
-  def currentScope: BlockBindingScope = scopes.last
+  def currentScope: BlockTermScope = scopes.last
 
   def openScope(): Unit = {
-    val scope = new BlockBindingScope(currentScope)
+    val scope = new BlockTermScope(currentScope)
     scopes = scopes :+ scope
   }
 

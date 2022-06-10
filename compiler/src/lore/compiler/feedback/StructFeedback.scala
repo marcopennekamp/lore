@@ -2,7 +2,7 @@ package lore.compiler.feedback
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.scopes.{StructBinding, StructObjectBinding}
+import lore.compiler.semantics.bindings.{StructBinding, StructObjectBinding}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.{ShapeType, TypeVariable}
 

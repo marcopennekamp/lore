@@ -9,9 +9,9 @@ import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 object TraitDefinitionResolver {
 
-  def resolve(node: DeclNode.TraitNode)(implicit types: Registry.Types, bindings: Registry.Bindings): TraitDefinition = {
+  def resolve(node: DeclNode.TraitNode)(implicit types: Registry.Types, terms: Registry.Terms): TraitDefinition = {
     Resolver.withRegistryScopes(node.localModule) {
-      implicit typeScope => implicit bindingScope =>
+      implicit typeScope => implicit termScope =>
         val schema = types.schemas.get(node.fullName).filterType[TraitSchema].getOrElse(
           throw CompilationException(s"The type schema for trait ${node.fullName} should be registered by now.")
         )

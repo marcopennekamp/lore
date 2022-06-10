@@ -11,9 +11,9 @@ object StructSchemaResolver {
     override def message = s"The struct ${node.fullName} does not implement a trait or shape but some other type."
   }
 
-  def resolve(node: DeclNode.StructNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): StructSchema = {
+  def resolve(node: DeclNode.StructNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): StructSchema = {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
-      implicit typeScope => implicit bindingScope => typeParameters =>
+      implicit typeScope => implicit termScope => typeParameters =>
         val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, StructIllegalExtends(node))
         new StructSchema(node.fullName, typeParameters, supertypes)
     }

@@ -153,7 +153,7 @@ Unless the import is targeting a companion module, it is good practice to use a 
 
 A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
 
-**Struct objects** may also have a companion module, but an object's properties and its companion module's bindings may not share a name.
+**Struct objects** may also have a companion module, but an object's properties and its companion module's term bindings may not share a name.
 
 ###### Example
 

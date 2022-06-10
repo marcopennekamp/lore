@@ -4,8 +4,9 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.scopes.{BindingScope, StructConstructorBinding, StructObjectBinding, TypeScope}
+import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeExprNode
 
@@ -17,8 +18,8 @@ object StructTransformation {
   def getConstructorBinding(
     name: NamePath,
     position: Position,
-  )(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
-    bindingScope.resolveStatic(name, position).flatMap {
+  )(implicit termScope: TermScope, reporter: Reporter): Option[StructConstructorBinding] = {
+    termScope.resolveStatic(name, position).flatMap {
       case binding: StructConstructorBinding => Some(binding)
 
       case _: StructObjectBinding =>
@@ -38,7 +39,7 @@ object StructTransformation {
     binding: StructConstructorBinding,
     typeArgumentNodes: Vector[TypeExprNode],
     position: Position,
-  )(implicit bindingScope: BindingScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
+  )(implicit termScope: TermScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
     val typeArguments = typeArgumentNodes.map(TypeExpressionEvaluator.evaluate)
     val structType = binding.instantiateStructType(typeArguments, position)
     Expression.ConstructorValue(binding, structType, position)

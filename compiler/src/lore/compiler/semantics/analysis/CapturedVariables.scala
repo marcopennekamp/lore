@@ -1,9 +1,9 @@
 package lore.compiler.semantics.analysis
 
 import lore.compiler.core.{CompilationException, UniqueKey}
+import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression.{AnonymousFunction, ForLoop}
 import lore.compiler.semantics.expressions.{Expression, ExpressionCombiningVisitor, ExpressionVisitor}
-import lore.compiler.semantics.scopes.LocalVariable
 
 object CapturedVariables {
 

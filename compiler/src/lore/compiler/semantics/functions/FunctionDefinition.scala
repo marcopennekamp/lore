@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.semantics.scopes.{BindingScope, FunctionBindingScope, ImmutableTypeScope, TypeScope}
+import lore.compiler.semantics.scopes.{TermScope, FunctionTermScope, ImmutableTypeScope, TypeScope}
 import lore.compiler.semantics.{NamePath, NamedDefinition, Registry}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{Fit, Type, TypeVariable}
@@ -43,7 +43,7 @@ class FunctionDefinition(
   var body: Option[Expression] = None
 
   def getTypeScope(implicit registry: Registry): TypeScope = FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
-  def getBindingScope(implicit registry: Registry): BindingScope = FunctionBindingScope(signature, registry.getBindingScope(localModule))
+  def getTermScope(implicit registry: Registry): TermScope = FunctionTermScope(signature, registry.getTermScope(localModule))
 
   /**
     * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a
