@@ -1,5 +1,10 @@
 ## TODO
 
+#### General
+
+- Perhaps rename *specification* to *(language) reference* to avoid any confusion around the level of technical language in the documents. The documents are a manual for users and the language developers.
+
+
 #### Types
 
 - Map types: Covariance and contravariance?

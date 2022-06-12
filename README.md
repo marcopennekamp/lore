@@ -1,8 +1,24 @@
 # Lore
 
-**Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming.
+**Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming. Take a look at it:
 
-To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some examples in the `test` folder, such as [hello_name.lore](test/lessons/hello_name.lore).
+```
+use lore.Enum.map
+
+func hello(String | Int): String
+func hello(name: String): String = 'Hello, $name.'
+func hello(id: Int): String = 'Hello, anonymous #$id.'
+
+func main(): [String] = ['world', 5, 'marco', 'console', 42] |> map(hello)
+```
+
+This is [hello_name.lore](../test/lessons/hello_name.lore), a hello world example making use of Lore's multiple dispatch. Depending on whether `hello`'s argument is a `String` or an `Int`, it either returns `'Hello, name.'` or `'Hello, anonymous #id.'`. The program results in a list of strings:
+
+```
+['Hello, world.', 'Hello, anonymous #5.', 'Hello, marco.', 'Hello, console.', 'Hello, anonymous #42.']
+```
+
+To learn more about Lore, read the [**overview**](specification/README.md) of our specification.
 
 
 
@@ -10,11 +26,11 @@ To learn more about the language, read the [**overview**](specification/overview
 
 This repository is divided into the following parts:
 
-- **Specification:** The Lore specification. We have taken care not to make the specification overly technical. It is, mostly, a user-facing description of the language and can be read as a guide to the language. The `technical` subfolder goes into more detail that might not be useful to average language users.
-- **Compiler:** The compiler, written in Scala, translates a Lore program to Poem bytecode, which is the custom bytecode format of the Lore VM.
-- **VM:** The VM executes Poem bytecode produced by the compiler. Crucially, the VM also implements Lore's type system, which is required for run-time multiple dispatch. It supports multi-functions natively and is thus a multiple dispatch VM.
-- **Pyramid:** This is the Lore standard library, which defines core functions expected by the compiler, functions to work with values such as lists, maps and strings, and additional types such as Options. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of (religious) lore in the world.
-- **Test:** Functional tests, which are comprised of many smaller Lore programs. This is the de-facto place to look at existing Lore code, but especially [test/lessons](test/lessons).
+- [**Specification:**](specification) The Lore specification, which is a user-facing reference manual rather than a technical specification.
+- [**Compiler:**](compiler) The compiler, written in Scala, translates a Lore program to Poem bytecode, which is the custom bytecode format of the Lore VM.
+- [**VM:**](vm) The VM executes Poem bytecode produced by the compiler. Crucially, the VM also implements Lore's type system, which is required for run-time multiple dispatch. It supports multi-functions natively and is thus a multiple dispatch VM.
+- [**Pyramid:**](pyramid) This is the Lore standard library, which defines core functions expected by the compiler, functions to work with built-in values such as lists, maps and strings, and additional types such as `Option`s.
+- [**Test:**](test) Functional tests, which are comprised of many smaller Lore programs. While the purpose of these tests is to verify the correctness of Lore's compiler and VM, the Lore code can also be used as a repository of examples for learners, especially [test/lessons](test/lessons).
 - **LSP:** An LSP language server and VSCode extension. Neither are currently up-to-date as Lore evolves, but they will be supported in the future to offer native IDE integration.
 
 
@@ -49,7 +65,7 @@ I have only tested this workflow on Linux and you might run into additional prob
 
 ### Functional Tests
 
-One part of this project is Lore's functional testing solution. In the folder `test` (a direct child of the project root), you will find Lore programs contained in single files or across multiple files in some cases (`test/calculator` and `test/combat`). You can compile and run all tests by executing `test.sh`.
+One part of this project is Lore's functional testing solution. In the folder [`test`](test), you will find Lore programs contained in single files, or in some cases across multiple files (`test/calculator` and `test/combat`). You can compile and run all tests by executing `test.sh`.
 
 Each test program defines a number of specs which can be executed by the Lore VM as tests and as benchmarks (depending on whether the spec is marked as a test, benchmark, or both). These specs use assertions to ensure that each test results in the expected outcome. Each file can additionally use types and functions from Pyramid.
 
