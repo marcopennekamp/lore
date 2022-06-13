@@ -372,10 +372,8 @@ target(a1, a2, ...)
 
 **Call semantics** depend on the `target`:
 
-- If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct function definition. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md).
-
-  We say *multi-function call*, because it only becomes a function call once a function has been chosen according to the dispatch semantics.
-
+- If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct target function so that argument and output types can be checked and inferred. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md). Even though the compiler will find a target function at compile time, ultimately the runtime also performs dispatch to find the function applicable with the concrete run-time arguments.
+  - Lore also supports importing more than one multi-function with the same simple name, using compile-time disambiguation whenever a set of multi-functions is used. See *Name Resolution for Multi-Functions* in [modules](modules.md) for more information.
 - If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed at run time.
 
 ##### Pipes
@@ -448,9 +446,9 @@ to_string :: Int => String
 
 
 
-### Fixing Functions at Compile-Time
+### Fixing Multi-Functions at Compile-Time
 
-Instead of deciding dispatch at run-time, you can **fix a function at compile-time:**
+Instead of deciding dispatch at run-time, you can **fix a multi-function at compile-time:**
 
 ```
 f.fixed[T1, T2, ...]
@@ -472,7 +470,7 @@ intrinsic[ResultType]('f', a1, a2, ...)
 
 The first argument is the name of the intrinsic, which must be a string constant. These are statically defined by the VM and cannot be added or removed by a Lore user. The compiler checks the existence and the arity of the intrinsic, but trusts the programmer about the argument types. 
 
-Unless you're absolutely sure what you're doing, avoid using intrinsics. There will usually be a multi-function available from Pyramid that offers the intrinsic's functionality.
+Unless you're absolutely sure what you're doing, avoid using intrinsics, as passing the wrong kinds of arguments will cause run-time errors. There will usually be a multi-function available from Pyramid that offers the intrinsic's functionality.
 
 
 

@@ -8,7 +8,7 @@ A **multi-function** is a set of functions bearing the same name, embedded in a 
 
 ### Functions and Multi-Functions
 
-A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name includes the module name. Function names are normal identifiers, as described [here](identifiers.md). The input type is defined as the tuple type of all parameter types in the order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be called at run-time. A function that is not abstract is also called *concrete*. 
+A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name includes the module name. Function names are normal identifiers, as described [here](identifiers.md). The input type is defined as the tuple type of all parameter types in the order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be invoked at run-time. A function that is not abstract is also called *concrete*. 
 
 An **action** is a function whose return type is `Unit`. Unless abstract, an action must have a block as its body, rather than any kind of expression. Conceptually, an action achieves results via side effects rather than a returned value.
 
@@ -31,9 +31,9 @@ This Lore code contains the functions `foo(Int): Real`, `foo(String): String`, a
 
 Take two functions *f1* and *f2* from a multi-function with *f2* specializing *f1*. Then *f2*'s **return type must be a subtype** of *f1*'s return type. This is easy to see. If at compile-time multiple dispatch would choose *f1*, the compiler uses the return type of *f1* to infer and check types. Hence, *f2* as a specialization must adhere to the substitution principle and only return values that adhere to *f1*'s return type.
 
-##### Type Variables
+##### Type Parameters
 
-A function can additionally declare **type variables** with an inline `where` clause or `@where` annotation:
+A function can additionally declare **type parameters** with an inline `where` clause or `@where` annotation:
 
 ```
 func identity(x: A): A where A = x
@@ -48,7 +48,7 @@ Note that type variables can only be used in bounds if they are declared **prece
 
 The usual syntax for function type parameters in many programming languages is: `foo<A, B, C>(...)`. This is *not* possible in Lore, because functions are dispatched to at run time and thus the compiler cannot anticipate which function is being called. Hence, **direct assignments** to function type parameters are impossible. Even a `.fixed` call simply performs multiple dispatch at compile time, without directly assigning type parameters.
 
-The **annotation syntax** has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps to put initial visual focus on the function head. In contrast, the **inline syntax** is more concise and provides better visual clarity when only one or two type parameters without bounds are desired. The inline syntax and annotation syntax cannot be used at the same time.
+The **annotation syntax** `@where` has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps to put initial visual focus on the function head. In contrast, the **inline syntax** `where` is more concise and provides better visual clarity when only one or two type parameters without bounds are desired. The inline syntax and annotation syntax cannot be used at the same time.
 
 Because type parameters are assigned from argument types, all type parameters declared with a function must be **contained in at least one parameter type**. Function declarations such as this are illegal:
 
@@ -59,7 +59,7 @@ func apply_to(a: A): (A => B) => B = f => f(a)
 
 ##### Unnamed Parameters
 
-A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. Unnamed parameters are especially useful for abstract functions, where parameter names are often redundant.
+A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. Unnamed parameters are especially useful for abstract functions, where parameter names are often redundant or difficult to come up with.
 
 ###### Example
 
@@ -73,7 +73,11 @@ func transcribe(#c): #g = #g
 
 The first function is abstract. A parameter name for `DnaNucleotide` would only add verbosity, e.g. `dna_nucleotide`, `nucleotide`, or just `n`. None of these candidates would add any additional information.
 
-The last four functions only need to match on the type of the argument, instead of the argument itself (this is trivial for symbol types, of course). Hence, parameter names can also be safely omitted here.
+The last four functions only need to match on the type of the argument, instead of the argument itself (this is trivial for symbol types). Hence, parameter names can also be safely omitted here.
+
+##### Compile-time Usage Disambiguation
+
+Lore makes it possible to import and declare two or more multi-functions with the same simple name. For example, it's possible to import both `lore.list.get!` and `lore.option.get!`, and let the compiler disambiguate specific usages at *compile time*. See *Name Resolution for Multi-Functions* in [modules](modules.md) for more information.
 
 
 

@@ -5,7 +5,7 @@
 ##### Minimum Viable Language
 
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
-  - Update the specification: `modules.md` and `multi-functions.md` should both mention this compile-time disambiguation.
+  - Update areas of the specification that discuss name resolution to make sure that multi-function disambiguation is taken into account.
   - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
   - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
