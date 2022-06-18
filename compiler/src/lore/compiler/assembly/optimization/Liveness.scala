@@ -71,7 +71,7 @@ object Liveness {
     // anything that is live in line 4 will be live in line 12. But when we arrive (backwards) at line 12, we don't
     // know what is live in line 4. This will have to be applied in a second iteration. We potentially need multiple
     // iterations if backwards jumps are "nested".
-    var hasChanged = false
+    var hasChanged = true
 
     def addVariable(liveSet: mutable.HashSet[Poem.Register], variable: Poem.Register): Unit = {
       val isNew = liveSet.add(variable)
@@ -80,7 +80,7 @@ object Liveness {
       }
     }
 
-    do {
+    while (hasChanged) {
       hasChanged = false
       for (line <- instructions.indices.reverse) {
         val instruction = instructions(line)
@@ -111,7 +111,7 @@ object Liveness {
           }
         }
       }
-    } while (hasChanged)
+    }
 
     (liveInSets, liveOutSets)
   }
