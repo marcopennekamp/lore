@@ -46,10 +46,15 @@ class FragmentParser(implicit fragment: Fragment) {
     def topModuleDeclaration = P(("module" ~~ Space.WS1 ~~ namePath ~~ Space.terminators).?).map(_.getOrElse(NamePathNode.empty))
     P(Space.WL ~~ Index ~~ topModuleDeclaration ~ moduleBody ~~ Index ~~ Space.WL ~~ End)
       .map {
+        case (startIndex, NamePathNode.empty, (imports, members), endIndex) =>
+          withPosition(DeclNode.ModuleNode)(startIndex, NamePathNode.empty, false, imports, members, endIndex)
+
+        // If the fragment has a top module declaration, we have to ensure that an empty, implicit local root module
+        // wraps this top module.
         case (startIndex, modulePath, (imports, members), endIndex) =>
-          (startIndex, modulePath, false, imports, members, endIndex)
+          val innerModule = withPosition(DeclNode.ModuleNode)(startIndex, modulePath, false, imports, members, endIndex)
+          withPosition(DeclNode.ModuleNode)(startIndex, NamePathNode.empty, false, Vector.empty, Vector(innerModule), endIndex)
       }
-      .map(withPosition(DeclNode.ModuleNode))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
