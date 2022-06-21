@@ -146,9 +146,8 @@ object StructConstraints {
   private def verifyObjectCompanionNames(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
     definition.companionModule.foreach { module =>
       definition.properties.foreach { property =>
-        if (module.has(property.name, BindingKind.Term)) {
-          val positions = module.getMemberPositions(property.name, BindingKind.Term)
-          positions.foreach { position =>
+        module.terms.get(property.name).foreach { moduleMember =>
+          moduleMember.positions.foreach { position =>
             reporter.error(StructFeedback.Object.MemberNameTaken(definition, property.name, position))
           }
         }

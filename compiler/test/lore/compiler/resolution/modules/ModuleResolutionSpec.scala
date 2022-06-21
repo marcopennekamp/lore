@@ -1,6 +1,6 @@
 package lore.compiler.resolution.modules
 
-import lore.compiler.feedback.{GlobalVariableFeedback, ModuleFeedback, MultiFunctionFeedback}
+import lore.compiler.feedback.{ModuleFeedback, MultiFunctionFeedback}
 import lore.compiler.test.BaseSpec
 
 class ModuleResolutionSpec extends BaseSpec {
@@ -11,7 +11,7 @@ class ModuleResolutionSpec extends BaseSpec {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
       (classOf[GlobalVariableFeedback.NameTaken], 2),
       (classOf[MultiFunctionFeedback.NameTaken], 5),
-      (classOf[ModuleFeedback.NameTaken], 8),
+      (classOf[ModuleFeedback.MemberNameTaken], 8),
     )
   }
 

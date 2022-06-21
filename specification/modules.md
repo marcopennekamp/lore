@@ -25,7 +25,7 @@ module Name2 do
 end
 ```
 
-The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence we each have a multi-function that contains only one function definition.
+The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence, we each have a multi-function that contains only one function definition.
 
 The requirement for the `do` when declaring module `Name2` is purely due to parsing ambiguities that would arise otherwise. Without the `do`, the parser might have to read the whole file to find the `end` that closes the block module declaration which the parser would first assume to be a top module declaration. This will eventually be removed once we introduce significant indentation.
 
@@ -46,6 +46,8 @@ Module members have access to certain other module members by their simple name.
 
 A **local module** refers to the module declaration that's syntactically placed around a declaration in a fragment. Because modules may be comprised of many module declarations sharing the same name across multiple fragments, local modules are a necessary contrast to **global modules**. Each declaration is part of exactly one local module.
 
+Internally, a non-root top module has a parent local root module regardless, with the top module placed inside the otherwise empty, implicit local root module. This ensures that name resolution always terminates at the root module and that non-root local modules always have a parent, which prevents the need to treat the root module as a special case during name resolution.
+
 A local module that is declared with a contracted name such as `module foo.bar` does not automatically admit access to `foo`'s global members by simple name, only `bar`'s global members. Any local module gives simple-name access to its global members even to nested local modules, simply because it's unintuitive if a local module can't access all members that its parent local module can also access. Contracted modules don't have this issue, as there is no code that lives in the `foo` part.
 
 Consider the following local module hierarchy:
@@ -62,12 +64,9 @@ end
 
 A member in the local module `baz` has access to the following module members by simple name (and in this precedence):
 
-- Locally declared members of `baz`.
-- Imports of the local module `baz`.
-- Locally declared members of `foo.bar`.
-- Imports of the local module `foo.bar`.
-- Locally declared members of `top`.
-- Imports of the local module `top`.
+- Imports and locally declared members of `baz`.
+- Imports and locally declared members of `foo.bar`.
+- Imports and locally declared members of `top`.
 - Globally declared members of `baz`.
 - Globally declared members of `foo.bar`.
 - Globally declared members of `top`.
@@ -103,15 +102,17 @@ In this example, `test` has access to `west` as it's locally declared, `baz` fro
 
 ##### Imports
 
-The `use` declaration can be used to introduce simple names for other module members at their point of use. It is also called an **import**. It has three flavors:
+TODO (multi-import): Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
 
-1. **Simple:** Import a single member.
+The `use` declaration can be used to introduce simple names for other module members at their point of use. It is also called an **import** and can only be placed at the beginning of a module declaration or at the beginning of a file. An import has three flavors:
+
+1. **Single:** Import a single member directly.
 
    ```
    use lore.Enum.map
    ```
 
-2. **Multiple:** Import multiple members of the same module.
+2. **List:** Import many members of the same module directly.
 
    ```
    use lore.Enum.[map, flat_map]
@@ -123,7 +124,13 @@ The `use` declaration can be used to introduce simple names for other module mem
    use lore.Enum._
    ```
 
-The `use` declaration can only be placed at the beginning of a module declaration and at the beginning of a file. If a name is imported multiple times (from potentially different sources), the last `use` wins.
+Import paths must have at least two segments. The wildcard counts as a segment. Single imports such as `use A` are nonsensical and thus illegal. The first segment of an import path must refer to a module.
+
+Direct imports have precedence over wildcard imports. That is, if a member is imported directly, an incompatible binding already imported by a wildcard import will be overridden. A later wildcard import can also override an earlier wildcard import of the same incompatible binding. An incompatible binding is either single-referable, or its kind doesn't agree with the new binding. Local declarations always take precedence over wildcard imports, starting from the first import.
+
+Directly importing an incompatible module member whose simple name is already taken by another direct import or local declaration is illegal and will result in an error. In respect to local declarations, the restriction is in place to avoid an edge case: an import might shadow global bindings of the local module and bindings of the local module's parents, while the import itself might be useless when shadowed by a local declaration. Such an import confuses users and makes name resolution more complex to implement.
+
+Imports may reference each other. For example, a wildcard import `use lore.option._` brings `lore.option.Option` into scope. Then, an import `use Option.some` directly imports `some`. Another wildcard import `use foo.bar._` might bring another `Option` into scope. Then, `Option` will refer to `foo.bar.Option`, while `some` still refers to `lore.option.Option.some`. The compiler applies the import precedence rules carefully and in order to achieve this. 
 
 ###### Example
 
@@ -149,7 +156,7 @@ Unless the import is targeting a companion module, it is good practice to use a 
 
 ##### Name Resolution for Multi-Functions
 
-**Multi-functions** have more involved name resolution semantics than other bindings. To allow importing multi-functions with the same simple names from different modules simultaneously, Lore supports compile-time disambiguation of multi-function calls and values.
+**Multi-functions** have more involved name resolution semantics than other bindings. To allow importing multi-functions with the same simple names from different modules simultaneously, Lore supports compile-time disambiguation of multi-function calls and values. We also say that multi-functions are *multi-referable*.
 
 When a simple-named multi-function is called or used as a value, the compiler simulates dispatch with all multi-function candidates that are accessible from the current scope, in two layers: local and global. These two layers are defined by the name resolution described above. The local layer contains all local definitions and imports, while the global layer contains global definitions that are not part of the local layer. The local layer has precedence.
 
@@ -180,7 +187,7 @@ Due to the type information available at compile time, it's easy for the compile
 
 Not all multi-functions should be imported and called like this, however. For example, a list function like `repeat`, which just takes any value as an argument, would be hard to disambiguate. Such functions are *not* tied to a domain and thus a little more fickle. `repeat` is best used as `List.repeat`.
 
-###### Interaction with other Bindings
+###### Interaction with other bindings
 
 Given the name resolution precedence, a non-multi-function definition or import shadows a multi-function from its outer local definitions and imports, and vice versa with multi-functions shadowing other bindings. Global definitions of inner modules are still taken into account, however. For example:
 
@@ -214,11 +221,11 @@ The import of the global variable `nature.zebra.foo` shadows the import of `natu
 The local module `apple` is where it gets tricky. The local import of `nature.bear.foo` reaffirms that `foo` should refer to a multi-function. The question is which local and global multi-functions are candidates for disambiguation:
 
 - `nature.bear.foo` is trivially available as a local candidate, because it's imported directly.
-- As `import nature.zebra.foo` shadows `import nature.cicada.foo` and the multi-function is not available as a global binding from the local module structure, `nature.cicada.foo` is clearly not a candidate.
+- As `import nature.zebra.foo` shadows `import nature.cicada.foo` and the multi-function is not available as a global binding from any local modules, `nature.cicada.foo` is clearly not a candidate.
 - Because `import nature.bear.foo` shadows `import nature.zebra.foo` and occurs inside the local module `apple`, `nature.apple.foo` should be available as a global candidate. The reasoning for this comes down to what the average programmer would expect inside the local module `apple`. The programmer is aware that `import nature.zebra.foo` has shadowed the import of `nature.cicada.foo`, so they don't expect `nature.cicada.foo` to be available anywhere inside the local module `nature`. The same applies to `nature.foo`, because usually the local module `nature` would make `nature.foo` available as a global binding, but the import overrides that. Hence, anywhere inside local module `apple`, because it's a child of local module `nature`, `nature.foo` is not available. However, `nature.apple.foo` *is* available because the local module `apple` makes it available as a global binding, similar to how `nature` would've made `nature.foo` available.
 - Bonus question: Assume `foo` is a multi-function declared in the root scope. `foo` will also not be available in local module `apple`, because the root local module would usually make `foo` available, but this is overridden by the import of `nature.zebra.foo`. Hence, again, anywhere in local module `nature` where the import occurs, `foo` should not be available.
 
-In summary, we have `nature.bear.foo` as a local candidate and `nature.apple.foo` as a global candidate.
+In summary, we have `nature.bear.foo` as a local candidate and `nature.apple.foo` as a global candidate. All results would be the same if `import nature.zebra.foo` was instead a local definition `let foo: Int = 5`.
 
 
 

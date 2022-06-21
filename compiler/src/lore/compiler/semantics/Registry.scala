@@ -12,7 +12,7 @@ import lore.compiler.types.{AliasSchema, DeclaredSchema, DeclaredTypeHierarchy, 
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
-  * The Registry represents the global scope of module, type, global variable, and function definitions.
+  * The Registry manages all global scope definitions.
   */
 case class Registry(
   types: Registry.Types,

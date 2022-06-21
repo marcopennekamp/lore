@@ -78,7 +78,7 @@ class FragmentParser(implicit fragment: Fragment) {
 
   private def use[_: P]: P[Vector[DeclNode.ImportNode]] = {
     def wildcard = P(namePath ~~ "._").map(path => Vector((path, true)))
-    def multi = P(namePath ~~ "." ~~ "[" ~ namePath.rep(1, ",") ~ "]").map {
+    def list = P(namePath ~~ "." ~~ "[" ~ namePath.rep(1, ",") ~ "]").map {
       case (prefix, paths) =>
         paths
           .map(path => NamePathNode(prefix.segments ++ path.segments))
@@ -87,7 +87,7 @@ class FragmentParser(implicit fragment: Fragment) {
     }
     def single = P(namePath).map(path => Vector((path, false)))
 
-    P(Index ~~ "use" ~~ Space.WS1 ~~ (wildcard | multi | single) ~~ Index)
+    P(Index ~~ "use" ~~ Space.WS1 ~~ (wildcard | list | single) ~~ Index)
       .map {
         case (startIndex, entries, endIndex) =>
           val position = Position(fragment, startIndex, endIndex)

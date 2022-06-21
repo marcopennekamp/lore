@@ -13,7 +13,7 @@ object SpecTransformer {
       TupleType.UnitType,
       registry.getTypeScope(spec.localModule),
       registry.getTermScope(spec.localModule),
-      s"spec ${spec.localModule.modulePath} '${spec.description}'",
+      s"spec ${spec.localModule.globalModule.name} '${spec.description}'",
     )
   }
 

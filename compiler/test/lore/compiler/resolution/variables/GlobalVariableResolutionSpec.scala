@@ -1,6 +1,6 @@
 package lore.compiler.resolution.variables
 
-import lore.compiler.feedback.{GlobalVariableFeedback, MultiFunctionFeedback}
+import lore.compiler.feedback.MultiFunctionFeedback
 import lore.compiler.test.BaseSpec
 
 class GlobalVariableResolutionSpec extends BaseSpec {

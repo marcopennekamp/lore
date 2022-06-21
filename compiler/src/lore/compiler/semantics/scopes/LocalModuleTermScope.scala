@@ -16,7 +16,8 @@ case class LocalModuleTermScope(
   terms: Registry.Terms,
 ) extends TermScope {
   override protected def local(name: String): Option[TermBinding] = {
-    localModule.getAbsolutePath(name, BindingKind.Term).flatMap(global)
+    // TODO (multi-import): Support multi-referable bindings.
+    localModule.terms.getAbsolutePaths(name).map(_.namePaths.head).flatMap(global)
   }
 
   override def global(absolutePath: NamePath): Option[TermBinding] = {
