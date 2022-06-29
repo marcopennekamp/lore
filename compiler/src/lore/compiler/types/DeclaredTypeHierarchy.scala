@@ -13,16 +13,18 @@ import scala.collection.mutable
 /**
   * A hierarchy of declared schemas to provide quick access to hierarchical relationships between structs and traits.
   */
-class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
+class DeclaredTypeHierarchy(schemas: Iterable[NamedSchema]) {
 
   /**
     * The graph that holds the subtyping relationship between declared type <i>schemas</i>. Any is the root node.
     */
   private val subtypingGraph: Graph[NamedSchema, DiEdge] = {
-    val edges = schemas.flatMap { schema =>
-      schema.declaredSupertypes
-        .map(t => t.schema ~> schema)
-        .withDefault(BasicType.Any ~> schema)
+    val edges = schemas.flatMap {
+      case schema: DeclaredSchema =>
+        schema.declaredSupertypes
+          .map(t => t.schema ~> schema)
+          .withDefault(BasicType.Any ~> schema)
+      case _ => Vector.empty
     }
 
     implicit val config: Graph.Config = CoreConfig()
@@ -71,6 +73,8 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
 
   /**
     * Returns the least common superschemas of two schemas found in the type hierarchy.
+    *
+    * TODO (multi-import): This is unused. Remove?
     */
   def leastCommonSuperschemas(s1: DeclaredSchema, s2: DeclaredSchema): Vector[NamedSchema] = {
     sealed trait Status

@@ -1,7 +1,5 @@
 package lore.compiler.semantics
 
-import lore.compiler.semantics.modules.ModuleMemberKind
-
 /**
   * [[BindingKind]] signifies which kind of binding a module member or name path should refer to.
   */
@@ -19,11 +17,6 @@ sealed trait BindingKind {
     */
   def isMultiReferable: Boolean = this == BindingKind.MultiFunction
   def isSingleReferable: Boolean = !isMultiReferable
-
-  def toModuleMemberKind: ModuleMemberKind = this match {
-    case BindingKind.Type => ModuleMemberKind.Type
-    case _: BindingKind.Term => ModuleMemberKind.Term
-  }
 }
 
 object BindingKind {

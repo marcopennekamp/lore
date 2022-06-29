@@ -6,7 +6,7 @@ This document describes the structure of the `.poem` bytecode format. Poem files
 
 A **Poem** is a single bytecode unit. It contains any number of *Schemas*, *GlobalVariables*, and *Functions*. 
 
-A VM program may consist of many poems. An explicit organisation of which items to put into which poem files is not prescribed. The Lore compiler usually puts a whole program into a single poem file, but it's also possible to put each function and type definition into its own poem (though not recommended), or anything in between. The VM is designed to handle fragmented multi-function definitions across as many poem files as necessary.
+A VM program may consist of many poems. An explicit organisation of which items to put into which poem files is not prescribed. The Lore compiler usually puts a whole program into a single poem file, but it's also possible to put each function and type definition into its own poem (though not recommended), or anything in between. The VM is designed to handle fragmented multi-function definitions across as many poem files as necessary. Types can be placed in a file in any order.
 
 Concretely, a Poem file has the following structure:
 

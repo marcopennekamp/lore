@@ -9,23 +9,31 @@ import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVe
 
 object TypeExpressionEvaluator {
 
+  // TODO (multi-import): Move these errors to the feedback package.
   case class MissingTypeArguments(schema: NamedSchema, node: TypeExprNode) extends Feedback.Error(node) {
-    override def message: String = s"The type ${schema.name.simpleName} expects ${schema.arity} type arguments. It cannot be used as is."
+    override def message: String = s"The type ${schema.name.simpleName} expects ${schema.arity} type arguments. It" +
+      s" cannot be used as is."
   }
 
   case class UnexpectedTypeArguments(tpe: Type, node: TypeExprNode) extends Feedback.Error(node) {
-    override def message: String = s"The type $tpe cannot be instantiated with type arguments. It must be used as a constant type."
+    override def message: String = s"The type $tpe cannot be instantiated with type arguments. It must be used as a" +
+      s" constant type."
   }
 
   case class DuplicateProperty(property: TypeExprNode.ShapePropertyNode) extends Feedback.Error(property) {
-    override def message = s"The property ${property.name} is declared twice in the shape type. Shape type properties must be unique."
+    override def message: String = s"The property ${property.name} is declared twice in the shape type. Shape type" +
+      s" properties must be unique."
   }
 
   /**
     * @param termScope The term scope is required to properly resolve modules containing types, for qualified type
     *                  names.
     */
-  def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): Option[Type] = {
+  def evaluate(expression: TypeExprNode)(
+    implicit typeScope: TypeScope,
+    termScope: TermScope,
+    reporter: Reporter,
+  ): Option[Type] = {
     expression match {
       case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolveStatic(node.namePath, position).map {
         case tpe: NamedType => tpe
@@ -57,7 +65,11 @@ object TypeExpressionEvaluator {
     }
   }
 
-  private def evaluateShape(expression: TypeExprNode.ShapeNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): ShapeType = {
+  private def evaluateShape(expression: TypeExprNode.ShapeNode)(
+    implicit typeScope: TypeScope,
+    termScope: TermScope,
+    reporter: Reporter,
+  ): ShapeType = {
     ShapeType(
       expression.properties
         .filterDuplicates(_.name, DuplicateProperty)
@@ -65,7 +77,11 @@ object TypeExpressionEvaluator {
     )
   }
 
-  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): ShapeType.Property = {
+  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(
+    implicit typeScope: TypeScope,
+    termScope: TermScope,
+    reporter: Reporter,
+  ): ShapeType.Property = {
     val tpe = evaluate(expression.tpe).getOrElse(BasicType.Any)
     ShapeType.Property(expression.name, tpe)
   }

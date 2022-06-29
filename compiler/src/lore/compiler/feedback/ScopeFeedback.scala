@@ -14,8 +14,4 @@ object ScopeFeedback {
   case class ModuleNotFound(name: String, override val position: Position) extends Feedback.Error(position) {
     override def message = s"The binding `$name` is not a module or does not exist in the current scope."
   }
-
-  case class ModuleExpected(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message = s"The binding `$name` must be a module."
-  }
 }

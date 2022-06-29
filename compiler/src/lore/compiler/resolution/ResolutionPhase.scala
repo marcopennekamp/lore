@@ -5,5 +5,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.syntax.DeclNode
 
 object ResolutionPhase {
-  def process(fragmentModules: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = DeclarationResolver.resolve(fragmentModules)
+  def process(fragmentModules: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
+    RegistryResolver.resolve(fragmentModules)
+  }
 }

@@ -3,7 +3,6 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, ScopeFeedback}
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 import scala.collection.mutable
@@ -57,7 +56,7 @@ trait Scope[A] {
     * members of other bindings (such as struct object properties) should be explicitly excluded. In other words, only
     * <i>static</i> terms and types are considered.
     *
-    * To use this function from outside the scope, use the `resolveStatic` functions in Term and TypeScope.
+    * To use this function from outside the scope, use the `resolveStatic` functions in TermScope and TypeScope.
     *
     * To resolve the correct module, this function requires a [[TermScope]]. Supplying a LocalModule is not
     * sufficient, because module names are shadowed by e.g. local variable names. Code such as this should not compile:
@@ -76,20 +75,14 @@ trait Scope[A] {
     termScope: TermScope,
     position: Position,
   )(implicit reporter: Reporter): Option[A] = {
-    // If the name path only contains a single segment, we don't need to resolve any module paths.
+    // If the name path only contains a single segment, we don't need to resolve the module.
     if (!namePath.isMultiple) {
       return resolve(namePath.simpleName, position)
     }
 
-    // To get the correct term which we can jump off of, we have to search with the name path's head name.
-    termScope.get(namePath.headName) match {
-      case Some(binding) => binding match {
-        case module: GlobalModule => resolveGlobal(module.name ++ namePath.tail, position)
-        case _ =>
-          reporter.error(ScopeFeedback.ModuleExpected(namePath.headName, position))
-          None
-      }
-
+    // To get the correct module which we can jump off of, we have to search with the name path's head name.
+    termScope.getModule(namePath.headName) match {
+      case Some(module) => resolveGlobal(module.name ++ namePath.tail, position)
       case None =>
         reporter.error(ScopeFeedback.ModuleNotFound(namePath.headName, position))
         None

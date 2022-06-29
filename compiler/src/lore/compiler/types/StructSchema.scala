@@ -3,12 +3,13 @@ package lore.compiler.types
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.types.NamedSchema.DefinitionProperty
 
 class StructSchema(
   override val name: NamePath,
   override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
-) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
+) extends DeclaredSchema with DefinitionProperty[StructDefinition] {
   override val kind: Kind = Kind.Struct
 
   val openParameters: Vector[TypeVariable] = parameters.filter(_.isOpen)

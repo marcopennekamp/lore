@@ -7,8 +7,10 @@ import lore.compiler.assembly.schemas.DeclaredSchemaAssembler
 import lore.compiler.assembly.specs.SpecAssembler
 import lore.compiler.core.CompilerOptions
 import lore.compiler.poem.writer.PoemWriter
-import lore.compiler.poem.{PoemFragment, PoemFunction, PoemGlobalVariable, PoemSchema, PoemSpec}
+import lore.compiler.poem._
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.DeclaredSchema
 
 object AssemblyPhase {
@@ -26,32 +28,33 @@ object AssemblyPhase {
     var poemFunctions = Vector.empty[PoemFunction]
     var poemSpecs = Vector.empty[PoemSpec]
 
-    registry.schemasInOrder.foreach {
-      case schema: DeclaredSchema =>
+    registry.modules.foreach { globalModule =>
+      globalModule.declaredSchemas.foreach { schema =>
         val (poemSchema, poemSchemaFunctions, poemSchemaObject) = DeclaredSchemaAssembler.generate(schema)
         poemSchemas :+= poemSchema
         poemSchemaObject.foreach(poemGlobalVariables :+= _)
         poemFunctions ++= poemSchemaFunctions
-
-      case _ =>
-    }
-
-    registry.terms.globalVariables.values.foreach { global =>
-      val (poemGlobalVariable, poemInitializerFunctions) = GlobalVariableAssembler.generate(global)
-      poemGlobalVariables :+= poemGlobalVariable
-      poemFunctions ++= poemInitializerFunctions
-    }
-
-    registry.terms.multiFunctions.values.foreach { mf =>
-      mf.functions.foreach { function =>
-        poemFunctions ++= FunctionAssembler.generate(function)
       }
-    }
 
-    registry.specs.foreach { spec =>
-      val (poemSpec, poemSpecFunction) = SpecAssembler.generate(spec)
-      poemSpecs :+= poemSpec
-      poemFunctions ++= poemSpecFunction
+      globalModule.terms.all.map(_.binding).foreach {
+        case globalVariable: GlobalVariableDefinition =>
+          val (poemGlobalVariable, poemInitializerFunctions) = GlobalVariableAssembler.generate(globalVariable)
+          poemGlobalVariables :+= poemGlobalVariable
+          poemFunctions ++= poemInitializerFunctions
+
+        case mf: MultiFunctionDefinition =>
+          mf.functions.foreach { function =>
+            poemFunctions ++= FunctionAssembler.generate(function)
+          }
+
+        case _ =>
+      }
+
+      globalModule.specs.foreach { moduleMember =>
+        val (poemSpec, poemSpecFunction) = SpecAssembler.generate(moduleMember.spec)
+        poemSpecs :+= poemSpec
+        poemFunctions ++= poemSpecFunction
+      }
     }
 
     val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions, poemSpecs)

@@ -4,15 +4,22 @@ import scala.reflect.ClassTag
 
 object CollectionExtensions {
 
+  implicit class IterableExtension[A](iterable: Iterable[A]) {
+    def filterType[T](implicit tag: ClassTag[T]): Iterable[T] = iterable.filter {
+      case _: T => true
+      case _ => false
+    }.asInstanceOf[Iterable[T]]
+  }
+
   implicit class VectorExtension[A](vector: Vector[A]) {
-    def filterType[T <: A](implicit tag: ClassTag[T]): Vector[T] = vector.flatMap {
-      case value: T => Some(value)
-      case _ => None
+    def filterType[T](implicit tag: ClassTag[T]): Vector[T] = vector.foldLeft(Vector.empty[T]) {
+      case (result, value: T) => result :+ value
+      case (result, _) => result
     }
 
-    def filterNotType[T <: A](implicit tag: ClassTag[T]): Vector[A] = vector.flatMap {
-      case _: T => None
-      case value => Some(value)
+    def filterNotType[T <: A](implicit tag: ClassTag[T]): Vector[A] = vector.foldLeft(Vector.empty[A]) {
+      case (result, _: T) => result
+      case (result, value) => result :+ value
     }
 
     def separateByType[T <: A](implicit tag: ClassTag[T]): (Vector[A], Vector[T]) = {
@@ -145,7 +152,7 @@ object CollectionExtensions {
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
-    def filterType[T <: A](implicit tag: ClassTag[T]): Option[T] = option.flatMap {
+    def filterType[T](implicit tag: ClassTag[T]): Option[T] = option.flatMap {
       case value: T => Some(value)
       case _ => None
     }

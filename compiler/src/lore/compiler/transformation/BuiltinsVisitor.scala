@@ -11,27 +11,58 @@ import lore.compiler.types.BasicType
   */
 class BuiltinsVisitor(implicit registry: Registry, reporter: Reporter) extends ExpressionIdentityVisitor.Simple {
 
-  override def visit(expression: Expression.BinaryOperation)(left: Expression, right: Expression): Expression = expression.operator match {
+  override def visit(
+    expression: Expression.BinaryOperation,
+  )(left: Expression, right: Expression): Expression = expression.operator match {
     case BinaryOperator.Equals =>
-      BuiltinsTransformation.transformComparison(registry.core.equal, BinaryOperator.Equals, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(
+        registry.coreDefinitions.equal,
+        BinaryOperator.Equals,
+        left,
+        right,
+        expression.position,
+      )
 
     case BinaryOperator.LessThan =>
-      BuiltinsTransformation.transformComparison(registry.core.less_than, BinaryOperator.LessThan, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(
+        registry.coreDefinitions.less_than,
+        BinaryOperator.LessThan,
+        left,
+        right,
+        expression.position,
+      )
 
     case BinaryOperator.LessThanEquals =>
-      BuiltinsTransformation.transformComparison(registry.core.less_than_equal, BinaryOperator.LessThanEquals, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(
+        registry.coreDefinitions.less_than_equal,
+        BinaryOperator.LessThanEquals,
+        left,
+        right,
+        expression.position,
+      )
 
     case _ => super.visit(expression)(left, right)
   }
 
-  override def visit(expression: Expression.XaryOperation)(operands: Vector[Expression]): Expression = expression.operator match {
+  override def visit(
+    expression: Expression.XaryOperation,
+  )(operands: Vector[Expression]): Expression = expression.operator match {
     case XaryOperator.Concatenation =>
       def transformOperand(operand: Expression) = {
         if (operand.tpe != BasicType.String) {
-          BuiltinsTransformation.multiFunctionCall(registry.core.to_string, Vector(operand), operand.position)
+          BuiltinsTransformation.multiFunctionCall(
+            registry.coreDefinitions.to_string,
+            Vector(operand),
+            operand.position,
+          )
         } else operand
       }
-      Expression.XaryOperation(XaryOperator.Concatenation, operands.map(transformOperand), BasicType.String, expression.position)
+      Expression.XaryOperation(
+        XaryOperator.Concatenation,
+        operands.map(transformOperand),
+        BasicType.String,
+        expression.position,
+      )
 
     case _ => super.visit(expression)(operands)
   }

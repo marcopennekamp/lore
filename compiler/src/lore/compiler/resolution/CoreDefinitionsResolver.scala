@@ -3,6 +3,7 @@ package lore.compiler.resolution
 import lore.compiler.feedback.{CoreFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.core.{CoreDefinitions, CoreMultiFunction, CoreTrait}
+import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.types.{BasicType, TraitSchema, TupleType, Type}
 
 object CoreDefinitionsResolver {
@@ -11,7 +12,8 @@ object CoreDefinitionsResolver {
     * Resolves all core definitions. If some definitions cannot be found, the resolver reports appropriate errors. They
     * are still added to CoreDefinitions, just without their underlying binding.
     */
-  def resolve()(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): CoreDefinitions = {
+  def resolve()(implicit registry: Registry, reporter: Reporter): CoreDefinitions = {
+    implicit val coreModule: GlobalModule = registry.getOrCreateModule(CoreDefinitions.modulePath)
     val inputAny = TupleType(BasicType.Any)
     val inputAnyAny = TupleType(BasicType.Any, BasicType.Any)
 
@@ -27,9 +29,9 @@ object CoreDefinitionsResolver {
     )
   }
 
-  private def resolveTrait(simpleName: String)(implicit types: Registry.Types, reporter: Reporter): CoreTrait = {
+  private def resolveTrait(simpleName: String)(implicit coreModule: GlobalModule, reporter: Reporter): CoreTrait = {
     val name = CoreDefinitions.modulePath + simpleName
-    val schema = types.schemas.get(name) match {
+    val schema = coreModule.getSchema(simpleName) match {
       case Some(schema) => schema match {
         case schema: TraitSchema => Some(schema)
         case _ =>
@@ -48,9 +50,9 @@ object CoreDefinitionsResolver {
     simpleName: String,
     expectedInputType: TupleType,
     expectedOutputType: Type,
-  )(implicit terms: Registry.Terms, reporter: Reporter): CoreMultiFunction = {
+  )(implicit coreModule: GlobalModule, reporter: Reporter): CoreMultiFunction = {
     val name = CoreDefinitions.modulePath + simpleName
-    val mf = terms.multiFunctions.get(name) match {
+    val mf = coreModule.getMultiFunction(simpleName) match {
       case Some(mf) =>
         val min = mf.min(expectedInputType)
         if (min.isEmpty) {

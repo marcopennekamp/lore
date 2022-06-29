@@ -61,7 +61,7 @@ object LoreCompiler {
   }
 
   private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
-    registry.definitionsIterator.foreach(analyze(_, reporter))
+    registry.modules.foreach(_.definitionsIterator.foreach(analyze(_, reporter)))
   }
 
   private def analyze(definition: Definition, parentReporter: Reporter)(implicit registry: Registry): Unit = {

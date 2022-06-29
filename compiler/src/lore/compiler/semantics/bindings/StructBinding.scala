@@ -5,6 +5,7 @@ import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.StructConstructorBinding.InstantiationSchema
 import lore.compiler.semantics.functions.FunctionSignature
+import lore.compiler.semantics.modules.StructModuleMember
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
@@ -13,7 +14,10 @@ import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 //       variable for each struct object. This might simplify the whole StructBinding business.
 
 sealed trait StructBinding extends TermBinding {
+  def moduleMember: StructModuleMember
   def definition: StructDefinition
+
+  def name: NamePath = moduleMember.name
 }
 
 /**
@@ -23,7 +27,7 @@ sealed trait StructBinding extends TermBinding {
   * constructor names.
   */
 case class StructConstructorBinding(
-  name: NamePath,
+  override val moduleMember: StructModuleMember,
   typeParameters: Vector[TypeVariable],
   underlyingType: StructType,
 ) extends StructBinding {
@@ -33,7 +37,7 @@ case class StructConstructorBinding(
 
   lazy val signature: FunctionSignature = underlyingType.constructorSignature.copy(typeParameters = typeParameters)
 
-  private lazy val instantiationSchema = InstantiationSchema(name, typeParameters, underlyingType)
+  private lazy val instantiationSchema = InstantiationSchema(moduleMember.name, typeParameters, underlyingType)
 
   def instantiateStructType(assignments: Assignments): StructType = instantiationSchema.instantiate(assignments)
 
@@ -43,7 +47,7 @@ case class StructConstructorBinding(
 
   override def toString: String = {
     val typeParameterString = if (typeParameters.nonEmpty) s"[${typeParameters.mkString(", ")}]" else ""
-    s"$name$typeParameterString"
+    s"${moduleMember.name}$typeParameterString"
   }
 }
 
@@ -62,6 +66,9 @@ object StructConstructorBinding {
 
 }
 
-case class StructObjectBinding(name: NamePath, tpe: StructType) extends StructBinding with TypedTermBinding {
+case class StructObjectBinding(
+  override val moduleMember: StructModuleMember,
+  tpe: StructType,
+) extends StructBinding with TypedTermBinding {
   override val definition: StructDefinition = tpe.schema.definition
 }

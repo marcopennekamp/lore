@@ -1,89 +1,83 @@
 package lore.compiler.semantics
 
-import lore.compiler.semantics.bindings.StructBinding
 import lore.compiler.semantics.core.CoreDefinitions
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
-import lore.compiler.semantics.scopes._
-import lore.compiler.semantics.specs.SpecDefinition
-import lore.compiler.semantics.structures.SchemaDefinition
-import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.{AliasSchema, DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.semantics.scopes.{LocalModuleTermScope, LocalModuleTypeScope}
+import lore.compiler.types.{DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.utils.Once
 
 /**
-  * The Registry manages all global scope definitions.
+  * The Registry manages all global modules and offers access to global modules and module members via name paths.
   */
-case class Registry(
-  types: Registry.Types,
-  terms: Registry.Terms,
-  specs: Registry.Specs,
-  core: CoreDefinitions,
-  schemaResolutionOrder: Registry.SchemaResolutionOrder,
-) {
+class Registry {
 
-  val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.schemas.values.toVector.filterType[DeclaredSchema])
+  private var moduleIndex: Map[NamePath, GlobalModule] = Map.empty
+  var coreDefinitions: Once[CoreDefinitions] = new Once
+  var declaredTypeHierarchy: Once[DeclaredTypeHierarchy] = new Once
 
   /**
-    * All schemas in their proper order of resolution. Excludes predefined types.
+    * The root module contains all members which aren't declared as part of a module themselves. It is immediately
+    * created with the Registry, which simplifies various resolution steps.
     */
-  val schemasInOrder: Vector[NamedSchema] = schemaResolutionOrder.map(name => types.schemas(name))
+  val rootModule: GlobalModule = getOrCreateModule(NamePath.empty)
 
   /**
-    * All schema definitions in their proper order of resolution.
+    * Returns all global modules.
     */
-  lazy val schemaDefinitionsInOrder: Vector[SchemaDefinition] = schemasInOrder.map {
-    case schema: DeclaredSchema => schema.definition
-    case schema: AliasSchema => schema.definition
+  def modules: Iterable[GlobalModule] = moduleIndex.values
+
+  /**
+    * Gets the global module with the given name, if it exists.
+    */
+  def getModule(modulePath: NamePath): Option[GlobalModule] = moduleIndex.get(modulePath)
+
+  /**
+    * Gets the global module with the given name if it exists, or creates a new one.
+    */
+  def getOrCreateModule(modulePath: NamePath): GlobalModule = this.synchronized {
+    getModule(modulePath) match {
+      case Some(globalModule) => globalModule
+      case None =>
+        val globalModule = new GlobalModule(modulePath)
+        moduleIndex = moduleIndex.updated(modulePath, globalModule)
+        globalModule
+    }
   }
 
   /**
-    * An iterator that iterates through all schemas in order, then global variables, multi-functions, and specs.
+    * Whether the index has a binding with the exact name path.
     */
-  def definitionsIterator: Iterator[Definition] = {
-    schemaDefinitionsInOrder.iterator ++
-      terms.globalVariables.valuesIterator ++
-      terms.multiFunctions.valuesIterator ++
-      specs.iterator
+  def has(name: NamePath): Boolean = {
+    moduleIndex
+      .get(name.parentOrEmpty)
+      .exists(module => module.types.has(name.simpleName) || module.terms.has(name.simpleName))
+  }
+
+  /**
+    * Returns the schema of the member `name`. If the member doesn't exist or if the schema hasn't been initialized,
+    * `None` is returned.
+    */
+  def getSchema(name: NamePath): Option[NamedSchema] = {
+    getModule(name.parentOrEmpty).flatMap(_.getSchema(name.simpleName))
+  }
+
+  /**
+    * Returns the multi-function definition of the member `name`. If the member doesn't exist or isn't a
+    * multi-function, `None` is returned.
+    */
+  def getMultiFunction(name: NamePath): Option[MultiFunctionDefinition] = {
+    getModule(name.parentOrEmpty).flatMap(_.getMultiFunction(name.simpleName))
   }
 
   /**
     * Creates a type scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = types.scope(localModule)
+  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, this)
 
   /**
     * Creates a term scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getTermScope(localModule: LocalModule): LocalModuleTermScope = terms.scope(localModule)
+  def getTermScope(localModule: LocalModule): LocalModuleTermScope = LocalModuleTermScope(localModule, this)
 
-}
-
-object Registry {
-  type Schemas = Map[NamePath, NamedSchema]
-  type SchemaDefinitions = Map[NamePath, SchemaDefinition]
-
-  case class Types(
-    schemas: Schemas,
-    schemaDefinitions: SchemaDefinitions,
-  ) {
-    def scope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, this)
-  }
-
-  type Modules = Map[NamePath, GlobalModule]
-  type GlobalVariables = Map[NamePath, GlobalVariableDefinition]
-  type MultiFunctions = Map[NamePath, MultiFunctionDefinition]
-  type StructBindings = Map[NamePath, StructBinding]
-
-  case class Terms(
-    modules: Modules,
-    globalVariables: GlobalVariables,
-    multiFunctions: MultiFunctions,
-    structBindings: StructBindings,
-  ) {
-    def scope(localModule: LocalModule): LocalModuleTermScope = LocalModuleTermScope(localModule, this)
-  }
-
-  type Specs = Vector[SpecDefinition]
-  type SchemaResolutionOrder = Vector[NamePath]
 }

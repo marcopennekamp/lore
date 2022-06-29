@@ -3,8 +3,9 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{LocalVariable, TermBinding}
-import lore.compiler.semantics.functions.FunctionSignature
+import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding, TypedTermBinding}
+import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.semantics.modules.GlobalModule
 
 /**
   * A scope that provides access to terms (variables, multi-functions, struct constructors, modules, etc.).
@@ -12,6 +13,16 @@ import lore.compiler.semantics.functions.FunctionSignature
 trait TermScope extends Scope[TermBinding] {
   def resolveStatic(namePath: NamePath, position: Position)(implicit reporter: Reporter): Option[TermBinding] = {
     resolveStatic(namePath, this, position)
+  }
+
+  /**
+    * Fetches a module or companion module `name` from the closest scope, or `None` if `name` doesn't exist or isn't a
+    * module.
+    */
+  def getModule(name: String): Option[GlobalModule] = get(name).flatMap {
+    case module: GlobalModule => Some(module)
+    case binding: StructBinding => binding.definition.companionModule
+    case _ => None
   }
 
   override def entryLabel: String = "binding"

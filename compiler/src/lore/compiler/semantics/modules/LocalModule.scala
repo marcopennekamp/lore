@@ -1,7 +1,9 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.semantics.{BindingKind, NamePath}
+import lore.compiler.semantics.{NamePath, Registry}
+
+import scala.reflect.ClassTag
 
 /**
   * A LocalModule contains local declarations and supports name resolution by resolving simple names to local, global,
@@ -20,40 +22,41 @@ import lore.compiler.semantics.{BindingKind, NamePath}
 class LocalModule(
   val globalModule: GlobalModule,
   val parent: Option[LocalModule],
-  typeMembers: Map[String, ModuleMember],
-  termMembers: Map[String, ModuleMember],
+  typeMembers: Map[String, TypeModuleMember],
+  termMembers: Map[String, TermModuleMember],
   val position: Position,
-)(implicit globalModuleIndex: GlobalModuleIndex) {
+)(implicit registry: Registry) {
   // Per the specification, a local module must either have a parent or be the root module. This prevents the need to
   // treat the root module as a special case during name resolution.
-  if (parent.isEmpty && globalModule != globalModuleIndex.root) {
+  if (parent.isEmpty && globalModule != registry.rootModule) {
     throw CompilationException(s"A local module must either be the root module or have a local module parent. Position:" +
       s" $position.")
   }
 
-  val types: LocalModuleMembers = new LocalModuleMembers(this, typeMembers, ModuleMemberKind.Type)
-  val terms: LocalModuleMembers = new LocalModuleMembers(this, termMembers, ModuleMemberKind.Term)
+  val types: LocalModuleMembers[TypeModuleMember] = new LocalModuleMembers[TypeModuleMember](this, typeMembers)
+  val terms: LocalModuleMembers[TermModuleMember] = new LocalModuleMembers[TermModuleMember](this, termMembers)
+
+  def members[A <: BindingModuleMember](implicit memberTag: ClassTag[A]): LocalModuleMembers[A] = {
+    ModuleMembers.membersOfType(types, terms)
+  }
 
   /**
     * Turns a relative type path into an absolute type path. This works similar to type path resolution in TypeScopes.
     * If the name cannot be found, the function returns None.
+    *
+    * TODO (multi-import): Return a module member instead of a name path.
     */
   def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
     if (!relativePath.isMultiple) {
-      types.getAbsolutePaths(relativePath.simpleName).map(_.singlePath)
+      types.getAccessibleMembers(relativePath.simpleName).map(_.singleMember.name)
     } else {
       // TODO (multi-import): An error should be reported if the head name does not refer to a module (or a companion
       //                      module through a struct binding). In general, reconsider the need for this function.
       terms
-        .getAbsolutePaths(relativePath.headName)
+        .getAccessibleMembers(relativePath.headName)
         //.filter(_.bindingKind == BindingKind.Module)
-        .map(_.singlePath ++ relativePath.tail)
-        .filter(globalModuleIndex.has)
+        .map(_.singleMember.name ++ relativePath.tail)
+        .filter(registry.has)
     }
-  }
-
-  def members(memberKind: ModuleMemberKind): LocalModuleMembers = memberKind match {
-    case ModuleMemberKind.Type => types
-    case ModuleMemberKind.Term => terms
   }
 }

@@ -26,7 +26,8 @@ sealed trait NamedDeclNode extends DeclNode {
   /**
     * The full name of the DeclNode. This is only available once [[localModule]] has been set.
     *
-    * TODO (multi-import): Maybe we can get this equivalent name path from the [[lore.compiler.semantics.modules.ModuleMember]].
+    * TODO (multi-import): Maybe we can get this equivalent name path from the [[lore.compiler.semantics.modules.BindingModuleMember]].
+    * TODO (multi-import): This probably shouldn't even exist or be a `def`.
     */
   lazy val fullName: NamePath = localModule.globalModule.name + simpleName
 }

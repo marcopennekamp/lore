@@ -1,6 +1,5 @@
 package lore.compiler.types
 
-import lore.compiler.core.CompilationException
 import lore.compiler.semantics.structures.DeclaredSchemaDefinition
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -62,22 +61,4 @@ trait DeclaredSchema extends NamedSchema {
       indirectDeclaredSupertypes.groupBy(_.schema).exists { case (_, types) => types.size > 1 }
   }
 
-}
-
-object DeclaredSchema {
-  trait DefinitionProperty[Def <: DeclaredSchemaDefinition] extends DeclaredSchema {
-    private var _def: Def = _
-    override def definition: Def = _def
-
-    /**
-      * Initializes the declared schema with its associated declared schema definition.
-      */
-    def initialize(definition: Def): Unit = {
-      if (this._def != null) {
-        throw CompilationException(s"Only declared schemas without an already attached definition may be initialized." +
-          s" Type name: $name. Definition name: ${definition.name}.")
-      }
-      this._def = definition
-    }
-  }
 }

@@ -10,7 +10,10 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): MultiFunctionDefinition = {
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(
+    implicit registry: Registry,
+    reporter: Reporter,
+  ): MultiFunctionDefinition = {
     if (!functionNodes.allEqual(_.fullName)) {
       val uniqueNames = functionNodes.map(_.fullName).distinct
       throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names: ${uniqueNames.mkString(", ")}.")
@@ -24,7 +27,10 @@ object MultiFunctionDefinitionResolver {
     multiFunction
   }
 
-  private def resolveFunction(node: DeclNode.FunctionNode)(implicit types: Registry.Types, terms: Registry.Terms, reporter: Reporter): FunctionDefinition = {
+  private def resolveFunction(node: DeclNode.FunctionNode)(
+    implicit registry: Registry,
+    reporter: Reporter,
+  ): FunctionDefinition = {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
@@ -34,6 +40,7 @@ object MultiFunctionDefinitionResolver {
     }
   }
 
+  // TODO (multi-import): Move this error to the feedback package.
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
     override def message = s"The function `${definition.signature}` is already declared somewhere else or has a type-theoretic duplicate."
   }
@@ -47,7 +54,9 @@ object MultiFunctionDefinitionResolver {
     * If two functions f1 and f2 are duplicates of each other, we have to filter out both because we don't know whether
     * the programmer made their error with f1 or f2.
     */
-  private def filterDuplicateFunctions(functions: Vector[FunctionDefinition])(implicit reporter: Reporter): Vector[FunctionDefinition] = {
+  private def filterDuplicateFunctions(
+    functions: Vector[FunctionDefinition],
+  )(implicit reporter: Reporter): Vector[FunctionDefinition] = {
     functions.flatMap { f1 =>
       val hasDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.areEquallySpecific(f2.signature.inputType, f1.signature.inputType))
       if (!hasDuplicate) {

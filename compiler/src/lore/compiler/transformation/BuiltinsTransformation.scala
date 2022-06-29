@@ -59,9 +59,9 @@ object BuiltinsTransformation {
     // specialized instruction.
     val hasSpecializedInstruction = (left.tpe, right.tpe) match {
       case (t1: BasicType, t2: BasicType) if t1.isNumeric && t2.isNumeric => true
-      case (BasicType.Boolean, BasicType.Boolean) => cmf == registry.core.equal
+      case (BasicType.Boolean, BasicType.Boolean) => cmf == registry.coreDefinitions.equal
       case (BasicType.String, BasicType.String) => true
-      case (t1, t2) if t1.isSymbol && t2.isSymbol => cmf == registry.core.equal
+      case (t1, t2) if t1.isSymbol && t2.isSymbol => cmf == registry.coreDefinitions.equal
       case _ => false
     }
 

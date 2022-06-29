@@ -3,8 +3,8 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.resolution.ImportResolver.{AccessibleSource, AccessibleSources}
-import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule, LocalModuleMembers, ModuleMember}
-import lore.compiler.semantics.{BindingKind, MultiNamePath, NamePath}
+import lore.compiler.semantics.modules._
+import lore.compiler.semantics.{BindingKind, NamePath, Registry}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.syntax.DeclNode.ImportNode
 
@@ -12,7 +12,7 @@ import lore.compiler.syntax.DeclNode.ImportNode
   * Due to temporary data that [[ImportResolver]] gathers, it should be instantiated exactly once per local module.
   * Resolving imports with multiple instances of the import resolver is illegal.
   */
-class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter) {
+class ImportResolver(localModule: LocalModule)(implicit registry: Registry, reporter: Reporter) {
 
   private val typeSources: AccessibleSources = new AccessibleSources(localModule, localModule.types)
   private val termSources: AccessibleSources = new AccessibleSources(localModule, localModule.terms)
@@ -36,7 +36,7 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
     * only have to resolve the head segment of the import path.
     *
     * To check the rest of the path, in a second step, we take the complete absolute path and check it against the
-    * GlobalModuleIndex. If the index has a member with the exact path name, the import is valid. If not, the compiler
+    * registry. If the registry has a member with the exact path name, the import is valid. If not, the compiler
     * reports an error.
     *
     * An import can start from the current module, any parent of the current module, or a previously imported module.
@@ -52,8 +52,8 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
     val importPath = resolveAbsoluteImportPath(importNode).getOrElse(return)
     val (typeMembers, termMembers) = resolveImportedBindings(importNode, importPath).getOrElse(return)
 
-    typeMembers.foreach(addAccessibleImport(_, importNode, localModule.types, typeSources))
-    termMembers.foreach(addAccessibleImport(_, importNode, localModule.terms, termSources))
+    typeMembers.foreach(addAccessibleImport[TypeModuleMember](_, importNode, localModule.types, typeSources))
+    termMembers.foreach(addAccessibleImport[TermModuleMember](_, importNode, localModule.terms, termSources))
   }
 
   /**
@@ -72,9 +72,9 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
 
     // To get the absolute import path, we must resolve the head segment, which must be a module.
     val headSegment = relativeImportPath.headName
-    localModule.terms.getAbsolutePaths(headSegment) match {
-      case Some(multiNamePath) if multiNamePath.bindingKind == BindingKind.Module =>
-        Some(multiNamePath.singlePath ++ relativeImportPath.tail)
+    localModule.terms.getAccessibleMembers(headSegment) match {
+      case Some(multiReference) if multiReference.bindingKind == BindingKind.Module =>
+        Some(multiReference.singleMember.name ++ relativeImportPath.tail)
 
       case Some(_) =>
         reporter.error(ModuleFeedback.Import.ModuleExpected(importNode, headSegment))
@@ -94,15 +94,15 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
   private def resolveImportedBindings(
     importNode: ImportNode,
     importPath: NamePath,
-  ): Option[(Iterable[ModuleMember], Iterable[ModuleMember])] = {
+  ): Option[(Iterable[TypeModuleMember], Iterable[TermModuleMember])] = {
     val parentPath = if (importNode.isWildcard) importPath else importPath.parentOrEmpty
-    val parentModule = globalModuleIndex.getModule(parentPath).getOrElse {
+    val parentModule = registry.getModule(parentPath).getOrElse {
       reporter.error(ModuleFeedback.Import.NotFound(importNode, parentPath.toString))
       return None
     }
 
     if (importNode.isWildcard) {
-      Some(parentModule.types.members.values, parentModule.terms.members.values)
+      Some(parentModule.types.all, parentModule.terms.all)
     } else {
       val memberName = importPath.simpleName
       val types = parentModule.types.get(memberName)
@@ -123,24 +123,24 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
     *
     * If the import is illegal, an error is reported and the local module's accessibles are not modified.
     */
-  private def addAccessibleImport(
-    moduleMember: ModuleMember,
+  private def addAccessibleImport[A <: BindingModuleMember](
+    moduleMember: A,
     importNode: ImportNode,
-    localModuleMembers: LocalModuleMembers,
+    localModuleMembers: LocalModuleMembers[A],
     accessibleSources: AccessibleSources,
   ): Unit = {
-    val memberName = moduleMember.namePath.simpleName
+    val memberName = moduleMember.name.simpleName
     val importSource = if (importNode.isWildcard) AccessibleSource.WildcardImport else AccessibleSource.DirectImport
-    lazy val singlePath = MultiNamePath(Set(moduleMember.namePath), Set.empty, moduleMember.bindingKind)
+    lazy val singleReference = MultiReference(moduleMember.bindingKind, Set(moduleMember), Set.empty)
 
     localModuleMembers.accessibles.get(memberName) match {
-      case Some(existingPaths) =>
-        if (existingPaths.bindingKind.isMultiReferable && existingPaths.bindingKind == moduleMember.bindingKind) {
-          // We can merge the multi name paths. The new accessible source has to be the source with the highest
+      case Some(existingMembers) =>
+        if (existingMembers.bindingKind.isMultiReferable && existingMembers.bindingKind == moduleMember.bindingKind) {
+          // We can merge the multi references. The new accessible source has to be the source with the highest
           // precedence. For example, if we wildcard-import a member and add it alongside a local definition, the
           // resulting accessible source must still be local. Otherwise, an accessible with higher precedence may be
           // accidentally overridden.
-          localModuleMembers.accessibles += memberName -> existingPaths.addLocal(moduleMember.namePath)
+          localModuleMembers.accessibles += memberName -> existingMembers.addLocal(moduleMember)
           accessibleSources.add(memberName, importSource)
         } else {
           val existingSource = accessibleSources.get(memberName)
@@ -152,28 +152,28 @@ class ImportResolver(localModule: LocalModule)(implicit globalModuleIndex: Globa
             case (AccessibleSource.DirectImport, AccessibleSource.DirectImport) =>
               // A direct import conflicting with another direct import results in an error, except when the exact same
               // module member has been imported again.
-              if (!existingPaths.namePaths.contains(moduleMember.namePath)) {
+              if (!existingMembers.members.contains(moduleMember)) {
                 reporter.error(
-                  ModuleFeedback.Import.DirectImport.CannotOverrideDirectImport(importNode, existingPaths.namePaths)
+                  ModuleFeedback.Import.DirectImport.CannotOverrideDirectImport(importNode, existingMembers.members)
                 )
               }
 
             case (AccessibleSource.DirectImport, AccessibleSource.WildcardImport) =>
               // Direct imports override wildcard imports.
-              localModuleMembers.accessibles += memberName -> singlePath
+              localModuleMembers.accessibles += memberName -> singleReference
               accessibleSources.replace(memberName, AccessibleSource.DirectImport)
 
             case (AccessibleSource.WildcardImport, AccessibleSource.WildcardImport) =>
               // Later wildcard imports override earlier wildcard imports. There is no need to update AccessibleSources
               // because the accessible source is already WildcardImport.
-              localModuleMembers.accessibles += memberName -> singlePath
+              localModuleMembers.accessibles += memberName -> singleReference
 
             case _ =>
           }
         }
 
       case None =>
-        localModuleMembers.accessibles += memberName -> singlePath
+        localModuleMembers.accessibles += memberName -> singleReference
         accessibleSources.add(memberName, importSource)
     }
   }
@@ -185,9 +185,12 @@ object ImportResolver {
     * During import resolution, we have to remember the sources that local module accessibles have come from to apply
     * precedence rules correctly.
     */
-  private class AccessibleSources(localModule: LocalModule, localModuleMembers: LocalModuleMembers) {
+  private class AccessibleSources(
+    localModule: LocalModule,
+    localModuleMembers: LocalModuleMembers[_],
+  ) {
     private var sources: Map[String, AccessibleSource] = {
-      localModuleMembers.accessibles.map { case (name, _) => name -> AccessibleSource.Local }
+      localModuleMembers.accessibles.keys.map(_ -> AccessibleSource.Local).toMap
     }
 
     def get(memberName: String): AccessibleSource = {

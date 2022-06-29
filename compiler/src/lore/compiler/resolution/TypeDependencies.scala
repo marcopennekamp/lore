@@ -2,9 +2,8 @@ package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.resolution.DeclarationResolver.TypeDeclarations
-import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.modules.{DeclaredTypeModuleMember, LocalModule}
 import lore.compiler.syntax.TypeExprNode.TypeNameNode
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.{BasicType, Type}
@@ -16,7 +15,9 @@ import scalax.collection.immutable.Graph
 
 object TypeDependencies {
 
-  private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[NamePath])
+  type SchemaResolutionOrder = Vector[DeclaredTypeModuleMember]
+
+  private case class TypeDeclarationInfo(moduleMember: DeclaredTypeModuleMember, dependencies: Vector[NamePath])
 
   /**
     * Verifies that the dependencies between the given types are correct and computes an order in which schemas need to
@@ -26,12 +27,16 @@ object TypeDependencies {
     *   1. All type dependencies referred to by name have a corresponding type declaration.
     *   2. There are no cyclic type dependencies.
     */
-  def resolve(typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Registry.SchemaResolutionOrder = {
-    val unfilteredInfos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
-    val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations))
+  def resolve(
+    typeModuleMembers: Map[NamePath, DeclaredTypeModuleMember],
+  )(implicit reporter: Reporter): SchemaResolutionOrder = {
+    val unfilteredInfos = typeModuleMembers.values.toVector.map(
+      moduleMember => TypeDeclarationInfo(moduleMember, dependencies(moduleMember.declNode))
+    )
+    val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeModuleMembers))
     var graph = buildDependencyGraph(infos)
 
-    graph = filterCycles(graph, typeDeclarations)
+    graph = filterCycles(graph, typeModuleMembers)
     graph = reconnectRoots(graph)
 
     // Now that the graph has been shown to be acyclic, it should be connected, as Any should be the supertype of all
@@ -42,7 +47,7 @@ object TypeDependencies {
       throw CompilationException(s"The type dependency graph must be connected.")
     }
 
-    computeSchemaResolutionOrder(graph)
+    computeSchemaResolutionOrder(graph, typeModuleMembers)
   }
 
   private def dependencies(declNode: TypeDeclNode): Vector[NamePath] = {
@@ -77,17 +82,24 @@ object TypeDependencies {
     ).toVector
   }
 
-  case class UndefinedDependency(node: TypeDeclNode, dependency: NamePath) extends Feedback.Error(node) {
-    override def message: String = s"The type ${node.fullName} depends on a type $dependency, but it doesn't exist."
+  // TODO (multi-import): Move this error to the feedback package.
+  case class UndefinedDependency(
+    moduleMember: DeclaredTypeModuleMember,
+    dependency: NamePath,
+  ) extends Feedback.Error(moduleMember) {
+    override def message: String = s"The type ${moduleMember.name} depends on a type $dependency, but it doesn't exist."
   }
 
   /**
     * Filters out any dependencies without a corresponding type declaration, reporting an error for each undefined
     * dependency. This ensures that the type resolution order contains only defined types.
     */
-  private def filterUndefinedDependencies(info: TypeDeclarationInfo, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarationInfo = {
-    val (defined, undefined) = info.dependencies.partition(typeDeclarations.contains)
-    undefined.foreach(dependency => reporter.report(UndefinedDependency(info.node, dependency)))
+  private def filterUndefinedDependencies(
+    info: TypeDeclarationInfo,
+    typeModuleMembers: Map[NamePath, DeclaredTypeModuleMember],
+  )(implicit reporter: Reporter): TypeDeclarationInfo = {
+    val (defined, undefined) = info.dependencies.partition(typeModuleMembers.contains)
+    undefined.foreach(dependency => reporter.report(UndefinedDependency(info.moduleMember, dependency)))
     info.copy(dependencies = defined)
   }
 
@@ -104,14 +116,18 @@ object TypeDependencies {
 
   private def buildDependencyEdges(info: TypeDeclarationInfo): Vector[DiEdge[NamePath]] = {
     info.dependencies
-      .map(dependency => dependency ~> info.node.fullName)
-      .withDefault(BasicType.Any.name ~> info.node.fullName)
+      .map(dependency => dependency ~> info.moduleMember.name)
+      .withDefault(BasicType.Any.name ~> info.moduleMember.name)
   }
 
+  // TODO (multi-import): Move this error to the feedback package.
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
-  case class InheritanceCycle(typeNames: Vector[NamePath], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
+  case class InheritanceCycle(
+    typeNames: Vector[NamePath],
+    occurrence: DeclaredTypeModuleMember,
+  ) extends Feedback.Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${typeNames.mkString(", ")}.
          |A declared type must not inherit from itself directly or indirectly. The subtyping relationships of declared
@@ -123,7 +139,10 @@ object TypeDependencies {
     * Removes all types contained in a cycle from the dependency graph, reporting an error for each such cycle. A cycle
     * means that at least one declared type extends itself directly or indirectly.
     */
-  private def filterCycles(graph: DependencyGraph, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): DependencyGraph = {
+  private def filterCycles(
+    graph: DependencyGraph,
+    typeModuleMembers: Map[NamePath, DeclaredTypeModuleMember],
+  )(implicit reporter: Reporter): DependencyGraph = {
     var result = graph
     while (result.isCyclic) {
       val cycles = distinctCycles(result)
@@ -134,7 +153,7 @@ object TypeDependencies {
       cycles.foreach { cycle =>
         val typeNames = cycle.nodes.map(_.value).toVector.init
         // Report the error at each occurrence so that IDEs can properly report them at each location.
-        reporter.report(typeNames.map(occurrence => InheritanceCycle(typeNames, typeDeclarations(occurrence))))
+        reporter.report(typeNames.map(occurrence => InheritanceCycle(typeNames, typeModuleMembers(occurrence))))
         result = result -- typeNames
       }
     }
@@ -172,10 +191,14 @@ object TypeDependencies {
   /**
     * Computes the order in which schemas need to be resolved.
     */
-  private def computeSchemaResolutionOrder(graph: DependencyGraph): Vector[NamePath] = {
+  private def computeSchemaResolutionOrder(
+    graph: DependencyGraph,
+    typeModuleMembers: Map[NamePath, DeclaredTypeModuleMember],
+  ): Vector[DeclaredTypeModuleMember] = {
     val order = graph.topologicalSort.fold(
       _ => throw CompilationException(
-        "Topological sort on the type dependency graph found a cycle, even though we verified earlier that there was no such cycle."
+        "Topological sort on the type dependency graph found a cycle, even though we verified earlier that there was" +
+          " no such cycle."
       ),
       order => order.toVector.map(_.value)
     )
@@ -185,7 +208,7 @@ object TypeDependencies {
     }
 
     // With .tail we exclude Any.
-    order.tail
+    order.tail.map(typeModuleMembers)
   }
 
 }
