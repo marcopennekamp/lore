@@ -1,0 +1,23 @@
+module language.modules.companions
+
+// The relationship between `Child` and `Parent` is such that `Parent`'s schema needs to be resolved first, but
+// `Parent` depends on the companion module of `Child`. This forces the compiler to ensure that companion modules can
+// be accessed even if the companion's struct type occurs later in the schema resolution order.
+struct Child() extends Parent
+module Child do
+  trait Something
+end
+
+trait Parent extends Child.Something
+
+func get_something(something: Child.Something): String = 'something'
+
+@root
+module language.modules do
+  use lore.test._
+
+  spec 'companion_cycle: create a `Child` and pass it to `get_something`' do
+    let child = Child()
+    get_something(child) should_eq 'something'
+  end
+end
