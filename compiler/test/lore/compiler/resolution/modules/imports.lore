@@ -1,11 +1,16 @@
 // Error: Single imports must have at least two segments.
 use lore
 
-// Error: `core` is not a binding.
+// Error: `core` does not exist.
 use core._
 
-// Error: `lore.Oist.map` cannot be found.
+// Error: `lore.Oist.map` does not exist.
 use lore.Oist.map
 
-// Error: `lore.Oist._` cannot be found.
+// Error: `lore.Oist._` does not exist.
 use lore.Oist._
+
+// Error: `global_variable` is not a module.
+use global_variable._
+
+let global_variable: Int = 2

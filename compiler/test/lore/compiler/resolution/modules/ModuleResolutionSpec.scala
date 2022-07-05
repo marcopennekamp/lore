@@ -11,7 +11,6 @@ class ModuleResolutionSpec extends BaseSpec {
 
   s"$fragmentBase/duplicates" should "be compiled with various 'name taken' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
-      (classOf[ModuleFeedback.MemberNameTaken], 2),
       (classOf[ModuleFeedback.MemberNameTaken], 5),
       (classOf[ModuleFeedback.MemberNameTaken], 8),
     )
@@ -20,9 +19,10 @@ class ModuleResolutionSpec extends BaseSpec {
   s"$fragmentBase/imports" should "be compiled with various import errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/imports.lore")(
       (classOf[ModuleFeedback.Import.TooShort], 2),
-      (classOf[ModuleFeedback.Import.ModuleExpected], 5),
+      (classOf[ModuleFeedback.Import.NotFound], 5),
       (classOf[ModuleFeedback.Import.NotFound], 8),
       (classOf[ModuleFeedback.Import.NotFound], 11),
+      (classOf[ModuleFeedback.Import.ModuleExpected], 14),
     )
   }
 

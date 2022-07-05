@@ -8,7 +8,7 @@ class GlobalVariableResolutionSpec extends BaseSpec {
 
   s"$fragmentBase/duplicates" should "be compiled with various 'duplicate name' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
-      (classOf[ModuleFeedback.MemberNameTaken], 2),
+      (classOf[ModuleFeedback.MemberNameTaken], 4),
       (classOf[ModuleFeedback.MemberNameTaken], 6),
     )
   }
