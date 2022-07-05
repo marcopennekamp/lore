@@ -11,7 +11,7 @@ object RuntimeNames {
   object struct {
     def constructor(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/construct")
     def `object`(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/object")
-    def defaultPropertyValue(property: StructPropertyDefinition): NamePath = property.structDefinition.name.appendToLastSegment(s"/default:${property.name}")
+    def defaultPropertyValue(property: StructPropertyDefinition): NamePath = property.struct.name.appendToLastSegment(s"/default:${property.name}")
   }
 
   object globalVariable {

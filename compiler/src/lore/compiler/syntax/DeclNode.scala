@@ -5,12 +5,15 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode}
+import lore.compiler.types.AliasSchema.AliasVariant
 import lore.compiler.types.TypeVariable.Variance
 
 /**
   * All top-level declaration nodes.
   */
 sealed trait DeclNode extends Node {
+  // TODO (multi-import): Turn `localModule` into a `Once`.
+
   /**
     * The [[LocalModule]] this DeclNode is declared in. Each DeclNode has exactly one associated local module.
     */
@@ -26,7 +29,6 @@ sealed trait NamedDeclNode extends DeclNode {
   /**
     * The full name of the DeclNode. This is only available once [[localModule]] has been set.
     *
-    * TODO (multi-import): Maybe we can get this equivalent name path from the [[lore.compiler.semantics.modules.BindingModuleMember]].
     * TODO (multi-import): This probably shouldn't even exist or be a `def`.
     */
   lazy val fullName: NamePath = localModule.globalModule.name + simpleName
@@ -163,15 +165,21 @@ object DeclNode {
 
   case class AliasNode(
     nameNode: NameNode,
+    aliasVariant: AliasVariant,
     typeVariables: Vector[TypeVariableNode],
     tpe: TypeExprNode,
-    isStructAlias: Boolean,
     position: Position,
   ) extends TypeDeclNode with SimpleNamedDeclNode
 
-  /**
-    * @param extended The names of all traits that the struct extends.
-    */
+  sealed trait DeclaredTypeDeclNode extends TypeDeclNode with SimpleNamedDeclNode {
+    def typeVariables: Vector[TypeVariableNode]
+
+    /**
+      * The names of all traits that the declared type extends.
+      */
+    def extended: Vector[TypeExprNode]
+  }
+
   case class StructNode(
     nameNode: NameNode,
     isObject: Boolean,
@@ -179,7 +187,7 @@ object DeclNode {
     extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
     position: Position,
-  ) extends TypeDeclNode with SimpleNamedDeclNode
+  ) extends DeclaredTypeDeclNode
 
   case class PropertyNode(
     nameNode: NameNode,
@@ -190,14 +198,11 @@ object DeclNode {
     position: Position,
   ) extends NamedNode
 
-  /**
-    * @param extended The names of all traits that the trait extends.
-    */
   case class TraitNode(
     nameNode: NameNode,
     typeVariables: Vector[TypeVariableNode],
     extended: Vector[TypeExprNode],
     position: Position,
-  ) extends TypeDeclNode with SimpleNamedDeclNode
+  ) extends DeclaredTypeDeclNode
 
 }

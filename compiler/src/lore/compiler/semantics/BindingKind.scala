@@ -1,5 +1,7 @@
 package lore.compiler.semantics
 
+// TODO (multi-import): Rename to DefinitionKind and move to `definitions` package.
+
 /**
   * [[BindingKind]] signifies which kind of binding a module member or name path should refer to.
   */

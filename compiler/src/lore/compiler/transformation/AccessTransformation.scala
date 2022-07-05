@@ -66,7 +66,7 @@ object AccessTransformation {
     }
 
     def handleCompanionModule(binding: StructBinding, error: => Feedback.Error) = {
-      binding.definition.companionModule match {
+      binding.companionModule match {
         case Some(module) => handleModule(module)
         case None =>
           reporter.error(error)

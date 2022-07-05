@@ -13,8 +13,8 @@ import lore.compiler.utils.Once
 class Registry {
 
   private var moduleIndex: Map[NamePath, GlobalModule] = Map.empty
-  var coreDefinitions: Once[CoreDefinitions] = new Once
-  var declaredTypeHierarchy: Once[DeclaredTypeHierarchy] = new Once
+  val declaredTypeHierarchy: Once[DeclaredTypeHierarchy] = new Once
+  val coreDefinitions: Once[CoreDefinitions] = new Once
 
   /**
     * The root module contains all members which aren't declared as part of a module themselves. It is immediately
@@ -55,16 +55,14 @@ class Registry {
   }
 
   /**
-    * Returns the schema of the member `name`. If the member doesn't exist or if the schema hasn't been initialized,
-    * `None` is returned.
+    * Returns the schema `name`. If the member doesn't exist, `None` is returned.
     */
   def getSchema(name: NamePath): Option[NamedSchema] = {
-    getModule(name.parentOrEmpty).flatMap(_.getSchema(name.simpleName))
+    getModule(name.parentOrEmpty).flatMap(_.types.get(name.simpleName))
   }
 
   /**
-    * Returns the multi-function definition of the member `name`. If the member doesn't exist or isn't a
-    * multi-function, `None` is returned.
+    * Returns the multi-function `name`. If the member doesn't exist or isn't a multi-function, `None` is returned.
     */
   def getMultiFunction(name: NamePath): Option[MultiFunctionDefinition] = {
     getModule(name.parentOrEmpty).flatMap(_.getMultiFunction(name.simpleName))
@@ -73,11 +71,11 @@ class Registry {
   /**
     * Creates a type scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, this)
+  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(this, localModule)
 
   /**
     * Creates a term scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getTermScope(localModule: LocalModule): LocalModuleTermScope = LocalModuleTermScope(localModule, this)
+  def getTermScope(localModule: LocalModule): LocalModuleTermScope = LocalModuleTermScope(this, localModule)
 
 }

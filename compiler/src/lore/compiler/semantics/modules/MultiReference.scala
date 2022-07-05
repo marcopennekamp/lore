@@ -2,10 +2,11 @@ package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.BindingKind
+import lore.compiler.semantics.definitions.BindingDefinition
 
 // TODO (multi-import): Add documentation comment.
 
-case class MultiReference[A <: BindingModuleMember](
+case class MultiReference[A <: BindingDefinition](
   bindingKind: BindingKind,
   local: Set[A],
   global: Set[A],
@@ -14,10 +15,11 @@ case class MultiReference[A <: BindingModuleMember](
   verify()
 
   /**
-    * If the binding is single-referable, returns the multi-reference's only member. That there will only be a single
-    * member is enforced by [[verify]]. If the binding is multi-referable, a [[CompilationException]] will be thrown.
+    * If the multi-reference is single-referable, returns the multi-reference's only binding. That there will only be a
+    * single binding is enforced by [[verify]]. If the multi-reference is multi-referable, a [[CompilationException]]
+    * will be thrown.
     */
-  def singleMember: A = {
+  def singleBinding: A = {
     if (bindingKind.isSingleReferable) members.head
     else throw CompilationException("`MultiReference.singleMember` can only be used with single-referable bindings." +
       s" Binding kind: $bindingKind.")

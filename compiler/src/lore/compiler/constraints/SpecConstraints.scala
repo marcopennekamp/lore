@@ -10,7 +10,7 @@ object SpecConstraints {
     *   - Expression constraints for the spec's body.
     */
   def verify(spec: SpecDefinition)(implicit reporter: Reporter): Unit = {
-    ExpressionConstraints.verify(spec.bodyNode)
+    ExpressionConstraints.verify(spec.node.body)
   }
 
 }

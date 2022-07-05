@@ -113,9 +113,9 @@ object TypingFeedback {
 
   object ConstructorCalls {
     case class CannotSpecialize(binding: StructConstructorBinding, expectedType: DeclaredType, context: Expression) extends Feedback.Error(context) {
-      override def message: String = s"A construction of `${binding.definition.name}` cannot result in expected type" +
-        s" `$expectedType`, because `$expectedType` cannot be specialized to `${binding.definition.name}`. Most likely," +
-        s" `${binding.definition.name}` is not a subtype of `$expectedType`."
+      override def message: String = s"A construction of `${binding.name}` cannot result in expected type" +
+        s" `$expectedType`, because `$expectedType` cannot be specialized to `${binding.name}`. Most likely," +
+        s" `${binding.name}` is not a subtype of `$expectedType`."
     }
   }
 

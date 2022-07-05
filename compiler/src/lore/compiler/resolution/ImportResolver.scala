@@ -3,6 +3,7 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.resolution.ImportResolver.{AccessibleSource, AccessibleSources}
+import lore.compiler.semantics.definitions.{BindingDefinition, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.modules._
 import lore.compiler.semantics.{BindingKind, NamePath, Registry}
 import lore.compiler.syntax.DeclNode
@@ -10,7 +11,7 @@ import lore.compiler.syntax.DeclNode.ImportNode
 
 /**
   * Due to temporary data that [[ImportResolver]] gathers, it should be instantiated exactly once per local module.
-  * Resolving imports with multiple instances of the import resolver is illegal.
+  * Resolving imports with multiple different instances of the import resolver is illegal.
   */
 class ImportResolver(localModule: LocalModule)(implicit registry: Registry, reporter: Reporter) {
 
@@ -18,9 +19,9 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
   private val termSources: AccessibleSources = new AccessibleSources(localModule, localModule.terms)
 
   /**
-    * Resolves `importNodes` for `localModule`, updating the local module's accessible paths according to the import
-    * rules in the specification. Illegal imports are reported as errors and the local module's accessible paths remain
-    * unchanged for the specific import.
+    * Resolves `importNodes` for `localModule`, updating the local module's accessibles according to the import rules
+    * in the specification. Illegal imports are reported as errors and the local module's accessibles remain unchanged
+    * for that specific import.
     *
     * Roughly, imports have the following precedence rules:
     *   - Local declarations have precedence over all imports.
@@ -52,8 +53,8 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
     val importPath = resolveAbsoluteImportPath(importNode).getOrElse(return)
     val (typeMembers, termMembers) = resolveImportedBindings(importNode, importPath).getOrElse(return)
 
-    typeMembers.foreach(addAccessibleImport[TypeModuleMember](_, importNode, localModule.types, typeSources))
-    termMembers.foreach(addAccessibleImport[TermModuleMember](_, importNode, localModule.terms, termSources))
+    typeMembers.foreach(addAccessibleImport(_, importNode, localModule.types, typeSources))
+    termMembers.foreach(addAccessibleImport(_, importNode, localModule.terms, termSources))
   }
 
   /**
@@ -74,7 +75,7 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
     val headSegment = relativeImportPath.headName
     localModule.terms.getAccessibleMembers(headSegment) match {
       case Some(multiReference) if multiReference.bindingKind == BindingKind.Module =>
-        Some(multiReference.singleMember.name ++ relativeImportPath.tail)
+        Some(multiReference.singleBinding.name ++ relativeImportPath.tail)
 
       case Some(_) =>
         reporter.error(ModuleFeedback.Import.ModuleExpected(importNode, headSegment))
@@ -87,14 +88,14 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
   }
 
   /**
-    * Resolve imported types and terms of the binding `importPath`. This depends on the kind of import:
+    * Resolve imported types and terms of the definition `importPath`. This depends on the kind of import:
     *   - For wildcard imports, the function resolves all members of a global module.
-    *   - For direct imports, we have to verify that the binding at the import path exists.
+    *   - For direct imports, we have to verify that the type or term definition at the import path exists.
     */
   private def resolveImportedBindings(
     importNode: ImportNode,
     importPath: NamePath,
-  ): Option[(Iterable[TypeModuleMember], Iterable[TermModuleMember])] = {
+  ): Option[(Iterable[TypeDefinition], Iterable[TermDefinition])] = {
     val parentPath = if (importNode.isWildcard) importPath else importPath.parentOrEmpty
     val parentModule = registry.getModule(parentPath).getOrElse {
       reporter.error(ModuleFeedback.Import.NotFound(importNode, parentPath.toString))
@@ -123,7 +124,7 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
     *
     * If the import is illegal, an error is reported and the local module's accessibles are not modified.
     */
-  private def addAccessibleImport[A <: BindingModuleMember](
+  private def addAccessibleImport[A <: BindingDefinition](
     moduleMember: A,
     importNode: ImportNode,
     localModuleMembers: LocalModuleMembers[A],

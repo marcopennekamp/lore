@@ -8,6 +8,7 @@
   - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
   - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
+  - Make sure that all Scala tests succeed.
   - Clear all `TODO (multi-import)` entries.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
@@ -138,6 +139,8 @@
 ##### Error Reporting
 
 - Add positions to CompilationExceptions.
+- Possibly sort errors by the phase they were raised in. Due to the non-stopping nature of the compiler, some errors only occur because of other errors. For example, a struct alias aliases an object, but is declared as `struct`, and then later a property of the "object" cannot be accessed because the compiler thinks it's a struct, causing confusing error messages.
+  - Alternatively, offer a stopping mode (phase-by-phase or even more granularly) for CLI compilation and non-stopping mode for IDE compilation.  
 - Add names to errors (similar to Typescript) so that programmers can quickly google/search for Lore errors. We might also add links to a specific error documentation (or wiki) on the web to keep compiler error messages short, but still allow beginners to read an extended version of the error, along with examples (DOs and DONTs). 
 - Transformation phase: If the expression of a variable declaration is incorrect, the variable won't be registered and there will be follow-up errors that may be confusing for a user. There is already code to handle a similar case if the type required of the expression is false. However, the `visitUnary` of the visitor isn't even called when the subtree expression produces compilation errors, so we will have to introduce some other mechanism to the visitor.
 

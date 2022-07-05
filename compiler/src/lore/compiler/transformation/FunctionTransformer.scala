@@ -12,7 +12,7 @@ object FunctionTransformer {
     * is sound compared to the result type of the body.
     */
   def transform(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    function.bodyNode.foreach { node =>
+    function.node.body.foreach { node =>
       function.body = Some(
         ExpressionTransformer.transform(
           node,

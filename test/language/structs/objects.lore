@@ -11,7 +11,7 @@ object Mutable do
   mut level: Int = 1
 end
 
-struct MutableAlias = Mutable
+object MutableAlias = Mutable
 
 object LazyEmpty do
   empty: Empty = Empty

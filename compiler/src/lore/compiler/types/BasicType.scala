@@ -1,8 +1,14 @@
 package lore.compiler.types
 
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.definitions.TypeDefinition
+import lore.compiler.syntax.TypeDeclNode
 
-sealed abstract class BasicType(override val name: NamePath, val kind: Kind) extends NamedType {
+sealed abstract class BasicType(override val name: NamePath, val kind: Kind) extends TypeDefinition with NamedType {
+  override def node: TypeDeclNode = throw CompilationException("Basic types don't have associated syntax nodes.")
+  override def isInitialized: Boolean = true
+  override def position: Position = Position.internal
   override val hashCode: Int = name.hashCode
 }
 

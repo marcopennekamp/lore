@@ -1,13 +1,13 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.modules.BindingModuleMember
+import lore.compiler.semantics.definitions.BindingDefinition
 import lore.compiler.syntax.DeclNode.ImportNode
 
 object ModuleFeedback {
   case class MemberNameTaken(
     memberName: String,
-    existing: BindingModuleMember,
+    existing: BindingDefinition,
     override val position: Position,
   ) extends Feedback.Error(position) {
     override def message: String = s"The name of the binding `$memberName` is already taken by another binding at" +
@@ -41,7 +41,7 @@ object ModuleFeedback {
 
       case class CannotOverrideDirectImport(
         node: ImportNode,
-        existingMembers: Iterable[BindingModuleMember],
+        existingMembers: Iterable[BindingDefinition],
       ) extends ImportError(node) {
         override def message: String = introduction + s"`$simpleName` is already imported directly from" +
           s" ${existingMembers.map(member => s"`${member.name.toString}`").mkString(", ")}. Direct imports may not" +

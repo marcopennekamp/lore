@@ -15,6 +15,7 @@ object Resolver {
     f(registry.getTypeScope(localModule))(registry.getTermScope(localModule))
   }
 
+  // TODO (multi-import): Move this to TypeExpressionEvaluator and rename TypeExpressionEvaluator into TypeResolver.
   def withTypeParameters[R](
     localModule: LocalModule,
     typeParameterNodes: Vector[DeclNode.TypeVariableNode],

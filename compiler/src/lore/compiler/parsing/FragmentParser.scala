@@ -6,6 +6,7 @@ import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax._
+import lore.compiler.types.AliasSchema.AliasVariant
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -104,8 +105,10 @@ class FragmentParser(implicit fragment: Fragment) {
   // Global variables.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def globalVariable[_: P]: P[DeclNode.GlobalVariableNode] = {
-    P(Index ~~ "let" ~~ Space.WS1 ~~ name ~~ Space.WS ~~ typeParser.typing ~~ Space.WS ~~ "=" ~ expressionParser.expression ~~ Index)
-      .map(withPosition(DeclNode.GlobalVariableNode))
+    P(
+      Index ~~ "let" ~~ Space.WS1 ~~ name ~~ Space.WS ~~ typeParser.typing ~~ Space.WS ~~ "="
+        ~ expressionParser.expression ~~ Index
+    ).map(withPosition(DeclNode.GlobalVariableNode))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +155,10 @@ class FragmentParser(implicit fragment: Fragment) {
     def parameters = P("(" ~ parameter.rep(sep = ",") ~ ",".? ~ ")").map(_.toVector)
     def commons = P(keyword ~~ Space.WS1 ~~/ name ~ parameters ~ typing)
     P(whereStyles(commons, definition))
-      .map { case (startIndex, (name, parameters, outputType), typeVariables, body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
+      .map {
+        case (startIndex, (name, parameters, outputType), typeVariables, body, endIndex) =>
+          (startIndex, name, typeVariables, parameters, outputType, body, endIndex)
+      }
       .map(withPosition(DeclNode.FunctionNode.from _))
   }
 
@@ -205,15 +211,27 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(alias | `trait` | struct | `object`)
 
   private def alias[_: P]: P[DeclNode.AliasNode] = {
-    def alias(keyword: => P[Unit], isStructAlias: Boolean) = {
-      P(Index ~~ keyword ~~ Space.WS1 ~~ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~~ Index)
-        .map(withPosition((nameNode, typeVariables, tpe, position) => DeclNode.AliasNode(nameNode, typeVariables, tpe, isStructAlias, position)))
+    def alias(keyword: => P[Unit], aliasVariant: AliasVariant) = {
+      P(
+        Index ~~ keyword ~~ Space.WS1 ~~ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter)
+          ~ "=" ~ typeExpression ~~ Index
+      ).map(
+        withPosition((nameNode, typeVariables, tpe, position) =>
+          DeclNode.AliasNode(nameNode, aliasVariant, typeVariables, tpe, position))
+      )
     }
-    P(alias("type", isStructAlias = false) | alias("struct", isStructAlias = true))
+    P(
+        alias("type", AliasVariant.Type)
+      | alias("struct", AliasVariant.Struct)
+      | alias("object", AliasVariant.Object)
+    )
   }
 
   private def `trait`[_: P]: P[DeclNode.TraitNode] = {
-    P(Index ~~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~~ Index).map(withPosition(DeclNode.TraitNode))
+    P(
+      Index ~~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter)
+        ~ `extends` ~~ Index
+    ).map(withPosition(DeclNode.TraitNode))
   }
 
   /**

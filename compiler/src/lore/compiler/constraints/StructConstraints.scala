@@ -3,7 +3,6 @@ package lore.compiler.constraints
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.semantics.{BindingKind, Registry}
-import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
@@ -22,37 +21,37 @@ object StructConstraints {
     *   1. All properties must have default values.
     *   2. None of the properties may share a name with the companion module's members.
     */
-  def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    verifyPropertiesUnique(definition)
-    verifyInheritedShapeProperties(definition)
-    verifyDefaultValueExpressionConstraints(definition)
-    verifyVariancePositions(definition)
-    verifyOpenTypeParameters(definition)
+  def verify(schema: StructSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    verifyPropertiesUnique(schema)
+    verifyInheritedShapeProperties(schema)
+    verifyDefaultValueExpressionConstraints(schema)
+    verifyVariancePositions(schema)
+    verifyOpenTypeParameters(schema)
 
-    if (definition.isObject) {
-      verifyObjectDefaults(definition)
-      verifyObjectCompanionNames(definition)
+    if (schema.isObject) {
+      verifyObjectDefaults(schema)
+      verifyObjectCompanionNames(schema)
     }
   }
 
   /**
     * Verifies that the given struct's properties are unique.
     */
-  private def verifyPropertiesUnique(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.properties.verifyUnique(_.name, property => StructFeedback.DuplicateProperty(definition, property))
+  private def verifyPropertiesUnique(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.properties.verifyUnique(_.name, property => StructFeedback.DuplicateProperty(schema, property))
   }
 
   /**
     * Verifies that the given struct's inherited shape type is properly implemented.
     */
-  private def verifyInheritedShapeProperties(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.schema.inheritedShapeType.properties.values.toVector.foreach { shapeProperty =>
-      definition.propertyMap.get(shapeProperty.name) match {
+  private def verifyInheritedShapeProperties(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.inheritedShapeType.properties.values.toVector.foreach { shapeProperty =>
+      schema.propertyMap.get(shapeProperty.name) match {
         case Some(structProperty) =>
           if (structProperty.tpe </= shapeProperty.tpe) {
-            reporter.error(StructFeedback.Shape.InvalidPropertyType(definition, structProperty, shapeProperty))
+            reporter.error(StructFeedback.Shape.InvalidPropertyType(schema, structProperty, shapeProperty))
           }
-        case None => reporter.error(StructFeedback.Shape.MissingProperty(definition, shapeProperty))
+        case None => reporter.error(StructFeedback.Shape.MissingProperty(schema, shapeProperty))
       }
     }
   }
@@ -60,8 +59,8 @@ object StructConstraints {
   /**
     * Verifies expression constraints for all default values.
     */
-  private def verifyDefaultValueExpressionConstraints(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.properties.foreach { property =>
+  private def verifyDefaultValueExpressionConstraints(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.properties.foreach { property =>
       property.defaultValueNode.foreach(ExpressionConstraints.verify)
     }
   }
@@ -69,8 +68,8 @@ object StructConstraints {
   /**
     * Verifies that co-/contra-/invariant type parameters are used in appropriate positions in property types.
     */
-  private def verifyVariancePositions(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.properties.foreach { property =>
+  private def verifyVariancePositions(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.properties.foreach { property =>
       val origin = if (property.isMutable) Variance.Invariant else Variance.Covariant
       VarianceConstraints.verifyVariance(property.tpe, origin, property.position)
     }
@@ -79,18 +78,18 @@ object StructConstraints {
   /**
     * Verifies that open type parameters are covariant, uniquely deducible, and used in immutable properties.
     */
-  private def verifyOpenTypeParameters(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.schema.openParameters.foreach { typeParameter =>
+  private def verifyOpenTypeParameters(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.openParameters.foreach { typeParameter =>
       if (typeParameter.variance != Variance.Covariant) {
-        reporter.error(StructFeedback.OpenTypeParameter.CovarianceRequired(typeParameter, definition.position))
+        reporter.error(StructFeedback.OpenTypeParameter.CovarianceRequired(typeParameter, schema.position))
       }
 
       if (typeParameter.lowerBound != BasicType.Nothing) {
-        reporter.error(StructFeedback.OpenTypeParameter.IllegalLowerBound(typeParameter, definition.position))
+        reporter.error(StructFeedback.OpenTypeParameter.IllegalLowerBound(typeParameter, schema.position))
       }
 
-      definition.schema.openParameterDerivations.get(typeParameter) match {
-        case None => reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, definition.position))
+      schema.openParameterDerivations.get(typeParameter) match {
+        case None => reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, schema.position))
         case Some(property) =>
           if (property.isMutable) {
             reporter.error(StructFeedback.OpenTypeParameter.MutableProperty(typeParameter, property))
@@ -129,9 +128,9 @@ object StructConstraints {
   /**
     * Verifies that the properties of the given object all have default values.
     */
-  private def verifyObjectDefaults(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.properties.filterNot(_.hasDefault).foreach {
-      property => reporter.error(StructFeedback.Object.MissingDefault(definition, property))
+  private def verifyObjectDefaults(schema: StructSchema)(implicit reporter: Reporter): Unit = {
+    schema.properties.filterNot(_.hasDefault).foreach {
+      property => reporter.error(StructFeedback.Object.MissingDefault(schema, property))
     }
   }
 
@@ -143,13 +142,11 @@ object StructConstraints {
     * member would at most be possible via imports. And second, the shadowing would make name resolution much more
     * complex, especially when resolving absolute paths.
     */
-  private def verifyObjectCompanionNames(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.companionModule.foreach { module =>
-      definition.properties.foreach { property =>
-        module.terms.get(property.name).foreach { moduleMember =>
-          moduleMember.positions.foreach { position =>
-            reporter.error(StructFeedback.Object.MemberNameTaken(definition, property.name, position))
-          }
+  private def verifyObjectCompanionNames(schema: StructSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    registry.getModule(schema.name).foreach { companionModule =>
+      schema.properties.foreach { property =>
+        companionModule.terms.get(property.name).foreach { term =>
+          reporter.error(StructFeedback.Object.MemberNameTaken(schema, property.name, term.position))
         }
       }
     }

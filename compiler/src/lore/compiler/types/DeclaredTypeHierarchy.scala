@@ -1,6 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
+import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.GraphPredef.EdgeAssoc
@@ -13,12 +14,12 @@ import scala.collection.mutable
 /**
   * A hierarchy of declared schemas to provide quick access to hierarchical relationships between structs and traits.
   */
-class DeclaredTypeHierarchy(schemas: Iterable[NamedSchema]) {
+class DeclaredTypeHierarchy(schemas: Iterable[TypeDefinition]) {
 
   /**
     * The graph that holds the subtyping relationship between declared type <i>schemas</i>. Any is the root node.
     */
-  private val subtypingGraph: Graph[NamedSchema, DiEdge] = {
+  private val subtypingGraph: Graph[TypeDefinition, DiEdge] = {
     val edges = schemas.flatMap {
       case schema: DeclaredSchema =>
         schema.declaredSupertypes
@@ -76,14 +77,14 @@ class DeclaredTypeHierarchy(schemas: Iterable[NamedSchema]) {
     *
     * TODO (multi-import): This is unused. Remove?
     */
-  def leastCommonSuperschemas(s1: DeclaredSchema, s2: DeclaredSchema): Vector[NamedSchema] = {
+  def leastCommonSuperschemas(s1: DeclaredSchema, s2: DeclaredSchema): Vector[TypeDefinition] = {
     sealed trait Status
     case object Unseen extends Status    // A schema not yet seen.
     case object Marked extends Status    // An ancestor of s1.
     case object Found extends Status     // One of the least common ancestors.
     case object Excluded extends Status  // A common ancestor, but not one of the least common ancestors.
 
-    val status = mutable.HashMap[NamedSchema, Status]()
+    val status = mutable.HashMap[TypeDefinition, Status]()
 
     // Set all ancestors of s1 to Marked.
     reverseBfs(subtypingGraph.get(s1), node => {

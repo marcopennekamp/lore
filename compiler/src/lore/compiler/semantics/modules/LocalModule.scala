@@ -1,9 +1,8 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.semantics.definitions.{BindingDefinition, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.{NamePath, Registry}
-
-import scala.reflect.ClassTag
 
 /**
   * A LocalModule contains local declarations and supports name resolution by resolving simple names to local, global,
@@ -15,15 +14,15 @@ import scala.reflect.ClassTag
   * process, so that DeclNodes don't lose their connection to the other local declarations. It also requires us to
   * create a parent/child relationship between nested local modules.
   *
-  * Local module members are separated by binding kind because some types and their corresponding modules may be placed
-  * in different namespaces. This is the case with the String type, which as a basic type is placed in the root
-  * namespace, but has the corresponding module `lore.String`.
+  * Local module members are separated by binding kind because types and their corresponding modules may be placed in
+  * different namespaces. This is the case with the String type, which as a basic type is placed in the root namespace,
+  * but has the corresponding module `lore.String`.
   */
 class LocalModule(
   val globalModule: GlobalModule,
   val parent: Option[LocalModule],
-  typeMembers: Map[String, TypeModuleMember],
-  termMembers: Map[String, TermModuleMember],
+  typeDefinitions: Map[String, TypeDefinition],
+  termDefinitions: Map[String, TermDefinition],
   val position: Position,
 )(implicit registry: Registry) {
   // Per the specification, a local module must either have a parent or be the root module. This prevents the need to
@@ -33,11 +32,11 @@ class LocalModule(
       s" $position.")
   }
 
-  val types: LocalModuleMembers[TypeModuleMember] = new LocalModuleMembers[TypeModuleMember](this, typeMembers)
-  val terms: LocalModuleMembers[TermModuleMember] = new LocalModuleMembers[TermModuleMember](this, termMembers)
+  val types: LocalModuleMembers[TypeDefinition] = new LocalModuleMembers(this, typeDefinitions, ModuleMemberKind.Type)
+  val terms: LocalModuleMembers[TermDefinition] = new LocalModuleMembers(this, termDefinitions, ModuleMemberKind.Term)
 
-  def members[A <: BindingModuleMember](implicit memberTag: ClassTag[A]): LocalModuleMembers[A] = {
-    ModuleMembers.membersOfType(types, terms)
+  def members[A <: BindingDefinition](moduleMemberKind: ModuleMemberKind[A]): LocalModuleMembers[A] = {
+    ModuleMembers.membersOfKind(types, terms, moduleMemberKind)
   }
 
   /**
@@ -48,14 +47,14 @@ class LocalModule(
     */
   def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
     if (!relativePath.isMultiple) {
-      types.getAccessibleMembers(relativePath.simpleName).map(_.singleMember.name)
+      types.getAccessibleMembers(relativePath.simpleName).map(_.singleBinding.name)
     } else {
       // TODO (multi-import): An error should be reported if the head name does not refer to a module (or a companion
       //                      module through a struct binding). In general, reconsider the need for this function.
       terms
         .getAccessibleMembers(relativePath.headName)
         //.filter(_.bindingKind == BindingKind.Module)
-        .map(_.singleMember.name ++ relativePath.tail)
+        .map(_.singleBinding.name ++ relativePath.tail)
         .filter(registry.has)
     }
   }

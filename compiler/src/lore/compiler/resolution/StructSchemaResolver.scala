@@ -2,34 +2,83 @@ package lore.compiler.resolution
 
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.StructDefinition
-import lore.compiler.syntax.DeclNode
-import lore.compiler.types.StructSchema
+import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding}
+import lore.compiler.semantics.modules.GlobalModule
+import lore.compiler.semantics.scopes.{TermScope, TypeScope}
+import lore.compiler.semantics.structures.StructPropertyDefinition
+import lore.compiler.syntax.DeclNode.{PropertyNode, StructNode}
+import lore.compiler.types.{BasicType, StructSchema}
 
 object StructSchemaResolver {
 
-  // TODO (multi-import): Move error to central location.
-  case class StructIllegalExtends(node: DeclNode.StructNode) extends Feedback.Error(node) {
-    override def message = s"The struct ${node.fullName} does not implement a trait or shape but some other type."
+  /**
+    * Creates an uninitialized [[StructSchema]] for `node`. Local modules of nodes are not yet resolved at this point.
+    */
+  def create(
+    node: StructNode,
+    globalModule: GlobalModule,
+  )(implicit registry: Registry, reporter: Reporter): StructSchema = {
+    new StructSchema(globalModule.name + node.simpleName, node.isObject, node)
   }
 
-  def resolve(node: DeclNode.StructNode)(implicit registry: Registry, reporter: Reporter): StructSchema = {
-    Resolver.withTypeParameters(node.localModule, node.typeVariables) {
-      implicit typeScope => implicit termScope => typeParameters =>
-        val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, StructIllegalExtends(node))
-        val schema = new StructSchema(node.fullName, typeParameters, supertypes)
-        val companionModule = registry.getModule(node.fullName)
-        val definition = new StructDefinition(
-          node.fullName,
-          schema,
-          node.isObject,
-          companionModule,
-          node.localModule,
-          node.nameNode.position,
-        )
-        schema.initialize(definition)
-        schema
+  /**
+    * Creates an uninitialized [[StructBinding]] for `schema`. Local modules of nodes are not yet resolved at this
+    * point.
+    */
+  def createStructBinding(schema: StructSchema): StructBinding = {
+    if (schema.isObject) new StructObjectBinding(schema)
+    else new StructConstructorBinding(schema)
+  }
+
+  /**
+    * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
+    */
+  def initialize(schema: StructSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    DeclaredSchemaResolver.initialize(schema, schema.node)
+  }
+
+  /**
+    * Initializes `structBinding`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
+    */
+  def initializeStructBinding(schema: StructSchema, structBinding: StructBinding): Unit = {
+    structBinding match {
+      case binding: StructConstructorBinding => binding.initialize(schema.instantiate(schema.identityAssignments))
+      case binding: StructObjectBinding => binding.initialize(schema)
     }
+  }
+
+  def initializeProperties(schema: StructSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    Resolver.withRegistryScopes(schema.localModule) {
+      registryTypeScope => implicit termScope =>
+        implicit val typeScope: TypeScope = schema.getTypeScope(registryTypeScope)
+        val properties = schema.node.properties.map(resolveProperty(schema, _))
+        schema.initializeProperties(properties)
+    }
+  }
+
+  // TODO (multi-import): Move error to central location.
+  case class MutableOpenProperty(node: PropertyNode) extends Feedback.Error(node) {
+    override def message = s"The open property ${node.name} may not be mutable."
+  }
+
+  private def resolveProperty(schema: StructSchema, node: PropertyNode)(
+    implicit typeScope: TypeScope,
+    termScope: TermScope,
+    reporter: Reporter,
+  ): StructPropertyDefinition = {
+    val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
+    if (node.isOpen && node.isMutable) {
+      reporter.error(MutableOpenProperty(node))
+    }
+    new StructPropertyDefinition(
+      node.name,
+      tpe,
+      node.isOpen,
+      node.isMutable,
+      node.defaultValue,
+      schema,
+      node.nameNode.position,
+    )
   }
 
 }

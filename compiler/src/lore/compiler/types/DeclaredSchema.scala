@@ -1,28 +1,40 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.structures.DeclaredSchemaDefinition
+import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.utils.Once
 
-trait DeclaredSchema extends NamedSchema {
+trait DeclaredSchema extends TypeDefinition {
 
-  override def constantType: DeclaredType = super.constantType.asInstanceOf[DeclaredType]
+  private val _parameters: Once[Vector[TypeVariable]] = new Once
+  private val _supertypes: Once[Vector[Type]] = new Once
+
+  override def parameters: Vector[TypeVariable] = _parameters
 
   /**
-    * The declared schema's kind is either `Trait` or `Struct`.
+    * The declared schema's kind, either `Trait` or `Struct`.
     */
   def kind: Kind
-
-  /**
-    * The definition associated with this schema.
-    */
-  def definition: DeclaredSchemaDefinition
 
   /**
     * The direct supertypes of the declared schema. Only traits and shapes are allowed to be supertypes of a declared
     * type. The list may contain instantiated type schemas whose type arguments contain some of the schema's type
     * variables.
     */
-  def supertypes: Vector[Type]
+  def supertypes: Vector[Type] = _supertypes
+
+  /**
+    * Initializes the parameters and supertypes of the declared schema. This corresponds to the initialization phase of
+    * the type binding.
+    */
+  def initialize(parameters: Vector[TypeVariable], supertypes: Vector[Type]): Unit = {
+    _parameters.assign(parameters)
+    _supertypes.assign(supertypes)
+  }
+
+  override def isInitialized: Boolean = _parameters.isAssigned && _supertypes.isAssigned
+
+  override def constantType: DeclaredType = super.constantType.asInstanceOf[DeclaredType]
 
   /**
     * All direct declared supertypes of the declared schema.

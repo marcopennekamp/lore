@@ -31,7 +31,7 @@ object CoreDefinitionsResolver {
 
   private def resolveTrait(simpleName: String)(implicit coreModule: GlobalModule, reporter: Reporter): CoreTrait = {
     val name = CoreDefinitions.modulePath + simpleName
-    val schema = coreModule.getSchema(simpleName) match {
+    val schema = coreModule.types.get(simpleName) match {
       case Some(schema) => schema match {
         case schema: TraitSchema => Some(schema)
         case _ =>

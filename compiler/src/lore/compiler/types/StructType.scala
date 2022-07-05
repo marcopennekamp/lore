@@ -11,7 +11,7 @@ case class StructType(
   /**
     * The struct's properties, their types instantiated with the type arguments.
     */
-  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(assignments))
+  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.properties.map(_.instantiate(assignments))
 
   /**
     * The struct constructor signature with all type parameters instantiated. The corresponding signature type
@@ -22,7 +22,7 @@ case class StructType(
     Vector.empty,
     properties.map(_.asParameter),
     this,
-    schema.definition.position,
+    schema.position,
   )
 
   /**

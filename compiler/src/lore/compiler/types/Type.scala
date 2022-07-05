@@ -2,6 +2,7 @@ package lore.compiler.types
 
 import com.typesafe.scalalogging.Logger
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.utils.CollectionExtensions._
 
 /**
@@ -39,7 +40,7 @@ object Type {
   val logger: Logger = Logger("lore.compiler.types")
   val loggerBlank: Logger = Logger("lore.compiler.types.blank")
 
-  val predefinedTypes: Map[NamePath, NamedType] = Vector(
+  val predefinedTypes: Map[NamePath, TypeDefinition] = Vector(
     BasicType.Any,
     BasicType.Nothing,
     BasicType.Int,

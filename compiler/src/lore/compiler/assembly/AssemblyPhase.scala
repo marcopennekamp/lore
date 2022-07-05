@@ -11,7 +11,6 @@ import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.DeclaredSchema
 
 object AssemblyPhase {
 
@@ -36,7 +35,7 @@ object AssemblyPhase {
         poemFunctions ++= poemSchemaFunctions
       }
 
-      globalModule.terms.all.map(_.binding).foreach {
+      globalModule.terms.all.foreach {
         case globalVariable: GlobalVariableDefinition =>
           val (poemGlobalVariable, poemInitializerFunctions) = GlobalVariableAssembler.generate(globalVariable)
           poemGlobalVariables :+= poemGlobalVariable
@@ -50,8 +49,8 @@ object AssemblyPhase {
         case _ =>
       }
 
-      globalModule.specs.foreach { moduleMember =>
-        val (poemSpec, poemSpecFunction) = SpecAssembler.generate(moduleMember.spec)
+      globalModule.specs.foreach { spec =>
+        val (poemSpec, poemSpecFunction) = SpecAssembler.generate(spec)
         poemSpecs :+= poemSpec
         poemFunctions ++= poemSpecFunction
       }

@@ -2,12 +2,12 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.semantics.definitions.HasLocalModule
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.semantics.scopes.{TermScope, FunctionTermScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.{NamePath, NamedDefinition, Registry}
-import lore.compiler.syntax.ExprNode
+import lore.compiler.semantics.scopes.{FunctionTermScope, ImmutableTypeScope, TermScope, TypeScope}
+import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.syntax.DeclNode.FunctionNode
 import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
@@ -20,30 +20,32 @@ import lore.compiler.types.{Fit, Type, TypeVariable}
   */
 class FunctionDefinition(
   val signature: FunctionSignature,
-  val bodyNode: Option[ExprNode],
-  val localModule: LocalModule,
-) extends NamedDefinition with Positioned {
-  override val name: NamePath = signature.name
+  val node: FunctionNode,
+  val multiFunction: MultiFunctionDefinition,
+) extends Positioned with HasLocalModule {
+  val name: NamePath = signature.name
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
   val typeParameters: Vector[TypeVariable] = signature.typeParameters
-  val isAbstract: Boolean = bodyNode.isEmpty
+  val isAbstract: Boolean = node.body.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic
 
   /**
-    * The multi-function this function is a part of. This is immediately initialized after the multi-function is created.
-    */
-  var multiFunction: MultiFunctionDefinition = _
-
-  /**
     * This is a variable because it may be transformed during the course of the compilation.
+    *
+    * TODO (multi-import): This and similar mutable fields should be Once.
     */
   var body: Option[Expression] = None
 
-  def getTypeScope(implicit registry: Registry): TypeScope = FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
-  def getTermScope(implicit registry: Registry): TermScope = FunctionTermScope(signature, registry.getTermScope(localModule))
+  def getTypeScope(implicit registry: Registry): TypeScope = {
+    FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
+  }
+
+  def getTermScope(implicit registry: Registry): TermScope = {
+    FunctionTermScope(signature, registry.getTermScope(localModule))
+  }
 
   /**
     * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a
@@ -66,13 +68,15 @@ class FunctionDefinition(
     */
   lazy val monomorphicInstance: FunctionInstance = {
     if (!isMonomorphic) {
-      throw CompilationException(s"The function instance $signature cannot be instantiated monomorphically, because it is not monomorphic.")
+      throw CompilationException(s"The function instance $signature cannot be instantiated monomorphically, because it" +
+        s" is not monomorphic.")
     }
     FunctionInstance(this, signature)
   }
 }
 
 object FunctionDefinition {
+  // TODO (multi-import): Move this error to the feedback package.
   case class CannotInstantiateFunction(definition: FunctionDefinition, argumentType: Type) extends Feedback.Error(definition) {
     override def message = s"The function definition $definition cannot be instantiated from argument type $argumentType."
   }

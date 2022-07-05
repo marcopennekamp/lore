@@ -3,7 +3,7 @@ package lore.compiler.constraints
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{DispatchHierarchy, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types._
 import scalaz.std.vector._
 import scalaz.syntax.traverse._
@@ -174,7 +174,7 @@ object MultiFunctionConstraints {
     * Verifies expression constraints for all functions defined in the given multi-function.
     */
   private def verifyExpressionConstraints(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
-    mf.functions.flatMap(_.bodyNode).foreach(ExpressionConstraints.verify)
+    mf.functions.flatMap(_.node.body).foreach(ExpressionConstraints.verify)
   }
 
   case class IncompatibleOutputTypes(
@@ -203,7 +203,9 @@ object MultiFunctionConstraints {
     * the same type.
     */
   private def verifyOutputTypes(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
-    def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Unit = {
+    val hierarchy: DispatchHierarchy = mf.hierarchy
+
+    def verifyHierarchyNode(node: hierarchy.graph.NodeT): Unit = {
       val parent = node.value
       val successors = node.diSuccessors.toVector
       successors.foreach { successor =>
@@ -218,7 +220,7 @@ object MultiFunctionConstraints {
       }
     }
 
-    mf.hierarchy.roots.foreach(verifyHierarchyNode)
+    hierarchy.roots.foreach(verifyHierarchyNode)
   }
 
   /**

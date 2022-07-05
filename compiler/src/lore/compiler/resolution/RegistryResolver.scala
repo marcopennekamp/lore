@@ -1,14 +1,16 @@
 package lore.compiler.resolution
 
-import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
 import lore.compiler.resolution.TypeDependencies.SchemaResolutionOrder
+import lore.compiler.semantics.bindings.StructBinding
+import lore.compiler.semantics.definitions.{TermDefinition, TypeDefinition}
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.semantics.{NamePath, Registry}
-import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
-import lore.compiler.semantics.modules._
-import lore.compiler.syntax.DeclNode.{ModuleNode, StructNode}
-import lore.compiler.syntax.{DeclNode, TypeDeclNode}
+import lore.compiler.syntax.DeclNode
+import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 object RegistryResolver {
 
@@ -18,11 +20,10 @@ object RegistryResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
     implicit val registry: Registry = new Registry
     resolveModules(moduleNodes)
-    val typeModuleMembers = resolveTypes()
+    val typeDefinitions = initializeTypes()
     resolveTerms()
-    resolveSpecs()
+    registry.declaredTypeHierarchy.assign(new DeclaredTypeHierarchy(typeDefinitions))
     registry.coreDefinitions.assign(CoreDefinitionsResolver.resolve())
-    registry.declaredTypeHierarchy.assign(new DeclaredTypeHierarchy(typeModuleMembers.map(_.schema.value)))
     registry
   }
 
@@ -41,179 +42,98 @@ object RegistryResolver {
     */
   private def resolvePredefinedTypes()(implicit registry: Registry): Unit = {
     Type.predefinedTypes.values.foreach {
-      tpe => registry.rootModule.types.add(new BuiltinTypeModuleMember(tpe, registry.rootModule))
+      tpe => registry.rootModule.types.add(tpe)
     }
   }
 
   /**
-    * Each module member (except for global modules) will have an unresolved NamedSchema, GlobalVariableDefinition, and
-    * so on. We have to resolve these in the correct order, with types first.
+    * Initializes all schemas and struct bindings.
     *
-    * We perform two separate passes over type declarations: (1) Resolve types and definitions and (2) resolve struct
-    * properties. This has the distinct advantage that we don't need to defer typings of struct properties with
-    * laziness.
+    * We perform two separate passes over type declarations: (1) Initialize types and (2) initialize struct properties.
+    * This has the distinct advantage that we don't need to defer typings of struct properties with laziness.
     *
-    * Struct bindings are resolved with struct schemas so that functions like `Scope.getStatic` can properly access
-    * companion modules of structs, which happens sometimes during schema resolution if a type is accessed through a
-    * companion module.
-    *
-    * Not all types are necessarily resolved. For example, a type with cyclic inheritance won't be added to the schema
-    * resolution order and thus not resolved. See also [[TypeModuleMember.schema]].
+    * TODO (multi-import): Some types with cyclic inheritance might need to be removed from global and local modules.
+    *                      We have to make sure that the compiler doesn't crash if some types aren't initialized!
+    *                      Basically, these uninitialized types should not be fetched from a scope. The best way to
+    *                      solve this is probably to literally remove these types from global and local modules.
     */
-  private def resolveTypes()(implicit registry: Registry, reporter: Reporter): Iterable[DeclaredTypeModuleMember] = {
-    val typeModuleMembers = collectTypeModuleMembers()
-    val schemaResolutionOrder = TypeDependencies.resolve(typeModuleMembers)
-    resolveSchemas(schemaResolutionOrder)
-    resolveStructProperties(schemaResolutionOrder)
-    typeModuleMembers.values
+  private def initializeTypes()(implicit registry: Registry, reporter: Reporter): Iterable[TypeDefinition] = {
+    val typeDefinitions = collectTypeDefinitions()
+    val schemaResolutionOrder = TypeDependencies.resolve(typeDefinitions)
+    initializeSchemas(schemaResolutionOrder)
+    initializeStructProperties(schemaResolutionOrder)
+    typeDefinitions.values
   }
 
   /**
-    * Collects all [[TypeDeclNode]]s from all global modules in the registry. In contrast to other declarations, type
-    * declarations have to be collected centrally so that a schema resolution order and later a declared type hierarchy
-    * can be built.
+    * Collects all user-defined [[TypeDefinition]]s from all global modules in the registry, excluding basic types. In
+    * contrast to other declarations, type definitions have to be collected centrally so that a schema resolution order
+    * and later a declared type hierarchy can be built.
     */
-  private def collectTypeModuleMembers()(implicit registry: Registry): Map[NamePath, DeclaredTypeModuleMember] = {
-    var typeModuleMembers = Map.empty[NamePath, DeclaredTypeModuleMember]
+  private def collectTypeDefinitions()(implicit registry: Registry): Map[NamePath, TypeDefinition] = {
+    var typeDefinitions = Map.empty[NamePath, TypeDefinition]
     registry.modules.foreach { globalModule =>
       globalModule.types.all.foreach {
-        case moduleMember: DeclaredTypeModuleMember => typeModuleMembers += moduleMember.name -> moduleMember
+        case _: BasicType =>
+        case moduleMember: TypeDefinition => typeDefinitions += moduleMember.name -> moduleMember
         case _ =>
       }
     }
-    typeModuleMembers
+    typeDefinitions
   }
 
   /**
-    * Resolves schemas, definitions, and struct bindings in their schema resolution order.
+    * Initializes schemas and struct bindings in their schema resolution order.
     */
-  private def resolveSchemas(schemaResolutionOrder: SchemaResolutionOrder)(
+  private def initializeSchemas(schemaResolutionOrder: SchemaResolutionOrder)(
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
-    schemaResolutionOrder.foreach { moduleMember =>
-      val schema = moduleMember.declNode match {
-        case aliasNode: DeclNode.AliasNode => AliasSchemaResolver.resolve(aliasNode)
-        case traitNode: DeclNode.TraitNode => TraitSchemaResolver.resolve(traitNode)
-        case structNode: DeclNode.StructNode => StructSchemaResolver.resolve(structNode)
-      }
-      moduleMember.schema.assign(schema)
+    schemaResolutionOrder.foreach { typeDefinition =>
+      lazy val structBinding = typeDefinition.globalModule.terms.get(typeDefinition.simpleName).filterType[StructBinding]
+      typeDefinition match {
+        case schema: AliasSchema =>
+          AliasSchemaResolver.initialize(schema)
+          structBinding.foreach(AliasSchemaResolver.initializeStructBinding(schema, _))
 
-      // Resolve struct bindings immediately so that type resolution can access companion modules through them.
-      // TODO (multi-import): Duplicate code!
-      schema match {
-        case _: StructSchema =>
-          moduleMember.owner.terms.get(moduleMember.simpleName) match {
-            case Some(bindingModuleMember: StructModuleMember) => resolveStructBinding(bindingModuleMember)
-            case None =>
-          }
-        case aliasSchema: AliasSchema if aliasSchema.definition.isStructAlias =>
-          moduleMember.owner.terms.get(moduleMember.simpleName) match {
-            case Some(bindingModuleMember: StructModuleMember) => resolveStructBinding(bindingModuleMember)
-            case None =>
-          }
-        case _ =>
+        case schema: TraitSchema =>
+          TraitSchemaResolver.initialize(schema)
+
+        case schema: StructSchema =>
+          StructSchemaResolver.initialize(schema)
+          structBinding.foreach(StructSchemaResolver.initializeStructBinding(schema, _))
       }
+    }
+  }
+
+  private def initializeStructProperties(schemaResolutionOrder: SchemaResolutionOrder)(
+    implicit registry: Registry,
+    reporter: Reporter,
+  ): Unit = {
+    schemaResolutionOrder.foreach {
+      case schema: StructSchema => StructSchemaResolver.initializeProperties(schema)
+      case _ =>
     }
   }
 
   /**
-    * Resolves the struct binding for `moduleMember`.
+    * Terms can be initialized in one go as global variables and multi-functions have no declarative interdependency.
     *
-    * In case of type aliases representing a struct type, the struct binding will be able to instantiate the struct
-    * with the correct struct type given the type alias's type parameters.
-    *
-    * TODO (multi-import): Maybe split into `resolveStructBinding` and `resolveStructAliasBinding`.
-    */
-  private def resolveStructBinding(moduleMember: StructModuleMember)(
-    implicit registry: Registry,
-    reporter: Reporter,
-  ): Unit = {
-    val binding = moduleMember.typeModuleMember.schema.value match {
-      case schema: StructSchema =>
-        if (schema.definition.isObject) {
-          StructObjectBinding(moduleMember, schema.constantType)
-        } else {
-          StructConstructorBinding(moduleMember, schema.parameters, schema.instantiate(schema.identityAssignments))
-        }
-
-      case schema: AliasSchema if schema.definition.isStructAlias =>
-        val underlyingType = schema.originalType.asInstanceOf[StructType]
-        if (underlyingType.schema.definition.isObject) {
-          StructObjectBinding(moduleMember, underlyingType)
-        } else {
-          StructConstructorBinding(moduleMember, schema.parameters, underlyingType)
-        }
-
-      case schema => throw CompilationException(s"Unexpected schema for struct binding `${moduleMember.name}`:" +
-        s" $schema. The schema is neither a struct schema nor a struct alias schema.")
-    }
-    moduleMember.structBinding.assign(binding)
-  }
-
-  private def resolveStructProperties(schemaResolutionOrder: SchemaResolutionOrder)(
-    implicit registry: Registry,
-    reporter: Reporter,
-  ): Unit = {
-    schemaResolutionOrder.foreach { moduleMember =>
-      moduleMember.schema.value match {
-        case schema: StructSchema => StructPropertyResolver.resolve(
-          schema,
-          // TODO (multi-import): This cast and other difficulties with matching on type module members tell me that
-          //                      we need separate module member types for each kind of type, i.e. StructTypeModuleMember,
-          //                      TraitTypeModuleMember, and AliasTypeModuleMember.
-          moduleMember.declNode.asInstanceOf[StructNode].properties,
-        )
-        case _ =>
-      }
-    }
-  }
-
-  /**
-    * Terms can be resolved in one go as global variables and multi-functions have no declarative interdependency.
-    *
-    * Struct bindings have already been resolved during type resolution.
+    * Struct bindings have already been initialized during type initialization.
     */
   private def resolveTerms()(implicit registry: Registry, reporter: Reporter): Unit = {
     registry.modules.foreach(_.terms.all.foreach(resolveTerm))
   }
 
-  private def resolveTerm(moduleMember: TermModuleMember)(
+  private def resolveTerm(moduleMember: TermDefinition)(
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
     moduleMember match {
-      //case moduleMember: StructModuleMember => resolveStructBinding(moduleMember)
-      case moduleMember: GlobalVariableModuleMember => resolveGlobalVariable(moduleMember)
-      case moduleMember: MultiFunctionModuleMember => resolveMultiFunction(moduleMember)
+      case variable: GlobalVariableDefinition => GlobalVariableDefinitionResolver.initialize(variable)
+      case mf: MultiFunctionDefinition => MultiFunctionDefinitionResolver.initialize(mf)
       case _ =>
-        // Global modules (ModuleModuleMembers) don't need to be resolved further.
-    }
-  }
-
-  private def resolveGlobalVariable(moduleMember: GlobalVariableModuleMember)(
-    implicit registry: Registry,
-    reporter: Reporter,
-  ): Unit = {
-    val definition = GlobalVariableDefinitionResolver.resolve(moduleMember.declNode)
-    moduleMember.globalVariable.assign(definition)
-  }
-
-  private def resolveMultiFunction(moduleMember: MultiFunctionModuleMember)(
-    implicit registry: Registry,
-    reporter: Reporter,
-  ): Unit = {
-    val definition = MultiFunctionDefinitionResolver.resolve(moduleMember.functionNodes)
-    moduleMember.multiFunction.assign(definition)
-  }
-
-  private def resolveSpecs()(implicit registry: Registry): Unit = {
-    registry.modules.foreach { globalModule =>
-      globalModule.specs.foreach {
-        moduleMember =>
-          val spec = SpecDefinitionResolver.resolve(moduleMember.declNode)
-          moduleMember.spec.assign(spec)
-      }
+        // Global modules and struct bindings don't need to be initialized further.
     }
   }
 

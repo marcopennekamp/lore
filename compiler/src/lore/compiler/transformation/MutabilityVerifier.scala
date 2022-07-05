@@ -8,7 +8,8 @@ import lore.compiler.semantics.expressions.{Expression, ExpressionVerificationVi
   */
 class MutabilityVerifier(implicit reporter: Reporter) extends ExpressionVerificationVisitor {
   override def verify(expression: Expression): Unit = expression match {
-    case Expression.Assignment(target, _, _) if !target.isMutable => reporter.error(ExpressionFeedback.ImmutableAssignment(target))
+    case Expression.Assignment(target, _, _) if !target.isMutable =>
+      reporter.error(ExpressionFeedback.ImmutableAssignment(target))
     case _ =>
   }
 }

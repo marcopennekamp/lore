@@ -12,7 +12,10 @@ import lore.compiler.typing.InferenceVariable.Assignments
 /**
   * Replaces all inference variables with inferred types.
   */
-class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry, reporter: Reporter) extends ExpressionIdentityVisitor[Expression] {
+class TypeRehydrationVisitor(assignments: Assignments)(
+  implicit registry: Registry,
+  reporter: Reporter,
+) extends ExpressionIdentityVisitor[Expression] {
 
   override protected def wrap(expression: Expression): Expression = expression
 
@@ -54,7 +57,9 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     body
   )
 
-  override def visit(expression: MultiFunctionValue): Expression = expression.copy(tpe = assignments.instantiate(expression.tpe))
+  override def visit(expression: MultiFunctionValue): Expression = {
+    expression.copy(tpe = assignments.instantiate(expression.tpe))
+  }
 
   override def visit(expression: UntypedConstructorValue): Expression = {
     assignments.instantiate(expression.tpe) match {
@@ -82,11 +87,13 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     tpe = assignments.instantiate(expression.tpe)
   )
 
-  override def visit(expression: Call)(target: Option[Expression], arguments: Vector[Expression]): Expression = expression.copy(
-    target = expression.target.withExpression(target),
-    arguments = arguments,
-    tpe = assignments.instantiate(expression.tpe),
-  )
+  override def visit(expression: Call)(target: Option[Expression], arguments: Vector[Expression]): Expression = {
+    expression.copy(
+      target = expression.target.withExpression(target),
+      arguments = arguments,
+      tpe = assignments.instantiate(expression.tpe),
+    )
+  }
 
   override def visit(expression: ForLoop)(collections: Vector[Expression], body: Expression): Expression = {
     val newLoop = expression.withCollections(collections)
@@ -101,6 +108,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     case v => v
   }
 
-  private def instantiateVariable(variable: LocalVariable): LocalVariable = variable.copy(tpe = assignments.instantiate(variable.tpe))
+  private def instantiateVariable(variable: LocalVariable): LocalVariable = {
+    variable.copy(tpe = assignments.instantiate(variable.tpe))
+  }
 
 }

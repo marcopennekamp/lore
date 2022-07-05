@@ -22,10 +22,10 @@ object StructSchemaAssembler {
     poemTypeParameters: Vector[PoemTypeParameter],
     poemSupertraits: Vector[PoemNamedType],
   )(implicit registry: Registry): (PoemStructSchema, Vector[PoemFunction], Option[PoemGlobalVariable]) = {
-    val poemProperties = generateProperties(schema.definition.properties)
+    val poemProperties = generateProperties(schema.properties)
     val poemSchema = PoemStructSchema(schema.kind, schema.name, poemTypeParameters, poemSupertraits, poemProperties)
     val poemConstructor = generateConstructor(schema)
-    val (poemObject, poemObjectFunctions) = if (schema.definition.isObject) {
+    val (poemObject, poemObjectFunctions) = if (schema.isObject) {
       val (poemGlobalVariable, poemFunctions) = generateObject(schema)
       (Some(poemGlobalVariable), poemFunctions)
     } else (None, Vector.empty)
@@ -52,10 +52,10 @@ object StructSchemaAssembler {
     implicit val registerProvider: RegisterProvider = new RegisterProvider
 
     // The first N registers are reserved for the property arguments in their declaration order.
-    val propertyArgumentRegisters = schema.definition.properties.map(property => property -> registerProvider.fresh()).toMap
+    val propertyArgumentRegisters = schema.properties.map(property => property -> registerProvider.fresh()).toMap
 
     val regInstance = registerProvider.fresh()
-    val orderedProperties = PropertyOrder.sort(schema.definition.properties)(_.name)
+    val orderedProperties = PropertyOrder.sort(schema.properties)(_.name)
     val valueArguments = orderedProperties.map(property => propertyArgumentRegisters(property))
     val bodyChunk = if (schema.isConstant) {
       val structType = TypeAssembler.generate(schema.constantType)
@@ -78,7 +78,7 @@ object StructSchemaAssembler {
           Chunk(PoemInstruction.TypeOf(regType, regProperty)) ++ TypePathAssembler.generate(regType, typePath)
         }
       }
-      val typeArguments = typeArgumentChunks.map(_.forceResult(schema.definition.position))
+      val typeArguments = typeArgumentChunks.map(_.forceResult(schema.position))
       val instanceChunk = Chunk(regInstance, PoemInstruction.StructPoly(regInstance, schema, typeArguments, valueArguments))
       Chunk.concat(typeArgumentChunks) ++ instanceChunk
     }
@@ -97,7 +97,7 @@ object StructSchemaAssembler {
   private def generateObject(schema: StructSchema)(implicit registry: Registry): (PoemGlobalVariable, Vector[PoemFunction]) = {
     val name = RuntimeNames.struct.`object`(schema)
 
-    if (schema.definition.properties.isEmpty) {
+    if (schema.properties.isEmpty) {
       // Remember that objects cannot have type parameters.
       val poemType = PoemNamedType(schema, Vector.empty)
       val poemValue = PoemStructValue(Map.empty, poemType)
@@ -106,10 +106,10 @@ object StructSchemaAssembler {
       implicit val registerProvider: RegisterProvider = new RegisterProvider
 
       // Remember that all properties of an object must have a default value.
-      val propertyChunks = schema.definition.properties.map(ConstructorAssembler.generatePropertyDefault)
+      val propertyChunks = schema.properties.map(ConstructorAssembler.generatePropertyDefault)
       val constructorCallChunk = ConstructorAssembler.generateCall(schema.constantType, propertyChunks.map(_.forceResult))
       val bodyChunk = Chunk.concat(propertyChunks) ++ constructorCallChunk
-      GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.definition.position)
+      GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.position)
     }
   }
 
@@ -117,7 +117,7 @@ object StructSchemaAssembler {
     * Generates the poem functions that compute default property values.
     */
   private def generatePropertyDefaultValueFunctions(schema: StructSchema)(implicit registry: Registry): Vector[PoemFunction] = {
-    schema.definition.properties.flatMap { property =>
+    schema.properties.flatMap { property =>
       property.defaultValue match {
         case Some(defaultValue) =>
           val functionName = RuntimeNames.struct.defaultPropertyValue(property)

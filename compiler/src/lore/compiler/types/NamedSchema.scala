@@ -1,17 +1,11 @@
 package lore.compiler.types
 
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.structures.SchemaDefinition
-import lore.compiler.utils.Once
+import lore.compiler.semantics.bindings.Binding
 
-trait NamedSchema extends TypeSchema {
+/**
+  * A named schema is synonymous with [[lore.compiler.semantics.bindings.TypeBinding]].
+  */
+trait NamedSchema extends TypeSchema with Binding {
   def name: NamePath
-}
-
-object NamedSchema {
-  trait DefinitionProperty[Def <: SchemaDefinition] extends NamedSchema {
-    private val _definition: Once[Def] = new Once
-    def definition: Def = _definition.value
-    def initialize(definition: Def): Unit = _definition.assign(definition)
-  }
 }

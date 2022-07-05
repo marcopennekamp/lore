@@ -144,7 +144,7 @@ class ExpressionTransformationVisitor(
     case IfElseNode(_, _, onFalse, position) =>
       val cases = Vector(
         CondCase(argument1, argument2),
-        CondCase(Expression.Literal.boolean(true, onFalse.map(_.position).getOrElse(position)), argument3)
+        CondCase(Expression.Literal.boolean(value = true, onFalse.map(_.position).getOrElse(position)), argument3)
       )
       Expression.Cond(cases, position)
   }
@@ -168,7 +168,7 @@ class ExpressionTransformationVisitor(
           val entries = entryNodes.zip(expressions).map {
             case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression
           }
-          val arguments = StructTransformation.entriesToArguments(binding.underlyingType.schema.definition, entries, position)
+          val arguments = StructTransformation.entriesToArguments(binding.underlyingType.schema, entries, position)
           typeArgumentNodes match {
             case Some(typeArgumentNodes) =>
               val target = StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)

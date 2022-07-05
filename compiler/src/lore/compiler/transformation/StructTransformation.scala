@@ -7,8 +7,9 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
-import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.syntax.TypeExprNode
+import lore.compiler.types.StructSchema
 
 object StructTransformation {
 
@@ -67,7 +68,7 @@ object StructTransformation {
     * Transforms the name/expression pairs in `entries` to an ordered list of arguments with which the struct's
     * constructor may be invoked.
     */
-  def entriesToArguments(struct: StructDefinition, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Vector[Expression] = {
+  def entriesToArguments(struct: StructSchema, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Vector[Expression] = {
     verifyNamesUnique(entries, position)
     correlateEntries(struct, entries.toMap, position)
   }
@@ -85,7 +86,7 @@ object StructTransformation {
     * constructor arguments in the correct order.
     */
   private def correlateEntries(
-    struct: StructDefinition,
+    struct: StructSchema,
     entries: Map[String, Expression],
     position: Position,
   )(implicit reporter: Reporter): Vector[Expression] = {

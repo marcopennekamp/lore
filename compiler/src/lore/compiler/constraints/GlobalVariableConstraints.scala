@@ -10,7 +10,7 @@ object GlobalVariableConstraints {
     *   - Expression constraints for the global variable's value expression.
     */
   def verify(variable: GlobalVariableDefinition)(implicit reporter: Reporter): Unit = {
-    ExpressionConstraints.verify(variable.valueNode)
+    ExpressionConstraints.verify(variable.node.value)
   }
 
 }

@@ -9,7 +9,7 @@ object SpecTransformer {
 
   def transform(spec: SpecDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     spec.body = ExpressionTransformer.transform(
-      spec.bodyNode,
+      spec.node.body,
       TupleType.UnitType,
       registry.getTypeScope(spec.localModule),
       registry.getTermScope(spec.localModule),

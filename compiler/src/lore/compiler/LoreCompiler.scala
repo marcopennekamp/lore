@@ -6,7 +6,8 @@ import lore.compiler.core.{CompilerOptions, Fragment}
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.parsing.ParsingPhase
 import lore.compiler.resolution.ResolutionPhase
-import lore.compiler.semantics.{Definition, Registry}
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.definitions.Definition
 import lore.compiler.transformation.TransformationPhase
 import lore.compiler.utils.Timer.timed
 

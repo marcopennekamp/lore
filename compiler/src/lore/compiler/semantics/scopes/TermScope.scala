@@ -3,8 +3,8 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding, TypedTermBinding}
-import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding}
+import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.modules.GlobalModule
 
 /**
@@ -21,10 +21,11 @@ trait TermScope extends Scope[TermBinding] {
     */
   def getModule(name: String): Option[GlobalModule] = get(name).flatMap {
     case module: GlobalModule => Some(module)
-    case binding: StructBinding => binding.definition.companionModule
+    case structBinding: StructBinding => structBinding.companionModule
     case _ => None
   }
 
+  override protected def optionalParent: Option[TermScope] = None
   override def entryLabel: String = "binding"
 }
 
@@ -32,7 +33,7 @@ trait TermScope extends Scope[TermBinding] {
   * The root term scope of a function, containing parameter bindings.
   */
 case class FunctionTermScope(signature: FunctionSignature, parent: TermScope) extends ImmutableScope[TermBinding] with TermScope {
-  override protected val optionalParent: Option[Scope[TermBinding]] = Some(parent)
+  override protected val optionalParent: Option[TermScope] = Some(parent)
   override protected val entries: Map[String, TermBinding] = signature.namedParameters.map(p => p.name -> p.asVariable).toMap
 }
 
@@ -40,7 +41,7 @@ case class FunctionTermScope(signature: FunctionSignature, parent: TermScope) ex
   * A scope opened by a block, containing local variable bindings.
   */
 class BlockTermScope(parent: TermScope) extends MutableScope[TermBinding] with TermScope {
-  override protected def optionalParent: Option[Scope[TermBinding]] = Some(parent)
+  override protected def optionalParent: Option[TermScope] = Some(parent)
   def register(variable: LocalVariable, position: Position)(implicit reporter: Reporter): Unit = {
     super.register(variable.name, variable, position)
   }

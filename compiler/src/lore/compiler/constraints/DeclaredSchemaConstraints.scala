@@ -2,8 +2,7 @@ package lore.compiler.constraints
 
 import lore.compiler.feedback.{DeclaredSchemaFeedback, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.{DeclaredSchemaDefinition, StructDefinition}
-import lore.compiler.types.TraitType
+import lore.compiler.types.{DeclaredSchema, StructSchema, TraitType}
 import lore.compiler.types.TypeVariable.Variance
 
 object DeclaredSchemaConstraints {
@@ -15,11 +14,11 @@ object DeclaredSchemaConstraints {
     *      are equal.
     *   3. All struct constraints if the given definition is a struct.
     */
-  def verify(definition: DeclaredSchemaDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    verifyVariancePositions(definition)
-    verifySupertraitInvarianceConsistency(definition)
-    definition match {
-      case struct: StructDefinition => StructConstraints.verify(struct)
+  def verify(schema: DeclaredSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    verifyVariancePositions(schema)
+    verifySupertraitInvarianceConsistency(schema)
+    schema match {
+      case schema: StructSchema => StructConstraints.verify(schema)
       case _ =>
     }
   }
@@ -27,9 +26,9 @@ object DeclaredSchemaConstraints {
   /**
     * Verifies that co-/contra-/invariant type parameters are used in appropriate positions in extended types.
     */
-  private def verifyVariancePositions(definition: DeclaredSchemaDefinition)(implicit reporter: Reporter): Unit = {
-    definition.schema.supertypes.foreach {
-      supertype => VarianceConstraints.verifyVariance(supertype, Variance.Covariant, definition.position)
+  private def verifyVariancePositions(schema: DeclaredSchema)(implicit reporter: Reporter): Unit = {
+    schema.supertypes.foreach {
+      supertype => VarianceConstraints.verifyVariance(supertype, Variance.Covariant, schema.position)
     }
   }
 
@@ -39,8 +38,8 @@ object DeclaredSchemaConstraints {
     * For example, if a struct `Z` extends both `X[Int]` and `X[Real]` directly or indirectly, and the type parameter
     * `A` is invariant, `A` isn't assigned to consistently, as `Int` and `Real` aren't equal.
     */
-  private def verifySupertraitInvarianceConsistency(definition: DeclaredSchemaDefinition)(implicit reporter: Reporter): Unit = {
-    val supertraitsBySchema = definition.schema.indirectDeclaredSupertypes.filter {
+  private def verifySupertraitInvarianceConsistency(schema: DeclaredSchema)(implicit reporter: Reporter): Unit = {
+    val supertraitsBySchema = schema.indirectDeclaredSupertypes.filter {
       // This filter combines a type filter on TraitType with a check that the supertrait schema even has invariant
       // type parameters. Traits without invariant type parameters can be ignored.
       case supertrait: TraitType => supertrait.schema.hasInvariantParameters
@@ -55,7 +54,7 @@ object DeclaredSchemaConstraints {
           if (typeArguments.size > 1) {
             reporter.error(
               DeclaredSchemaFeedback.SupertraitInvarianceInconsistent(
-                definition.schema,
+                schema,
                 supertraitSchema,
                 typeParameter,
                 typeArguments.toVector,

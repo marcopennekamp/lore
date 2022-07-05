@@ -1,9 +1,14 @@
 package lore.compiler.semantics.modules
 
+import lore.compiler.semantics.definitions.BindingDefinition
+
 /**
-  * [[GlobalModuleMembers]] manages global module members of a particular binding kind, i.e. either types or terms.
+  * [[GlobalModuleMembers]] manages type or term global module members.
   */
-class GlobalModuleMembers[A <: BindingModuleMember](val globalModule: GlobalModule) extends ModuleMembers[A] {
+class GlobalModuleMembers[A <: BindingDefinition](
+  val globalModule: GlobalModule,
+  val moduleMemberKind: ModuleMemberKind[A],
+) extends ModuleMembers[A] {
   private var members: Map[String, A] = Map.empty
 
   /**

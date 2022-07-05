@@ -1,26 +1,26 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
+import lore.compiler.semantics.definitions.BindingDefinition
 import lore.compiler.semantics.{BindingKind, Registry}
 
-import scala.reflect.ClassTag
-
 /**
-  * [[LocalModuleMembers]] manages local module members of a particular binding kind, i.e. either types or terms.
+  * [[LocalModuleMembers]] manages type or term local module members.
   */
-class LocalModuleMembers[A <: BindingModuleMember](
+class LocalModuleMembers[A <: BindingDefinition](
   val localModule: LocalModule,
   val members: Map[String, A],
-)(implicit memberTag: ClassTag[A], registry: Registry) extends ModuleMembers[A] {
-  private val parent: Option[LocalModuleMembers[A]] = localModule.parent.map(_.members[A])
-  private val global: GlobalModuleMembers[A] = localModule.globalModule.members[A]
+  val moduleMemberKind: ModuleMemberKind[A],
+)(implicit registry: Registry) extends ModuleMembers[A] {
+  private val parent: Option[LocalModuleMembers[A]] = localModule.parent.map(_.members(moduleMemberKind))
+  private val global: GlobalModuleMembers[A] = localModule.globalModule.members(moduleMemberKind)
 
   /**
     * For each simple name, all local and foreign module members that are accessible by simple name in this local
     * module without taking parent modules into account. The map is built by considering local module members and
     * imports, while handling multi-referable members, the precedence of local members, and precedence between imports.
     *
-    * [[accessibles]] is mutable so that it can be constructed efficiently. It should only be changed during module
+    * [[accessibles]] is mutable so that it can be constructed efficiently. It should only be mutated during module
     * resolution.
     */
   var accessibles: Map[String, MultiReference[A]] = members.map {
@@ -31,21 +31,21 @@ class LocalModuleMembers[A <: BindingModuleMember](
     * Returns a [[MultiReference]] for `memberName` if it occurs in this local module, in one of the local module's
     * parents, or globally as a module member of the current local module or a parent local module. Multi-referable
     * bindings may result in a multi-reference that contains multiple members, while single-referable bindings are
-    * guaranteed to produce a single member. The rules governing name resolution of name paths are defined in the
-    * language specification.
+    * guaranteed to produce a single member. The rules governing name resolution are defined in the language
+    * specification.
     *
     * Per the specification, globally declared members of contracted module names (e.g. `foo` in `module foo.bar`) are
     * not taken into account. To decide global membership, the [[Registry]] is taken into consideration.
     */
   def getAccessibleMembers(memberName: String): Option[MultiReference[A]] = {
     getAccessibleMembersLocally(memberName) match {
-      case Some(localPaths) if localPaths.bindingKind.isMultiReferable =>
-        val paths = getAccessibleMembersGlobally(memberName, Some(localPaths.bindingKind)) match {
-          case Some(globalPaths) => globalPaths ++ localPaths
-          case None => localPaths
+      case Some(localMembers) if localMembers.bindingKind.isMultiReferable =>
+        val members = getAccessibleMembersGlobally(memberName, Some(localMembers.bindingKind)) match {
+          case Some(globalMembers) => globalMembers ++ localMembers
+          case None => localMembers
         }
-        Some(paths)
-      case Some(localPaths) => Some(localPaths)
+        Some(members)
+      case Some(localMembers) => Some(localMembers)
       case None => getAccessibleMembersGlobally(memberName, None)
     }
   }
@@ -56,7 +56,7 @@ class LocalModuleMembers[A <: BindingModuleMember](
     */
   private def getAccessibleMembersLocally(memberName: String): Option[MultiReference[A]] = {
     accessibles.get(memberName) match {
-      case Some(paths) => Some(mergeWithParentMembers(paths, _.getAccessibleMembersLocally(memberName)))
+      case Some(multiReference) => Some(mergeWithParentMembers(multiReference, _.getAccessibleMembersLocally(memberName)))
       case None => parent.flatMap(_.getAccessibleMembersLocally(memberName))
     }
   }
@@ -68,7 +68,7 @@ class LocalModuleMembers[A <: BindingModuleMember](
     * If `localBindingKind` is specified, the member has already been found locally, but the bindings are
     * multi-referable and thus the global space has to be searched as well. In this case, care has to be taken that the
     * specification's requirement of local shadowing is followed. The parent chain for a global module may only be
-    * followed so far as the `localBindingKind` still agrees with the local member's *and* global member's binding
+    * followed so far as the `localBindingKind` still agrees with the local member's <i>and</i> global member's binding
     * kinds. See the section `Interaction with other bindings` in `modules.md` of the specification for a motivating
     * example.
     */
@@ -77,7 +77,7 @@ class LocalModuleMembers[A <: BindingModuleMember](
     localBindingKind: Option[BindingKind],
   ): Option[MultiReference[A]] = {
     if (localBindingKind.exists(_.isSingleReferable)) {
-      throw CompilationException("`localBindingKind` must be multi-referable. Otherwise, `getAbsolutePathsGlobally`" +
+      throw CompilationException("`localBindingKind` must be multi-referable. Otherwise, `getAccessibleMembersGlobally`" +
         " shouldn't have been called as the local module member should've been preferred.")
     }
 
@@ -99,9 +99,9 @@ class LocalModuleMembers[A <: BindingModuleMember](
   }
 
   /**
-    * Merges `multiReference` with any multi-references received from `getParentPaths` *if* the member of
-    * `multiReference` are multi-referable and the parent paths agree in their binding kind with `multiReference`.
-    * Otherwise, `multiReference` is preferred.
+    * Merges `multiReference` with any multi-references received from `mergeWithParentMembers` *if* `multiReference` is
+    * multi-referable and the parent multi-reference agrees in its binding kind with `multiReference`. Otherwise,
+    * `multiReference` has precedence.
     */
   private def mergeWithParentMembers(
     multiReference: MultiReference[A],

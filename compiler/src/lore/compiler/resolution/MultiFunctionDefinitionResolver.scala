@@ -6,28 +6,29 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, Fit}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(
+  def initialize(mf: MultiFunctionDefinition)(
     implicit registry: Registry,
     reporter: Reporter,
-  ): MultiFunctionDefinition = {
-    if (!functionNodes.allEqual(_.fullName)) {
-      val uniqueNames = functionNodes.map(_.fullName).distinct
-      throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names: ${uniqueNames.mkString(", ")}.")
+  ): Unit = {
+    // TODO (multi-import): Rewrite this so that `fullName` can be deleted from `NamedDeclNode`.
+    if (mf.functionNodes.exists(_.fullName != mf.name)) {
+      val uniqueNames = mf.functionNodes.map(_.fullName).distinct
+      throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names:" +
+        s" ${uniqueNames.mkString(", ")}. Multi-function name: ${mf.name}.")
     }
 
-    val name = functionNodes.head.fullName
-    val functions = functionNodes.map(resolveFunction)
+    val functions = mf.functionNodes.map(resolveFunction(_, mf))
     val uniqueFunctions = filterDuplicateFunctions(functions)
-    val multiFunction = new MultiFunctionDefinition(name, uniqueFunctions)
-    multiFunction.functions.foreach(_.multiFunction = multiFunction)
-    multiFunction
+    mf.initialize(uniqueFunctions)
   }
 
-  private def resolveFunction(node: DeclNode.FunctionNode)(
+  private def resolveFunction(
+    node: DeclNode.FunctionNode,
+    multiFunction: MultiFunctionDefinition,
+  )(
     implicit registry: Registry,
     reporter: Reporter,
   ): FunctionDefinition = {
@@ -36,7 +37,7 @@ object MultiFunctionDefinitionResolver {
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
         val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
         val signature = FunctionSignature(node.fullName, typeParameters, parameters, outputType, node.nameNode.position)
-        new FunctionDefinition(signature, node.body, node.localModule)
+        new FunctionDefinition(signature, node, multiFunction)
     }
   }
 
@@ -58,7 +59,9 @@ object MultiFunctionDefinitionResolver {
     functions: Vector[FunctionDefinition],
   )(implicit reporter: Reporter): Vector[FunctionDefinition] = {
     functions.flatMap { f1 =>
-      val hasDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.areEquallySpecific(f2.signature.inputType, f1.signature.inputType))
+      val hasDuplicate = functions.filterNot(_ == f1).exists(
+        f2 => Fit.areEquallySpecific(f2.signature.inputType, f1.signature.inputType)
+      )
       if (!hasDuplicate) {
         Vector(f1)
       } else {

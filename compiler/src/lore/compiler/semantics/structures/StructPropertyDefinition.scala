@@ -2,10 +2,12 @@ package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned, UniqueKey}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
+import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
-import lore.compiler.types.{Type, TypeVariable}
+import lore.compiler.types.{StructSchema, Type, TypeVariable}
+
+// TODO (multi-import): Rename to StructProperty and move to the `types` package.
 
 /**
   * The property of a struct.
@@ -18,16 +20,11 @@ class StructPropertyDefinition(
   val isOpen: Boolean,
   val isMutable: Boolean,
   val defaultValueNode: Option[ExprNode],
+  val struct: StructSchema,
   override val position: Position,
 ) extends Positioned {
 
   val uniqueKey: UniqueKey = UniqueKey.fresh()
-
-  /**
-    * The struct definition this property is attached to. This is immediately initialized during the resolution of
-    * struct definitions.
-    */
-  var structDefinition: StructDefinition = _
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.

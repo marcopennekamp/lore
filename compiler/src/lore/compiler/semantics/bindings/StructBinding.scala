@@ -2,73 +2,121 @@ package lore.compiler.semantics.bindings
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.StructConstructorBinding.InstantiationSchema
+import lore.compiler.semantics.definitions.{TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.modules.StructModuleMember
-import lore.compiler.semantics.structures.StructDefinition
+import lore.compiler.semantics.{BindingKind, NamePath}
 import lore.compiler.types.TypeVariable.Assignments
-import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
+import lore.compiler.types._
+import lore.compiler.utils.Once
 
 // TODO: We could roll StructObjectBindings into GlobalVariableDefinitions, that is, generating a semantic global
 //       variable for each struct object. This might simplify the whole StructBinding business.
 
-sealed trait StructBinding extends TermBinding {
-  def moduleMember: StructModuleMember
-  def definition: StructDefinition
+// TODO (multi-import): Move this out of `bindings` because a StructBinding is now a TermDefinition?
 
-  def name: NamePath = moduleMember.name
+/**
+  * A struct binding represents constructors and objects as terms. A struct binding may have a different underlying
+  * schema than its defining schema due to the ability of (parameterized) type aliases to be used as constructors and
+  * objects.
+  *
+  * Because type aliases point to an underlying schema that might not have been created yet during creation of the
+  * struct binding, the underlying schema has to be resolved during initialization of the struct binding. (Also compare
+  * the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
+  */
+sealed trait StructBinding extends TermDefinition {
+  private val _underlyingSchema: Once[StructSchema] = new Once
+
+  def definingSchema: TypeDefinition
+  def underlyingSchema: StructSchema = _underlyingSchema
+
+  def initialize(underlyingSchema: StructSchema): Unit = {
+    _underlyingSchema.assign(underlyingSchema)
+  }
+
+  override def isInitialized: Boolean = _underlyingSchema.isAssigned
+
+  override def name: NamePath = definingSchema.name
+  override def bindingKind: BindingKind = BindingKind.Struct
+  override def position: Position = definingSchema.position
 }
 
 /**
-  * A struct constructor binding represents constructors as terms and allows instantiating a specific underlying struct
-  * type and its constructor. The instantiation may require a type parameter list that is different from the struct
-  * schema's original type parameters. This is due to the ability of (parameterized) type aliases to be used as
-  * constructor names.
+  * A struct constructor binding allows instantiating a specific underlying struct type and its constructor.
   */
-case class StructConstructorBinding(
-  override val moduleMember: StructModuleMember,
-  typeParameters: Vector[TypeVariable],
-  underlyingType: StructType,
+class StructConstructorBinding(
+  override val definingSchema: TypeDefinition,
 ) extends StructBinding {
-  val isConstant: Boolean = typeParameters.isEmpty
+  private val _underlyingType: Once[StructType] = new Once
 
-  override val definition: StructDefinition = underlyingType.schema.definition
+  def underlyingType: StructType = _underlyingType
+  def typeParameters: Vector[TypeVariable] = definingSchema.parameters
+
+  def initialize(underlyingType: StructType): Unit = {
+    super.initialize(underlyingType.schema)
+    _underlyingType.assign(underlyingType)
+  }
+
+  override def isInitialized: Boolean = super.isInitialized && _underlyingType.isAssigned
+
+  lazy val isConstant: Boolean = typeParameters.isEmpty
 
   lazy val signature: FunctionSignature = underlyingType.constructorSignature.copy(typeParameters = typeParameters)
 
-  private lazy val instantiationSchema = InstantiationSchema(moduleMember.name, typeParameters, underlyingType)
+  private lazy val instantiationSchema = InstantiationSchema(name, typeParameters, underlyingType)
 
   def instantiateStructType(assignments: Assignments): StructType = instantiationSchema.instantiate(assignments)
 
-  def instantiateStructType(arguments: Vector[Option[Type]], position: Position)(implicit reporter: Reporter): StructType = {
+  def instantiateStructType(
+    arguments: Vector[Option[Type]],
+    position: Position,
+  )(implicit reporter: Reporter): StructType = {
     instantiationSchema.instantiate(arguments, position)
   }
 
   override def toString: String = {
-    val typeParameterString = if (typeParameters.nonEmpty) s"[${typeParameters.mkString(", ")}]" else ""
-    s"${moduleMember.name}$typeParameterString"
+    val typeParameterString = if (isInitialized && typeParameters.nonEmpty) {
+      s"[${typeParameters.mkString(", ")}]"
+    } else ""
+    s"$name$typeParameterString"
   }
 }
 
 object StructConstructorBinding {
-
   /**
     * This is a private helper schema to instantiate a struct type for the struct constructor binding without much code
     * duplication.
     */
-  private case class InstantiationSchema(name: NamePath, parameters: Vector[TypeVariable], underlyingType: StructType) extends NamedSchema {
-    override def instantiate(assignments: Assignments): StructType = Type.substitute(underlyingType, assignments).asInstanceOf[StructType]
-    override def instantiate(arguments: Vector[Option[Type]], position: Position)(implicit reporter: Reporter): StructType = {
+  private case class InstantiationSchema(
+    name: NamePath,
+    parameters: Vector[TypeVariable],
+    underlyingType: StructType,
+  ) extends NamedSchema {
+    override def instantiate(assignments: Assignments): StructType = {
+      Type.substitute(underlyingType, assignments).asInstanceOf[StructType]
+    }
+
+    override def instantiate(
+      arguments: Vector[Option[Type]],
+      position: Position,
+    )(implicit reporter: Reporter): StructType = {
       super.instantiate(arguments, position).asInstanceOf[StructType]
     }
   }
-
 }
 
-case class StructObjectBinding(
-  override val moduleMember: StructModuleMember,
-  tpe: StructType,
+class StructObjectBinding(
+  override val definingSchema: TypeDefinition,
 ) extends StructBinding with TypedTermBinding {
-  override val definition: StructDefinition = tpe.schema.definition
+  private val _underlyingType: Once[StructType] = new Once
+
+  def underlyingType: StructType = _underlyingType
+  override def tpe: Type = underlyingType
+
+  override def initialize(underlyingSchema: StructSchema): Unit = {
+    super.initialize(underlyingSchema)
+    _underlyingType.assign(underlyingSchema.constantType)
+  }
+
+  override def isInitialized: Boolean = _underlyingType.isAssigned
 }

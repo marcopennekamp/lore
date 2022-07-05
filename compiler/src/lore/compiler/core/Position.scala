@@ -78,6 +78,8 @@ object Position {
   /**
     * A Position that is equal to any other position. This is used in tests to make nodes equal regardless of their
     * position. It should never be used by the compiler!
+    *
+    * TODO (multi-import): This isn't used anywhere and can be removed!
     */
   val wildcard: Position = Position(Fragment("wildcard", ""), 0, 0)
 

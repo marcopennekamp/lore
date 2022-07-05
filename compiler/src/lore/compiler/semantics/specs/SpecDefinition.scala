@@ -1,10 +1,9 @@
 package lore.compiler.semantics.specs
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics.Definition
+import lore.compiler.semantics.definitions.{Definition, HasLocalModule}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.syntax.ExprNode
+import lore.compiler.syntax.DeclNode.SpecNode
 
 /**
   * A definition of a `spec`. Spec definition equality is always reference equality, as we create exactly one spec
@@ -15,14 +14,14 @@ class SpecDefinition(
   val description: String,
   val isTest: Boolean,
   val isBenchmark: Boolean,
-  val bodyNode: ExprNode,
-  val localModule: LocalModule,
-  override val position: Position,
-) extends Definition with Positioned {
+  val node: SpecNode,
+) extends Definition with Positioned with HasLocalModule {
 
   /**
     * This is a variable because it will be transformed during the course of the compilation.
     */
   var body: Expression = _
+
+  override def position: Position = node.position
 
 }

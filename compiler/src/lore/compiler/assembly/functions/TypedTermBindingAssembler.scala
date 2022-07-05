@@ -30,7 +30,7 @@ object TypedTermBindingAssembler {
 
       case binding: StructObjectBinding =>
         val target = registerProvider.fresh()
-        val objectName = RuntimeNames.struct.`object`(binding.definition.schema)
+        val objectName = RuntimeNames.struct.`object`(binding.underlyingSchema)
         Chunk(target, PoemInstruction.GlobalGet(target, objectName))
     }
   }
