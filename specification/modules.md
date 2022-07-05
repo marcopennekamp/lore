@@ -102,8 +102,6 @@ In this example, `test` has access to `west` as it's locally declared, `baz` fro
 
 ##### Imports
 
-TODO (multi-import): Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
-
 The `use` declaration can be used to introduce simple names for other module members at their point of use. It is also called an **import** and can only be placed at the beginning of a module declaration or at the beginning of a file. An import has three flavors:
 
 1. **Single:** Import a single member directly.
