@@ -45,13 +45,14 @@ object AliasSchemaResolver {
   /**
     * Initializes `structBinding`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
     */
-  def initializeStructBinding(schema: AliasSchema, structBinding: StructBinding): Unit = {
-    val underlyingType = schema.originalType.asInstanceOf[StructType]
-    val underlyingSchema = underlyingType.schema
-    structBinding match {
-      case binding: StructConstructorBinding => binding.initialize(underlyingType)
-      case binding: StructObjectBinding => binding.initialize(underlyingSchema)
-    }
+  def initializeStructBinding(schema: AliasSchema, structBinding: StructBinding): Unit = schema.originalType match {
+    case underlyingType: StructType =>
+      val underlyingSchema = underlyingType.schema
+      structBinding match {
+        case binding: StructConstructorBinding => binding.initialize(underlyingType)
+        case binding: StructObjectBinding => binding.initialize(underlyingSchema)
+      }
+    case _ =>
   }
 
 }

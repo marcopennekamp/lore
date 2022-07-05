@@ -56,6 +56,8 @@ object RegistryResolver {
     *                      We have to make sure that the compiler doesn't crash if some types aren't initialized!
     *                      Basically, these uninitialized types should not be fetched from a scope. The best way to
     *                      solve this is probably to literally remove these types from global and local modules.
+    *                      The same applies to alias StructBindings which haven't been initialized due to the aliased
+    *                      type not being a struct type.
     */
   private def initializeTypes()(implicit registry: Registry, reporter: Reporter): Iterable[TypeDefinition] = {
     val typeDefinitions = collectTypeDefinitions()
