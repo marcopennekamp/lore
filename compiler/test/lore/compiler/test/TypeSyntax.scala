@@ -1,7 +1,7 @@
 package lore.compiler.test
 
 import lore.compiler.core.UniqueKey
-import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 
@@ -21,7 +21,7 @@ trait TypeSyntax {
     new TypeVariable(UniqueKey.fresh(), name, lowerBound, upperBound, Variance.Invariant, false, 0)
   }
 
-  implicit def toType(name: String)(implicit registry: Registry): Type = registry.types.schemas(NamePath(name)).constantType
+  implicit def toType(name: String)(implicit registry: Registry): Type = registry.rootModule.types.get(name).get.constantType
 
   def tuple(elements: Type*): TupleType = TupleType(elements.toVector)
 
