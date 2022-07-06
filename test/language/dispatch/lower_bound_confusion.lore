@@ -1,0 +1,21 @@
+module language.dispatch.lower_bound_confusion
+
+trait Scaly
+
+trait Animal
+trait Mammal extends Animal
+trait Fish extends Animal, Scaly
+object Goldfish extends Fish
+
+func describe(scaly: Scaly): String = 'What a nice texture!'
+
+@where A >: Mammal
+func describe(animal: A): Int = 5
+
+// TODO (dispatch-consistency): `describe(scaly: Scaly)` will be called, even though the compiler thinks that
+// `describe(animal: A)` will be called. This leads to a problem: The actual return type at run time is String, while
+// the compiler acts as if `describe(animal)` returns an Int.
+func main(): Int = do
+  let animal: Animal = Goldfish
+  describe(animal)
+end
