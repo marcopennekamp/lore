@@ -274,3 +274,11 @@
 ##### IntelliJ
 
 - Add IntelliJ support via a plugin library like this: https://github.com/ballerina-platform/lsp4intellij.
+
+
+#### Example Programs
+
+In general, Lore needs more example programs that cover and use language features in different ways. This helps us discover elements of friction in the language design, find bugs, and provide a larger base of examples to new users.
+
+- Write some Lore programs that solve advent of code puzzles: https://adventofcode.com
+- Implement Julia micro-benchmarks: https://github.com/JuliaLang/Microbenchmarks
