@@ -5,6 +5,7 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.types.{TupleType, Type}
 
 object CoreFeedback {
+
   object Trait {
     case class NotFound(name: NamePath) extends Feedback.Error(Position.unknown) {
       override def message: String = s"The core trait `$name` is not defined. Please include Pyramid in your project" +
@@ -29,4 +30,5 @@ object CoreFeedback {
         s" output type: $outputType."
     }
   }
+
 }

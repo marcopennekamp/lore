@@ -1,7 +1,8 @@
 package lore.compiler.constraints
 
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
-import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter}
+import lore.compiler.feedback.{MemoReporter, MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{DispatchHierarchy, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types._
@@ -35,12 +36,11 @@ object MultiFunctionConstraints {
     mf.functions.map(_.signature).foreach(verifyUniqueParameterNames)
   }
 
-  case class DuplicateParameterName(signature: FunctionSignature, name: String) extends Feedback.Error(signature.position) {
-    override def message: String = s"The function ${signature.name.simpleName} has two or more parameters named $name. Parameter names must be unique."
-  }
-
   private def verifyUniqueParameterNames(signature: FunctionSignature)(implicit reporter: Reporter): Unit = {
-    signature.namedParameters.verifyUnique(_.name, parameter => DuplicateParameterName(signature, parameter.name))
+    signature.namedParameters.verifyUnique(
+      _.name,
+      parameter => MultiFunctionFeedback.DuplicateParameterName(signature, parameter.name),
+    )
   }
 
   /**
@@ -56,32 +56,25 @@ object MultiFunctionConstraints {
     }
   }
 
-  case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Feedback.Error(function) {
-    override def message: String = s"The function ${function.signature} is declared abstract even though it doesn't have an" +
-      s" abstract input type. Either implement the function or ensure the input type is abstract."
-  }
-
   /**
     * Verifies that the given function satisfies the input abstractness constraint.
     */
   private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     if (function.signature.inputType.isConcrete) {
-      reporter.error(FunctionIllegallyAbstract(function))
+      reporter.error(MultiFunctionFeedback.Abstract.IllegallyAbstract(function))
     }
-  }
-
-  case class AbstractFunctionNotImplemented(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
-    override def message: String = s"The abstract function ${function.signature} is not fully implemented and thus doesn't" +
-      s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }
 
   /**
     * Verifies the totality constraint for the given function.
     */
-  private def verifyTotalityConstraint(function: FunctionDefinition, mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+  private def verifyTotalityConstraint(
+    function: FunctionDefinition,
+    mf: MultiFunctionDefinition,
+  )(implicit registry: Registry, reporter: Reporter): Unit = {
     val missing = verifyInputTypeTotality(function.signature.inputType, mf)
     if (missing.nonEmpty) {
-      reporter.error(AbstractFunctionNotImplemented(function, missing))
+      reporter.error(MultiFunctionFeedback.Abstract.NotTotal(function, missing))
     }
   }
 
@@ -99,12 +92,18 @@ object MultiFunctionConstraints {
     * the totality of the `name(animal: Animal)` function without having to declare a function `name(fish: Fish)`. We
     * merely have to define the function for all types that extend `Fish`.
     */
-  private def verifyInputTypeTotality(inputType: TupleType, mf: MultiFunctionDefinition)(implicit registry: Registry): Vector[TupleType] = {
+  private def verifyInputTypeTotality(
+    inputType: TupleType,
+    mf: MultiFunctionDefinition,
+  )(implicit registry: Registry): Vector[TupleType] = {
     Type.loggerBlank.trace("")
     Type.logger.trace(s"Totality constraint: Checking relevant subtypes for input type $inputType.")
     Type.loggerBlank.trace("")
     val subtypes = relevantSubtypes(inputType).map(_.asInstanceOf[TupleType])
-    Type.logger.trace(s"Totality constraint: $inputType has ${subtypes.length} relevant subtypes: ${subtypes.mkString(", ")}.")
+    Type.logger.trace(
+      s"Totality constraint: $inputType has ${subtypes.length} relevant subtypes: ${subtypes.mkString(", ")}."
+    )
+
     subtypes.flatMap { subtype =>
       if (mf.fit(subtype).exists(f2 => Fit.isMoreSpecific(f2.signature.inputType, inputType))) {
         Vector.empty

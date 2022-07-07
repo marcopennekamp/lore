@@ -148,14 +148,14 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
           (importSource, existingSource) match {
             case (AccessibleSource.DirectImport, AccessibleSource.Local) =>
               // A direct import conflicting with a local declaration results in an error.
-              reporter.error(ModuleFeedback.Import.DirectImport.CannotOverrideLocalDeclaration(importNode))
+              reporter.error(ModuleFeedback.DirectImport.CannotOverrideLocalDeclaration(importNode))
 
             case (AccessibleSource.DirectImport, AccessibleSource.DirectImport) =>
               // A direct import conflicting with another direct import results in an error, except when the exact same
               // module member has been imported again.
               if (!existingMembers.members.contains(moduleMember)) {
                 reporter.error(
-                  ModuleFeedback.Import.DirectImport.CannotOverrideDirectImport(importNode, existingMembers.members)
+                  ModuleFeedback.DirectImport.CannotOverrideDirectImport(importNode, existingMembers.members)
                 )
               }
 

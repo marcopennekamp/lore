@@ -1,7 +1,7 @@
 package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, Reporter, SchemaFeedback}
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.semantics.modules.LocalModule
@@ -86,13 +86,6 @@ object TypeDependencies {
     ).toVector
   }
 
-  // TODO (multi-import): Move this error to the feedback package.
-  case class UndefinedDependency(
-    tpe: TypeDefinition,
-    dependency: NamePath,
-  ) extends Feedback.Error(tpe) {
-    override def message: String = s"The type ${tpe.name} depends on a type $dependency, but it doesn't exist."
-  }
 
   /**
     * Filters out any dependencies without a corresponding type declaration, reporting an error for each undefined
@@ -103,7 +96,7 @@ object TypeDependencies {
     typeDefinitions: Map[NamePath, TypeDefinition],
   )(implicit reporter: Reporter): TypeDeclarationInfo = {
     val (defined, undefined) = info.dependencies.partition(typeDefinitions.contains)
-    undefined.foreach(dependency => reporter.report(UndefinedDependency(info.tpe, dependency)))
+    undefined.foreach(dependency => reporter.report(SchemaFeedback.UndefinedDependency(info.tpe, dependency)))
     info.copy(dependencies = defined)
   }
 
@@ -125,19 +118,7 @@ object TypeDependencies {
   }
 
   // TODO (multi-import): Move this error to the feedback package.
-  /**
-    * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
-    */
-  case class InheritanceCycle(
-    typeNames: Vector[NamePath],
-    occurrence: TypeDefinition,
-  ) extends Feedback.Error(occurrence) {
-    override def message: String =
-      s"""An inheritance cycle between the following types has been detected: ${typeNames.mkString(", ")}.
-         |A declared type must not inherit from itself directly or indirectly. The subtyping relationships of declared
-         |types must result in a directed, acyclic graph."""
-        .stripMargin.replaceAll("\n", " ").trim
-  }
+
 
   /**
     * Removes all types contained in a cycle from the dependency graph, reporting an error for each such cycle. A cycle
@@ -157,7 +138,7 @@ object TypeDependencies {
       cycles.foreach { cycle =>
         val typeNames = cycle.nodes.map(_.value).toVector.init
         // Report the error at each occurrence so that IDEs can properly report them at each location.
-        reporter.report(typeNames.map(occurrence => InheritanceCycle(typeNames, typeDefinitions(occurrence))))
+        reporter.report(typeNames.map(occurrence => SchemaFeedback.InheritanceCycle(typeNames, typeDefinitions(occurrence))))
         result = result -- typeNames
       }
     }

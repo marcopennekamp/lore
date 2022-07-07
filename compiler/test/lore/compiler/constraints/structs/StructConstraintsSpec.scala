@@ -1,7 +1,7 @@
 package lore.compiler.constraints.structs
 
 import lore.compiler.constraints.VarianceConstraints
-import lore.compiler.feedback.StructFeedback
+import lore.compiler.feedback.{StructFeedback, TypingFeedback}
 import lore.compiler.test.BaseSpec
 
 class StructConstraintsSpec extends BaseSpec {
@@ -41,9 +41,9 @@ class StructConstraintsSpec extends BaseSpec {
     assertCompilationErrorSignatures(s"$fragmentBase/open_type_parameters.lore")(
       (classOf[StructFeedback.OpenTypeParameter.CovarianceRequired], 2),
       (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 7),
-      (classOf[VarianceConstraints.InvalidVariance], 14),
+      (classOf[TypingFeedback.InvalidVariance], 14),
       (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 14),
-      (classOf[VarianceConstraints.InvalidVariance], 19),
+      (classOf[TypingFeedback.InvalidVariance], 19),
       (classOf[StructFeedback.OpenTypeParameter.MutableProperty], 19),
     )
   }

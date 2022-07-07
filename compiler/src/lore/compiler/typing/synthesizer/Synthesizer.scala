@@ -53,7 +53,7 @@ object Synthesizer {
           instanceType.member(name) match {
             case Some(member) => InferenceVariable.assign(memberInferenceVariable, member.tpe, assignments2)
             case None =>
-              reporter.report(TypingFeedback.Members.NotFound(expression, instanceType))
+              reporter.report(TypingFeedback.Member.NotFound(expression, instanceType))
               None
           }
         }
@@ -67,7 +67,7 @@ object Synthesizer {
         if (expression.isFullyAnnotated) {
           infer(body, assignments)
         } else {
-          reporter.report(TypingFeedback.AnonymousFunctions.TypeContextExpected(expression))
+          reporter.report(TypingFeedback.AnonymousFunction.TypeContextExpected(expression))
           None
         }
 
@@ -79,7 +79,7 @@ object Synthesizer {
             MultiFunctionValueSynthesizer.handleFunctionInstance(function.monomorphicInstance, expression, None, assignments)
 
           case _ =>
-            reporter.error(TypingFeedback.MultiFunctionValues.TypeContextExpected(expression))
+            reporter.error(TypingFeedback.MultiFunctionValue.TypeContextExpected(expression))
             None
         }
 
@@ -91,7 +91,7 @@ object Synthesizer {
         if (binding.isConstant) {
           InferenceVariable.assign(tpe, binding.underlyingType, assignments)
         } else {
-          reporter.report(TypingFeedback.ConstructorValues.TypeContextExpected(expression))
+          reporter.report(TypingFeedback.ConstructorValue.TypeContextExpected(expression))
           None
         }
 
@@ -150,7 +150,7 @@ object Synthesizer {
                   }
 
                 case _ =>
-                  reporter.report(TypingFeedback.Lists.ListExpected(expression, collectionType))
+                  reporter.report(TypingFeedback.List.ListExpected(expression, collectionType))
                   None
               }
             }
@@ -180,12 +180,12 @@ object Synthesizer {
                     }
                     assignments3.map((_, output))
                   } else {
-                    reporter.error(TypingFeedback.Functions.IllegalArity(expression.arguments.length, input.elements.length, expression))
+                    reporter.error(TypingFeedback.Function.IllegalArity(expression.arguments.length, input.elements.length, expression))
                     None
                   }
 
                 case targetType =>
-                  reporter.error(TypingFeedback.ValueCalls.FunctionExpected(expression, targetType))
+                  reporter.error(TypingFeedback.ValueCall.FunctionExpected(expression, targetType))
                   None
               }
               argumentsResult.flatMap {
@@ -226,7 +226,7 @@ object Synthesizer {
             case ListType(element) => Some(element)
             case MapType(key, value) => Some(TupleType(key, value))
             case _ =>
-              reporter.error(TypingFeedback.Loops.CollectionExpected(collectionType, extractor.collection))
+              reporter.error(TypingFeedback.Loop.CollectionExpected(collectionType, extractor.collection))
               None
           }
 

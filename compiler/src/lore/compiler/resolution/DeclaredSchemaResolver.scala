@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{SchemaFeedback, Feedback, Reporter}
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.DeclNode.DeclaredTypeDeclNode
@@ -9,14 +9,6 @@ import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 object DeclaredSchemaResolver {
-
-  // TODO (multi-import): Move error to central location.
-  case class IllegalExtends(schema: DeclaredSchema, supertypeName: Option[NamePath]) extends Feedback.Error(schema) {
-    override def message: String = supertypeName match {
-      case Some(name) => s"The trait or struct `${schema.name}` extends a type `$name` which is not a trait or shape."
-      case None => s"The trait or struct `${schema.name}` extends a type other than a trait or shape."
-    }
-  }
 
   /**
     * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
@@ -57,7 +49,7 @@ object DeclaredSchemaResolver {
       case IntersectionType(parts) => parts.toVector.flatMap(extract)
       case _ =>
         val supertypeName = Some(tpe).filterType[NamedType].map(_.name)
-        reporter.error(IllegalExtends(schema, supertypeName))
+        reporter.error(SchemaFeedback.IllegalExtends(schema, supertypeName))
         Vector.empty
     }
 

@@ -1,13 +1,12 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
+import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
-import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.StructSchema
 
@@ -46,24 +45,6 @@ object StructTransformation {
     Expression.ConstructorValue(binding, structType, position)
   }
 
-  case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The property $name occurs more than once in the instantiation. Properties must be unique here."
-  }
-
-  case class MissingProperty(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"This map-style instantiation is missing a property $name."
-  }
-
-  case class IllegalProperty(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The struct to be instantiated does not have a property $name."
-  }
-
-  case class IllegallyTypedProperty(property: StructPropertyDefinition, expression: Expression) extends Feedback.Error(expression) {
-    override def message: String =
-      s"The property ${property.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
-        s" the property itself has the type ${property.tpe}, which is not a subtype of ${expression.tpe}."
-  }
-
   /**
     * Transforms the name/expression pairs in `entries` to an ordered list of arguments with which the struct's
     * constructor may be invoked.
@@ -76,7 +57,7 @@ object StructTransformation {
   private def verifyNamesUnique(entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Unit = {
     entries.map(_._1).groupBy(identity).foreach {
       case (_, Vector(_)) =>
-      case (name, _) => reporter.error(DuplicateProperty(name, position))
+      case (name, _) => reporter.error(StructFeedback.Instantiation.DuplicateProperty(name, position))
     }
   }
 
@@ -107,8 +88,8 @@ object StructTransformation {
       }
     }
 
-    reporter.error(missing.map(MissingProperty(_, position)))
-    reporter.error(illegal.map(IllegalProperty(_, position)))
+    reporter.error(missing.map(StructFeedback.Instantiation.MissingProperty(_, position)))
+    reporter.error(illegal.map(StructFeedback.Instantiation.IllegalProperty(_, position)))
 
     arguments
   }

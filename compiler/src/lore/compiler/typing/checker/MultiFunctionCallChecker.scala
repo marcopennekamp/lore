@@ -148,7 +148,7 @@ object MultiFunctionCallChecker {
         case Vector(argumentCandidate) => Some(argumentCandidate)
         case _ =>
           Typing.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n${argumentCandidates.mkString("\n")}")
-          reporter.error(TypingFeedback.MultiFunctionCalls.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
+          reporter.error(TypingFeedback.MultiFunctionCall.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
           None
       }
     } else {

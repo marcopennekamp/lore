@@ -1,7 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.types.TypeVariable.Variance
 
@@ -81,8 +81,8 @@ trait TypeSchema {
   def instantiate(arguments: Vector[Option[Type]], position: Position)(implicit reporter: Reporter): Type = {
     instantiate(
       arguments,
-      () => reporter.error(TypeSchema.IllegalArity(this, arguments.length, position)),
-      (tv, argument) => reporter.error(TypeSchema.IllegalBounds(tv, argument, position)),
+      () => reporter.error(TypingFeedback.Schema.IllegalArity(this, arguments.length, position)),
+      (tv, argument) => reporter.error(TypingFeedback.Schema.IllegalBounds(tv, argument, position)),
     )
   }
 
@@ -134,14 +134,6 @@ trait TypeSchema {
 
 object TypeSchema {
 
-  case class IllegalArity(schema: TypeSchema, arity: Int, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type $schema expects ${schema.arity} type arguments, but $arity type" +
-      s" arguments were supplied."
-  }
 
-  case class IllegalBounds(tv: TypeVariable, argument: Type, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type argument $argument must adhere to the lower bound ${tv.lowerBound} and" +
-      s" the upper bound ${tv.upperBound}."
-  }
 
 }

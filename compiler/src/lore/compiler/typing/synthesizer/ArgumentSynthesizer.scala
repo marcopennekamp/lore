@@ -104,7 +104,7 @@ object ArgumentSynthesizer {
     context: Positioned,
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     if (argumentTypes.length != parameterTypes.length) {
-      reporter.error(TypingFeedback.Functions.IllegalArity(argumentTypes.length, parameterTypes.length, context))
+      reporter.error(TypingFeedback.Function.IllegalArity(argumentTypes.length, parameterTypes.length, context))
       return None
     }
 
@@ -113,7 +113,7 @@ object ArgumentSynthesizer {
     //   2. It assigns type arguments to type parameters.
     val assignments2 = Unification.unifyFits(argumentTypes, parameterTypes, assignments).getOrElse {
       reporter.error(
-        TypingFeedback.Functions.IllegalArgumentTypes(
+        TypingFeedback.Function.IllegalArgumentTypes(
           InferenceVariable.instantiateCandidate(argumentTypes, assignments),
           InferenceVariable.instantiateCandidate(parameterTypes, assignments),
           context,
@@ -125,7 +125,7 @@ object ArgumentSynthesizer {
     val assignments3 = if (typeParameters.nonEmpty) {
       Unification.unifyTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
         val typeArguments = InferenceVariable.instantiateCandidate(typeParameters.map(typeParameterAssignments), assignments2)
-        reporter.error(TypingFeedback.Functions.IllegalTypeArguments(typeArguments, typeParameters, context))
+        reporter.error(TypingFeedback.Function.IllegalTypeArguments(typeArguments, typeParameters, context))
         return None
       }
     } else assignments2
@@ -204,7 +204,7 @@ object ArgumentSynthesizer {
       case (innerAssignments, ((Some(_), _), _)) => Some(innerAssignments)
     }.getOrElse {
       reporter.error(
-        TypingFeedback.Functions.IllegalArgumentTypes(
+        TypingFeedback.Function.IllegalArgumentTypes(
           InferenceVariable.instantiateCandidate(arguments.map(_.tpe), assignments3),
           InferenceVariable.instantiateCandidate(parameterTypes, assignments3),
           context,

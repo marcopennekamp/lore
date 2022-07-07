@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
@@ -33,11 +33,6 @@ object MultiFunctionDefinitionResolver {
     }
   }
 
-  // TODO (multi-import): Move this error to the feedback package.
-  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
-    override def message = s"The function `${definition.signature}` is already declared somewhere else or has a type-theoretic duplicate."
-  }
-
   /**
     * Filters out all duplicate functions declared in the multi-function, producing an error for each such function. A
     * duplicate function is a function f1 for which another function f2 exists that has an equally specific input type.
@@ -57,7 +52,7 @@ object MultiFunctionDefinitionResolver {
       if (!hasDuplicate) {
         Vector(f1)
       } else {
-        reporter.error(FunctionAlreadyExists(f1))
+        reporter.error(MultiFunctionFeedback.DuplicateFunction(f1))
         Vector.empty
       }
     }

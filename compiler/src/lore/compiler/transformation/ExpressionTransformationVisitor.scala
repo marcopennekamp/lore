@@ -58,8 +58,8 @@ class ExpressionTransformationVisitor(
           val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
           mf.dispatch(
             inputType,
-            MultiFunctionFeedback.Dispatch.FixedFunctionEmptyFit(mf, inputType, position),
-            min => MultiFunctionFeedback.Dispatch.FixedFunctionAmbiguousCall(mf, inputType, min, position),
+            MultiFunctionFeedback.FixedFunction.EmptyFit(mf, inputType, position),
+            min => MultiFunctionFeedback.FixedFunction.AmbiguousCall(mf, inputType, min, position),
           ).map(instance => Expression.FixedFunctionValue(instance, position))
 
         case _ =>

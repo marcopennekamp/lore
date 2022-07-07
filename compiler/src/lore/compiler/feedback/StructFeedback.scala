@@ -4,12 +4,17 @@ import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.{StructBinding, StructObjectBinding}
 import lore.compiler.semantics.structures.StructPropertyDefinition
+import lore.compiler.syntax.DeclNode.PropertyNode
 import lore.compiler.types.{ShapeType, StructSchema, TypeVariable}
 
 object StructFeedback {
 
   case class DuplicateProperty(schema: StructSchema, property: StructPropertyDefinition) extends Feedback.Error(property) {
     override def message = s"The property `${property.name}` is declared twice in the struct `${schema.name}`."
+  }
+
+  case class MutableOpenProperty(node: PropertyNode) extends Feedback.Error(node) {
+    override def message = s"The open property `${node.name}` may not be mutable."
   }
 
   case class ConstructorExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
@@ -23,6 +28,21 @@ object StructFeedback {
   ) extends Feedback.Error(position) {
     override def message: String = s"The struct `${binding.name}` does not have a companion module which" +
       s" might define a member `$memberName`."
+  }
+
+  object Instantiation {
+    case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The property `$name` occurs more than once in the instantiation. Properties must" +
+        s" be unique here."
+    }
+
+    case class MissingProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The struct's property `$name` must be specified in the instantiation."
+    }
+
+    case class IllegalProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The struct to be instantiated does not have a property `$name`."
+    }
   }
 
   object Shape {

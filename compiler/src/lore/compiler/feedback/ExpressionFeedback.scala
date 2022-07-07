@@ -5,10 +5,11 @@ import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.GlobalModule
-import lore.compiler.syntax.ExprNode
+import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types.BasicType
 
 object ExpressionFeedback {
+
   case class ImmutableAssignment(access: Expression.Access) extends Feedback.Error(access) {
     override def message = s"The variable or member `$access` may not be mutated."
   }
@@ -29,6 +30,16 @@ object ExpressionFeedback {
       s" case. Mixing in total cases is not allowed because any subsequent cases are dead code."
   }
 
+  object Return {
+    case class DeadCode(node: TopLevelExprNode) extends Feedback.Error(node) {
+      override def message = s"This line is never reached due to a previous `return` statement."
+    }
+
+    case class IllegalReturn(node: TopLevelExprNode.ReturnNode) extends Feedback.Error(node) {
+      override def message = s"You cannot `return` inside this expression."
+    }
+  }
+
   object Intrinsic {
     case class NotFound(node: ExprNode.IntrinsicCallNode, name: String) extends Feedback.Error(node) {
       override def message: String = s"The intrinsic `$name` does not exist."
@@ -45,4 +56,5 @@ object ExpressionFeedback {
       override def message = s"The binding `$name` must be a multi-function to be fixed."
     }
   }
+
 }

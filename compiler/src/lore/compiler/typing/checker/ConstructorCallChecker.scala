@@ -32,7 +32,7 @@ object ConstructorCallChecker {
       val expectedStructType = expectedType match {
         case structType: StructType if structType.schema == structSchema => structType
         case _ => expectedType.specialize(structSchema).filterType[StructType].getOrElse {
-          reporter.error(TypingFeedback.ConstructorCalls.CannotSpecialize(binding, expectedType, expression))
+          reporter.error(TypingFeedback.ConstructorCall.CannotSpecialize(binding, expectedType, expression))
           return None
         }
       }

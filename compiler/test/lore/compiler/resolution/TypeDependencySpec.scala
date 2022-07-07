@@ -1,5 +1,6 @@
 package lore.compiler.resolution
 
+import lore.compiler.feedback.SchemaFeedback
 import lore.compiler.test.BaseSpec
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -11,7 +12,7 @@ class TypeDependencySpec extends BaseSpec {
     // The errors that the compiler produces vary from run to run, as inheritance cycle analysis is not deterministic.
     // Hence, we are simply checking whether all lines on which errors occur are reported correctly.
     assertCompilationErrors(s"$fragmentBase/dependency_cycles.lore") { errors =>
-      val errorLines = errors.filterType[TypeDependencies.InheritanceCycle].map(_.position.startLine).toSet
+      val errorLines = errors.filterType[SchemaFeedback.InheritanceCycle].map(_.position.startLine).toSet
       errorLines shouldEqual Set(1, 2, 3, 9, 10, 13, 15, 16)
     }
   }

@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.modules.GlobalModule
@@ -56,11 +56,6 @@ object StructSchemaResolver {
     }
   }
 
-  // TODO (multi-import): Move error to central location.
-  case class MutableOpenProperty(node: PropertyNode) extends Feedback.Error(node) {
-    override def message = s"The open property ${node.name} may not be mutable."
-  }
-
   private def resolveProperty(schema: StructSchema, node: PropertyNode)(
     implicit typeScope: TypeScope,
     termScope: TermScope,
@@ -68,7 +63,7 @@ object StructSchemaResolver {
   ): StructPropertyDefinition = {
     val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
     if (node.isOpen && node.isMutable) {
-      reporter.error(MutableOpenProperty(node))
+      reporter.error(StructFeedback.MutableOpenProperty(node))
     }
     new StructPropertyDefinition(
       node.name,

@@ -1,16 +1,11 @@
 package lore.compiler.constraints
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 
 object VarianceConstraints {
-
-  case class InvalidVariance(typeVariable: TypeVariable, origin: Variance, override val position: Position) extends Feedback.Error(position) {
-    override val message: String = s"The ${typeVariable.variance.humanReadable} type variable $typeVariable is in an" +
-      s" illegal ${origin.humanReadable} position."
-  }
 
   /**
     * Verifies that the given type contains only type variables with the given origin variance or invariance. Certain
@@ -22,7 +17,8 @@ object VarianceConstraints {
     def recFlipped = t => verifyVariance(t, Variance.flip(origin), position)
 
     tpe match {
-      case tv: TypeVariable if tv.variance != origin && tv.variance != Variance.Invariant => reporter.error(InvalidVariance(tv, origin, position))
+      case tv: TypeVariable if tv.variance != origin && tv.variance != Variance.Invariant =>
+        reporter.error(TypingFeedback.InvalidVariance(tv, origin, position))
       case SumType(types) => types.foreach(rec)
       case IntersectionType(types) => types.foreach(rec)
       case TupleType(elements) => elements.foreach(rec)

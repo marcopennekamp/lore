@@ -9,23 +9,23 @@ class MultiFunctionConstraintsSpec extends BaseSpec {
 
   s"$fragmentBase/illegally_abstract" should "be compiled with 'function illegally abstract' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/illegally_abstract.lore")(
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 7),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 9),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 11),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 13),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 15),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 17),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 19),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 21),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 23),
-      (classOf[MultiFunctionConstraints.FunctionIllegallyAbstract], 25),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 7),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 9),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 11),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 13),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 15),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 17),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 19),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 21),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 23),
+      (classOf[MultiFunctionFeedback.Abstract.IllegallyAbstract], 25),
     )
   }
 
   s"$fragmentBase/incompatible_output_types" should "be compiled with 'incompatible output types' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/incompatible_output_types.lore")(
-      (classOf[MultiFunctionConstraints.IncompatibleOutputTypes], 8),
-      (classOf[MultiFunctionConstraints.IncompatibleOutputTypes], 11),
+      (classOf[MultiFunctionFeedback.IncompatibleOutputTypes], 8),
+      (classOf[MultiFunctionFeedback.IncompatibleOutputTypes], 11),
     )
   }
 
@@ -37,11 +37,11 @@ class MultiFunctionConstraintsSpec extends BaseSpec {
 
   s"$fragmentBase/not_fully_implemented" should "be compiled with 'function is not fully implemented' errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/not_fully_implemented.lore")(
-      (classOf[MultiFunctionConstraints.AbstractFunctionNotImplemented], 12),
-      (classOf[MultiFunctionConstraints.AbstractFunctionNotImplemented], 13),
-      (classOf[MultiFunctionConstraints.AbstractFunctionNotImplemented], 15),
-      (classOf[MultiFunctionConstraints.AbstractFunctionNotImplemented], 18),
-      (classOf[MultiFunctionConstraints.AbstractFunctionNotImplemented], 19),
+      (classOf[MultiFunctionFeedback.Abstract.NotTotal], 12),
+      (classOf[MultiFunctionFeedback.Abstract.NotTotal], 13),
+      (classOf[MultiFunctionFeedback.Abstract.NotTotal], 15),
+      (classOf[MultiFunctionFeedback.Abstract.NotTotal], 18),
+      (classOf[MultiFunctionFeedback.Abstract.NotTotal], 19),
     )
   }
 }

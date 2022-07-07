@@ -1,21 +1,13 @@
 package lore.compiler.constraints
 
-import lore.compiler.constraints.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.constraints.ReturnConstraints.{DefinitelyReturns, IsReturnAllowed}
+import lore.compiler.feedback.{ExpressionFeedback, Reporter}
 import lore.compiler.syntax.visitor.{CombiningTopLevelExprVisitor, TopLevelExprVisitor, VerificationTopLevelExprVisitor}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 
 object ReturnConstraints {
   type DefinitelyReturns = Boolean
   type IsReturnAllowed = Boolean
-
-  case class DeadCode(node: TopLevelExprNode) extends Feedback.Error(node) {
-    override def message = s"This node represents dead code after a previous return."
-  }
-
-  case class ImpossibleReturn(node: TopLevelExprNode.ReturnNode) extends Feedback.Error(node) {
-    override def message = s"You cannot return inside this expression."
-  }
 
   /**
     * Verifies the following two constraints:
@@ -61,7 +53,7 @@ private class ReturnDeadCodeVisitor(implicit reporter: Reporter) extends Combini
         val returnIndex = returns.init.indexOf(true)
         if (returnIndex >= 0) {
           val firstDeadNode = expressions(returnIndex + 1)
-          reporter.error(DeadCode(firstDeadNode))
+          reporter.error(ExpressionFeedback.Return.DeadCode(firstDeadNode))
 
           // If we report `true` here, the DeadCode error will potentially be reported multiple times. Hence, even
           // though there was a `return` expression, we don't want this to be reported up the chain.
@@ -99,7 +91,7 @@ private class ReturnAllowedApplicator(implicit reporter: Reporter)
     case node@TopLevelExprNode.ReturnNode(expr, _) =>
       visit(expr, false)
       if (!isReturnAllowed) {
-        reporter.error(ImpossibleReturn(node))
+        reporter.error(ExpressionFeedback.Return.IllegalReturn(node))
       }
 
     case ExprNode.BlockNode(expressions, _) =>

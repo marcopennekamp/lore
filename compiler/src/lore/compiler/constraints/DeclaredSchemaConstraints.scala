@@ -1,6 +1,6 @@
 package lore.compiler.constraints
 
-import lore.compiler.feedback.{DeclaredSchemaFeedback, Reporter}
+import lore.compiler.feedback.{SchemaFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.{DeclaredSchema, StructSchema, TraitType}
 import lore.compiler.types.TypeVariable.Variance
@@ -53,7 +53,7 @@ object DeclaredSchemaConstraints {
           val typeArguments = traitTypes.map(_.assignments(typeParameter))
           if (typeArguments.size > 1) {
             reporter.error(
-              DeclaredSchemaFeedback.SupertraitInvarianceInconsistent(
+              SchemaFeedback.SupertraitInvarianceInconsistent(
                 schema,
                 supertraitSchema,
                 typeParameter,

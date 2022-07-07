@@ -23,7 +23,7 @@ object MultiFunctionValueSynthesizer {
 
     expectedType.foreach { expectedType =>
       if (functionType.output </= expectedType.output) {
-        reporter.error(TypingFeedback.MultiFunctionValues.IllegalOutput(expression, expectedType, functionType))
+        reporter.error(TypingFeedback.MultiFunctionValue.IllegalOutput(expression, expectedType, functionType))
         return None
       }
     }

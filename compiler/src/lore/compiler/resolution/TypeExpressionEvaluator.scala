@@ -1,29 +1,13 @@
 package lore.compiler.resolution
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVectorExtension}
 
 object TypeExpressionEvaluator {
-
-  // TODO (multi-import): Move these errors to the feedback package.
-  case class MissingTypeArguments(schema: NamedSchema, node: TypeExprNode) extends Feedback.Error(node) {
-    override def message: String = s"The type ${schema.name.simpleName} expects ${schema.arity} type arguments. It" +
-      s" cannot be used as is."
-  }
-
-  case class UnexpectedTypeArguments(tpe: Type, node: TypeExprNode) extends Feedback.Error(node) {
-    override def message: String = s"The type $tpe cannot be instantiated with type arguments. It must be used as a" +
-      s" constant type."
-  }
-
-  case class DuplicateProperty(property: TypeExprNode.ShapePropertyNode) extends Feedback.Error(property) {
-    override def message: String = s"The property ${property.name} is declared twice in the shape type. Shape type" +
-      s" properties must be unique."
-  }
 
   /**
     * @param termScope The term scope is required to properly resolve modules containing types, for qualified type
@@ -39,7 +23,7 @@ object TypeExpressionEvaluator {
         case tpe: NamedType => tpe
         case schema: NamedSchema =>
           if (!schema.isConstant) {
-            reporter.error(MissingTypeArguments(schema, expression))
+            reporter.error(TypingFeedback.Schema.IllegalArity(schema, 0, expression.position))
           }
           // Even if the schema isn't constant, the schema will still be instantiated with best-guess type arguments.
           schema.instantiate(Vector.empty, expression.position)
@@ -47,7 +31,7 @@ object TypeExpressionEvaluator {
 
       case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolveStatic(nameNode.namePath, nameNode.position).map {
         case tpe: NamedType =>
-          reporter.error(UnexpectedTypeArguments(tpe, expression))
+          reporter.error(TypingFeedback.Schema.ConstantUseRequired(tpe, expression))
           tpe
         case schema: NamedSchema =>
           schema.instantiate(argumentNodes.map(evaluate), expression.position)
@@ -72,7 +56,7 @@ object TypeExpressionEvaluator {
   ): ShapeType = {
     ShapeType(
       expression.properties
-        .filterDuplicates(_.name, DuplicateProperty)
+        .filterDuplicates(_.name, TypingFeedback.Shape.DuplicateProperty)
         .map(evaluateShapeProperty)
     )
   }

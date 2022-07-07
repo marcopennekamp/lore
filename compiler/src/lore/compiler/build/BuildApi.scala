@@ -1,9 +1,9 @@
 package lore.compiler.build
 
 import lore.compiler.LoreCompiler
-import lore.compiler.core.{CompilationException, CompilerOptions, Fragment, Position}
+import lore.compiler.core.{CompilationException, CompilerOptions, Fragment}
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
+import lore.compiler.feedback.{BuildFeedback, Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 
 import java.nio.file.{Files, Path}
@@ -56,12 +56,6 @@ object BuildApi {
     LoreCompiler.analyze(fragments, exitEarly = true)
   }
 
-  case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0, 0)) {
-    override def message: String = s"The fragment '${fragment.name}' is defined multiple times. Fragments may not " +
-      s"share names. Most likely you have specified a source file which is also included via a directory source, or " +
-      s"multiple directory sources which point to the same file."
-  }
-
   /**
     * Gets all fragments that can be found given the build options.
     */
@@ -71,7 +65,7 @@ object BuildApi {
     val sources = options.sources :+ options.sdk.resolve("pyramid")
     sources
       .flatMap(SourceFiles.of)
-      .filterDuplicates(_.name, DuplicateFragmentName)
+      .filterDuplicates(_.name, BuildFeedback.DuplicateFragmentName)
   }
 
   /**

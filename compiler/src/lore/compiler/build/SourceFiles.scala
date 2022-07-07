@@ -1,29 +1,13 @@
 package lore.compiler.build
 
-import lore.compiler.core.{Fragment, Position}
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.core.Fragment
+import lore.compiler.feedback.{BuildFeedback, Reporter}
 
 import java.nio.file.{FileSystems, Files, Path, PathMatcher}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.{Failure, Success, Try}
 
 object SourceFiles {
-
-  case class DirectoryNotFound(path: Path) extends Feedback.Error(Position.unknown) {
-    override def message: String = s"The directory '$path' does not exist."
-  }
-
-  case class FragmentNotFound(path: Path) extends Feedback.Error(Position.unknown) {
-    override def message: String = s"The file '$path' does not exist."
-  }
-
-  case class IllegalFileExtension(path: Path) extends Feedback.Error(Position.unknown) {
-    override def message: String = s"The file '$path' has an illegal file extension. It must either be a directory or end in '.lore'."
-  }
-
-  case class FileAccessFailed(path: Path, exception: Throwable) extends Feedback.Error(Position.unknown) {
-    override def message: String = s"The file '$path' cannot be found or accessed due to an unknown error. The following exception occurred:\n$exception"
-  }
 
   private val lorePathMatcher: PathMatcher = FileSystems.getDefault.getPathMatcher("glob:**.lore")
 
@@ -39,17 +23,17 @@ object SourceFiles {
       if (Files.exists(path)) {
         ofFile(path).toVector
       } else {
-        reporter.error(FragmentNotFound(path))
+        reporter.error(BuildFeedback.FragmentNotFound(path))
         Vector.empty
       }
     } else if (Files.isDirectory(path)) {
       ofDirectory(path)
     } else {
       if (path.getFileName.toString.contains('.')) {
-        reporter.error(IllegalFileExtension(path))
+        reporter.error(BuildFeedback.IllegalFileExtension(path))
         Vector.empty
       } else {
-        reporter.error(DirectoryNotFound(path))
+        reporter.error(BuildFeedback.DirectoryNotFound(path))
         Vector.empty
       }
     }
@@ -68,7 +52,7 @@ object SourceFiles {
     Try(Files.readString(path) + "\n") match {
       case Success(source) => Some(Fragment(path.toString, Some(path), source))
       case Failure(exception) =>
-        reporter.error(FileAccessFailed(path, exception))
+        reporter.error(BuildFeedback.FileAccessFailed(path, exception))
         None
     }
   }

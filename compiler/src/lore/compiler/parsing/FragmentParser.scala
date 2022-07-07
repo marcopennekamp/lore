@@ -3,7 +3,7 @@ package lore.compiler.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{ParsingFeedback, Reporter}
 import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax._
 import lore.compiler.types.AliasSchema.AliasVariant
@@ -25,18 +25,18 @@ class FragmentParser(implicit fragment: Fragment) {
   import nameParser._
   import typeParser.typeExpression
 
-  case class ParsingError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The file had parsing errors: $fastparseError"
-  }
-
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
   def parse()(implicit reporter: Reporter): DeclNode.ModuleNode = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
-        val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index, extra.index))
-        reporter.error(error)
+        reporter.error(
+          ParsingFeedback.ParseError(
+            s"Parsing failure: ${extra.trace().aggregateMsg}",
+            Position(fragment, extra.index, extra.index),
+          )
+        )
         DeclNode.ModuleNode(NamePathNode.empty, atRoot = false, Vector.empty, Vector.empty, Position(fragment, 0, 0))
 
       case Parsed.Success(result, _) => result

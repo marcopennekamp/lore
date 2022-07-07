@@ -86,7 +86,7 @@ case class Checker(returnType: Type) {
             if (elements.length == values.length) {
               check(values, elements, assignments)
             } else {
-              reporter.report(TypingFeedback.Tuples.IncorrectLength(expression, expectedType))
+              reporter.report(TypingFeedback.Tuple.IncorrectLength(expression, expectedType))
               None
             }
 
@@ -107,16 +107,16 @@ case class Checker(returnType: Type) {
 
                 case None =>
                   val instantiatedInput = InferenceVariable.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
-                  reporter.error(TypingFeedback.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
+                  reporter.error(TypingFeedback.AnonymousFunction.IllegalParameterTypes(expression, expectedType, instantiatedInput))
                   None
               }
 
             case expectedType: FunctionType =>
-              reporter.error(TypingFeedback.AnonymousFunctions.IllegalArity(expression, expectedType))
+              reporter.error(TypingFeedback.AnonymousFunction.IllegalArity(expression, expectedType))
               None
 
             case _ =>
-              reporter.error(TypingFeedback.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
+              reporter.error(TypingFeedback.AnonymousFunction.FunctionTypeExpected(expression, expectedType))
               None
           }
         }
@@ -142,7 +142,7 @@ case class Checker(returnType: Type) {
             fallback
 
           case _ =>
-            reporter.error(TypingFeedback.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
+            reporter.error(TypingFeedback.MultiFunctionValue.FunctionTypeExpected(expression, expectedType))
             None
         }
 
