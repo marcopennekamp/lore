@@ -11,6 +11,53 @@
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
   - Make sure that all Scala tests succeed.
   - Clear all `TODO (multi-import)` entries.
+- Disjunction and conjunction operations aren't short-circuiting. This was probably an oversight when we moved from Javascript to the VM. Reimplement this feature.
+  - In general, a short-circuiting operator `a || b` can be compiled as `if a then true else b` and `a && b` as `if a then b else false`. A naive implementation of short-circuiting operators would be to simply replace `and` and `or` with their respective `if` expansions.
+    - Without much effort, this will lead to inefficient bytecode. For example:
+      ```
+      if a == b && c == d then 10 else 20
+      ```
+      This would be naively compiled as:
+      ```
+      if (if a == b then c == d else false) then 10 else 20
+      ```
+      This results in bytecode that first calculates the inner expression into a temporary variable, and *then* uses it to jump via the outer `if`, while already using jumps to calculate the and's result. This results in the following bytecode (assuming the variables are globals):
+      ```
+       0: GlobalGet reg0 <- a
+       1: GlobalGet reg1 <- b
+       2: IntEq reg0 <- reg0 reg1
+       3: JumpIfFalse 8 if !reg0
+       4: GlobalGet reg0 <- c
+       5: GlobalGet reg1 <- d
+       6: IntEq reg0 <- reg0 reg1
+       7: Jump 10
+       8: BooleanConst reg1 <- false
+       9: Assign reg0 <- reg1
+      10: JumpIfFalse 13 if !reg0
+      11: IntConst reg0 <- 10
+      12: Jump 15
+      13: IntConst reg1 <- 20
+      14: Assign reg0 <- reg1
+      15: Return reg0
+      ```
+      Note how instructions 6 and 8+9 assign either `c == d` or `false` to a temporary boolean register. Instruction 10 consumes this register to implement the jump for the outer `if`, but the jumps could've simply been carried out right away. An optimized version of this would be (fewer instructions and one jump less):
+      ```
+       0: GlobalGet reg0 <- a
+       1: GlobalGet reg1 <- b
+       2: IntEq reg0 <- reg0 reg1
+       3: JumpIfFalse 10 if !reg0    // Jump directly to the `else` part of the outer `if`.
+       4: GlobalGet reg0 <- c
+       5: GlobalGet reg1 <- d
+       6: IntEq reg0 <- reg0 reg1
+       7: JumpIfFalse 10 if !reg0    // Jump directly to the `else` part of the outer `if`.
+       8: IntConst reg0 <- 10
+       9: Jump 11
+      10: IntConst reg0 <- 20
+      11: Return reg0
+      ```
+      I see two approaches here: (1) improve code generation by handling the edge case `if (if ...)` (or the `cond` equivalent) specially or (2) implement bytecode optimizations that discover the redundant temporary boolean register and "merge" the jumps accordingly. My gut tells me that (1) is much easier, but (2) will be more generally applicable. Surely there will be an existing optimization strategy which we can look up that handles exactly these cases.
+    - Expanding to `if` might have a bad interaction with `if` being internally represented as a special case of `cond`. It should work fine, but when implementing this feature, double-check that `cond` exhibits the same short-circuiting behavior.
+  - If the right-side expression `b` is without side effects, `a && b` and `a || b` is probably better compiled to `BooleanOr` unless `b` is very complex. The question is how much of this should be optimized by the compiler and how much the VM can do.
 - Improve dispatch consistency:
   - Dispatch should *never* invoke a function that would return an incompatible return type. Lower bounds for function type parameters combined with multiple inheritance sadly completely enable this. Consider the example `test/language/dispatch/lower_bound_confusion.lore`. The compiler can easily be tricked into thinking a returned `String` would actually be an `Int`! There are a few ways to approach this:
     - Nuclear option: Remove lower bounds from *(multi-)function* type parameters. Structs and traits could still easily have lower bounds, because struct constructors aren't beholden to issues arising from dispatch. However, this would rule out many legitimate uses of lower bounds.
@@ -42,17 +89,20 @@
     - One difficulty here is that the user would expect `b` to only be evaluated once. If we parse this naively, `b` will be evaluated twice, causing potential side effects. So it's very likely that a chained comparison would have to use intermediate values for each operand.
   - Rename `act` to `proc`. This would be in line with `func`.
     - `act` could also be confused with `actor` (actor models, etc.), leading someone new to the language to think that the function somehow supports or enables concurrency via the actor model.
+  - Rename `let mut` to `var`.
   - Rename `Boolean` to `Bool`. Int is also abbreviated.
   - Implement implicit real conversions for integer literals standing in `Real` contexts.
     - A list like `[0, -2, 2.5, 6, 22]` should also be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
   - Provide a means to directly access tuple elements, such as `._1`.
     - Also consider adding default element names again, i.e. `tuple.a` for a tuple `(A, B)` referring to the first element. Might still be a slippery slope.
-  - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
+  - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax (such as `it`).
   - Trailing lambdas (`map(things) do thing => thing.name end`).
     - Take care that the syntax doesn't require a `do..end` after `thing =>`, e.g. `map(things) do thing => do ... end end` would be unfortunate.
   - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.Symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
   - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
   - Consider adding `func`, `type`, `spec` etc. to the list of keywords. While the grammar might not be ambiguous now, it might become ambiguous later, and I'd like to avoid a design deadlock where adding e.g. `type` as a keyword isn't possible without breaking user code.
+  - Allow double quotes `"` for strings alongside single quotes. Double quotes are so natural for strings that we will never be able to use them for any other kind of syntax, without majorly confusing every programmer in existence (myself included).
+  - Allow string concatenation with `+`, at least until operator overloading is supported.
   - Change comments from `//` and `/* */` to `#` and `#[ ]#`? This is way more visually consistent for documentation comments, because the `/** * */` style eats up two lines of code for every documentation comment, while `///` or `//*` adds THREE characters of visual noise to each line. `##` documentation comments clearly separate their intent from regular `#` comments, while being easy to type and only having moderate visual noise.
     - The `#` comment syntax would be unfortunate for symbols and collection types/literals. Using the hashtag for symbols is visually very consistent with a lower-case identifier (e.g. `#name` or `#bear`), as it lines up very well with the top and bottom of most lower-case letters. Here is a table of syntax changes that would be required to introduce `#` comments:
       ```
