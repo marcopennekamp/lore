@@ -56,6 +56,8 @@
       11: Return reg0
       ```
       I see two approaches here: (1) improve code generation by handling the edge case `if (if ...)` (or the `cond` equivalent) specially or (2) implement bytecode optimizations that discover the redundant temporary boolean register and "merge" the jumps accordingly. My gut tells me that (1) is much easier, but (2) will be more generally applicable. Surely there will be an existing optimization strategy which we can look up that handles exactly these cases.
+
+      One bit of insight: If `3: JumpIfFalse` jumps to 8, `10: JumpIfFalse` ALWAYS jumps to 13. When operating on the control-flow graph of the bytecode, it's probably possible to follow jumps and see if jumping just takes them to another jump that's guaranteed. In this case, the "difficulty" for the optimizer is to notice that `10: JumpIfFalse` will always jump if the block is entered at 8. This is trivial, though, if 8-10 is seen as one block in the control-flow graph, as this block could be simplified to `Jump 13` and then be removed. Similarly, for the `true` case, the optimizer should see that `7: Jump 10` leads to a block with a single instruction `JumpIfFalse 13`, and thus the `Jump 10` can be replaced by the `JumpIfFalse 13`.
     - Expanding to `if` might have a bad interaction with `if` being internally represented as a special case of `cond`. It should work fine, but when implementing this feature, double-check that `cond` exhibits the same short-circuiting behavior.
   - If the right-side expression `b` is without side effects, `a && b` and `a || b` is probably better compiled to `BooleanOr` unless `b` is very complex. The question is how much of this should be optimized by the compiler and how much the VM can do.
 - Improve dispatch consistency:
