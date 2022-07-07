@@ -1,6 +1,5 @@
 package lore.compiler.resolution
 
-import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
@@ -13,13 +12,6 @@ object MultiFunctionDefinitionResolver {
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
-    // TODO (multi-import): Rewrite this so that `fullName` can be deleted from `NamedDeclNode`.
-    if (mf.functionNodes.exists(_.fullName != mf.name)) {
-      val uniqueNames = mf.functionNodes.map(_.fullName).distinct
-      throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names:" +
-        s" ${uniqueNames.mkString(", ")}. Multi-function name: ${mf.name}.")
-    }
-
     val functions = mf.functionNodes.map(resolveFunction(_, mf))
     val uniqueFunctions = filterDuplicateFunctions(functions)
     mf.initialize(uniqueFunctions)
@@ -36,7 +28,7 @@ object MultiFunctionDefinitionResolver {
       implicit typeScope => implicit termScope => typeParameters =>
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
         val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
-        val signature = FunctionSignature(node.fullName, typeParameters, parameters, outputType, node.nameNode.position)
+        val signature = FunctionSignature(multiFunction.name, typeParameters, parameters, outputType, node.nameNode.position)
         new FunctionDefinition(signature, node, multiFunction)
     }
   }

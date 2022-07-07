@@ -1,6 +1,6 @@
 package lore.compiler.syntax
 
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.syntax.DeclNode.TypeVariableNode
@@ -25,13 +25,6 @@ sealed trait NamedDeclNode extends DeclNode {
     * The simple name of the declared entity.
     */
   def simpleName: String
-
-  /**
-    * The full name of the DeclNode. This is only available once [[localModule]] has been set.
-    *
-    * TODO (multi-import): This probably shouldn't even exist or be a `def`.
-    */
-  lazy val fullName: NamePath = localModule.globalModule.name + simpleName
 }
 
 sealed trait SimpleNamedDeclNode extends NamedDeclNode {
@@ -67,11 +60,6 @@ object DeclNode {
       * name by which the module will be referred to in scopes.
       */
     override def simpleName: String = namePath.headName
-
-    // The definition of "full name" for a module node is a little iffy. It could either be the name up to the head
-    // segment, or the name that includes all of `namePath`. `fullName` for modules isn't actually used, so disallowing
-    // its use is fine.
-    override lazy val fullName: NamePath = throw CompilationException("Module nodes do not define full names.")
   }
 
   case class ImportNode(
