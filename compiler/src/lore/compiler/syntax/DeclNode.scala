@@ -7,17 +7,20 @@ import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode}
 import lore.compiler.types.AliasSchema.AliasVariant
 import lore.compiler.types.TypeVariable.Variance
+import lore.compiler.utils.Once
 
 /**
   * All top-level declaration nodes.
   */
 sealed trait DeclNode extends Node {
-  // TODO (multi-import): Turn `localModule` into a `Once`.
+  private val _localModule: Once[LocalModule] = new Once
+
+  def attachLocalModule(localModule: LocalModule): Unit = _localModule.assign(localModule)
 
   /**
     * The [[LocalModule]] this DeclNode is declared in. Each DeclNode has exactly one associated local module.
     */
-  var localModule: LocalModule = _
+  def localModule: LocalModule = _localModule
 }
 
 sealed trait NamedDeclNode extends DeclNode {

@@ -89,7 +89,7 @@ object LocalModuleResolver {
     * and later phases to easily build LocalModule*Scopes.
     */
   private def annotateDeclNodes(moduleNode: ModuleNode, localModule: LocalModule): Unit = {
-    moduleNode.members.foreach(node => node.localModule = localModule)
+    moduleNode.members.foreach(node => node.attachLocalModule(localModule))
   }
 
   /**
