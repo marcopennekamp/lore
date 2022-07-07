@@ -177,14 +177,6 @@ object MultiFunctionConstraints {
     mf.functions.flatMap(_.node.body).foreach(ExpressionConstraints.verify)
   }
 
-  case class IncompatibleOutputTypes(
-    child: FunctionSignature, parent: FunctionSignature, parentInstance: FunctionSignature,
-  ) extends Feedback.Error(child) {
-    override def message: String = s"The functions $parent and $child are in a hierarchical relationship, but the latter's" +
-      s" output type is not a subtype of the former's output type. Concretely, it should hold that ${child.outputType} <:" +
-      s" ${parentInstance.outputType}, but this is not the case."
-  }
-
   /**
     * Verifies that the output types of the functions in the multi-function are compatible with each other. That is, a
     * child's output type must be a subtype of the parent's output type.
@@ -210,12 +202,24 @@ object MultiFunctionConstraints {
       val successors = node.diSuccessors.toVector
       successors.foreach { successor =>
         val child = successor.value
-        parent.instantiate(child.signature.inputType).foreach { parentInstance =>
-          if (child.signature.outputType <= parentInstance.signature.outputType) {
-            successors.foreach(verifyHierarchyNode)
-          } else {
-            reporter.error(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
-          }
+        parent.instantiate(child.signature.inputType) match {
+          case Some(parentInstance) =>
+            if (child.signature.outputType <= parentInstance.signature.outputType) {
+              successors.foreach(verifyHierarchyNode)
+            } else {
+              reporter.error(
+                MultiFunctionFeedback.IncompatibleOutputTypes(
+                  child.signature,
+                  parent.signature,
+                  parentInstance.signature,
+                )
+              )
+            }
+
+          case None => throw CompilationException(
+            s"A function should always be instantiable with a child function's argument types." +
+              s" Child: $child. Parent: $parent."
+          )
         }
       }
     }

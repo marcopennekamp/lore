@@ -52,12 +52,12 @@ class MultiFunctionDefinition(
   /**
     * Calculates the multi-function's fit set for the given type.
     */
-  def fit(tpe: TupleType): Vector[FunctionDefinition] = Dispatch.fit(hierarchy, tpe)
+  def fit(tpe: TupleType): Vector[FunctionInstance] = Dispatch.fit(hierarchy, tpe)
 
   /**
     * Calculates the multi-function's min set for the given type.
     */
-  def min(tpe: TupleType): Vector[FunctionDefinition] = Dispatch.min(hierarchy, tpe)
+  def min(tpe: TupleType): Vector[FunctionInstance] = Dispatch.min(hierarchy, tpe)
 
   def positions: Vector[Position] = functions.map(_.position)
   override def position: Position = functions.headOption.map(_.position).getOrElse(Position.unknown)

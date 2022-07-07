@@ -40,7 +40,7 @@ object DispatchHierarchyBuilder {
 
       top.foreach { f =>
         // The min set must be calculated before the node is added to the graph.
-        val min = Dispatch.min(asHierarchy, f.signature.inputType)
+        val min = Dispatch.min(asHierarchy, f.signature.inputType).map(_.definition)
 
         graph = graph.incl(f)
         min.foreach { g =>

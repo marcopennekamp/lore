@@ -6,10 +6,11 @@ import lore.compiler.typing.unification.Unification
 object Fit {
 
   /**
-    * Whether t1 could be an argument type for a function with input type t2.
+    * Whether `t1` could be an argument type for a function with input type `t2`. Returns the type variable assignments
+    * if `t1` fits into `t2`, and `None` otherwise.
     *
     * Specifically, the following needs to be true for the fit to hold:
-    *   1. ALL variables in t2 need to be assigned types from t1.
+    *   1. All variables in t2 need to be assigned types from t1.
     *   2. All assignments to the same variable need to be the same type. We cannot permit subtypes in assignments.
     *      For example, assigning A = Animal and then A = Fish will fail, even though it would be quite valid in
     *      programming languages that don't resolve parametric types at run-time.
@@ -24,22 +25,25 @@ object Fit {
     * boils down to t1 <= t2 if t2 is monomorphic. (In such a case, t1 may either be polymorphic or monomorphic,
     * it doesn't matter.)
     */
-  def fits(t1: Type, t2: Type): Boolean = {
-    // Two types trivially fit into each other if they are equal.
-    if (t1 == t2) return true
-
-    // The type allocation in this.assignments handles (1), (2), and (3).
-    assignments(t1, t2).exists { assignments =>
+  def fitsAssignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
+    // The unification in `assignments` handles (1), (2), and (3).
+    assignments(t1, t2).map { assignments =>
       val substituted = if (assignments.nonEmpty) Type.substitute(t2, assignments) else t2
       t1 <= substituted
+      assignments
     }
   }
 
   /**
-    * Assigns types from `t1` to type variables in `t2`, returning the resulting type variable assignments. Otherwise
-    * returns None if no consistent assignment can be found.
+    * Whether `t1` could be an argument type for a function with input type `t2`.
     */
-  def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
+  def fits(t1: Type, t2: Type): Boolean = t1 == t2 || fitsAssignments(t1, t2).isDefined
+
+  /**
+    * Assigns types from `t1` to type variables in `t2`, returning the resulting type variable assignments. Otherwise
+    * returns `None` if no consistent assignment can be found.
+    */
+  private def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
     val typeVariables = Type.variables(t2).toVector
     val (s2, typeVariableAssignments) = InferenceVariable.fromTypeVariables(t2, typeVariables)
     Unification.unifyFits(t1, s2, Map.empty).flatMap { assignments =>

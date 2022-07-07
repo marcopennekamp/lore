@@ -1,14 +1,12 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
-import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.definitions.HasLocalModule
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.scopes.{FunctionTermScope, ImmutableTypeScope, TermScope, TypeScope}
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode.FunctionNode
-import lore.compiler.types.{Fit, Type, TypeVariable}
+import lore.compiler.types.{Fit, TupleType, TypeVariable}
 
 /**
   * A definition of a single function as part of a larger multi-function.
@@ -48,18 +46,13 @@ class FunctionDefinition(
   }
 
   /**
-    * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a
-    * "cannot instantiate function" error.
+    * Attempts to instantiate the function definition with the given argument type. Returns `None` if the function
+    * cannot be instantiated.
     */
-  def instantiate(argumentType: Type)(implicit reporter: Reporter): Option[FunctionInstance] = {
-    val option = Fit
-      .assignments(argumentType, signature.inputType)
-      .map(assignments => FunctionInstance(this, signature.substitute(assignments)))
-
-    if (option.isEmpty) {
-      reporter.error(CannotInstantiateFunction(this, argumentType))
-    }
-    option
+  def instantiate(argumentType: TupleType): Option[FunctionInstance] = {
+    Fit
+      .fitsAssignments(argumentType, signature.inputType)
+      .map(assignments => FunctionInstance(this, assignments))
   }
 
   /**
@@ -71,15 +64,12 @@ class FunctionDefinition(
       throw CompilationException(s"The function instance $signature cannot be instantiated monomorphically, because it" +
         s" is not monomorphic.")
     }
-    FunctionInstance(this, signature)
+    FunctionInstance(this, Map.empty)
   }
 }
 
 object FunctionDefinition {
   // TODO (multi-import): Move this error to the feedback package.
-  case class CannotInstantiateFunction(definition: FunctionDefinition, argumentType: Type) extends Feedback.Error(definition) {
-    override def message = s"The function definition $definition cannot be instantiated from argument type $argumentType."
-  }
 
   /**
     * Creates an immutable type scope that allows access to the function's type parameters.

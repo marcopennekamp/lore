@@ -11,6 +11,15 @@ object MultiFunctionFeedback {
       s" at least one parameter."
   }
 
+  case class IncompatibleOutputTypes(
+    child: FunctionSignature,
+    parent: FunctionSignature,
+    parentInstance: FunctionSignature,
+  ) extends Feedback.Error(child) {
+    override def message: String = s"The function `$child` specializes `$parent`, but its output type ${child.outputType}" +
+      s" is not a subtype of the parent's (instantiated) output type ${parentInstance.outputType}."
+  }
+
   object Dispatch {
     case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type, override val position: Position) extends Feedback.Error(position) {
       override def message: String = s"The multi-function call `${mf.name}` at this site has an empty fit. We cannot" +
