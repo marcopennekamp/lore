@@ -21,7 +21,10 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     */
   def analyzeFragment(fragmentPath: String): Registry = {
     implicit val reporter: MemoReporter = MemoReporter()
-    val registry = BuildApi.analyzeExitEarly(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)))
+    val registry = BuildApi.analyze(
+      BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)),
+      exitEarly = true,
+    )
 
     val errors = reporter.feedback.filter(_.isError)
     if (errors.nonEmpty) {
@@ -37,9 +40,15 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * Assert that the given fragment's compilation results in a list of errors, as required by the assertion. The list
     * of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
-  def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
+  def assertCompilationErrors(
+    fragmentPath: String,
+    exitCompilationEarly: Boolean = true,
+  )(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     implicit val reporter: MemoReporter = MemoReporter()
-    BuildApi.analyzeExitEarly(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)))
+    BuildApi.analyze(
+      BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)),
+      exitCompilationEarly,
+    )
 
     if (!reporter.feedback.exists(_.isError)) {
       Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
@@ -52,8 +61,11 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   /**
     * Assert that the given fragment's compilation results in the given error messages at each specified start line.
     */
-  def assertCompilationErrorMessages(fragmentPath: String)(messages: (String, Int)*): Assertion = {
-    assertCompilationErrors(fragmentPath) {
+  def assertCompilationErrorMessages(
+    fragmentPath: String,
+    exitCompilationEarly: Boolean = true,
+  )(messages: (String, Int)*): Assertion = {
+    assertCompilationErrors(fragmentPath, exitCompilationEarly) {
       errors => errors.map(e => (e.message, e.position.startLine)) shouldEqual messages.toVector
     }
   }
@@ -72,8 +84,11 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   /**
     * Assert that the given fragment's compilation results in the given error signatures.
     */
-  def assertCompilationErrorSignatures(fragmentPath: String)(signatures: (Class[_], Int)*): Assertion = {
-    assertCompilationErrors(fragmentPath) { errors =>
+  def assertCompilationErrorSignatures(
+    fragmentPath: String,
+    exitCompilationEarly: Boolean = true,
+  )(signatures: (Class[_], Int)*): Assertion = {
+    assertCompilationErrors(fragmentPath, exitCompilationEarly) { errors =>
       errors should have length signatures.length
       forAll(errors.zip(signatures)) { case (error, (errorClass, line)) =>
         ErrorSignature(errorClass, line).assertMatches(error)
@@ -81,6 +96,8 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     }
   }
 
-  val beAbstract: Matcher[FunctionDefinition] = (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
+  val beAbstract: Matcher[FunctionDefinition] = {
+    (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
+  }
 
 }

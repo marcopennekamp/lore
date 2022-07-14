@@ -51,9 +51,9 @@ object BuildApi {
     )
   }
 
-  def analyzeExitEarly(options: BuildOptions)(implicit reporter: Reporter): Option[Registry] = {
+  def analyze(options: BuildOptions, exitEarly: Boolean = false)(implicit reporter: Reporter): Option[Registry] = {
     val fragments = getFragments(options)
-    LoreCompiler.analyze(fragments, exitEarly = true)
+    LoreCompiler.analyze(fragments, exitEarly)
   }
 
   /**
