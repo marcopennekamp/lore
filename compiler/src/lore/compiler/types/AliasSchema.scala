@@ -28,12 +28,15 @@ class AliasSchema(
 
   override def instantiate(assignments: Assignments): Type = Type.substitute(originalType, assignments)
 
+  def isStructAlias: Boolean = aliasVariant.isStructAlias
+  def isObjectAlias: Boolean = aliasVariant == AliasVariant.Object
+
   override def position: Position = node.position
 }
 
 object AliasSchema {
   sealed trait AliasVariant {
-    def isStructAlias: Boolean = this == AliasVariant.Struct || this == AliasVariant.Object
+    def isStructAlias: Boolean = this == AliasVariant.Struct && this == AliasVariant.Object
   }
 
   object AliasVariant {

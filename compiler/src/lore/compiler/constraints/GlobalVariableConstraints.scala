@@ -6,8 +6,7 @@ import lore.compiler.semantics.variables.GlobalVariableDefinition
 object GlobalVariableConstraints {
 
   /**
-    * Verifies:
-    *   - Expression constraints for the global variable's value expression.
+    * Verifies expression constraints for the global variable's value expression.
     */
   def verify(variable: GlobalVariableDefinition)(implicit reporter: Reporter): Unit = {
     ExpressionConstraints.verify(variable.node.value)

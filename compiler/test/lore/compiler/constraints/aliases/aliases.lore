@@ -1,0 +1,10 @@
+struct Foo()
+
+struct Bar = Foo
+
+// Error: The struct alias `Baz` must alias a struct type.
+struct Baz = String
+
+// Error: The object alias `FooObj` must alias an object type.
+// Error: The object alias `FooObj` must not have type parameters.
+object FooObj[X] = Foo

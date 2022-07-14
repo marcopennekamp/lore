@@ -6,8 +6,7 @@ import lore.compiler.semantics.specs.SpecDefinition
 object SpecConstraints {
 
   /**
-    * Verifies:
-    *   - Expression constraints for the spec's body.
+    * Verifies expression constraints for the spec's body.
     */
   def verify(spec: SpecDefinition)(implicit reporter: Reporter): Unit = {
     ExpressionConstraints.verify(spec.node.body)

@@ -75,7 +75,7 @@ object GlobalModuleResolver {
 
       case node: AliasNode =>
         addSimple(parentModule.types, () => AliasSchemaResolver.create(node, parentModule)).foreach {
-          case schema if schema.aliasVariant.isStructAlias =>
+          case schema if schema.isStructAlias =>
             addStructBinding(() => AliasSchemaResolver.createStructBinding(schema))
           case _ =>
         }

@@ -7,9 +7,19 @@ import lore.compiler.types.{AliasSchema, StructType}
 object AliasConstraints {
 
   /**
-    * Verifies that, if the type alias is a struct/object alias, the underlying type is a struct/object type.
+    * Verifies:
+    *   1. If the type alias is a struct/object alias, the underlying type is a struct/object type.
+    *   2. If the type alias is an object alias, it must not have any type parameters.
     */
   def verify(alias: AliasSchema)(implicit reporter: Reporter): Unit = {
+    verifyUnderlyingStructType(alias)
+    verifyConstantObjectAlias(alias)
+  }
+
+  /**
+    * Verifies that the type alias has an underlying struct/object type if it is a struct/object alias.
+    */
+  private def verifyUnderlyingStructType(alias: AliasSchema)(implicit reporter: Reporter): Unit = {
     alias.aliasVariant match {
       case AliasVariant.Struct => alias.originalType match {
         case tpe: StructType if !tpe.schema.isObject =>
@@ -22,6 +32,15 @@ object AliasConstraints {
       }
 
       case AliasVariant.Type =>
+    }
+  }
+
+  /**
+    * Verifies that the object type alias has no type parameters.
+    */
+  private def verifyConstantObjectAlias(alias: AliasSchema)(implicit reporter: Reporter): Unit = {
+    if (alias.isObjectAlias && alias.parameters.nonEmpty) {
+      reporter.error(AliasFeedback.ConstantObjectAliasExpected(alias))
     }
   }
 

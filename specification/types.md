@@ -41,7 +41,7 @@ id #id () (,) [] #[->] %{} (...)   // name, symbol, unit, tuple, list, map, shap
 
 A **type alias** turns any type into a named type available in the global scope. They may have any number of **type parameters**. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
 
-A **struct type alias** goes a step further: It aliases the type, but also provides the struct constructor/object binding under the new name. Structs must be aliased with the keyword `struct` and objects with the keyword `object`.
+A **struct type alias** goes a step further: It aliases the type, but also provides the struct constructor/object binding under the new name. Structs must be aliased with the keyword `struct` and objects with the keyword `object`. Object aliases may not have any type parameters.
 
 ###### Syntax Example
 
