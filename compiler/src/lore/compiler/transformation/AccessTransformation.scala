@@ -85,7 +85,7 @@ object AccessTransformation {
         if (binding.tpe.member(nameNode.value).isDefined) {
           Some((binding, remaining))
         } else {
-          handleCompanionModule(binding, StructFeedback.Object.CompanionModuleExpected(binding, nameNode.value, nameNode.position))
+          handleCompanionModule(binding, StructFeedback.Object.MemberNotFound(binding, nameNode.value, nameNode.position))
         }
       case binding => Some((binding, remaining))
     }

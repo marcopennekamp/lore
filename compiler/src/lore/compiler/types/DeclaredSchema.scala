@@ -1,6 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.semantics.definitions.TypeDefinition
+import lore.compiler.syntax.DeclNode.DeclaredTypeDeclNode
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Once
 
@@ -10,6 +11,8 @@ trait DeclaredSchema extends TypeDefinition {
   private val _supertypes: Once[Vector[Type]] = new Once
 
   override def parameters: Vector[TypeVariable] = _parameters
+
+  override def node: DeclaredTypeDeclNode
 
   /**
     * The declared schema's kind, either `Trait` or `Struct`.

@@ -5,6 +5,7 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.syntax.DeclNode.StructNode
+import lore.compiler.syntax.Node.NameNode
 import lore.compiler.utils.Once
 
 class StructSchema(
@@ -57,4 +58,27 @@ class StructSchema(
   override def instantiate(assignments: TypeVariable.Assignments): StructType = StructType(this, assignments)
 
   override def position: Position = node.position
+}
+
+object StructSchema {
+
+  /**
+    * Creates a mock struct or object schema which can be used as a stand-in for an unresolved struct schema. The
+    * schema is guaranteed to be constant.
+    */
+  def createMock(name: NamePath, isObject: Boolean): StructSchema = {
+    val node = StructNode(
+      NameNode(name.simpleName, Position.internal),
+      isObject,
+      Vector.empty,
+      Vector.empty,
+      Vector.empty,
+      Position.internal,
+    )
+    val schema = new StructSchema(name, isObject, node)
+    schema.initialize(Vector.empty, Vector.empty)
+    schema.initializeProperties(Vector.empty)
+    schema
+  }
+
 }

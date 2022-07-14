@@ -1,9 +1,8 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{SchemaFeedback, Feedback, Reporter}
-import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.feedback.{Reporter, SchemaFeedback}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
-import lore.compiler.syntax.DeclNode.DeclaredTypeDeclNode
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.OptionExtension
@@ -13,13 +12,10 @@ object DeclaredSchemaResolver {
   /**
     * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
     */
-  def initialize(
-    schema: DeclaredSchema,
-    node: DeclaredTypeDeclNode,
-  )(implicit registry: Registry, reporter: Reporter): Unit = {
-    Resolver.withTypeParameters(schema.localModule, node.typeVariables) {
+  def initialize(schema: DeclaredSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
-        val supertypes = resolveInheritedTypes(schema, node.extended)
+        val supertypes = resolveInheritedTypes(schema, schema.node.extended)
         schema.initialize(typeParameters, supertypes)
     }
   }
@@ -57,6 +53,17 @@ object DeclaredSchemaResolver {
       .flatMap(TypeExpressionEvaluator.evaluate)
       .flatMap(extract)
       .distinct
+  }
+
+  /**
+    * Fallback-initializes `schema`, initializing type parameters without bounds and ignoring inherited types. This
+    * happens before any other schemas are initialized, so the schema may not reference any other declared types.
+    */
+  def fallbackInitialize(schema: DeclaredSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables, resolveBounds = false) {
+      implicit typeScope => implicit termScope => typeParameters =>
+        schema.initialize(typeParameters, Vector.empty)
+    }
   }
 
 }

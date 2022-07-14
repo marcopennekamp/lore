@@ -115,7 +115,7 @@ object StructFeedback {
         s" Companion module members and struct properties may not share names."
     }
 
-    case class CompanionModuleExpected(
+    case class MemberNotFound(
       binding: StructObjectBinding,
       memberName: String,
       override val position: Position,

@@ -44,15 +44,43 @@ object AliasSchemaResolver {
 
   /**
     * Initializes `structBinding`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
+    *
+    * If the alias's original type is not a struct type or if the alias is an object and the underlying type is not,
+    * the struct binding is initialized with a mock struct or object. This ensures that the compiler can continue
+    * working with an initialized struct binding, which is necessary to avoid compiler crashes. Note that the alias
+    * struct <i>binding</i> is initialized with the mock type, not the type alias itself, which retains its original
+    * type.
     */
-  def initializeStructBinding(schema: AliasSchema, structBinding: StructBinding): Unit = schema.originalType match {
-    case underlyingType: StructType =>
-      val underlyingSchema = underlyingType.schema
-      structBinding match {
-        case binding: StructConstructorBinding => binding.initialize(underlyingType)
-        case binding: StructObjectBinding => binding.initialize(underlyingSchema)
-      }
-    case _ =>
+  def initializeStructBinding(schema: AliasSchema, structBinding: StructBinding): Unit = {
+    val underlyingType = schema.originalType match {
+      case underlyingType: StructType if !schema.isObjectAlias || underlyingType.schema.isObject => underlyingType
+      case _ => createMockStruct(schema)
+    }
+
+    structBinding match {
+      case binding: StructConstructorBinding => binding.initialize(underlyingType)
+      case binding: StructObjectBinding => binding.initialize(underlyingType.schema)
+    }
+  }
+
+  /**
+    * Fallback-initializes `schema`, initializing type parameters without bounds and ignoring the underlying type
+    * expression. Regular aliases are initialized to `Any`, while struct aliases are initialized with a mock struct or
+    * object.
+    */
+  def fallbackInitialize(schema: AliasSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
+    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
+      implicit typeScope => implicit termScope => typeParameters =>
+        val originalType = schema.aliasVariant match {
+          case AliasVariant.Type => BasicType.Any
+          case AliasVariant.Struct | AliasVariant.Object => createMockStruct(schema)
+        }
+        schema.initialize(typeParameters, originalType)
+    }
+  }
+
+  private def createMockStruct(schema: AliasSchema): StructType = {
+    StructSchema.createMock(schema.name, schema.aliasVariant == AliasVariant.Object).constantType
   }
 
 }

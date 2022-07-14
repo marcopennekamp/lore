@@ -2,7 +2,6 @@ package lore.compiler.resolution
 
 import lore.compiler.feedback._
 import lore.compiler.resolution.TypeDependencies.SchemaResolutionOrder
-import lore.compiler.semantics.bindings.StructBinding
 import lore.compiler.semantics.definitions.{TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -10,7 +9,6 @@ import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.types._
-import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 object RegistryResolver {
 
@@ -52,18 +50,22 @@ object RegistryResolver {
     * We perform two separate passes over type declarations: (1) Initialize types and (2) initialize struct properties.
     * This has the distinct advantage that we don't need to defer typings of struct properties with laziness.
     *
-    * TODO (multi-import): Some types with cyclic inheritance might need to be removed from global and local modules.
-    *                      We have to make sure that the compiler doesn't crash if some types aren't initialized!
-    *                      Basically, these uninitialized types should not be fetched from a scope. The best way to
-    *                      solve this is probably to literally remove these types from global and local modules.
-    *                      The same applies to alias StructBindings which haven't been initialized due to the aliased
-    *                      type not being a struct type.
+    * Cyclic type definitions are fallback-initialized. See [[initializeCyclicSchemas]]. This happens before the schema
+    * resolution order is iterated so that valid types which rely on these cyclic types can correctly reference them.
+    *
+    * Struct alias bindings which don't have an underlying struct type are fallback-initialized with a mock struct or
+    * object.
     */
   private def initializeTypes()(implicit registry: Registry, reporter: Reporter): Iterable[TypeDefinition] = {
     val typeDefinitions = collectTypeDefinitions()
-    val schemaResolutionOrder = TypeDependencies.resolve(typeDefinitions)
+    val (schemaResolutionOrder, cyclicTypeDefinitions) = TypeDependencies.resolve(typeDefinitions)
+    initializeCyclicSchemas(cyclicTypeDefinitions)
     initializeSchemas(schemaResolutionOrder)
-    initializeStructProperties(schemaResolutionOrder)
+
+    // We need to initialize the struct properties of both cyclic types and regularly initialized types. Property
+    // initialization of cyclic types does not differ from regular types.
+    initializeStructProperties(cyclicTypeDefinitions ++ schemaResolutionOrder)
+
     typeDefinitions.values
   }
 
@@ -85,26 +87,47 @@ object RegistryResolver {
   }
 
   /**
+    * Initializes schemas and struct bindings which haven't been added to the schema resolution order due to cyclic
+    * dependencies. They are fallback-initialized specially as "empty" types (without type parameter bounds and
+    * extended types) so that the compiler can continue to work with these types. Mainly, we want to avoid the compiler
+    * crashing due to an uninitialized type.
+    */
+  private def initializeCyclicSchemas(typeDefinitions: Vector[TypeDefinition])(
+    implicit registry: Registry,
+    reporter: Reporter,
+  ): Unit = {
+    typeDefinitions.foreach {
+      case schema: AliasSchema =>
+        AliasSchemaResolver.fallbackInitialize(schema)
+        schema.structBinding.foreach(AliasSchemaResolver.initializeStructBinding(schema, _))
+
+      case schema: TraitSchema =>
+        DeclaredSchemaResolver.fallbackInitialize(schema)
+
+      case schema: StructSchema =>
+        DeclaredSchemaResolver.fallbackInitialize(schema)
+        schema.structBinding.foreach(StructSchemaResolver.initializeStructBinding(schema, _))
+    }
+  }
+
+  /**
     * Initializes schemas and struct bindings in their schema resolution order.
     */
   private def initializeSchemas(schemaResolutionOrder: SchemaResolutionOrder)(
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
-    schemaResolutionOrder.foreach { typeDefinition =>
-      lazy val structBinding = typeDefinition.globalModule.terms.get(typeDefinition.simpleName).filterType[StructBinding]
-      typeDefinition match {
-        case schema: AliasSchema =>
-          AliasSchemaResolver.initialize(schema)
-          structBinding.foreach(AliasSchemaResolver.initializeStructBinding(schema, _))
+    schemaResolutionOrder.foreach {
+      case schema: AliasSchema =>
+        AliasSchemaResolver.initialize(schema)
+        schema.structBinding.foreach(AliasSchemaResolver.initializeStructBinding(schema, _))
 
-        case schema: TraitSchema =>
-          TraitSchemaResolver.initialize(schema)
+      case schema: TraitSchema =>
+        DeclaredSchemaResolver.initialize(schema)
 
-        case schema: StructSchema =>
-          StructSchemaResolver.initialize(schema)
-          structBinding.foreach(StructSchemaResolver.initializeStructBinding(schema, _))
-      }
+      case schema: StructSchema =>
+        DeclaredSchemaResolver.initialize(schema)
+        schema.structBinding.foreach(StructSchemaResolver.initializeStructBinding(schema, _))
     }
   }
 

@@ -1,7 +1,7 @@
 package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, Reporter, SchemaFeedback}
+import lore.compiler.feedback.{Reporter, SchemaFeedback}
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.semantics.modules.LocalModule
@@ -25,7 +25,8 @@ object TypeDependencies {
 
   /**
     * Verifies that the dependencies between the given types are correct and computes an order in which schemas need to
-    * be resolved (initialized).
+    * be resolved (initialized). In addition, returns a list of cyclic type definitions which haven't been added to the
+    * schema resolution order. These types will have to be fallback-initialized separately.
     *
     * Type dependencies are correct when:
     *   1. All type dependencies referred to by name have a corresponding type declaration.
@@ -33,14 +34,15 @@ object TypeDependencies {
     */
   def resolve(
     typeDefinitions: Map[NamePath, TypeDefinition],
-  )(implicit reporter: Reporter): SchemaResolutionOrder = {
+  )(implicit reporter: Reporter): (SchemaResolutionOrder, Vector[TypeDefinition]) = {
     val unfilteredInfos = typeDefinitions.values.toVector.map(
       tpe => TypeDeclarationInfo(tpe, dependencies(tpe.node))
     )
     val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeDefinitions))
     var graph = buildDependencyGraph(infos)
 
-    graph = filterCycles(graph, typeDefinitions)
+    val (filteredGraph, cyclicDefinitions) = filterCycles(graph, typeDefinitions)
+    graph = filteredGraph
     graph = reconnectRoots(graph)
 
     // Now that the graph has been shown to be acyclic, it should be connected, as Any should be the supertype of all
@@ -51,7 +53,8 @@ object TypeDependencies {
       throw CompilationException(s"The type dependency graph must be connected.")
     }
 
-    computeSchemaResolutionOrder(graph, typeDefinitions)
+    val order = computeSchemaResolutionOrder(graph, typeDefinitions)
+    (order, cyclicDefinitions.toVector)
   }
 
   private def dependencies(declNode: TypeDeclNode): Vector[NamePath] = {
@@ -123,12 +126,16 @@ object TypeDependencies {
   /**
     * Removes all types contained in a cycle from the dependency graph, reporting an error for each such cycle. A cycle
     * means that at least one declared type extends itself directly or indirectly.
+    *
+    * The type definitions involved in cycles are returned separately.
     */
   private def filterCycles(
     graph: DependencyGraph,
     typeDefinitions: Map[NamePath, TypeDefinition],
-  )(implicit reporter: Reporter): DependencyGraph = {
+  )(implicit reporter: Reporter): (DependencyGraph, Set[TypeDefinition]) = {
     var result = graph
+    var cyclicDefinitions = Set.empty[TypeDefinition]
+
     while (result.isCyclic) {
       val cycles = distinctCycles(result)
       if (cycles.isEmpty) {
@@ -136,14 +143,19 @@ object TypeDependencies {
       }
 
       cycles.foreach { cycle =>
-        val typeNames = cycle.nodes.map(_.value).toVector.init
-        // Report the error at each occurrence so that IDEs can properly report them at each location.
-        reporter.report(typeNames.map(occurrence => SchemaFeedback.InheritanceCycle(typeNames, typeDefinitions(occurrence))))
+        // Report the error at each occurrence so that IDEs can properly report them at each location. Also collect all
+        // cyclic definitions.
+        val typeNames = cycle.nodes.map(_.value).init.toVector
+        typeNames.foreach { typeName =>
+          val definition = typeDefinitions(typeName)
+          reporter.report(SchemaFeedback.InheritanceCycle(typeNames, definition))
+          cyclicDefinitions += definition
+        }
         result = result -- typeNames
       }
     }
 
-    result
+    (result, cyclicDefinitions)
   }
 
   /**

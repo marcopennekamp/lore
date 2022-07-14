@@ -12,7 +12,7 @@ class StructConstraintsSpec extends BaseSpec {
       (classOf[StructFeedback.CompanionModuleExpected], 4),
       (classOf[StructFeedback.Object.MemberNameTaken], 15),
       (classOf[StructFeedback.Object.MemberNameTaken], 17),
-      (classOf[StructFeedback.Object.CompanionModuleExpected], 27),
+      (classOf[StructFeedback.Object.MemberNotFound], 27),
     )
   }
 

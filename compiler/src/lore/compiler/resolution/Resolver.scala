@@ -19,12 +19,13 @@ object Resolver {
   def withTypeParameters[R](
     localModule: LocalModule,
     typeParameterNodes: Vector[DeclNode.TypeVariableNode],
+    resolveBounds: Boolean = true,
   )(
     f: TypeScope => TermScope => Vector[TypeVariable] => R,
   )(implicit registry: Registry, reporter: Reporter): R = {
     withRegistryScopes(localModule) {
       typeScope => implicit termScope =>
-        val typeParameters = TypeVariableResolver.resolve(typeParameterNodes, typeScope)
+        val typeParameters = TypeVariableResolver.resolve(typeParameterNodes, typeScope, resolveBounds)
         val typeParameterScope: TypeScope = ImmutableTypeScope.from(typeParameters, typeScope)
         f(typeParameterScope)(termScope)(typeParameters)
     }

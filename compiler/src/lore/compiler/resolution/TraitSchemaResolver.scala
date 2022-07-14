@@ -18,11 +18,4 @@ object TraitSchemaResolver {
     new TraitSchema(globalModule.name + node.simpleName, node)
   }
 
-  /**
-    * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
-    */
-  def initialize(schema: TraitSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    DeclaredSchemaResolver.initialize(schema, schema.node)
-  }
-
 }

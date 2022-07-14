@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
+import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.modules.GlobalModule
@@ -28,13 +28,6 @@ object StructSchemaResolver {
   def createStructBinding(schema: StructSchema): StructBinding = {
     if (schema.isObject) new StructObjectBinding(schema)
     else new StructConstructorBinding(schema)
-  }
-
-  /**
-    * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
-    */
-  def initialize(schema: StructSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    DeclaredSchemaResolver.initialize(schema, schema.node)
   }
 
   /**
