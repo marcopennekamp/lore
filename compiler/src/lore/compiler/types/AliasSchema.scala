@@ -36,7 +36,7 @@ class AliasSchema(
 
 object AliasSchema {
   sealed trait AliasVariant {
-    def isStructAlias: Boolean = this == AliasVariant.Struct && this == AliasVariant.Object
+    def isStructAlias: Boolean = this == AliasVariant.Struct || this == AliasVariant.Object
   }
 
   object AliasVariant {
