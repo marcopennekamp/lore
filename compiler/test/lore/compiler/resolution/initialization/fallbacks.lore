@@ -1,0 +1,31 @@
+trait H
+trait J extends H
+
+// Error: Cyclic inheritance.
+trait A[+X <: H] extends B[X]
+
+// Error: Cyclic inheritance.
+trait B[+X <: H] extends A[X]
+
+struct C[+X <: H](value: B[X]) extends A[X]
+object D extends B[J]
+
+type CyclicAlias1[X <: H] = A[X]
+// Error: Struct alias must alias a non-object struct type.
+struct CyclicAlias2[X <: H] = A[X]
+
+struct StructAlias1 = C[J]
+// Error: The object alias must alias an object type.
+object StructAlias2 = C[J]
+
+func main(): [Any] = [
+  C(D),
+
+  C(D) :: CyclicAlias1[J],
+  CyclicAlias2[J],
+  CyclicAlias2(D),
+
+  StructAlias1('test'),
+  // Error: `StructAlias2` does not have a property `foobar` or a companion module with `foobar`.
+  StructAlias2.foobar,
+]
