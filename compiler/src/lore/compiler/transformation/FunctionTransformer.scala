@@ -3,7 +3,6 @@ package lore.compiler.transformation
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.scopes.FunctionTermScope
 
 object FunctionTransformer {
 
@@ -12,16 +11,19 @@ object FunctionTransformer {
     * is sound compared to the result type of the body.
     */
   def transform(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    function.node.body.foreach { node =>
-      function.body = Some(
-        ExpressionTransformer.transform(
-          node,
-          function.signature.outputType,
-          function.getTypeScope,
-          function.getTermScope,
-          function.name.toString,
+    function.node.body match {
+      case Some(bodyNode) => function.body.assign(
+        Some(
+          ExpressionTransformer.transform(
+            bodyNode,
+            function.signature.outputType,
+            function.getTypeScope,
+            function.getTermScope,
+            function.name.toString,
+          )
         )
       )
+      case None => function.body.assign(None)
     }
   }
 

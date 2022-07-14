@@ -118,7 +118,7 @@ object StructSchemaAssembler {
     */
   private def generatePropertyDefaultValueFunctions(schema: StructSchema)(implicit registry: Registry): Vector[PoemFunction] = {
     schema.properties.flatMap { property =>
-      property.defaultValue match {
+      property.defaultValue.value match {
         case Some(defaultValue) =>
           val functionName = RuntimeNames.struct.defaultPropertyValue(property)
           val signature = FunctionSignature.constant(functionName, defaultValue.tpe, defaultValue.position)

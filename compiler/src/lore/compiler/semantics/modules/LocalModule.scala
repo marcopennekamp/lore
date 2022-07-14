@@ -14,9 +14,9 @@ import lore.compiler.semantics.{NamePath, Registry}
   * process, so that DeclNodes don't lose their connection to the other local declarations. It also requires us to
   * create a parent/child relationship between nested local modules.
   *
-  * Local module members are separated by binding kind because types and their corresponding modules may be placed in
-  * different namespaces. This is the case with the String type, which as a basic type is placed in the root namespace,
-  * but has the corresponding module `lore.String`.
+  * Local module members are separated by definition kind because types and their corresponding modules may be placed
+  * in different namespaces. This is the case with the String type, which as a basic type is placed in the root
+  * namespace, but has the corresponding module `lore.String`.
   */
 class LocalModule(
   val globalModule: GlobalModule,
@@ -53,7 +53,6 @@ class LocalModule(
       //                      module through a struct binding). In general, reconsider the need for this function.
       terms
         .getAccessibleMembers(relativePath.headName)
-        //.filter(_.bindingKind == BindingKind.Module)
         .map(_.singleBinding.name ++ relativePath.tail)
         .filter(registry.has)
     }

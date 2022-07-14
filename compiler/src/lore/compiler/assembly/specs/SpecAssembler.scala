@@ -19,7 +19,7 @@ object SpecAssembler {
     // There is no need to have stable executable names across compilation runs, so a UUID suffices.
     val executableName = modulePath.appendToLastSegment("/spec-" + UUID.randomUUID())
     val signature = FunctionSignature.constant(executableName, TupleType.UnitType, spec.position)
-    val poemFunctions = FunctionAssembler.generate(signature, Some(spec.body), Map.empty)
+    val poemFunctions = FunctionAssembler.generate(signature, Some(spec.body.value), Map.empty)
     val poemSpec = PoemSpec(modulePath, spec.description, spec.isTest, spec.isBenchmark, executableName)
     (poemSpec, poemFunctions)
   }

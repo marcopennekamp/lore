@@ -5,11 +5,12 @@ import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Report
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, StructObjectBinding, TermBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, TermBinding, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
+import lore.compiler.semantics.structures.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._

@@ -4,9 +4,9 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
+import lore.compiler.semantics.structures.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.StructSchema
 

@@ -2,11 +2,11 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned, UniqueKey}
 import lore.compiler.semantics.analysis.CapturedVariables
-import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.structures.StructPropertyDefinition
+import lore.compiler.semantics.structures.{StructConstructorBinding, StructPropertyDefinition}
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable
 

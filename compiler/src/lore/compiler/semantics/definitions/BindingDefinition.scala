@@ -1,6 +1,6 @@
 package lore.compiler.semantics.definitions
 
-import lore.compiler.semantics.{BindingKind, NamePath}
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.Binding
 
 /**
@@ -27,7 +27,7 @@ import lore.compiler.semantics.bindings.Binding
   */
 trait BindingDefinition extends Definition with Binding {
   def name: NamePath
-  def bindingKind: BindingKind // TODO (multi-import): Move to Definition? Rename to BindingDefinitionKind or something?
+  def definitionKind: BindingDefinitionKind
   def isInitialized: Boolean
 
   def simpleName: String = name.simpleName

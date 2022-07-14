@@ -7,6 +7,7 @@ import lore.compiler.semantics.scopes.{FunctionTermScope, ImmutableTypeScope, Te
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode.FunctionNode
 import lore.compiler.types.{Fit, TupleType, TypeVariable}
+import lore.compiler.utils.Once
 
 /**
   * A definition of a single function as part of a larger multi-function.
@@ -30,12 +31,7 @@ class FunctionDefinition(
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic
 
-  /**
-    * This is a variable because it may be transformed during the course of the compilation.
-    *
-    * TODO (multi-import): This and similar mutable fields should be Once.
-    */
-  var body: Option[Expression] = None
+  val body: Once[Option[Expression]] = new Once
 
   def getTypeScope(implicit registry: Registry): TypeScope = {
     FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
@@ -69,8 +65,6 @@ class FunctionDefinition(
 }
 
 object FunctionDefinition {
-  // TODO (multi-import): Move this error to the feedback package.
-
   /**
     * Creates an immutable type scope that allows access to the function's type parameters.
     */

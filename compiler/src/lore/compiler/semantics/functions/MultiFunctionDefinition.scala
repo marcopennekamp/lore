@@ -2,8 +2,8 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.definitions.TermDefinition
-import lore.compiler.semantics.{BindingKind, NamePath}
+import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition}
+import lore.compiler.semantics.NamePath
 import lore.compiler.syntax.DeclNode.FunctionNode
 import lore.compiler.types.TupleType
 import lore.compiler.utils.Once
@@ -62,7 +62,7 @@ class MultiFunctionDefinition(
   def positions: Vector[Position] = functions.map(_.position)
   override def position: Position = functions.headOption.map(_.position).getOrElse(Position.unknown)
 
-  override def bindingKind: BindingKind = BindingKind.MultiFunction
+  override def definitionKind: BindingDefinitionKind = BindingDefinitionKind.MultiFunction
   override def toString: String = name.toString
 
 }

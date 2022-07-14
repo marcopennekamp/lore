@@ -8,12 +8,14 @@ import lore.compiler.types.TupleType
 object SpecTransformer {
 
   def transform(spec: SpecDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
-    spec.body = ExpressionTransformer.transform(
-      spec.node.body,
-      TupleType.UnitType,
-      registry.getTypeScope(spec.localModule),
-      registry.getTermScope(spec.localModule),
-      s"spec ${spec.localModule.globalModule.name} '${spec.description}'",
+    spec.body.assign(
+      ExpressionTransformer.transform(
+        spec.node.body,
+        TupleType.UnitType,
+        registry.getTypeScope(spec.localModule),
+        registry.getTermScope(spec.localModule),
+        s"spec ${spec.localModule.globalModule.name} '${spec.description}'",
+      )
     )
   }
 

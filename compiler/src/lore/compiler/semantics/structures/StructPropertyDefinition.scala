@@ -6,6 +6,7 @@ import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{StructSchema, Type, TypeVariable}
+import lore.compiler.utils.Once
 
 // TODO (multi-import): Rename to StructProperty and move to the `types` package.
 
@@ -26,10 +27,7 @@ class StructPropertyDefinition(
 
   val uniqueKey: UniqueKey = UniqueKey.fresh()
 
-  /**
-    * This is a variable because it may be transformed during the course of the compilation.
-    */
-  var defaultValue: Option[Expression] = _
+  val defaultValue: Once[Option[Expression]] = new Once
 
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 

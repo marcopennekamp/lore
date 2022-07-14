@@ -2,10 +2,10 @@ package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
-import lore.compiler.semantics.bindings.StructBinding
-import lore.compiler.semantics.definitions.BindingDefinition
+import lore.compiler.semantics.definitions.{BindingDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules._
+import lore.compiler.semantics.structures.StructBinding
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.{DeclNode, NamedDeclNode}
@@ -76,13 +76,13 @@ object GlobalModuleResolver {
       case node: AliasNode =>
         addSimple(parentModule.types, () => AliasSchemaResolver.create(node, parentModule)).foreach {
           case schema if schema.isStructAlias =>
-            addStructBinding(() => AliasSchemaResolver.createStructBinding(schema))
+            addStructBinding(schema, () => AliasSchemaResolver.createStructBinding(schema))
           case _ =>
         }
 
       case node: StructNode =>
         addSimple(parentModule.types, () => StructSchemaResolver.create(node, parentModule)).foreach {
-          schema => addStructBinding(() => StructSchemaResolver.createStructBinding(schema))
+          schema => addStructBinding(schema, () => StructSchemaResolver.createStructBinding(schema))
         }
 
       case node: TraitNode =>
@@ -161,12 +161,18 @@ object GlobalModuleResolver {
       }
     }
 
-    private def addStructBinding(create: () => StructBinding): Unit = {
-      addWithMerge(parentModule.terms, create) {
+    private def addStructBinding(typeDefinition: TypeDefinition, create: () => StructBinding): Unit = {
+      val createAndAssign = () => {
+        val structBinding = create()
+        typeDefinition.structBinding = Some(structBinding)
+        structBinding
+      }
+
+      addWithMerge(parentModule.terms, createAndAssign) {
         case globalModule: GlobalModule =>
           // We're adding a struct term to an existing module member, which means that the module is a companion module
           // and needs to be replaced by the struct term.
-          val structBinding = create()
+          val structBinding = createAndAssign()
           structBinding.companionModule = Some(globalModule)
           parentModule.terms.add(structBinding)
           Some(structBinding)

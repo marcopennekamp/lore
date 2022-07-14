@@ -3,8 +3,8 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.modules.GlobalModule
+import lore.compiler.semantics.structures.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.syntax.DeclNode.AliasNode
 import lore.compiler.types.AliasSchema.AliasVariant
 import lore.compiler.types._

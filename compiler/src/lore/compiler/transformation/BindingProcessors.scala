@@ -1,9 +1,10 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{TermBinding, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.structures.StructConstructorBinding
 import lore.compiler.typing.InferenceVariable
 
 object BindingProcessors {

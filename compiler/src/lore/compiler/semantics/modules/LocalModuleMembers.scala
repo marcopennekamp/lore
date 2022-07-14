@@ -1,8 +1,8 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.definitions.BindingDefinition
-import lore.compiler.semantics.{BindingKind, Registry}
+import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
+import lore.compiler.semantics.Registry
 
 /**
   * [[LocalModuleMembers]] manages type or term local module members.
@@ -24,7 +24,7 @@ class LocalModuleMembers[A <: BindingDefinition](
     * resolution.
     */
   var accessibles: Map[String, MultiReference[A]] = members.map {
-    case (name, moduleMember) => name -> MultiReference(moduleMember.bindingKind, Set(moduleMember), Set.empty)
+    case (name, moduleMember) => name -> MultiReference(moduleMember.definitionKind, Set(moduleMember), Set.empty)
   }
 
   /**
@@ -39,8 +39,8 @@ class LocalModuleMembers[A <: BindingDefinition](
     */
   def getAccessibleMembers(memberName: String): Option[MultiReference[A]] = {
     getAccessibleMembersLocally(memberName) match {
-      case Some(localMembers) if localMembers.bindingKind.isMultiReferable =>
-        val members = getAccessibleMembersGlobally(memberName, Some(localMembers.bindingKind)) match {
+      case Some(localMembers) if localMembers.definitionKind.isMultiReferable =>
+        val members = getAccessibleMembersGlobally(memberName, Some(localMembers.definitionKind)) match {
           case Some(globalMembers) => globalMembers ++ localMembers
           case None => localMembers
         }
@@ -65,49 +65,49 @@ class LocalModuleMembers[A <: BindingDefinition](
     * Returns a [[MultiReference]] for `memberName` if it occurs in this local module's global definitions, or those of
     * a parent local module or the root module.
     *
-    * If `localBindingKind` is specified, the member has already been found locally, but the bindings are
+    * If `localDefinitionKind` is specified, the member has already been found locally, but the definitions are
     * multi-referable and thus the global space has to be searched as well. In this case, care has to be taken that the
     * specification's requirement of local shadowing is followed. The parent chain for a global module may only be
-    * followed so far as the `localBindingKind` still agrees with the local member's <i>and</i> global member's binding
-    * kinds. See the section `Interaction with other bindings` in `modules.md` of the specification for a motivating
-    * example.
+    * followed so far as the `localDefinitionKind` still agrees with the local member's <i>and</i> global member's
+    * definition kinds. See the section `Interaction with other bindings` in `modules.md` of the specification for a
+    * motivating example.
     */
   protected def getAccessibleMembersGlobally(
     memberName: String,
-    localBindingKind: Option[BindingKind],
+    localDefinitionKind: Option[BindingDefinitionKind],
   ): Option[MultiReference[A]] = {
-    if (localBindingKind.exists(_.isSingleReferable)) {
-      throw CompilationException("`localBindingKind` must be multi-referable. Otherwise, `getAccessibleMembersGlobally`" +
+    if (localDefinitionKind.exists(_.isSingleReferable)) {
+      throw CompilationException("`localDefinitionKind` must be multi-referable. Otherwise, `getAccessibleMembersGlobally`" +
         " shouldn't have been called as the local module member should've been preferred.")
     }
 
-    // Check that `localBindingKind`, if it exists, agrees with the binding kind of the local module's member, if it
-    // exists. Keep in mind that `localBindingKind` may not have come from THIS local module but rather a parent local
-    // module, so we have to check against it in all cases.
-    if (localBindingKind.exists(bk => accessibles.get(memberName).exists(_.bindingKind != bk))) {
+    // Check that `localDefinitionKind`, if it exists, agrees with the definition kind of the local module's member, if
+    // it exists. Keep in mind that `localDefinitionKind` may not have come from THIS local module but rather a parent
+    // local module, so we have to check against it in all cases.
+    if (localDefinitionKind.exists(bk => accessibles.get(memberName).exists(_.definitionKind != bk))) {
       return None
     }
 
     global.get(memberName) match {
-      case Some(moduleMember) if localBindingKind.exists(_ != moduleMember.bindingKind) => None
+      case Some(moduleMember) if localDefinitionKind.exists(_ != moduleMember.definitionKind) => None
       case Some(moduleMember) =>
-        val multiReference = MultiReference(moduleMember.bindingKind, Set.empty, Set(moduleMember))
-        Some(mergeWithParentMembers(multiReference, _.getAccessibleMembersGlobally(memberName, localBindingKind)))
+        val multiReference = MultiReference(moduleMember.definitionKind, Set.empty, Set(moduleMember))
+        Some(mergeWithParentMembers(multiReference, _.getAccessibleMembersGlobally(memberName, localDefinitionKind)))
       case None =>
-        parent.flatMap(_.getAccessibleMembersGlobally(memberName, localBindingKind))
+        parent.flatMap(_.getAccessibleMembersGlobally(memberName, localDefinitionKind))
     }
   }
 
   /**
     * Merges `multiReference` with any multi-references received from `mergeWithParentMembers` *if* `multiReference` is
-    * multi-referable and the parent multi-reference agrees in its binding kind with `multiReference`. Otherwise,
+    * multi-referable and the parent multi-reference agrees in its definition kind with `multiReference`. Otherwise,
     * `multiReference` has precedence.
     */
   private def mergeWithParentMembers(
     multiReference: MultiReference[A],
     getParentMembers: LocalModuleMembers[A] => Option[MultiReference[A]],
   ): MultiReference[A] = {
-    if (multiReference.bindingKind.isMultiReferable && parent.isDefined) {
+    if (multiReference.definitionKind.isMultiReferable && parent.isDefined) {
       getParentMembers(parent.get)
         .filter(multiReference.isCompatibleWith)
         .map(multiReference ++ _)

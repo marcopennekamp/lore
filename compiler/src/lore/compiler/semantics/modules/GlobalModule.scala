@@ -1,9 +1,10 @@
 package lore.compiler.semantics.modules
 
-import lore.compiler.semantics.definitions.{BindingDefinition, Definition, TermDefinition, TypeDefinition}
+import lore.compiler.core.Position
+import lore.compiler.semantics.definitions.{BindingDefinition, Definition, BindingDefinitionKind, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.specs.SpecDefinition
-import lore.compiler.semantics.{BindingKind, NamePath, PositionsProperty}
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.DeclaredSchema
 import lore.compiler.utils.CollectionExtensions.{IterableExtension, OptionExtension}
 
@@ -13,7 +14,7 @@ import lore.compiler.utils.CollectionExtensions.{IterableExtension, OptionExtens
   */
 class GlobalModule(
   override val name: NamePath,
-) extends TermDefinition with PositionsProperty {
+) extends TermDefinition {
   val types: GlobalModuleMembers[TypeDefinition] = new GlobalModuleMembers(this, ModuleMemberKind.Type)
   val terms: GlobalModuleMembers[TermDefinition] = new GlobalModuleMembers(this, ModuleMemberKind.Term)
 
@@ -21,23 +22,13 @@ class GlobalModule(
     ModuleMembers.membersOfKind(types, terms, moduleMemberKind)
   }
 
-  /*
-  private var _schemas: Map[String, NamedSchema] = Map.empty
-  def schemas: Map[String, NamedSchema] = _schemas
-  def addSchema(schema: NamedSchema): Unit = _schemas += schema.name -> schema
-
-  private var _globalVariables: Map[String, GlobalVariableDefinition] = Map.empty
-  def globalVariables: Map[String, GlobalVariableDefinition] = _globalVariables
-  def addGlobalVariable(global: GlobalVariableDefinition): Unit = _globalVariables += global.name -> global
-
-  private var _multiFunctions: Map[String, MultiFunctionDefinition] = Map.empty
-  def multiFunctions: Map[String, MultiFunctionDefinition] = _multiFunctions
-  def addMultiFunction(mf: MultiFunctionDefinition): Unit = _multiFunctions += mf.name -> mf
-  */
-
   private var _specs: Vector[SpecDefinition] = Vector.empty
   def specs: Vector[SpecDefinition] = _specs
   def addSpec(spec: SpecDefinition): Unit = _specs :+= spec
+
+  private var _positions: Vector[Position] = Vector.empty
+  def positions: Vector[Position] = _positions
+  def addPosition(position: Position): Unit = _positions :+= position
 
   def declaredSchemas: Iterable[DeclaredSchema] = types.all.filterType[DeclaredSchema]
 
@@ -55,7 +46,8 @@ class GlobalModule(
     terms.get(memberName).filterType[MultiFunctionDefinition]
   }
 
-  override def bindingKind: BindingKind = BindingKind.Module
+  override def definitionKind: BindingDefinitionKind = BindingDefinitionKind.Module
   override def isInitialized: Boolean = true
+  override def position: Position = positions.headOption.getOrElse(Position.unknown)
   override def toString: String = name.toString
 }

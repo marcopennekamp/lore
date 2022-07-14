@@ -120,9 +120,6 @@ object TypeDependencies {
       .withDefault(BasicType.Any.name ~> info.tpe.name)
   }
 
-  // TODO (multi-import): Move this error to the feedback package.
-
-
   /**
     * Removes all types contained in a cycle from the dependency graph, reporting an error for each such cycle. A cycle
     * means that at least one declared type extends itself directly or indirectly.

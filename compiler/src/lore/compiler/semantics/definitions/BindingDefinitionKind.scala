@@ -1,15 +1,14 @@
-package lore.compiler.semantics
-
-// TODO (multi-import): Rename to DefinitionKind and move to `definitions` package.
+package lore.compiler.semantics.definitions
 
 /**
-  * [[BindingKind]] signifies which kind of binding a module member or name path should refer to.
+  * [[BindingDefinitionKind]] signifies the kind of a binding definition, i.e. whether the definition is
+  * multi-definable and/or multi-referable.
   */
-sealed trait BindingKind {
+sealed trait BindingDefinitionKind {
   /**
     * Whether bindings of this kind may be defined multiple times across multiple different local modules.
     */
-  def isMultiDefinable: Boolean = this == BindingKind.Module || this == BindingKind.MultiFunction
+  def isMultiDefinable: Boolean = this == BindingDefinitionKind.Module || this == BindingDefinitionKind.MultiFunction
 
   /**
     * Whether multiple distinct bindings of this kind may be referred to via a single simple name, which will induce
@@ -17,14 +16,14 @@ sealed trait BindingKind {
     *
     * Only multi-functions are currently multi-referable, but the implementation is applicable generally.
     */
-  def isMultiReferable: Boolean = this == BindingKind.MultiFunction
+  def isMultiReferable: Boolean = this == BindingDefinitionKind.MultiFunction
   def isSingleReferable: Boolean = !isMultiReferable
 }
 
-object BindingKind {
-  case object Type extends BindingKind
+object BindingDefinitionKind {
+  case object Type extends BindingDefinitionKind
 
-  sealed trait Term extends BindingKind
+  sealed trait Term extends BindingDefinitionKind
   case object Module extends Term
   case object Struct extends Term
   case object GlobalVariable extends Term

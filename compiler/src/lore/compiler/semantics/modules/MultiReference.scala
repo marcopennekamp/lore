@@ -1,13 +1,12 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.BindingKind
-import lore.compiler.semantics.definitions.BindingDefinition
+import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
 
 // TODO (multi-import): Add documentation comment.
 
 case class MultiReference[A <: BindingDefinition](
-  bindingKind: BindingKind,
+  definitionKind: BindingDefinitionKind,
   local: Set[A],
   global: Set[A],
 ) {
@@ -20,37 +19,37 @@ case class MultiReference[A <: BindingDefinition](
     * will be thrown.
     */
   def singleBinding: A = {
-    if (bindingKind.isSingleReferable) members.head
+    if (definitionKind.isSingleReferable) members.head
     else throw CompilationException("`MultiReference.singleMember` can only be used with single-referable bindings." +
-      s" Binding kind: $bindingKind.")
+      s" Definition kind: $definitionKind.")
   }
 
   /**
-    * Whether this multi-reference is compatible with `other`, meaning that their binding kinds agree so that they
+    * Whether this multi-reference is compatible with `other`, meaning that their definition kinds agree so that they
     * could be merged.
     */
-  def isCompatibleWith(other: MultiReference[A]): Boolean = bindingKind == other.bindingKind
+  def isCompatibleWith(other: MultiReference[A]): Boolean = definitionKind == other.definitionKind
 
   /**
-    * Concatenates this multi-reference with `other`. The binding kinds must agree.
+    * Concatenates this multi-reference with `other`. The definition kinds must agree.
     */
   def ++(other: MultiReference[A]): MultiReference[A] = {
     if (!this.isCompatibleWith(other)) {
-      throw CompilationException(s"Binding kinds must agree for multi-reference concatenation. Own binding kind:" +
-        s" $bindingKind. Other binding kind: ${other.bindingKind}.")
+      throw CompilationException(s"Definition kinds must agree for multi-reference concatenation. Own definition kind:" +
+        s" $definitionKind. Other definition kind: ${other.definitionKind}.")
     }
-    MultiReference(bindingKind, local ++ other.local, global ++ other.global)
+    MultiReference(definitionKind, local ++ other.local, global ++ other.global)
   }
 
   /**
     * Creates a new multi-reference with `moduleMember` added as a local member.
     */
   def addLocal(moduleMember: A): MultiReference[A] = {
-    if (moduleMember.bindingKind != bindingKind) {
-      throw CompilationException(s"Cannot add module member ${moduleMember.name} to multi-reference: binding kinds" +
-        s" don't agree. Own binding kind: $bindingKind. Member binding kind: ${moduleMember.bindingKind}.")
+    if (moduleMember.definitionKind != definitionKind) {
+      throw CompilationException(s"Cannot add module member ${moduleMember.name} to multi-reference: definition kinds" +
+        s" don't agree. Own definition kind: $definitionKind. Member definition kind: ${moduleMember.definitionKind}.")
     }
-    MultiReference(bindingKind, local + moduleMember, global)
+    MultiReference(definitionKind, local + moduleMember, global)
   }
 
   private def verify(): Unit = {
@@ -58,9 +57,9 @@ case class MultiReference[A <: BindingDefinition](
       throw CompilationException("Multi-references must contain at least one member.")
     }
 
-    if (bindingKind.isSingleReferable && members.size > 1) {
+    if (definitionKind.isSingleReferable && members.size > 1) {
       throw CompilationException(s"Multi-references for single-referable bindings must be instantiated with a single" +
-        s" module member. Binding kind: $bindingKind.")
+        s" module member. Definition kind: $definitionKind.")
     }
 
     if (members.map(_.simpleName).size > 1) {

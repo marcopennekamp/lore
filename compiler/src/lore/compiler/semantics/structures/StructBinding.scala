@@ -1,19 +1,18 @@
-package lore.compiler.semantics.bindings
+package lore.compiler.semantics.structures
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.bindings.StructConstructorBinding.InstantiationSchema
-import lore.compiler.semantics.definitions.{TermDefinition, TypeDefinition}
+import lore.compiler.semantics.bindings.TypedTermBinding
+import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.{BindingKind, NamePath}
+import lore.compiler.semantics.structures.StructConstructorBinding.InstantiationSchema
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types._
 import lore.compiler.utils.Once
 
 // TODO: We could roll StructObjectBindings into GlobalVariableDefinitions, that is, generating a semantic global
 //       variable for each struct object. This might simplify the whole StructBinding business.
-
-// TODO (multi-import): Move this out of `bindings` because a StructBinding is now a TermDefinition?
 
 /**
   * A struct binding represents constructors and objects as terms. A struct binding may have a different underlying
@@ -37,7 +36,7 @@ sealed trait StructBinding extends TermDefinition {
   override def isInitialized: Boolean = _underlyingSchema.isAssigned
 
   override def name: NamePath = definingSchema.name
-  override def bindingKind: BindingKind = BindingKind.Struct
+  override def definitionKind: BindingDefinitionKind = BindingDefinitionKind.Struct
   override def position: Position = definingSchema.position
 }
 

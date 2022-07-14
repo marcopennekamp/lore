@@ -2,7 +2,8 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
 import lore.compiler.poem.PoemInstruction
-import lore.compiler.semantics.bindings.{LocalVariable, StructObjectBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, TypedTermBinding}
+import lore.compiler.semantics.structures.StructObjectBinding
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 
 object TypedTermBindingAssembler {

@@ -3,9 +3,9 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.resolution.ImportResolver.{AccessibleSource, AccessibleSources}
-import lore.compiler.semantics.definitions.{BindingDefinition, TermDefinition, TypeDefinition}
+import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.modules._
-import lore.compiler.semantics.{BindingKind, NamePath, Registry}
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.syntax.DeclNode.ImportNode
 
@@ -74,7 +74,7 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
     // To get the absolute import path, we must resolve the head segment, which must be a module.
     val headSegment = relativeImportPath.headName
     localModule.terms.getAccessibleMembers(headSegment) match {
-      case Some(multiReference) if multiReference.bindingKind == BindingKind.Module =>
+      case Some(multiReference) if multiReference.definitionKind == BindingDefinitionKind.Module =>
         Some(multiReference.singleBinding.name ++ relativeImportPath.tail)
 
       case Some(_) =>
@@ -132,11 +132,11 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
   ): Unit = {
     val memberName = moduleMember.name.simpleName
     val importSource = if (importNode.isWildcard) AccessibleSource.WildcardImport else AccessibleSource.DirectImport
-    lazy val singleReference = MultiReference(moduleMember.bindingKind, Set(moduleMember), Set.empty)
+    lazy val singleReference = MultiReference(moduleMember.definitionKind, Set(moduleMember), Set.empty)
 
     localModuleMembers.accessibles.get(memberName) match {
       case Some(existingMembers) =>
-        if (existingMembers.bindingKind.isMultiReferable && existingMembers.bindingKind == moduleMember.bindingKind) {
+        if (existingMembers.definitionKind.isMultiReferable && existingMembers.definitionKind == moduleMember.definitionKind) {
           // We can merge the multi references. The new accessible source has to be the source with the highest
           // precedence. For example, if we wildcard-import a member and add it alongside a local definition, the
           // resulting accessible source must still be local. Otherwise, an accessible with higher precedence may be
