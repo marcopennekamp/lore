@@ -50,15 +50,15 @@ class StructConstraintsSpec extends BaseSpec {
 
   s"$fragmentBase/variance" should "be compiled with various variance errors" in {
     assertCompilationErrorMessages(s"$fragmentBase/variance.lore")(
-      ("The covariant type variable B is in an illegal contravariant position.", 5),
-      ("The contravariant type variable A is in an illegal covariant position.", 5),
-      ("The covariant type variable B is in an illegal contravariant position.", 10),
-      ("The contravariant type variable A is in an illegal covariant position.", 10),
-      ("The contravariant type variable A is in an illegal invariant position.", 13),
-      ("The covariant type variable B is in an illegal invariant position.", 15),
-      ("The contravariant type variable A is in an illegal invariant position.", 19),
-      ("The contravariant type variable A is in an illegal invariant position.", 21),
-      ("The covariant type variable A is in an illegal invariant position.", 27),
+      ("The covariant type variable `B` is in an illegal contravariant position.", 5),
+      ("The contravariant type variable `A` is in an illegal covariant position.", 5),
+      ("The covariant type variable `B` is in an illegal contravariant position.", 10),
+      ("The contravariant type variable `A` is in an illegal covariant position.", 10),
+      ("The contravariant type variable `A` is in an illegal invariant position.", 13),
+      ("The covariant type variable `B` is in an illegal invariant position.", 15),
+      ("The contravariant type variable `A` is in an illegal invariant position.", 19),
+      ("The contravariant type variable `A` is in an illegal invariant position.", 21),
+      ("The covariant type variable `A` is in an illegal invariant position.", 27),
     )
   }
 }
