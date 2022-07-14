@@ -21,12 +21,7 @@ object TypeExpressionEvaluator {
     expression match {
       case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolveStatic(node.namePath, position).map {
         case tpe: NamedType => tpe
-        case schema: NamedSchema =>
-          if (!schema.isConstant) {
-            reporter.error(TypingFeedback.Schema.IllegalArity(schema, 0, expression.position))
-          }
-          // Even if the schema isn't constant, the schema will still be instantiated with best-guess type arguments.
-          schema.instantiate(Vector.empty, expression.position)
+        case schema: NamedSchema => schema.instantiate(Vector.empty, expression.position)
       }
 
       case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolveStatic(nameNode.namePath, nameNode.position).map {
