@@ -9,12 +9,14 @@ func parse_and_evaluate(term: String): Real = term |> Tokenizer.tokenize |> Opti
 func main(): [Real] = [
   '',
   '1 2 +',
+  '1 2 -',
   '1 2 3 * +',
-  '3 30 / 5 /',
-  '2 3 * 4 0 - - 9 + 7 5 * /',
+  '5 30 3 / /',
+  '0 1 1 2 3 5 8 ++++++',
+  '7 5 * 0 4 - 2 3 * - 9 + /',
 ] |> map(parse_and_evaluate)
 
 @bench
 spec '`main` parses and evaluates the example terms' do
-  main() should_eq [0.0, 3.0, 7.0, 0.5, -35.0]
+  main() should_eq [0.0, 3.0, -1.0, 7.0, 0.5, 20, -35.0]
 end

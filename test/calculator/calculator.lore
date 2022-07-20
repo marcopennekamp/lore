@@ -23,8 +23,8 @@ module Calculator do
   func handle(Div, stack: Stack): Unit = apply_binary_operator((a, b) => a / b, stack)
 
   func apply_binary_operator(f: (Real, Real) => Real, stack: Stack): Unit = do
-    let a = Stack.pop(stack)
     let b = Stack.pop(stack)
+    let a = Stack.pop(stack)
     Stack.push(stack, f(a, b))
   end
 end
