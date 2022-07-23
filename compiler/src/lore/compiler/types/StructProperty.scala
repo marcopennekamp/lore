@@ -1,21 +1,18 @@
-package lore.compiler.semantics.structures
+package lore.compiler.types
 
 import lore.compiler.core.{Position, Positioned, UniqueKey}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
-import lore.compiler.types.{StructSchema, Type, TypeVariable}
 import lore.compiler.utils.Once
-
-// TODO (multi-import): Rename to StructProperty and move to the `types` package.
 
 /**
   * The property of a struct.
   *
   * The position is restricted to the property's name for better error highlighting and index building.
   */
-class StructPropertyDefinition(
+class StructProperty(
   val name: String,
   val tpe: Type,
   val isOpen: Boolean,
@@ -32,25 +29,36 @@ class StructPropertyDefinition(
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 
   /**
-    * Instantiates the property definition with type variables substituted using the given assignments.
+    * Instantiates the property with type variables substituted using the given assignments.
     */
-  def instantiate(assignments: TypeVariable.Assignments): StructPropertyDefinition.Instance = {
-    StructPropertyDefinition.Instance(this, Type.substitute(tpe, assignments))
+  def instantiate(assignments: TypeVariable.Assignments): StructProperty.Instance = {
+    StructProperty.Instance(this, Type.substitute(tpe, assignments))
   }
 
   override def toString: String = name
 
   override def equals(obj: Any): Boolean = obj match {
-    case other: StructPropertyDefinition => uniqueKey == other.uniqueKey
+    case other: StructProperty => uniqueKey == other.uniqueKey
   }
 
   override val hashCode: Int = uniqueKey.hashCode()
 
 }
 
-object StructPropertyDefinition {
-  case class Instance(definition: StructPropertyDefinition, tpe: Type) {
-    def asParameter: ParameterDefinition = ParameterDefinition(definition.uniqueKey, Some(definition.name), tpe, definition.position)
-    def asMember: Member = Member(definition.name, tpe, isAssignable = definition.isMutable, definition.isMutable)
+object StructProperty {
+  case class Instance(property: StructProperty, tpe: Type) {
+    def asParameter: ParameterDefinition = ParameterDefinition(
+      property.uniqueKey,
+      Some(property.name),
+      tpe,
+      property.position,
+    )
+
+    def asMember: Member = Member(
+      property.name,
+      tpe,
+      isAssignable = property.isMutable,
+      property.isMutable,
+    )
   }
 }

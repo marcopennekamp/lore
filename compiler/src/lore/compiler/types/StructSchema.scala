@@ -3,7 +3,6 @@ package lore.compiler.types
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.syntax.DeclNode.StructNode
 import lore.compiler.syntax.Node.NameNode
 import lore.compiler.utils.Once
@@ -13,16 +12,16 @@ class StructSchema(
   val isObject: Boolean,
   override val node: StructNode,
 ) extends DeclaredSchema {
-  private val _properties: Once[Vector[StructPropertyDefinition]] = new Once
+  private val _properties: Once[Vector[StructProperty]] = new Once
 
-  def properties: Vector[StructPropertyDefinition] = _properties
+  def properties: Vector[StructProperty] = _properties
   override def kind: Kind = Kind.Struct
 
   /**
     * Initializes the properties of the struct schema. Because properties don't influence the schema resolution order,
     * they have to be resolved in a second phase when all types have already been initialized.
     */
-  def initializeProperties(properties: Vector[StructPropertyDefinition]): Unit = {
+  def initializeProperties(properties: Vector[StructProperty]): Unit = {
     _properties.assign(properties)
   }
 
@@ -34,7 +33,7 @@ class StructSchema(
     * If the type parameter is contained in none or multiple property types, there will be no entry in this map. The
     * struct constraints will properly report this before any exceptions are raised.
     */
-  lazy val openParameterDerivations: Map[TypeVariable, StructPropertyDefinition] = {
+  lazy val openParameterDerivations: Map[TypeVariable, StructProperty] = {
     openParameters.flatMap { typeParameter =>
       properties.filter(property => Type.contains(property.tpe, typeParameter)) match {
         case Vector(property) => Vector((typeParameter, property))
@@ -43,8 +42,8 @@ class StructSchema(
     }.toMap
   }
 
-  lazy val propertyMap: Map[String, StructPropertyDefinition] = properties.map(p => (p.name, p)).toMap
-  lazy val openProperties: Vector[StructPropertyDefinition] = properties.filter(_.isOpen)
+  lazy val propertyMap: Map[String, StructProperty] = properties.map(p => (p.name, p)).toMap
+  lazy val openProperties: Vector[StructProperty] = properties.filter(_.isOpen)
   def hasOpenProperties: Boolean = openProperties.nonEmpty
 
   /**

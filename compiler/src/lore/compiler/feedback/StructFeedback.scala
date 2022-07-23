@@ -2,13 +2,13 @@ package lore.compiler.feedback
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.structures.{StructBinding, StructObjectBinding, StructPropertyDefinition}
+import lore.compiler.semantics.structures.{StructBinding, StructObjectBinding}
 import lore.compiler.syntax.DeclNode.PropertyNode
-import lore.compiler.types.{ShapeType, StructSchema, TypeVariable}
+import lore.compiler.types.{ShapeType, StructProperty, StructSchema, TypeVariable}
 
 object StructFeedback {
 
-  case class DuplicateProperty(schema: StructSchema, property: StructPropertyDefinition) extends Feedback.Error(property) {
+  case class DuplicateProperty(schema: StructSchema, property: StructProperty) extends Feedback.Error(property) {
     override def message = s"The property `${property.name}` is declared twice in the struct `${schema.name}`."
   }
 
@@ -53,7 +53,7 @@ object StructFeedback {
 
     case class InvalidPropertyType(
       schema: StructSchema,
-      structProperty: StructPropertyDefinition,
+      structProperty: StructProperty,
       shapeProperty: ShapeType.Property,
     ) extends Feedback.Error(structProperty) {
       override def message: String = s"The property `${structProperty.name}` should have the type `${shapeProperty.tpe}`" +
@@ -86,7 +86,7 @@ object StructFeedback {
 
     case class MutableProperty(
       typeParameter: TypeVariable,
-      property: StructPropertyDefinition,
+      property: StructProperty,
     ) extends Feedback.Error(property) {
       override def message: String = s"The open type parameter `$typeParameter` is used in a mutable property `$property`." +
         s" It may only be used in an immutable property."
@@ -94,7 +94,7 @@ object StructFeedback {
   }
 
   object Object {
-    case class MissingDefault(schema: StructSchema, property: StructPropertyDefinition) extends Feedback.Error(property) {
+    case class MissingDefault(schema: StructSchema, property: StructProperty) extends Feedback.Error(property) {
       override def message: String = s"The property `${property.name}` must have a default value because `${schema.name}`" +
         s" is an object. Objects cannot be instantiated directly, so the default value ensures that each property is" +
         s" assigned an appropriate value."

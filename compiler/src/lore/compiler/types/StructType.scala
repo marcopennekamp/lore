@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.structures.StructPropertyDefinition
 
 case class StructType(
   schema: StructSchema,
@@ -11,7 +10,7 @@ case class StructType(
   /**
     * The struct's properties, their types instantiated with the type arguments.
     */
-  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.properties.map(_.instantiate(assignments))
+  lazy val properties: Vector[StructProperty.Instance] = schema.properties.map(_.instantiate(assignments))
 
   /**
     * The struct constructor signature with all type parameters instantiated. The corresponding signature type

@@ -8,8 +8,7 @@ import lore.compiler.core.CompilationException
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.structures.StructPropertyDefinition
-import lore.compiler.types.{StructSchema, TypePath}
+import lore.compiler.types.{StructProperty, StructSchema, TypePath}
 
 object StructSchemaAssembler {
 
@@ -34,7 +33,7 @@ object StructSchemaAssembler {
     (poemSchema, poemConstructor +: (poemObjectFunctions ++ poemPropertyDefaultValueFunctions), poemObject)
   }
 
-  private def generateProperties(properties: Vector[StructPropertyDefinition]): Vector[PoemStructProperty] = {
+  private def generateProperties(properties: Vector[StructProperty]): Vector[PoemStructProperty] = {
     PropertyOrder.sort(properties.zipWithIndex)(_._1.name).map { case (property, declarationIndex) =>
       PoemStructProperty(property.name, TypeAssembler.generate(property.tpe), property.isOpen, declarationIndex)
     }

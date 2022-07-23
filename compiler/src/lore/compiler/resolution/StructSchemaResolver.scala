@@ -4,9 +4,9 @@ import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
-import lore.compiler.semantics.structures.{StructBinding, StructConstructorBinding, StructObjectBinding, StructPropertyDefinition}
+import lore.compiler.semantics.structures.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.syntax.DeclNode.{PropertyNode, StructNode}
-import lore.compiler.types.{BasicType, StructSchema}
+import lore.compiler.types.{BasicType, StructProperty, StructSchema}
 
 object StructSchemaResolver {
 
@@ -52,12 +52,12 @@ object StructSchemaResolver {
     implicit typeScope: TypeScope,
     termScope: TermScope,
     reporter: Reporter,
-  ): StructPropertyDefinition = {
+  ): StructProperty = {
     val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
     if (node.isOpen && node.isMutable) {
       reporter.error(StructFeedback.MutableOpenProperty(node))
     }
-    new StructPropertyDefinition(
+    new StructProperty(
       node.name,
       tpe,
       node.isOpen,

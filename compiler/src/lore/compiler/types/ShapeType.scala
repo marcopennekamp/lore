@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.structures.StructPropertyDefinition
 
 import scala.util.hashing.MurmurHash3
 
@@ -51,7 +50,7 @@ object ShapeType {
   }
 
   object Property {
-    def apply(property: StructPropertyDefinition.Instance): Property = Property(property.definition.name, property.tpe)
+    def apply(instance: StructProperty.Instance): Property = Property(instance.property.name, instance.tpe)
   }
 
   /**

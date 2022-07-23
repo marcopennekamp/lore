@@ -5,8 +5,7 @@ import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.StructPropertyDefinition
-import lore.compiler.types.StructType
+import lore.compiler.types.{StructProperty, StructType}
 
 object ConstructorAssembler {
 
@@ -52,7 +51,7 @@ object ConstructorAssembler {
     }
   }
 
-  def generatePropertyDefault(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): Chunk = {
+  def generatePropertyDefault(property: StructProperty)(implicit registerProvider: RegisterProvider): Chunk = {
     val functionName = RuntimeNames.struct.defaultPropertyValue(property)
     val regResult = registerProvider.fresh()
     val functionInstance = PoemFunctionInstance(functionName, Vector.empty)
