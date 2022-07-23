@@ -3,8 +3,13 @@ package lore.compiler.semantics.modules
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
 
-// TODO (multi-import): Add documentation comment.
-
+/**
+  * A multi-reference represents a reference to multiple definitions of the same simple name. The multi-reference may
+  * only contain multiple definitions if its definition kind is multi-referable.
+  *
+  * Multi-references with multiple definitions must be disambiguated at some point. This disambiguation needs to be
+  * performed, per the specification, by giving [[local]] definitions precedence over [[global]] definitions.
+  */
 case class MultiReference[A <: BindingDefinition](
   definitionKind: BindingDefinitionKind,
   local: Set[A],
