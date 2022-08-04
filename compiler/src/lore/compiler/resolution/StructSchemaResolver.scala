@@ -53,7 +53,7 @@ object StructSchemaResolver {
     termScope: TermScope,
     reporter: Reporter,
   ): StructProperty = {
-    val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
+    val tpe = TypeResolver.resolve(node.tpe).getOrElse(BasicType.Any)
     if (node.isOpen && node.isMutable) {
       reporter.error(StructFeedback.MutableOpenProperty(node))
     }

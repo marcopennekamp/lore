@@ -26,7 +26,7 @@ object GlobalVariableDefinitionResolver {
   def initialize(variable: GlobalVariableDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     Resolver.withRegistryScopes(variable.localModule) {
       implicit typeScope => implicit termScope =>
-        val tpe = TypeExpressionEvaluator.evaluate(variable.node.tpe).getOrElse(BasicType.Nothing)
+        val tpe = TypeResolver.resolve(variable.node.tpe).getOrElse(BasicType.Nothing)
         variable.initialize(tpe)
     }
   }

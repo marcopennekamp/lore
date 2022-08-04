@@ -27,7 +27,7 @@ object MultiFunctionDefinitionResolver {
     Resolver.withTypeParameters(node.localModule, node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
-        val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
+        val outputType = TypeResolver.resolve(node.outputType).getOrElse(BasicType.Any)
         val signature = FunctionSignature(multiFunction.name, typeParameters, parameters, outputType, node.nameNode.position)
         new FunctionDefinition(signature, node, multiFunction)
     }

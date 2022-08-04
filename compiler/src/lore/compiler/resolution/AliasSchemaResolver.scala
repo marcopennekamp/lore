@@ -37,7 +37,7 @@ object AliasSchemaResolver {
   def initialize(schema: AliasSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
     Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
-        val originalType = TypeExpressionEvaluator.evaluate(schema.node.tpe).getOrElse(BasicType.Any)
+        val originalType = TypeResolver.resolve(schema.node.tpe).getOrElse(BasicType.Any)
         schema.initialize(typeParameters, originalType)
     }
   }

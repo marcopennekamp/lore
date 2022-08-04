@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, StructFeedback}
-import lore.compiler.resolution.TypeExpressionEvaluator
+import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
@@ -40,7 +40,7 @@ object StructTransformation {
     typeArgumentNodes: Vector[TypeExprNode],
     position: Position,
   )(implicit termScope: TermScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
-    val typeArguments = typeArgumentNodes.map(TypeExpressionEvaluator.evaluate)
+    val typeArguments = typeArgumentNodes.map(TypeResolver.resolve)
     val structType = binding.instantiateStructType(typeArguments, position)
     Expression.ConstructorValue(binding, structType, position)
   }

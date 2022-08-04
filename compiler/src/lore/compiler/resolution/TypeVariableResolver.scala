@@ -37,12 +37,12 @@ object TypeVariableResolver {
   )(implicit typeScope: TypeScope, termScope: TermScope, reporter: Reporter): TypeVariable = {
     val lowerBound = node.lowerBound
       .filter(_ => resolveBounds)
-      .flatMap(TypeExpressionEvaluator.evaluate)
+      .flatMap(TypeResolver.resolve)
       .getOrElse(BasicType.Nothing)
 
     val upperBound = node.upperBound
       .filter(_ => resolveBounds)
-      .flatMap(TypeExpressionEvaluator.evaluate)
+      .flatMap(TypeResolver.resolve)
       .getOrElse(BasicType.Any)
 
     new TypeVariable(UniqueKey.fresh(), node.name, lowerBound, upperBound, node.variance, node.isOpen, index)

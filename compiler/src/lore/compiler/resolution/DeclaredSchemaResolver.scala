@@ -50,7 +50,7 @@ object DeclaredSchemaResolver {
     }
 
     nodes
-      .flatMap(TypeExpressionEvaluator.evaluate)
+      .flatMap(TypeResolver.resolve)
       .flatMap(extract)
       .distinct
   }

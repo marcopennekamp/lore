@@ -3,7 +3,7 @@ package lore.compiler.transformation
 import lore.compiler.core._
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
 import lore.compiler.poem.PoemIntrinsic
-import lore.compiler.resolution.TypeExpressionEvaluator
+import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.{LocalVariable, TermBinding, TypedTermBinding}
 import lore.compiler.semantics.expressions.Expression
@@ -56,7 +56,7 @@ class ExpressionTransformationVisitor(
     case FixedFunctionNode(namePathNode, typeExpressions, position) =>
       scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
         case mf: MultiFunctionDefinition =>
-          val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
+          val inputType = TupleType(typeExpressions.map(TypeResolver.resolve).map(_.getOrElse(BasicType.Nothing)))
           mf.dispatch(
             inputType,
             MultiFunctionFeedback.FixedFunction.EmptyFit(mf, inputType, position),
@@ -80,7 +80,7 @@ class ExpressionTransformationVisitor(
 
     case VariableDeclarationNode(nameNode, isMutable, maybeTypeExpr, _, position) =>
       // If the type annotation cannot be compiled, it is effectively treated as non-existing.
-      val typeAnnotation = maybeTypeExpr.flatMap(TypeExpressionEvaluator.evaluate)
+      val typeAnnotation = maybeTypeExpr.flatMap(TypeResolver.resolve)
       val tpe = typeAnnotation match {
         case Some(tpe) => tpe
         case None => new InferenceVariable
@@ -96,7 +96,7 @@ class ExpressionTransformationVisitor(
     case MemberAccessNode(_, nameNode, _) => AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
 
     case AscriptionNode(_, expectedTypeNode, position) =>
-      val expectedType = TypeExpressionEvaluator.evaluate(expectedTypeNode).getOrElse(BasicType.Any)
+      val expectedType = TypeResolver.resolve(expectedTypeNode).getOrElse(BasicType.Any)
       Expression.Ascription(expression, expectedType, position)
   }
 
@@ -217,7 +217,7 @@ class ExpressionTransformationVisitor(
 
     case node@IntrinsicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val name = nameLiteral.value
-      val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
+      val resultType = TypeResolver.resolve(resultTypeNode).getOrElse(BasicType.Nothing)
 
       // We have to check the existence and arity of the invoked intrinsic before we can create the Call expression.
       PoemIntrinsic.intrinsicsMap.get(name) match {
@@ -240,7 +240,7 @@ class ExpressionTransformationVisitor(
       case AnonymousFunctionParameterNode(nameNode, typeNode, position) =>
         // If the type annotation isn't specified or cannot be compiled, we default to an inference variable.
         val tpe = typeNode
-          .flatMap(TypeExpressionEvaluator.evaluate)
+          .flatMap(TypeResolver.resolve)
           .getOrElse(new InferenceVariable)
         val variable = LocalVariable(nameNode.value, tpe, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)
