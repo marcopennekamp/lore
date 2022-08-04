@@ -3,10 +3,9 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{LocalVariable, TermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding}
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.modules.GlobalModule
-import lore.compiler.semantics.structures.StructBinding
 
 /**
   * A scope that provides access to terms (variables, multi-functions, struct constructors, modules, etc.).

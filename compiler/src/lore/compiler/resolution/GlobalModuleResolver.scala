@@ -2,10 +2,10 @@ package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
+import lore.compiler.semantics.bindings.StructBinding
 import lore.compiler.semantics.definitions.{BindingDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules._
-import lore.compiler.semantics.structures.StructBinding
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.{DeclNode, NamedDeclNode}

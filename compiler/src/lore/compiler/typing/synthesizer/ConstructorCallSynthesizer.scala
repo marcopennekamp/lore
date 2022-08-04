@@ -1,8 +1,8 @@
 package lore.compiler.typing.synthesizer
 
 import lore.compiler.feedback.Reporter
+import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.StructConstructorBinding
 import lore.compiler.types.{Type, TypeVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.{InferenceVariable, Typing}

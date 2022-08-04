@@ -1,10 +1,10 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.structures.StructConstructorBinding
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._

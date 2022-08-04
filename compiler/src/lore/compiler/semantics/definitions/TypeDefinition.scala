@@ -1,7 +1,6 @@
 package lore.compiler.semantics.definitions
 
-import lore.compiler.semantics.bindings.TypeBinding
-import lore.compiler.semantics.structures.StructBinding
+import lore.compiler.semantics.bindings.{StructBinding, TypeBinding}
 import lore.compiler.syntax.TypeDeclNode
 
 /**

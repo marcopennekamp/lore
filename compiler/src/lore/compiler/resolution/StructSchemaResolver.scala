@@ -2,9 +2,9 @@ package lore.compiler.resolution
 
 import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
-import lore.compiler.semantics.structures.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.syntax.DeclNode.{PropertyNode, StructNode}
 import lore.compiler.types.{BasicType, StructProperty, StructSchema}
 

@@ -1,12 +1,11 @@
-package lore.compiler.semantics.structures
+package lore.compiler.semantics.bindings
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.bindings.TypedTermBinding
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.bindings.StructConstructorBinding.InstantiationSchema
 import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.structures.StructConstructorBinding.InstantiationSchema
-import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types._
 import lore.compiler.utils.Once

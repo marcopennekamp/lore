@@ -1,8 +1,7 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.semantics.bindings.TermBinding
+import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding, TermBinding}
 import lore.compiler.semantics.modules.LocalModule
-import lore.compiler.semantics.structures.{StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.{NamePath, Registry}
 
 /**
