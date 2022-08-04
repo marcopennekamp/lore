@@ -153,9 +153,9 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
             case (AccessibleSource.DirectImport, AccessibleSource.DirectImport) =>
               // A direct import conflicting with another direct import results in an error, except when the exact same
               // module member has been imported again.
-              if (!existingMembers.members.contains(moduleMember)) {
+              if (!existingMembers.bindings.contains(moduleMember)) {
                 reporter.error(
-                  ModuleFeedback.DirectImport.CannotOverrideDirectImport(importNode, existingMembers.members)
+                  ModuleFeedback.DirectImport.CannotOverrideDirectImport(importNode, existingMembers.bindings)
                 )
               }
 

@@ -12,8 +12,12 @@ import lore.compiler.semantics.{NamePath, Registry}
   */
 case class LocalModuleTermScope(registry: Registry, localModule: LocalModule) extends TermScope {
   override protected def local(name: String): Option[TermBinding] = {
-    // TODO (multi-import): Support multi-referable bindings.
-    localModule.terms.getAccessibleMembers(name).map(_.members.head)
+    localModule.terms.getAccessibleMembers(name).map { multiReference =>
+      multiReference.singleBindingOption.getOrElse {
+        // TODO (multi-import): Deal with multi-referable multi-functions.
+        throw new UnsupportedOperationException(s"Not yet implemented. Bindings: ${multiReference.bindings}")
+      }
+    }
   }
 
   override def global(absolutePath: NamePath): Option[TermBinding] = {

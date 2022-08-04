@@ -15,19 +15,23 @@ case class MultiReference[A <: BindingDefinition](
   local: Set[A],
   global: Set[A],
 ) {
-  val members: Set[A] = local ++ global
+  val bindings: Set[A] = local ++ global
   verify()
 
   /**
-    * If the multi-reference is single-referable, returns the multi-reference's only binding. That there will only be a
-    * single binding is enforced by [[verify]]. If the multi-reference is multi-referable, a [[CompilationException]]
-    * will be thrown.
+    * Returns the multi-reference's sole binding. Throws a [[CompilationException]] if the multi-reference has multiple
+    * bindings.
     */
   def singleBinding: A = {
-    if (definitionKind.isSingleReferable) members.head
-    else throw CompilationException("`MultiReference.singleMember` can only be used with single-referable bindings." +
-      s" Definition kind: $definitionKind.")
+    if (bindings.size == 1) bindings.head
+    else throw CompilationException("`MultiReference.singleBinding` cannot be used with multi-references containing" +
+      " more than one binding.")
   }
+
+  /**
+    * Returns the multi-reference's sole binding, or `None` if the multi-reference has multiple bindings.
+    */
+  def singleBindingOption: Option[A] = if (bindings.size == 1) Some(bindings.head) else None
 
   /**
     * Whether this multi-reference is compatible with `other`, meaning that their definition kinds agree so that they
@@ -58,18 +62,18 @@ case class MultiReference[A <: BindingDefinition](
   }
 
   private def verify(): Unit = {
-    if (members.isEmpty) {
+    if (bindings.isEmpty) {
       throw CompilationException("Multi-references must contain at least one member.")
     }
 
-    if (definitionKind.isSingleReferable && members.size > 1) {
+    if (definitionKind.isSingleReferable && bindings.size > 1) {
       throw CompilationException(s"Multi-references for single-referable bindings must be instantiated with a single" +
         s" module member. Definition kind: $definitionKind.")
     }
 
-    if (members.map(_.simpleName).size > 1) {
+    if (bindings.map(_.simpleName).size > 1) {
       throw CompilationException(s"All members of a multi-reference must have the same simple name. Name paths:" +
-        s" ${members.map(_.name).mkString(", ")}.")
+        s" ${bindings.map(_.name).mkString(", ")}.")
     }
   }
 }
