@@ -35,7 +35,7 @@ object AliasSchemaResolver {
     * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
     */
   def initialize(schema: AliasSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
+    TypeResolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val originalType = TypeResolver.resolve(schema.node.tpe).getOrElse(BasicType.Any)
         schema.initialize(typeParameters, originalType)
@@ -69,7 +69,7 @@ object AliasSchemaResolver {
     * object.
     */
   def fallbackInitialize(schema: AliasSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
+    TypeResolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val originalType = schema.aliasVariant match {
           case AliasVariant.Type => BasicType.Any

@@ -14,19 +14,16 @@ import scalax.collection.GraphPredef.EdgeAssoc
 import scalax.collection.config.CoreConfig
 import scalax.collection.immutable.Graph
 
-// TODO (multi-import): Rename SchemaResolutionOrder to SchemaInitializationOrder. Also take into account comments that
-//                      use the term "schema resolution order".
-
 object TypeDependencies {
 
-  type SchemaResolutionOrder = Vector[TypeDefinition]
+  type SchemaInitializationOrder = Vector[TypeDefinition]
 
   private case class TypeDeclarationInfo(tpe: TypeDefinition, dependencies: Vector[NamePath])
 
   /**
     * Verifies that the dependencies between the given types are correct and computes an order in which schemas need to
-    * be resolved (initialized). In addition, returns a list of cyclic type definitions which haven't been added to the
-    * schema resolution order. These types will have to be fallback-initialized separately.
+    * be initialized. In addition, returns a list of cyclic type definitions which haven't been added to the schema
+    * initialization order. These types will have to be fallback-initialized separately.
     *
     * Type dependencies are correct when:
     *   1. All type dependencies referred to by name have a corresponding type declaration.
@@ -34,7 +31,7 @@ object TypeDependencies {
     */
   def resolve(
     typeDefinitions: Map[NamePath, TypeDefinition],
-  )(implicit reporter: Reporter): (SchemaResolutionOrder, Vector[TypeDefinition]) = {
+  )(implicit reporter: Reporter): (SchemaInitializationOrder, Vector[TypeDefinition]) = {
     val unfilteredInfos = typeDefinitions.values.toVector.map(
       tpe => TypeDeclarationInfo(tpe, dependencies(tpe.node))
     )
@@ -53,7 +50,7 @@ object TypeDependencies {
       throw CompilationException(s"The type dependency graph must be connected.")
     }
 
-    val order = computeSchemaResolutionOrder(graph, typeDefinitions)
+    val order = computeSchemaInitializationOrder(graph, typeDefinitions)
     (order, cyclicDefinitions.toVector)
   }
 
@@ -89,10 +86,9 @@ object TypeDependencies {
     ).toVector
   }
 
-
   /**
     * Filters out any dependencies without a corresponding type declaration, reporting an error for each undefined
-    * dependency. This ensures that the type resolution order contains only defined types.
+    * dependency. This ensures that the schema initialization order contains only defined types.
     */
   private def filterUndefinedDependencies(
     info: TypeDeclarationInfo,
@@ -106,7 +102,7 @@ object TypeDependencies {
   private type DependencyGraph = Graph[NamePath, DiEdge]
 
   /**
-    * Builds the dependency graph which is used to find dependency cycles and compute the type resolution order.
+    * Builds the dependency graph which is used to find dependency cycles and compute the schema initialization order.
     */
   private def buildDependencyGraph(infos: Vector[TypeDeclarationInfo]): DependencyGraph = {
     val edges = infos.flatMap(buildDependencyEdges)
@@ -185,7 +181,7 @@ object TypeDependencies {
   /**
     * Computes the order in which schemas need to be resolved.
     */
-  private def computeSchemaResolutionOrder(
+  private def computeSchemaInitializationOrder(
     graph: DependencyGraph,
     typeDefinitions: Map[NamePath, TypeDefinition],
   ): Vector[TypeDefinition] = {
@@ -198,7 +194,7 @@ object TypeDependencies {
     )
 
     if (!order.headOption.contains(BasicType.Any.name)) {
-      throw CompilationException("The first element in the type resolution order must be the root type Any.")
+      throw CompilationException("The first element in the schema initialization order must be the root type Any.")
     }
 
     // With .tail we exclude Any.

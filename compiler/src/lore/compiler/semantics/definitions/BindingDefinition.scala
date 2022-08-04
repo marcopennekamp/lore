@@ -19,11 +19,10 @@ import lore.compiler.semantics.bindings.Binding
   *     and take into account imports and multi-referable definitions, <i>while</i> other definitions are being
   *     resolved. Pre-creating all definitions allows us to avoid these intermediate structures, simplifying the
   *     architectural burden considerably.
-  *   - A struct that's earlier in the schema resolution order might access the companion module of a struct that's
+  *   - A struct that's earlier in the schema initialization order might access the companion module of a struct that's
   *     later in the order (see `test/language/modules/companion_cycle.lore`). But if the struct term hasn't been
-  *     resolved yet, it cannot be returned from a scope. This edge case requires a workaround in term scopes that
-  *     handles the possibility of an unresolved struct term, returning the companion module instead. Pre-creating all
-  *     definitions removes the need for this workaround.
+  *     resolved yet, it cannot be returned from a scope. Pre-creating all definitions ensures that a struct term can
+  *     always be returned, even if it hasn't been initialized yet.
   */
 trait BindingDefinition extends Definition with Binding {
   def name: NamePath

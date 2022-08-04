@@ -161,7 +161,7 @@
   - Clear all `TODO (lists)` entries.
 - Add immutable (hash) sets with a syntax `#[A]` or `{A}`.
 - Provide an easy way to update immutable structs and shapes. For example, Scala's case class `copy` function.
-- Allow inherited shape type properties to reference declared types placed lower in the resolution order. The reasoning for this is simple: Struct properties are immune to the resolution order, because they are resolved in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
+- Allow inherited shape type properties to reference declared types placed lower in the schema initialization order. The reasoning for this is simple: Struct properties are immune to the initialization order, because they are initialized in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
   - The VM already handles this correctly.
 - Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.
   - This will allow us to type lists, for example, as Enums, and so on.

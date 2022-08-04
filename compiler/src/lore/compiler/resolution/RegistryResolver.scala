@@ -1,7 +1,7 @@
 package lore.compiler.resolution
 
 import lore.compiler.feedback._
-import lore.compiler.resolution.TypeDependencies.SchemaResolutionOrder
+import lore.compiler.resolution.TypeDependencies.SchemaInitializationOrder
 import lore.compiler.semantics.definitions.{TermDefinition, TypeDefinition}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -51,28 +51,29 @@ object RegistryResolver {
     * This has the distinct advantage that we don't need to defer typings of struct properties with laziness.
     *
     * Cyclic type definitions are fallback-initialized. See [[initializeCyclicSchemas]]. This happens before the schema
-    * resolution order is iterated so that valid types which rely on these cyclic types can correctly reference them.
+    * initialization order is iterated so that valid types which rely on these cyclic types can correctly reference
+    * them.
     *
     * Struct alias bindings which don't have an underlying struct type are fallback-initialized with a mock struct or
     * object.
     */
   private def initializeTypes()(implicit registry: Registry, reporter: Reporter): Iterable[TypeDefinition] = {
     val typeDefinitions = collectTypeDefinitions()
-    val (schemaResolutionOrder, cyclicTypeDefinitions) = TypeDependencies.resolve(typeDefinitions)
+    val (schemaInitializationOrder, cyclicTypeDefinitions) = TypeDependencies.resolve(typeDefinitions)
     initializeCyclicSchemas(cyclicTypeDefinitions)
-    initializeSchemas(schemaResolutionOrder)
+    initializeSchemas(schemaInitializationOrder)
 
     // We need to initialize the struct properties of both cyclic types and regularly initialized types. Property
     // initialization of cyclic types does not differ from regular types.
-    initializeStructProperties(cyclicTypeDefinitions ++ schemaResolutionOrder)
+    initializeStructProperties(cyclicTypeDefinitions ++ schemaInitializationOrder)
 
     typeDefinitions.values
   }
 
   /**
     * Collects all user-defined [[TypeDefinition]]s from all global modules in the registry, excluding basic types. In
-    * contrast to other declarations, type definitions have to be collected centrally so that a schema resolution order
-    * and later a declared type hierarchy can be built.
+    * contrast to other declarations, type definitions have to be collected centrally so that a schema initialization
+    * order and later a declared type hierarchy can be built.
     */
   private def collectTypeDefinitions()(implicit registry: Registry): Map[NamePath, TypeDefinition] = {
     var typeDefinitions = Map.empty[NamePath, TypeDefinition]
@@ -87,7 +88,7 @@ object RegistryResolver {
   }
 
   /**
-    * Initializes schemas and struct bindings which haven't been added to the schema resolution order due to cyclic
+    * Initializes schemas and struct bindings which haven't been added to the schema initialization order due to cyclic
     * dependencies. They are fallback-initialized specially as "empty" types (without type parameter bounds and
     * extended types) so that the compiler can continue to work with these types. Mainly, we want to avoid the compiler
     * crashing due to an uninitialized type.
@@ -111,13 +112,13 @@ object RegistryResolver {
   }
 
   /**
-    * Initializes schemas and struct bindings in their schema resolution order.
+    * Initializes schemas and struct bindings in their schema initialization order.
     */
-  private def initializeSchemas(schemaResolutionOrder: SchemaResolutionOrder)(
+  private def initializeSchemas(schemaInitializationOrder: SchemaInitializationOrder)(
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
-    schemaResolutionOrder.foreach {
+    schemaInitializationOrder.foreach {
       case schema: AliasSchema =>
         AliasSchemaResolver.initialize(schema)
         schema.structBinding.foreach(AliasSchemaResolver.initializeStructBinding(schema, _))
@@ -131,11 +132,11 @@ object RegistryResolver {
     }
   }
 
-  private def initializeStructProperties(schemaResolutionOrder: SchemaResolutionOrder)(
+  private def initializeStructProperties(schemaInitializationOrder: SchemaInitializationOrder)(
     implicit registry: Registry,
     reporter: Reporter,
   ): Unit = {
-    schemaResolutionOrder.foreach {
+    schemaInitializationOrder.foreach {
       case schema: StructSchema => StructSchemaResolver.initializeProperties(schema)
       case _ =>
     }

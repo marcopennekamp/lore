@@ -2,7 +2,7 @@ module language.modules.companions
 
 // The relationship between `Child` and `Parent` is such that `Parent`'s schema needs to be resolved first, but
 // `Parent` depends on the companion module of `Child`. This forces the compiler to ensure that companion modules can
-// be accessed even if the companion's struct type occurs later in the schema resolution order.
+// be accessed even if the companion's struct type occurs later in the schema initialization order.
 struct Child() extends Parent
 module Child do
   trait Something

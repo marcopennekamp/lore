@@ -24,7 +24,7 @@ object MultiFunctionDefinitionResolver {
     implicit registry: Registry,
     reporter: Reporter,
   ): FunctionDefinition = {
-    Resolver.withTypeParameters(node.localModule, node.typeVariables) {
+    TypeResolver.withTypeParameters(node.localModule, node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
         val outputType = TypeResolver.resolve(node.outputType).getOrElse(BasicType.Any)

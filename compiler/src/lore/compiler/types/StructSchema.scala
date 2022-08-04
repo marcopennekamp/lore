@@ -18,8 +18,8 @@ class StructSchema(
   override def kind: Kind = Kind.Struct
 
   /**
-    * Initializes the properties of the struct schema. Because properties don't influence the schema resolution order,
-    * they have to be resolved in a second phase when all types have already been initialized.
+    * Initializes the properties of the struct schema. Because properties don't influence the schema initialization
+    * order, they have to be resolved in a second phase when all types have already been initialized.
     */
   def initializeProperties(properties: Vector[StructProperty]): Unit = {
     _properties.assign(properties)

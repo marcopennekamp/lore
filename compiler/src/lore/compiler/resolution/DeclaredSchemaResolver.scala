@@ -13,7 +13,7 @@ object DeclaredSchemaResolver {
     * Initializes `schema`. (See the guidelines in [[lore.compiler.semantics.definitions.BindingDefinition]].)
     */
   def initialize(schema: DeclaredSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
+    TypeResolver.withTypeParameters(schema.localModule, schema.node.typeVariables) {
       implicit typeScope => implicit termScope => typeParameters =>
         val supertypes = resolveInheritedTypes(schema, schema.node.extended)
         schema.initialize(typeParameters, supertypes)
@@ -60,7 +60,7 @@ object DeclaredSchemaResolver {
     * happens before any other schemas are initialized, so the schema may not reference any other declared types.
     */
   def fallbackInitialize(schema: DeclaredSchema)(implicit registry: Registry, reporter: Reporter): Unit = {
-    Resolver.withTypeParameters(schema.localModule, schema.node.typeVariables, resolveBounds = false) {
+    TypeResolver.withTypeParameters(schema.localModule, schema.node.typeVariables, resolveBounds = false) {
       implicit typeScope => implicit termScope => typeParameters =>
         schema.initialize(typeParameters, Vector.empty)
     }
