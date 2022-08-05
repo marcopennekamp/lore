@@ -5,7 +5,7 @@ import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Report
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, StructObjectBinding, TermBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings._
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
@@ -197,19 +197,27 @@ class ExpressionTransformationVisitor(
         Expression.Call(CallTarget.Value(target), expressions, new InferenceVariable, position)
       }
 
-      def handleSingleBinding(binding: TermBinding): Option[Expression.Call] = {
+      def handleSingleAccess(binding: TermBinding): Option[Expression.Call] = {
         binding match {
-          case mf: MultiFunctionDefinition => Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
-          case structBinding: StructConstructorBinding => Some(Expression.Call(CallTarget.Constructor(structBinding), expressions, new InferenceVariable, position))
+          case mf: MultiFunctionDefinition =>
+            Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
+
+          case AmbiguousMultiFunction(multiReference) => ??? // TODO (multi-import): Implement.
+
+          case structBinding: StructConstructorBinding =>
+            Some(Expression.Call(CallTarget.Constructor(structBinding), expressions, new InferenceVariable, position))
+
           case structObject: StructObjectBinding =>
             reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
             None
-          case binding: TypedTermBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
+
+          case binding: TypedTermBinding =>
+            Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
         }
       }
 
       AccessTransformation.transform(
-        handleSingleBinding,
+        handleSingleAccess,
         BindingProcessors.accessCoercion(namePathNode.position),
         expression => Some(handleValueCall(expression)),
       )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))

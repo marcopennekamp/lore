@@ -18,6 +18,8 @@ case class MultiReference[A <: BindingDefinition](
   val bindings: Set[A] = local ++ global
   verify()
 
+  def simpleName: String = bindings.head.simpleName
+
   /**
     * Returns the multi-reference's sole binding. Throws a [[CompilationException]] if the multi-reference has multiple
     * bindings.

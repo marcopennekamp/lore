@@ -1,13 +1,13 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.feedback.{MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.core.CoreMultiFunction
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.types.{BasicType, TupleType}
 
 object BuiltinsTransformation {
 
@@ -18,7 +18,7 @@ object BuiltinsTransformation {
     cmf: CoreMultiFunction,
     arguments: Vector[Expression],
     position: Position,
-  )(implicit registry: Registry, reporter: Reporter): Expression = {
+  )(implicit reporter: Reporter): Expression = {
     cmf.mf match {
       case Some(mf) =>
         val inputType = TupleType(arguments.map(_.tpe))

@@ -61,7 +61,8 @@ case class Checker(returnType: Type) {
                 val valueType = InferenceVariable.instantiateCandidate(value.tpe, assignments2)
                 InferenceVariable.assign(iv, valueType, assignments2)
               }
-            case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
+            case _ => throw CompilationException("A variable declared without a type annotation should have an" +
+              s" inference variable as its type. Position: ${expression.position}.")
           }
         }
 
@@ -129,7 +130,13 @@ case class Checker(returnType: Type) {
               MultiFunctionFeedback.Dispatch.EmptyFit(mf, expectedInput, position),
               min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, expectedInput, min, position),
             ) match {
-              case Some(instance) => MultiFunctionValueSynthesizer.handleFunctionInstance(instance, expression, Some(expectedType), assignments)
+              case Some(instance) => MultiFunctionValueSynthesizer.handleFunctionInstance(
+                instance,
+                expression,
+                Some(expectedType),
+                assignments
+              )
+
               case None =>
                 // `dispatch` already reported an error.
                 None

@@ -1,7 +1,10 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding, TermBinding}
-import lore.compiler.semantics.modules.LocalModule
+import lore.compiler.core.CompilationException
+import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, StructConstructorBinding, StructObjectBinding, TermBinding}
+import lore.compiler.semantics.definitions.BindingDefinitionKind
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.modules.{LocalModule, MultiReference}
 import lore.compiler.semantics.{NamePath, Registry}
 
 /**
@@ -14,8 +17,12 @@ case class LocalModuleTermScope(registry: Registry, localModule: LocalModule) ex
   override protected def local(name: String): Option[TermBinding] = {
     localModule.terms.getAccessibleMembers(name).map { multiReference =>
       multiReference.singleBindingOption.getOrElse {
-        // TODO (multi-import): Deal with multi-referable multi-functions.
-        throw new UnsupportedOperationException(s"Not yet implemented. Bindings: ${multiReference.bindings}")
+        if (multiReference.definitionKind == BindingDefinitionKind.MultiFunction) {
+          AmbiguousMultiFunction(multiReference.asInstanceOf[MultiReference[MultiFunctionDefinition]])
+        } else {
+          throw CompilationException("Cannot build an ambiguous term binding from a binding with definition kind" +
+            s" ${multiReference.definitionKind}.")
+        }
       }
     }
   }
