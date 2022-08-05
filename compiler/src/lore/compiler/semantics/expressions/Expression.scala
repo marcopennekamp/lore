@@ -9,6 +9,8 @@ import lore.compiler.semantics.members.Member
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable
 
+// TODO (multi-import): Move to expressions.typed package.
+
 sealed trait Expression extends Positioned {
   def tpe: Type
 
@@ -17,6 +19,8 @@ sealed trait Expression extends Positioned {
     * instructions may be omitted during assembly.
     *
     * `isUsed` is set by [[lore.compiler.transformation.UsageAnalyzer]] during the transformation stage.
+    *
+    * TODO (multi-import): Can we roll this into the UntypedExpression -> Expression transformation?
     */
   var isUsed: Boolean = true
 
@@ -42,6 +46,8 @@ object Expression {
   case class Return(value: Expression, position: Position) extends Expression.Apply(BasicType.Nothing)
 
   /**
+    * TODO: Do we even need to generate VariableDeclarations from untyped Assignments?
+    *
     * @param typeAnnotation The type that the variable declaration was annotated with.
     */
   case class VariableDeclaration(
@@ -56,18 +62,6 @@ object Expression {
     value: Expression,
     position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Block expressions.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /**
-    * @param expressions The expressions list must have at least one element. Empty blocks should be populated with a
-    *                    single unit value expression.
-    * @param tpe         The result type of the block. This is usually the type of the last expression, but not when
-    *                    the type expected of the block is Unit. In this case, the block will receive an implicit unit
-    *                    value as its last expression after typechecking.
-    */
-  case class Block(expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Access expressions.
@@ -99,6 +93,19 @@ object Expression {
     override val label: String = name
     override def isMutable: Boolean = throw CompilationException(s"$this has an undefined mutability.")
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Block expressions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * @param expressions The expressions list must have at least one element. Empty blocks should be populated with a
+    *                    single unit value expression.
+    * @param tpe         The result type of the block. This is usually the type of the last expression, but not when
+    *                    the type expected of the block is Unit. In this case, the block will receive an implicit unit
+    *                    value as its last expression after typechecking.
+    */
+  case class Block(expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Literals and Value Constructors.
@@ -165,6 +172,7 @@ object Expression {
     lazy val capturedVariables: Vector[LocalVariable] = CapturedVariables.findCapturedVariables(this).toVector
   }
 
+  // TODO (multi-import): Do we still need unique keys with the new UntypedExpression IR?
   case class AnonymousFunctionParameter(uniqueKey: UniqueKey, name: String, tpe: Type, position: Position) {
     /**
       * Whether the parameter has a type annotation. Unannotated parameters always have an inference variable as their
@@ -249,6 +257,7 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Operators.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO (multi-import): Move to the general package, as its used by both UntypedExpressions and Expressions.
   sealed trait UnaryOperator
   object UnaryOperator {
     case object Negation extends UnaryOperator
@@ -283,14 +292,16 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class Call(target: CallTarget, arguments: Vector[Expression], tpe: Type, position: Position) extends Expression
 
+
+  // TODO (multi-import): Trait Call and case classes for each call target.
+
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
     * A `cond` expression must always be total. If the code doesn't have a total case, the transformation must generate
     * a last, total case which evaluates to unit. This guarantee simplifies typing and assembly.
-    *
-    * The transformation phase will also ensure that a `cond` only has a single total case in the last position.
     */
   case class Cond(cases: Vector[CondCase], position: Position) extends Expression {
     override val tpe: Type = SumType.construct(cases.map(_.body.tpe))
@@ -312,6 +323,9 @@ object Expression {
 
   case class WhileLoop(condition: Expression, body: Expression, position: Position) extends Loop
 
+  // TODO: Can't we break down a for loop into a while loop when transforming UntypedExpression to Expression, or even
+  //       before (Node -> UntypedExpression)? We can achieve this either with a universal `flat_map` concept OR an
+  //       iterator approach.
   case class ForLoop(extractors: Vector[Extractor], body: Expression, position: Position) extends Loop {
     /**
       * Creates a for-loop expression with the given collection values. The order of extractors and collections must be
@@ -330,5 +344,6 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Type ascriptions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO (multi-import): No need for this, only in UntypedExpression.
   case class Ascription(value: Expression, expectedType: Type, position: Position) extends Expression.Apply(expectedType)
 }

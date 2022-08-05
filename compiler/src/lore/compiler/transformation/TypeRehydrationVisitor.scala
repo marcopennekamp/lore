@@ -9,6 +9,8 @@ import lore.compiler.semantics.members.Member
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable.Assignments
 
+// TODO (multi-import): This will be rolled into type checking when UntypedExpressions are transformed to Expressions.
+
 /**
   * Replaces all inference variables with inferred types.
   */
