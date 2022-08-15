@@ -39,7 +39,7 @@ case class Checker2(returnType: Type) {
         expectedType match {
           case expectedType@TupleType(elementTypes) =>
             if (elements.length == elementTypes.length) {
-              check(elements, elementTypes, context).mapFirst(Tuple(_, position))
+              check(elements, elementTypes, context).mapFirst(TupleValue(_, position))
             } else {
               reporter.report(TypingFeedback.Tuple.IncorrectLength2(expression, expectedType))
               None
@@ -110,7 +110,7 @@ case class Checker2(returnType: Type) {
       case UntypedListValue(elements, position) =>
         expectedType match {
           case ListType(elementType) =>
-            check(elements, elementType, context).mapFirst(ListConstruction(_, position))
+            check(elements, elementType, context).mapFirst(ListValue(_, position))
           case _ => fallback
         }
 

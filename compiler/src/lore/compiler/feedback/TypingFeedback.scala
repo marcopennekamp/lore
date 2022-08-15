@@ -86,7 +86,7 @@ object TypingFeedback {
 
   object AnonymousFunction {
     case class FunctionTypeExpected(
-      expression: Expression.AnonymousFunction,
+      expression: Expression.LambdaValue,
       expectedType: Type,
     ) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred from a type `$expectedType`." +
@@ -102,7 +102,7 @@ object TypingFeedback {
     }
 
     case class IllegalArity(
-      expression: Expression.AnonymousFunction,
+      expression: Expression.LambdaValue,
       expectedType: FunctionType,
     ) extends Feedback.Error(expression) {
       override def message: String = s"The anonymous function declares ${expression.parameters.length} parameters, but" +
@@ -118,7 +118,7 @@ object TypingFeedback {
     }
 
     case class IllegalParameterTypes(
-      expression: Expression.AnonymousFunction,
+      expression: Expression.LambdaValue,
       expectedType: FunctionType,
       parameterTypes: TupleType,
     ) extends Feedback.Error(expression) {
@@ -135,7 +135,7 @@ object TypingFeedback {
         s" expected function type expects `$expectedParameterType` for this parameter."
     }
 
-    case class TypeContextExpected(expression: Expression.AnonymousFunction) extends Feedback.Error(expression) {
+    case class TypeContextExpected(expression: Expression.LambdaValue) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
         s" parameters with a type, or provide a function type in an outer expression."
     }
@@ -180,8 +180,8 @@ object TypingFeedback {
       override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."
     }
-    case class IncorrectLength(expression: Expression.Tuple, expectedType: TupleType) extends Feedback.Error(expression) {
-      override def message: String = s"The tuple has ${expression.values.length} elements, but the expected tuple type" +
+    case class IncorrectLength(expression: Expression.TupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
+      override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."
     }
   }

@@ -6,41 +6,47 @@ import lore.compiler.semantics.expressions.Expression._
 trait ExpressionVisitor[A, B] {
   type Result = B
 
-  // Error Recovery
   def visit(expression: Hole): B = throw CompilationException("Expression.Hole is not supported by this visitor.")
 
-  // Top-Level Expressions
-  def visit(expression: Return)(value: A): B
-  def visit(expression: VariableDeclaration)(value: A): B
-  def visit(expression: Assignment)(target: A, value: A): B
-
-  // Expressions
-  def visit(expression: Block)(expressions: Vector[A]): B
-  def visit(expression: BindingAccess): B
-  def visit(expression: MemberAccess)(instance: A): B
-  def visit(expression: UnresolvedMemberAccess)(instance: A): B = throw CompilationException("Expression.UnresolvedMemberAccess is not supported by this visitor.")
-  def visit(expression: Literal): B
-  def visit(expression: Tuple)(values: Vector[A]): B
-  def visit(expression: AnonymousFunction)(body: A): B
+  // Values.
+  def visit(expression: IntValue): B
+  def visit(expression: RealValue): B
+  def visit(expression: BooleanValue): B
+  def visit(expression: StringValue): B
+  def visit(expression: SymbolValue): B
+  def visit(expression: TupleValue)(values: Vector[A]): B
+  def visit(expression: LambdaValue)(body: A): B
   def visit(expression: MultiFunctionValue): B
   def visit(expression: FixedFunctionValue): B
   def visit(expression: ConstructorValue): B
-  def visit(expression: UntypedConstructorValue): B = throw CompilationException("Expression.UntypedConstructorValue is not supported by this visitor.")
-  def visit(expression: ListConstruction)(values: Vector[A]): B
-  def visit(expression: MapConstruction)(entries: Vector[(A, A)]): B
+  def visit(expression: ListValue)(values: Vector[A]): B
   def visit(expression: ShapeValue)(properties: Vector[A]): B
   def visit(expression: PropertyDefaultValue): B
+
+  // Operators and calls.
   def visit(expression: UnaryOperation)(value: A): B
   def visit(expression: BinaryOperation)(left: A, right: A): B
   def visit(expression: XaryOperation)(operands: Vector[A]): B
-  def visit(expression: Call)(target: Option[A], arguments: Vector[A]): B
+  def visit(expression: MultiFunctionCall)(arguments: Vector[A]): B
+  def visit(expression: ValueCall)(target: A, arguments: Vector[A]): B
+  def visit(expression: ConstructorCall)(arguments: Vector[A]): B
+  def visit(expression: IntrinsicCall)(arguments: Vector[A]): B
+
+  // Variables and members.
+  def visit(expression: VariableDeclaration)(value: A): B
+  def visit(expression: Assignment)(target: A, value: A): B
+  def visit(expression: BindingAccess): B
+  def visit(expression: MemberAccess)(instance: A): B
+
+  // Control expressions.
+  def visit(expression: Return)(value: A): B
+  def visit(expression: Block)(expressions: Vector[A]): B
   def visit(expression: Cond)(cases: Vector[(A, A)]): B
   def visit(expression: WhileLoop)(condition: A, body: A): B
   def visit(expression: ForLoop)(collections: Vector[A], body: A): B
-  def visit(expression: Ascription)(value: A): B
 
   /**
-    * Invoked before an expressions's subtrees are visited. This can be used to set up contexts.
+    * Invoked before an expression's subtrees are visited. This can be used to set up contexts.
     */
   def before: PartialFunction[Expression, Unit] = PartialFunction.empty
 }
@@ -54,38 +60,40 @@ object ExpressionVisitor {
     val rec = visit(visitor) _
     visitor.before.applyOrElse(expression, (_: Expression) => ())
     expression match {
-      // Error Recovery
       case node@Hole(_, _) => visitor.visit(node)
 
-      // Top-Level Expressions
-      case node@Return(value, _) => visitor.visit(node)(rec(value))
-      case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))
-      case node@Assignment(target, value, _) => visitor.visit(node)(rec(target), rec(value))
-
-      // Expressions
-      case node@Block(expressions, _, _) => visitor.visit(node)(expressions.map(rec))
-      case node@BindingAccess(_, _) => visitor.visit(node)
-      case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
-      case node@UnresolvedMemberAccess(instance, _, _, _) => visitor.visit(node)(rec(instance))
-      case node@Literal(_, _) => visitor.visit(node)
-      case node@Tuple(values, _) => visitor.visit(node)(values.map(rec))
-      case node@AnonymousFunction(_, body, _) => visitor.visit(node)(rec(body))
+      case node@IntValue(_, _) => visitor.visit(node)
+      case node@RealValue(_, _) => visitor.visit(node)
+      case node@BooleanValue(_, _) => visitor.visit(node)
+      case node@StringValue(_, _) => visitor.visit(node)
+      case node@SymbolValue(_, _) => visitor.visit(node)
+      case node@TupleValue(values, _) => visitor.visit(node)(values.map(rec))
+      case node@LambdaValue(_, body, _) => visitor.visit(node)(rec(body))
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
       case node@ConstructorValue(_, _, _) => visitor.visit(node)
-      case node@UntypedConstructorValue(_, _, _) => visitor.visit(node)
-      case node@ListConstruction(values, _) => visitor.visit(node)(values.map(rec))
-      case node@MapConstruction(entries, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
+      case node@ListValue(values, _) => visitor.visit(node)(values.map(rec))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))
       case node@PropertyDefaultValue(_, _) => visitor.visit(node)
+
       case node@UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
-      case node@Call(target, arguments, _, _) => visitor.visit(node)(target.getExpression.map(rec), arguments.map(rec))
+      case node@MultiFunctionCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
+      case node@ValueCall(target, arguments, _, _) => visitor.visit(node)(rec(target), arguments.map(rec))
+      case node@ConstructorCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
+      case node@IntrinsicCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
+
+      case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))
+      case node@Assignment(target, value, _) => visitor.visit(node)(rec(target), rec(value))
+      case node@BindingAccess(_, _) => visitor.visit(node)
+      case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
+
+      case node@Return(value, _) => visitor.visit(node)(rec(value))
+      case node@Block(expressions, _) => visitor.visit(node)(expressions.map(rec))
       case node@Cond(cases, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
       case node@WhileLoop(condition, body, _) => visitor.visit(node)(rec(condition), rec(body))
       case node@ForLoop(extractors, body, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
-      case node@Ascription(value, _, _) => visitor.visit(node)(rec(value))
     }
   }
 

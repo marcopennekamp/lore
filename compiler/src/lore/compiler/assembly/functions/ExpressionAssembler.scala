@@ -70,13 +70,13 @@ class ExpressionAssembler(
       case expression: MemberAccess => handle(expression)
       case _: UnresolvedMemberAccess => throw CompilationException("Expression.UnresolvedMemberAccess cannot be assembled.")
       case expression: Literal => handle(expression)
-      case expression: Tuple => handle(expression)
-      case expression: AnonymousFunction => handle(expression)
+      case expression: TupleValue => handle(expression)
+      case expression: LambdaValue => handle(expression)
       case expression: MultiFunctionValue => handle(expression)
       case expression: FixedFunctionValue => handle(expression)
       case expression: ConstructorValue => handle(expression)
       case _: UntypedConstructorValue => throw CompilationException("Expression.UntypedConstructorValue cannot be assembled.")
-      case expression: ListConstruction => handle(expression)
+      case expression: ListValue => handle(expression)
       case expression: MapConstruction => handle(expression)
       case expression: ShapeValue => handle(expression)
       case expression: PropertyDefaultValue => handle(expression)
@@ -151,22 +151,22 @@ class ExpressionAssembler(
     ValueAssembler.generateConstForced(literal, registerProvider.fresh())
   }
 
-  private def handle(expression: Tuple): Chunk = {
+  private def handle(expression: TupleValue): Chunk = {
     // A unit value that is unused can be safely ignored. This is an important optimization for unused `if` expressions
     // whose `else` part is unspecified and thus `()`.
-    if (expression.isUnused && expression.values.isEmpty) {
+    if (expression.isUnused && expression.elements.isEmpty) {
       return Chunk.empty
     }
 
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
-      val valueChunks = generate(expression.values)
+      val valueChunks = generate(expression.elements)
       val instruction = PoemInstruction.Tuple(target, valueChunks.map(_.forceResult(expression.position)))
       Chunk.concat(valueChunks) ++ Chunk(target, instruction)
     }
   }
 
-  private def handle(expression: AnonymousFunction): Chunk = {
+  private def handle(expression: LambdaValue): Chunk = {
     val (chunk, poemFunctions) = LambdaAssembler.generate(expression, signature)
     generatedPoemFunctions ++= poemFunctions
     chunk
@@ -182,10 +182,10 @@ class ExpressionAssembler(
 
   private def handle(expression: ConstructorValue): Chunk = ConstructorAssembler.generateValue(expression)
 
-  private def handle(expression: ListConstruction): Chunk = {
+  private def handle(expression: ListValue): Chunk = {
     val regResult = registerProvider.fresh()
     ValueAssembler.generateConst(expression, regResult).getOrElse {
-      val valueChunks = generate(expression.values)
+      val valueChunks = generate(expression.elements)
       val tpe = TypeAssembler.generate(expression.tpe)
       val instruction = PoemInstruction.List(regResult, tpe, valueChunks.map(_.forceResult(expression.position)))
       Chunk.concat(valueChunks) ++ Chunk(regResult, instruction)
@@ -255,7 +255,7 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: XaryOperation): Chunk = {
-    val operandChunks = generate(expression.expressions)
+    val operandChunks = generate(expression.operands)
     PrimitiveOperationAssembler.generateXaryOperation(expression, operandChunks)
   }
 

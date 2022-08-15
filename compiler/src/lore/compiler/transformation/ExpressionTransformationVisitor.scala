@@ -153,14 +153,14 @@ class ExpressionTransformationVisitor(
     case BlockNode(_, position) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       scopeContext.closeScope()
-      Expression.Block(expressions.withDefault(Expression.Tuple(Vector.empty, position)), new InferenceVariable, position)
+      Expression.Block(expressions.withDefault(Expression.TupleValue(Vector.empty, position)), new InferenceVariable, position)
 
     // Value constructors.
     case TupleNode(_, position) =>
-      Expression.Tuple(expressions, position)
+      Expression.TupleValue(expressions, position)
 
     case ListNode(_, position) =>
-      Expression.ListConstruction(expressions, position)
+      Expression.ListValue(expressions, position)
 
     case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
       StructTransformation.getConstructorBinding(namePathNode.namePath, namePathNode.position) match {
@@ -251,13 +251,13 @@ class ExpressionTransformationVisitor(
           .getOrElse(new InferenceVariable)
         val variable = LocalVariable(nameNode.value, tpe, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)
-        Expression.AnonymousFunctionParameter(variable.uniqueKey, variable.name, variable.tpe, position)
+        Expression.LambdaParameter(variable.uniqueKey, variable.name, variable.tpe, position)
     }
 
     val body = visitBody()
     scopeContext.closeScope()
 
-    Expression.AnonymousFunction(parameters, body, node.position)
+    Expression.LambdaValue(parameters, body, node.position)
   }
 
   override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Expression = {
@@ -278,7 +278,7 @@ class ExpressionTransformationVisitor(
     if (!cases.lastOption.exists(_.isTotalCase)) {
       cases = cases :+ CondCase(
         Expression.Literal(Expression.Literal.BooleanValue(true), node.position),
-        Expression.Tuple(Vector.empty, node.position),
+        Expression.TupleValue(Vector.empty, node.position),
       )
     }
 

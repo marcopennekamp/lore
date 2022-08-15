@@ -1,7 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
-import lore.compiler.semantics.expressions.Expression.{AnonymousFunction, AnonymousFunctionParameter}
+import lore.compiler.semantics.expressions.Expression.{LambdaValue, LambdaParameter}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedLambdaValue
 import lore.compiler.types.{FunctionType, Type}
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension
@@ -46,7 +46,7 @@ object LambdaTyping {
 
             // TODO (multi-import): Some parts of the AnonymousFunctionParameter construction should be moved to a
             //                      helper function which the synthesizer can use.
-            AnonymousFunctionParameter(
+            LambdaParameter(
               parameter.uniqueKey,
               parameter.name,
               parameterType,
@@ -55,7 +55,7 @@ object LambdaTyping {
         }
 
         checker.check(expression.body, expectedOutputType, context).mapFirst { typedBody =>
-          AnonymousFunction(
+          LambdaValue(
             typedParameters,
             typedBody,
             expression.position,

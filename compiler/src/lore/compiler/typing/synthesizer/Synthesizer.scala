@@ -60,9 +60,9 @@ object Synthesizer {
 
       case Expression.Literal(_, _) => Some(assignments)
 
-      case Expression.Tuple(values, _) => infer(values, assignments)
+      case Expression.TupleValue(values, _) => infer(values, assignments)
 
-      case expression@Expression.AnonymousFunction(_, body, _) =>
+      case expression@Expression.LambdaValue(_, body, _) =>
         // To infer the type of an anonymous function, its parameters must be fully annotated.
         if (expression.isFullyAnnotated) {
           infer(body, assignments)
@@ -95,7 +95,7 @@ object Synthesizer {
           None
         }
 
-      case Expression.ListConstruction(values, _) => infer(values, assignments)
+      case Expression.ListValue(values, _) => infer(values, assignments)
 
       case Expression.MapConstruction(entries, _) =>
         infer(entries.map(_.key), assignments)

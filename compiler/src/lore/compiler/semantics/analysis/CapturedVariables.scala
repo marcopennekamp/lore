@@ -2,7 +2,7 @@ package lore.compiler.semantics.analysis
 
 import lore.compiler.core.{CompilationException, UniqueKey}
 import lore.compiler.semantics.bindings.LocalVariable
-import lore.compiler.semantics.expressions.Expression.{AnonymousFunction, ForLoop}
+import lore.compiler.semantics.expressions.Expression.{LambdaValue, ForLoop}
 import lore.compiler.semantics.expressions.{Expression, ExpressionCombiningVisitor, ExpressionVisitor}
 
 object CapturedVariables {
@@ -10,7 +10,7 @@ object CapturedVariables {
   /**
     * Finds all unique local variables that the given lambda expression must invariably capture.
     */
-  def findCapturedVariables(expression: Expression.AnonymousFunction): Set[LocalVariable] = {
+  def findCapturedVariables(expression: Expression.LambdaValue): Set[LocalVariable] = {
     val visitor = CapturedVariableVisitor()
     ExpressionVisitor.visit(visitor)(expression)
   }
@@ -40,7 +40,7 @@ object CapturedVariables {
     }
 
     override def before: PartialFunction[Expression, Unit] = {
-      case expression: AnonymousFunction =>
+      case expression: LambdaValue =>
         // This also registers the parameters of the outer-most anonymous function.
         localDeclarations ++= expression.parameters.map(_.uniqueKey)
 

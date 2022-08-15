@@ -86,7 +86,7 @@ case class Checker(returnType: Type) {
           .flatMap(check(expressions.last, effectiveExpectedType, _))
           .flatMap(assignBlockType(expression, Some(expectedType), _))
 
-      case expression@Expression.Tuple(values, _) =>
+      case expression@Expression.TupleValue(values, _) =>
         expectedType match {
           case expectedType@TupleType(elements)  =>
             if (elements.length == values.length) {
@@ -99,7 +99,7 @@ case class Checker(returnType: Type) {
           case _ => fallback
         }
 
-      case expression@Expression.AnonymousFunction(parameters, body, _) =>
+      case expression@Expression.LambdaValue(parameters, body, _) =>
         if (expression.isFullyAnnotated) {
           Synthesizer.infer(expression, assignments)
         } else {
@@ -173,7 +173,7 @@ case class Checker(returnType: Type) {
           case _ => fallback
         }
 
-      case Expression.ListConstruction(values, _) =>
+      case Expression.ListValue(values, _) =>
         expectedType match {
           case ListType(elementType) => check(values, elementType, assignments)
           case _ => fallback

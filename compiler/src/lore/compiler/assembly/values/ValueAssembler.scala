@@ -40,7 +40,7 @@ object ValueAssembler {
       }
       Some(poemValue)
 
-    case expression@Expression.Tuple(values, _) =>
+    case expression@Expression.TupleValue(values, _) =>
       // The tuple's type is directly built from its element types, so we can just check the former for type
       // variables.
       if (expression.tpe.isPolymorphic) {
@@ -48,7 +48,7 @@ object ValueAssembler {
       }
       generate(values).map(values => PoemTupleValue(values, TypeAssembler.generate(expression.tpe)))
 
-    case _: Expression.AnonymousFunction =>
+    case _: Expression.LambdaValue =>
       // It is technically possible to turn anonymous functions into constant poem values, but this would complicate
       // the ValueAssembler as it'd have to generate PoemFunctions. If a value cannot be generated due to some other
       // reason, the PoemFunction would be needlessly assembled before being thrown away. In addition, we'd have to
@@ -82,7 +82,7 @@ object ValueAssembler {
         Some(poemValue)
       } else None
 
-    case Expression.ListConstruction(values, _) =>
+    case Expression.ListValue(values, _) =>
       // In contrast to tuples, a list constant's type isn't guaranteed to contain the types of all its elements. For
       // example, a list `[a, b]` with `a: Any` and `b: X` will have the element type `Any`.
       if (values.exists(v => v.tpe.isPolymorphic)) {

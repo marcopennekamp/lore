@@ -33,7 +33,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(
     // expression doesn't already result in Unit.
     val blockType = assignments.instantiate(expression.tpe)
     val allExpressions = if (blockType == TupleType.UnitType && expressions.last.tpe != TupleType.UnitType) {
-      expressions :+ Expression.Tuple(Vector.empty, expressions.last.position)
+      expressions :+ Expression.TupleValue(Vector.empty, expressions.last.position)
     } else expressions
     expression.copy(expressions = allExpressions, tpe = blockType)
   }
@@ -54,7 +54,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(
     MemberAccess(instance, member, expression.position)
   }
 
-  override def visit(expression: AnonymousFunction)(body: Expression): Expression = expression.copy(
+  override def visit(expression: LambdaValue)(body: Expression): Expression = expression.copy(
     expression.parameters.map(_.mapType(assignments.instantiate)),
     body
   )
@@ -85,7 +85,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(
   )
 
   override def visit(expression: XaryOperation)(operands: Vector[Expression]): Expression = expression.copy(
-    expressions = operands,
+    operands = operands,
     tpe = assignments.instantiate(expression.tpe)
   )
 

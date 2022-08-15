@@ -4,6 +4,8 @@ import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
 
+// TODO (multi-import): Remove.
+
 /**
   * A call target models the callable entity in a [[Expression.Call]].
   */

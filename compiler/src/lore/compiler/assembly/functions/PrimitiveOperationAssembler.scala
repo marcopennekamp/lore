@@ -45,9 +45,9 @@ object PrimitiveOperationAssembler {
     operation: Expression.XaryOperation,
     operandChunks: Vector[Chunk],
   )(implicit registerProvider: RegisterProvider): Chunk = {
-    val domainKind = getDomainKind(operation.expressions.map(_.tpe): _*)
+    val domainKind = getDomainKind(operation.operands.map(_.tpe): _*)
     val cs = if (domainKind == Kind.Real) {
-      operation.expressions.zip(operandChunks).map((convertToReal _).tupled)
+      operation.operands.zip(operandChunks).map((convertToReal _).tupled)
     } else operandChunks
 
     // We can use the same `target` register for all steps as it's legal to consume and overwrite in a single step.

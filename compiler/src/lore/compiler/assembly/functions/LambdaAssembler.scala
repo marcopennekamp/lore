@@ -4,7 +4,7 @@ import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemSingleFunctionValue}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression.AnonymousFunction
+import lore.compiler.semantics.expressions.Expression.LambdaValue
 import lore.compiler.semantics.functions.{FunctionSignature, ParameterDefinition}
 
 import java.util.UUID
@@ -12,7 +12,7 @@ import java.util.UUID
 object LambdaAssembler {
 
   def generate(
-    expression: AnonymousFunction,
+    expression: LambdaValue,
     parentSignature: FunctionSignature,
   )(
     implicit registry: Registry,
