@@ -3,7 +3,7 @@ package lore.compiler.typing2
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{UntypedConstructorValue, _}
+import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types.{ListType, ShapeType, TupleType, Type}
@@ -158,20 +158,7 @@ case class Checker2(returnType: Type) {
 
       case UntypedReturn(value, position) => check(value, returnType, context).mapFirst(Return(_, position))
 
-      case UntypedBlock(expressions, position) =>
-        Synthesizer2.infer(expressions.init, context)
-          .flatMap { case (typedExpressions, context2) =>
-            (
-              if (expectedType != TupleType.UnitType) check(expressions.last, expectedType, context2)
-              else Synthesizer2.infer(expressions.last, context2)
-            ).mapFirst(typedExpressions :+ _)
-          }
-          .mapFirst { typedExpressions =>
-            // If the expected type is Unit, we're relying on a feature that blocks have implicit unit values.
-            val resultType = if (expectedType == TupleType.UnitType) TupleType.UnitType else typedExpressions.last.tpe
-            Block(typedExpressions, resultType, position)
-          }
-
+      case block: UntypedBlock => BlockTyping.checkOrInfer(block, Some(expectedType), context)
       case expression: UntypedCond => CondTyping.checkOrInfer(expression, Some(expectedType), context)
       case expression: UntypedWhileLoop => LoopTyping.checkOrInfer(expression, Some(expectedType), context)
       case expression: UntypedForLoop => LoopTyping.checkOrInfer(expression, Some(expectedType), context)
