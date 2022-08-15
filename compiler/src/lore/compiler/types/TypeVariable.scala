@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.UniqueKey
+import lore.compiler.core.{UniqueIdentifiable, UniqueKey}
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
 
@@ -21,17 +21,10 @@ case class TypeVariable(
   variance: Variance,
   isOpen: Boolean,
   index: Int,
-) extends NamedType {
+) extends NamedType with UniqueIdentifiable {
   override val name: NamePath = NamePath(simpleName)
 
   def withoutBounds: TypeVariable = this.copy(lowerBound = BasicType.Nothing, upperBound = BasicType.Any)
-
-  override def equals(obj: Any): Boolean = obj match {
-    case other: TypeVariable => this.uniqueKey == other.uniqueKey
-    case _ => false
-  }
-
-  override def hashCode(): Int = uniqueKey.hashCode()
 }
 
 object TypeVariable {

@@ -4,6 +4,7 @@ import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedLambdaValue, UntypedTupleValue}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -92,11 +93,27 @@ object TypingFeedback {
         s" Either annotate all parameters with a type, or provide a function type in an outer expression."
     }
 
+    case class FunctionTypeExpected2(
+      expression: UntypedLambdaValue,
+      expectedType: Type,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"The type of the lambda function cannot be inferred from a type `$expectedType`." +
+        s" Either annotate all parameters with a type, or provide a function type in an outer expression."
+    }
+
     case class IllegalArity(
       expression: Expression.AnonymousFunction,
       expectedType: FunctionType,
     ) extends Feedback.Error(expression) {
       override def message: String = s"The anonymous function declares ${expression.parameters.length} parameters, but" +
+        s" the expected function type `$expectedType` expects ${expectedType.input.elements.length} parameters."
+    }
+
+    case class IllegalArity2(
+      expression: UntypedLambdaValue,
+      expectedType: FunctionType,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"The lambda function declares ${expression.parameters.length} parameters, but" +
         s" the expected function type `$expectedType` expects ${expectedType.input.elements.length} parameters."
     }
 
@@ -107,6 +124,15 @@ object TypingFeedback {
     ) extends Feedback.Error(expression) {
       override def message: String = s"The anonymous function declares parameters of type `$parameterTypes`, but the" +
         s" expected function type `$expectedType` has incompatible parameters."
+    }
+
+    case class IllegalParameterType(
+      expectedParameterType: Type,
+      parameterType: Type,
+      parameterPosition: Position,
+    ) extends Feedback.Error(parameterPosition) {
+      override def message: String = s"The lambda function declares a parameter of type `$parameterType`, but the" +
+        s" expected function type expects `$expectedParameterType` for this parameter."
     }
 
     case class TypeContextExpected(expression: Expression.AnonymousFunction) extends Feedback.Error(expression) {
@@ -150,6 +176,10 @@ object TypingFeedback {
   }
 
   object Tuple {
+    case class IncorrectLength2(expression: UntypedTupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
+      override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
+        s" `$expectedType` requires ${expectedType.elements.length} elements."
+    }
     case class IncorrectLength(expression: Expression.Tuple, expectedType: TupleType) extends Feedback.Error(expression) {
       override def message: String = s"The tuple has ${expression.values.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."

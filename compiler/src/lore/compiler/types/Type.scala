@@ -126,7 +126,7 @@ object Type {
     case FunctionType(input, output) => isPolymorphic(input) || isPolymorphic(output)
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
-    case ShapeType(properties) => properties.values.map(_.tpe).exists(isPolymorphic)
+    case t: ShapeType => t.propertyTypes.exists(isPolymorphic)
     case dt: DeclaredType => dt.typeArguments.exists(isPolymorphic)
     case _ => false
   }
@@ -147,7 +147,7 @@ object Type {
     case FunctionType(input, output) => variables(input) ++ variables(output)
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
-    case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
+    case t: ShapeType => t.propertyTypes.flatMap(variables).toSet
     case dt: DeclaredType => dt.typeArguments.flatMap(variables).toSet
     case _ => Set.empty
   }
@@ -212,7 +212,7 @@ object Type {
       case FunctionType(input, output) => rec(input) || rec(output)
       case ListType(element) => rec(element)
       case MapType(key, value) => rec(key) || rec(value)
-      case ShapeType(properties) => properties.values.map(_.tpe).exists(rec)
+      case tpe: ShapeType => tpe.propertyTypes.exists(rec)
       case dt: DeclaredType => dt.typeArguments.exists(rec)
       case _ => false
     }

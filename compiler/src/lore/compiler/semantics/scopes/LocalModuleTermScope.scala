@@ -18,7 +18,9 @@ case class LocalModuleTermScope(registry: Registry, localModule: LocalModule) ex
     localModule.terms.getAccessibleMembers(name).map { multiReference =>
       multiReference.singleBindingOption.getOrElse {
         if (multiReference.definitionKind == BindingDefinitionKind.MultiFunction) {
-          AmbiguousMultiFunction(multiReference.asInstanceOf[MultiReference[MultiFunctionDefinition]])
+          //AmbiguousMultiFunction(multiReference.asInstanceOf[MultiReference[MultiFunctionDefinition]])
+          // TODO (multi-import): Temp simplification. Remove.
+          multiReference.local.head
         } else {
           throw CompilationException("Cannot build an ambiguous term binding from a binding with definition kind" +
             s" ${multiReference.definitionKind}.")

@@ -11,6 +11,7 @@
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
   - Make sure that all Scala tests succeed.
   - Clear all `TODO (multi-import)` entries.
+- Move to Scala 3 and migrate to a different parser library.
 - Disjunction and conjunction operations aren't short-circuiting. This was probably an oversight when we moved from Javascript to the VM. Reimplement this feature.
   - In general, a short-circuiting operator `a || b` can be compiled as `if a then true else b` and `a && b` as `if a then b else false`. A naive implementation of short-circuiting operators would be to simply replace `and` and `or` with their respective `if` expansions.
     - Without much effort, this will lead to inefficient bytecode. For example:

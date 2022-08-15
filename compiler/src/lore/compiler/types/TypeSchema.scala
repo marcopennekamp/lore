@@ -11,6 +11,10 @@ import lore.compiler.types.TypeVariable.Variance
   */
 trait TypeSchema {
 
+  // TODO (multi-import): Rename `parameters` to `typeParameters` and `arity` to `schemaArity`. The problem is that
+  //                      these names might conflict with other things known about types, especially instantiated
+  //                      types, such as function type arity.
+
   /**
     * The schema's type parameters in their order of declaration.
     */
@@ -19,11 +23,15 @@ trait TypeSchema {
 
   /**
     * A constant schema has no type parameters (arity 0) and is thus effectively equal to a single type.
+    *
+    * TODO (multi-import): Rename to `isConstantSchema`.
     */
   def isConstant: Boolean = arity == 0
 
   /**
     * Whether the schema has invariant type parameters.
+    *
+    * TODO (multi-import): Rename to `hasInvariantTypeParameters`.
     */
   lazy val hasInvariantParameters: Boolean = parameters.exists(_.variance == Variance.Invariant)
 
@@ -41,6 +49,8 @@ trait TypeSchema {
   /**
     * These assignments can be used to instantiate the type schema with the parameters themselves as type arguments.
     * This is beneficial in a few select use cases.
+    *
+    * TODO (multi-import): Rename to `identityTypeParameterAssignments`.
     */
   lazy val identityAssignments: TypeVariable.Assignments = parameters.zip(parameters).toMap
 
@@ -129,11 +139,5 @@ trait TypeSchema {
   def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
 
   override def toString: String = SchemaStringifier.toString(this)
-
-}
-
-object TypeSchema {
-
-
 
 }

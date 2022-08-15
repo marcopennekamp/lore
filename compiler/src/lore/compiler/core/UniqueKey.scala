@@ -16,3 +16,14 @@ object UniqueKey {
 
   def fresh(): UniqueKey = UniqueKey(uniqueKeyCounter.getAndIncrement())
 }
+
+trait UniqueIdentifiable {
+  def uniqueKey: UniqueKey
+
+  override def equals(obj: Any): Boolean = obj match {
+    case other: UniqueIdentifiable => this.uniqueKey == other.uniqueKey
+    case _ => false
+  }
+
+  override def hashCode(): Int = uniqueKey.hashCode()
+}

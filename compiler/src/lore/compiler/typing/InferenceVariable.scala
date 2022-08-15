@@ -141,7 +141,7 @@ object InferenceVariable {
     case FunctionType(input, output) => isFullyInstantiated(input) && isFullyInstantiated(output)
     case ListType(element) => isFullyInstantiated(element)
     case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
-    case ShapeType(properties) => properties.values.map(_.tpe).forall(isFullyInstantiated)
+    case tpe: ShapeType => tpe.propertyTypes.forall(isFullyInstantiated)
     case dt: DeclaredType if !dt.schema.isConstant => dt.typeArguments.forall(isFullyInstantiated)
     case _ => true
   }

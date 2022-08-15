@@ -4,7 +4,16 @@ import lore.compiler.semantics.members.Member
 
 import scala.util.hashing.MurmurHash3
 
+// TODO (multi-import): Do we even need a ShapeType.Property or would a Type suffice, given that the map already
+//                      contains the names?
 case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
+
+  def propertyTypes: Iterable[Type] = properties.values.map(_.tpe)
+
+  /**
+    * Returns the type of property `name`, if it exists.
+    */
+  def propertyType(name: String): Option[Type] = properties.get(name).map(_.tpe)
 
   /**
     * Maps the given function to each property type, constructing a new shape type in the process.

@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.{Position, Positioned, UniqueKey}
+import lore.compiler.core.{Position, Positioned, UniqueIdentifiable, UniqueKey}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.semantics.members.Member
@@ -20,7 +20,7 @@ class StructProperty(
   val defaultValueNode: Option[ExprNode],
   val struct: StructSchema,
   override val position: Position,
-) extends Positioned {
+) extends Positioned with UniqueIdentifiable {
 
   val uniqueKey: UniqueKey = UniqueKey.fresh()
 
@@ -36,12 +36,6 @@ class StructProperty(
   }
 
   override def toString: String = name
-
-  override def equals(obj: Any): Boolean = obj match {
-    case other: StructProperty => uniqueKey == other.uniqueKey
-  }
-
-  override val hashCode: Int = uniqueKey.hashCode()
 
 }
 

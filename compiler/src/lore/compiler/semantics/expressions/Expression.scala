@@ -32,6 +32,9 @@ sealed trait Expression extends Positioned {
 }
 
 object Expression {
+  // TODO (multi-import): Adopt names and definition order from UntypedExpression.
+  // TODO (multi-import): Rename all mentions to an anonymous function with lambda (function).
+
   sealed abstract class Apply(override val tpe: Type) extends Expression
 
   /**
@@ -53,7 +56,7 @@ object Expression {
   case class VariableDeclaration(
     variable: LocalVariable,
     value: Expression,
-    typeAnnotation: Option[Type],
+    typeAnnotation: Option[Type], // TODO (multi-import): This can be removed.
     position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
 
@@ -307,6 +310,12 @@ object Expression {
     override val tpe: Type = SumType.construct(cases.map(_.body.tpe))
 
     def withCases(pairs: Vector[(Expression, Expression)]): Cond = this.copy(pairs.map(CondCase.tupled))
+  }
+
+  object Cond {
+    def apply(conditions: Vector[Expression], bodies: Vector[Expression], position: Position): Cond = {
+      Cond(conditions.zip(bodies).map(CondCase.tupled), position)
+    }
   }
 
   case class CondCase(condition: Expression, body: Expression) {

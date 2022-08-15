@@ -29,7 +29,7 @@ object VarianceConstraints {
       case MapType(key, value) =>
         rec(key)
         rec(value)
-      case ShapeType(properties) => properties.values.map(_.tpe).foreach(rec)
+      case tpe: ShapeType => tpe.propertyTypes.foreach(rec)
       case dt: DeclaredType =>
         dt.assignments.foreach {
           case (typeParameter, typeArgument) => typeParameter.variance match {

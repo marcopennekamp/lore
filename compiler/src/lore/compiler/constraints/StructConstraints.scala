@@ -119,7 +119,7 @@ object StructConstraints {
       case FunctionType(input, output) => multiCount(Vector(input, output))
       case ListType(element) => count(element)
       case MapType(key, value) => multiCount(Vector(key, value))
-      case ShapeType(properties) => multiCount(properties.values.map(_.tpe).toVector)
+      case tpe: ShapeType => multiCount(tpe.propertyTypes.toVector)
       case dt: DeclaredType => multiCount(dt.typeArguments)
       case _ => Some(0)
     }

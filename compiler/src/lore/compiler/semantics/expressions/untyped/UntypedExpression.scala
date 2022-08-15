@@ -2,7 +2,7 @@ package lore.compiler.semantics.expressions.untyped
 
 import lore.compiler.core.{Position, Positioned, UniqueKey}
 import lore.compiler.poem.PoemIntrinsic
-import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, TypedTermBinding, UntypedLocalVariable}
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
@@ -30,10 +30,9 @@ trait UntypedExpression extends Positioned
 
 object UntypedExpression {
 
-  // TODO (multi-import): Provide a suggested type for the hole?
-  case class UntypedHole(position: Position) extends UntypedExpression
+  case class UntypedHole(fallbackType: Type, position: Position) extends UntypedExpression
 
-  case class TypeAscription(
+  case class UntypedTypeAscription(
     expression: UntypedExpression,
     expectedType: Type,
     position: Position,
@@ -59,7 +58,13 @@ object UntypedExpression {
     parameters: Vector[UntypedLambdaParameter],
     body: UntypedExpression,
     position: Position,
-  ) extends UntypedExpression
+  ) extends UntypedExpression {
+    /**
+      * Whether the lambda function only has annotated parameters. This allows the inference algorithm to infer the
+      * type of the function directly.
+      */
+    lazy val isFullyAnnotated: Boolean = parameters.forall(_.typeAnnotation.isDefined)
+  }
 
   case class UntypedLambdaParameter(
     uniqueKey: UniqueKey,
@@ -136,7 +141,7 @@ object UntypedExpression {
 
   // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
   case class UntypedMultiFunctionCall(
-    multiReference: MultiReference[MultiFunctionDefinition],
+    target: MultiReference[MultiFunctionDefinition],
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall
@@ -148,13 +153,13 @@ object UntypedExpression {
   ) extends UntypedCall
 
   case class UntypedConstructorCall(
-    binding: StructConstructorBinding,
+    target: StructConstructorBinding,
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall
 
   case class UntypedIntrinsicCall(
-    intrinsic: PoemIntrinsic,
+    target: PoemIntrinsic,
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall
@@ -162,12 +167,13 @@ object UntypedExpression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variables and members.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO (multi-import): The variable needs a position!
   case class UntypedVariableDeclaration(
-    variable: LocalVariable, // TODO (multi-import): Untyped local variable?
+    variable: UntypedLocalVariable,
     value: UntypedExpression,
     typeAnnotation: Option[Type],
     position: Position,
-  )
+  ) extends UntypedExpression
 
   case class UntypedAssignment(
     target: UntypedAccess,
@@ -181,8 +187,15 @@ object UntypedExpression {
     override def toString: String = label
   }
 
+  /**
+    * @param binding The binding is a [[TermBinding]], not a [[TypedTermBinding]], because
+    *
+    *                TODO (multi-import): The untyped nature of the binding might allow us to move access coercion of multi-functions
+    *                to the typing phase, because this binding access could carry a multi-function binding. That
+    *                would mean that we don't need an UntypedMultiFunctionValue.
+    */
   case class UntypedBindingAccess(
-    binding: TypedTermBinding,
+    binding: TermBinding,
     position: Position,
   ) extends UntypedExpression with UntypedAccess {
     override val label: String = binding.toString
@@ -236,7 +249,7 @@ object UntypedExpression {
   ) extends UntypedLoop
 
   case class UntypedExtractor(
-    variable: LocalVariable,  // TODO (multi-import): Untyped local variable?
+    variable: UntypedLocalVariable,
     collection: UntypedExpression,
   )
 
