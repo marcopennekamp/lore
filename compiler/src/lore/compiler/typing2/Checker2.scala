@@ -49,12 +49,7 @@ case class Checker2(returnType: Type) {
           case _ => fallback
         }
 
-      case expression: UntypedLambdaValue =>
-        if (expression.isFullyAnnotated) {
-          Synthesizer2.infer(expression, context)
-        } else {
-          LambdaTyping.checkVagueLambdaValue(expression, expectedType, context)
-        }
+      case expression: UntypedLambdaValue => LambdaTyping.check(expression, expectedType, context)
 
       // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
       //                      typing phase.
