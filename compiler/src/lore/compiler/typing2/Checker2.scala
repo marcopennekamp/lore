@@ -109,17 +109,9 @@ case class Checker2(returnType: Type) {
           case _ => fallback
         }
 
-      case UntypedShapeValue(properties, position) =>
+      case expression: UntypedShapeValue =>
         expectedType match {
-          case shapeType: ShapeType =>
-            properties
-              .foldSome((Vector.empty[ShapeProperty], context)) {
-                case ((typedProperties, context2), property) =>
-                  checkOrInfer(property.value, shapeType.propertyType(property.name), context2).mapFirst {
-                    typedValue => typedProperties :+ ShapeProperty(property.name, typedValue)
-                  }
-              }
-              .mapFirst(ShapeValue(_, position))
+          case shapeType: ShapeType => ShapeTyping.checkOrInfer(expression, Some(shapeType), context)
           case _ => fallback
         }
 
