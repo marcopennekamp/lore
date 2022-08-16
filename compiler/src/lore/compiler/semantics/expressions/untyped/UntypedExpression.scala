@@ -75,7 +75,7 @@ object UntypedExpression {
 
   // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
   case class UntypedMultiFunctionValue(
-    multiReference: MultiReference[MultiFunctionDefinition],
+    mfs: MultiReference[MultiFunctionDefinition],
     position: Position,
   ) extends UntypedExpression
 

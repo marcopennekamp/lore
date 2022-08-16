@@ -17,10 +17,11 @@ case class Checker2(returnType: Type) {
   private implicit val checker: Checker2 = this
 
   /**
-    * Checks that `expression` has the type `expectedType` (or a subtype thereof). Any typing errors result in `None`.
+    * Checks that `expression` has the type `expectedType` (or a subtype thereof) and produces a typed [[Expression]].
+    * Any typing errors result in `None`.
     *
     * @param expectedType The type expected from the expression by the surrounding context. It informs certain
-    *                     inference decisions. TODO (multi-import): "`expectedType` must be fully instantiated." Needed?
+    *                     inference decisions.
     */
   def check(
     expression: UntypedExpression,
@@ -57,7 +58,7 @@ case class Checker2(returnType: Type) {
 
       // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
       //                      typing phase.
-      case UntypedMultiFunctionValue(multiReference, position) =>
+      case UntypedMultiFunctionValue(mfs, position) =>
         /* expectedType match {
           case expectedType@FunctionType(expectedInput, _) =>
             mf.dispatch(
@@ -91,7 +92,7 @@ case class Checker2(returnType: Type) {
 
       // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
       //                      typing phase.
-      case UntypedExpression.UntypedConstructorValue(_, _) =>
+      case UntypedConstructorValue(_, _) =>
         /* expectedType match {
           case FunctionType(input, _) =>
             ArgumentSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments, expression).flatMap {
@@ -109,8 +110,7 @@ case class Checker2(returnType: Type) {
 
       case UntypedListValue(elements, position) =>
         expectedType match {
-          case ListType(elementType) =>
-            check(elements, elementType, context).mapFirst(ListValue(_, position))
+          case ListType(elementType) => check(elements, elementType, context).mapFirst(ListValue(_, position))
           case _ => fallback
         }
 
