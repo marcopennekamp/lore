@@ -3,8 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedLambdaValue, UntypedTupleValue}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedConstructorValue, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -51,7 +50,7 @@ object TypingFeedback {
   }
 
   object Member {
-    case class NotFound(expression: UnresolvedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
+    case class NotFound(expression: UntypedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
       override def message: String = s"The type `$instanceType` does not have a member `${expression.name}`."
     }
   }
@@ -139,6 +138,11 @@ object TypingFeedback {
       override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
         s" parameters with a type, or provide a function type in an outer expression."
     }
+
+    case class TypeContextExpected2(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
+      override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
+        s" parameters with a type, or provide a function type in an outer expression."
+    }
   }
 
   object MultiFunctionValue {
@@ -169,7 +173,7 @@ object TypingFeedback {
   }
 
   object ConstructorValue {
-    case class TypeContextExpected(expression: Expression.UntypedConstructorValue) extends Feedback.Error(expression) {
+    case class TypeContextExpected(expression: UntypedConstructorValue) extends Feedback.Error(expression) {
       override def message: String = s"The constructor value's type arguments cannot be inferred without a proper type" +
         s" context. Please provide a function type in an outer expression (e.g. with a type ascription)."
     }
@@ -189,6 +193,11 @@ object TypingFeedback {
   object List {
     case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"You can only append elements to lists. The type `$actualType` is not a list."
+    }
+
+    case class AppendListExpected(collection: Expression, positioned: Positioned) extends Feedback.Error(positioned) {
+      override def message: String = s"You can only append elements to lists. The collection of type" +
+        s" `${collection.tpe}` is not a list."
     }
   }
 

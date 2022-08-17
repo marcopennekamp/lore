@@ -20,7 +20,7 @@ import lore.compiler.utils.Once
 class FunctionDefinition(
   val signature: FunctionSignature,
   val node: FunctionNode,
-  val multiFunction: MultiFunctionDefinition,
+  val multiFunction: MultiFunctionDefinition, // TODO (multi-import): Make this the first property.
 ) extends Positioned with HasLocalModule {
   val name: NamePath = signature.name
   override val position: Position = signature.position

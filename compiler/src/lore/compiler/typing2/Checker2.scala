@@ -1,6 +1,7 @@
 package lore.compiler.typing2
 
-import lore.compiler.feedback.{Reporter, TypingFeedback}
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression._
@@ -12,7 +13,7 @@ import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorEx
 /**
   * @param returnType The expected return type of the surrounding function, used to check `Return` expressions.
   */
-case class Checker2(returnType: Type) {
+case class Checker2(returnType: Type)(implicit registry: Registry) {
 
   private implicit val checker: Checker2 = this
 
@@ -32,8 +33,6 @@ case class Checker2(returnType: Type) {
 
     // Step 1: Check and/or infer the untyped expression to produce a typed expression.
     val result: Option[InferenceResult] = expression match {
-      case UntypedHole(tpe, position) => Some((Hole(tpe, position), context))
-
       case UntypedTypeAscription(expression, expectedType, _) => check(expression, expectedType, context)
 
       case expression@UntypedTupleValue(elements, position) =>
@@ -128,6 +127,11 @@ case class Checker2(returnType: Type) {
         // }
         ???
 
+      case UntypedBindingAccess(binding, position) =>
+        // TODO (multi-import): Sync this with the version from Synthesizer. Now that we have access coercion here, we
+        //                      need an expected type for multi-function and constructor values.
+        ???
+
       case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
         checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
           val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
@@ -139,6 +143,7 @@ case class Checker2(returnType: Type) {
         }
 
       case UntypedAssignment(target, value, position) =>
+        // TODO (multi-import): Check mutability.
         Synthesizer2.infer(target, context).flatMap { case (typedTarget: Expression.Access, context2) =>
           check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
         }
@@ -218,6 +223,19 @@ case class Checker2(returnType: Type) {
   )(implicit reporter: Reporter): Option[InferenceResults] = expectedType match {
     case Some(expectedType) => check(expressions, expectedType, context)
     case None => Synthesizer2.infer(expressions, context)
+  }
+
+  /**
+    * Attempts type checking via [[check]], using an internal reporter that accumulates errors, which are then returned
+    * separately. `attempt` can be used to try a particular checking path without committing to it.
+    */
+  def attempt(
+    expression: UntypedExpression,
+    expectedType: Type,
+    context: InferenceContext,
+  ): (Option[InferenceResult], Vector[Feedback]) = {
+    implicit val reporter: MemoReporter = MemoReporter()
+    (check(expression, expectedType, context), reporter.feedback)
   }
 
 }

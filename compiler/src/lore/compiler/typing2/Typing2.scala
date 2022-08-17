@@ -1,7 +1,6 @@
 package lore.compiler.typing2
 
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.typing.InferenceVariable
 import lore.compiler.typing.Typing.logger
 
 object Typing2 {

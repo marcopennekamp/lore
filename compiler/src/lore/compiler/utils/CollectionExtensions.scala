@@ -193,6 +193,7 @@ object CollectionExtensions {
   }
 
   implicit class Tuple2OptionExtension[A, B](option: Option[(A, B)]) {
+    def flatMapFirst[R](f: A => Option[R]): Option[(R, B)] = option.flatMap { case (a, b) => f(a).map((_, b)) }
     def mapFirst[R](f: A => R): Option[(R, B)] = option.map { case (a, b) => (f(a), b) }
   }
 

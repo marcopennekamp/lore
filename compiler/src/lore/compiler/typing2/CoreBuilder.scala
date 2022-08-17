@@ -1,0 +1,34 @@
+package lore.compiler.typing2
+
+import lore.compiler.core.Position
+import lore.compiler.feedback.{MultiFunctionFeedback, Reporter}
+import lore.compiler.semantics.core.CoreMultiFunction
+import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.Expression.MultiFunctionCall
+import lore.compiler.types.TupleType
+
+object CoreBuilder {
+
+  /**
+    * Builds a multi-function call to a core multi-function such as `lore.core.to_string`.
+    */
+  def multiFunctionCall(
+    cmf: CoreMultiFunction,
+    arguments: Vector[Expression],
+    position: Position,
+  )(implicit reporter: Reporter): Option[Expression] = {
+    cmf.mf.flatMap { mf =>
+      val inputType = TupleType(arguments.map(_.tpe))
+      mf.dispatch(
+        inputType,
+        MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, position),
+        min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, inputType, min, position),
+      ).map { instance =>
+        // The specific instance's output type will be a subtype of the CMF's expected output type because the instance
+        // is necessarily a specialization of the CMF. Output types are kept consistent by multi-function constraints.
+        MultiFunctionCall(instance, arguments, position)
+      }
+    }
+  }
+
+}

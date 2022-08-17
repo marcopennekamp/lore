@@ -1,9 +1,9 @@
 package lore.compiler.semantics.expressions.untyped
 
-import lore.compiler.core.{Position, Positioned, UniqueKey}
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, TypedTermBinding, UntypedLocalVariable}
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.Expression.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.types.{StructProperty, Type}
@@ -67,8 +67,7 @@ object UntypedExpression {
   }
 
   case class UntypedLambdaParameter(
-    uniqueKey: UniqueKey,
-    name: String,
+    variable: UntypedLocalVariable,
     typeAnnotation: Option[Type],
     position: Position,
   )
@@ -116,24 +115,33 @@ object UntypedExpression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Operators and calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  trait UntypedOperation extends UntypedExpression {
+    def operator: Operator
+    def operands: Vector[UntypedExpression]
+  }
+
   case class UntypedUnaryOperation(
     operator: UnaryOperator,
-    value: UntypedExpression,
+    operand: UntypedExpression,
     position: Position,
-  ) extends UntypedExpression
+  ) extends UntypedOperation {
+    override def operands: Vector[UntypedExpression] = Vector(operand)
+  }
 
   case class UntypedBinaryOperation(
     operator: BinaryOperator,
-    left: UntypedExpression,
-    right: UntypedExpression,
+    operand1: UntypedExpression,
+    operand2: UntypedExpression,
     position: Position,
-  ) extends UntypedExpression
+  ) extends UntypedOperation {
+    override def operands: Vector[UntypedExpression] = Vector(operand1, operand2)
+  }
 
   case class UntypedXaryOperation(
     operator: XaryOperator,
     operands: Vector[UntypedExpression],
     position: Position,
-  ) extends UntypedExpression
+  ) extends UntypedOperation
 
   trait UntypedCall extends UntypedExpression {
     def arguments: Vector[UntypedExpression]
@@ -161,6 +169,7 @@ object UntypedExpression {
   case class UntypedIntrinsicCall(
     target: PoemIntrinsic,
     arguments: Vector[UntypedExpression],
+    tpe: Type,
     position: Position,
   ) extends UntypedCall
 

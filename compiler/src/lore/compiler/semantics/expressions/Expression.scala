@@ -62,7 +62,7 @@ object Expression {
     body: Expression,
     position: Position,
   ) extends Expression {
-    override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
+    override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.variable.tpe)), body.tpe)
 
     /**
       * All local variables that this anonymous function must capture.
@@ -70,16 +70,10 @@ object Expression {
     lazy val capturedVariables: Vector[LocalVariable] = CapturedVariables.findCapturedVariables(this).toVector
   }
 
-  // TODO (multi-import): Do we still need unique keys with the new UntypedExpression IR?
-  // TODO (multi-import): Doesn't it suffice to keep LocalVariables as lambda parameters?
   case class LambdaParameter(
-    uniqueKey: UniqueKey,
-    name: String,
-    tpe: Type,
+    variable: LocalVariable,
     position: Position,
-  ) {
-    def mapType(f: Type => Type): LambdaParameter = this.copy(tpe = f(tpe))
-  }
+  )
 
   /**
     * A multi-function typed as a function. It can be passed around like any other function value.
@@ -170,13 +164,15 @@ object Expression {
   // Operators and calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO (multi-import): Move to the general package, as its used by both UntypedExpressions and Expressions.
-  sealed trait UnaryOperator
+  sealed trait Operator
+
+  sealed trait UnaryOperator extends Operator
   object UnaryOperator {
     case object Negation extends UnaryOperator
     case object LogicalNot extends UnaryOperator
   }
 
-  sealed trait BinaryOperator
+  sealed trait BinaryOperator extends Operator
   object BinaryOperator {
     case object Addition extends BinaryOperator
     case object Subtraction extends BinaryOperator
@@ -188,7 +184,7 @@ object Expression {
     case object Append extends BinaryOperator
   }
 
-  sealed trait XaryOperator
+  sealed trait XaryOperator extends Operator
   object XaryOperator {
     case object Conjunction extends XaryOperator
     case object Disjunction extends XaryOperator
@@ -222,11 +218,12 @@ object Expression {
   }
 
   case class MultiFunctionCall(
-    target: MultiFunctionDefinition,
+    target: FunctionInstance,
     arguments: Vector[Expression],
-    tpe: Type,
     position: Position,
-  ) extends Call
+  ) extends Call {
+    override def tpe: Type = target.signature.outputType
+  }
 
   case class ValueCall(
     target: Expression,
