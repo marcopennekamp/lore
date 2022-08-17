@@ -72,20 +72,8 @@ object UntypedExpression {
     position: Position,
   )
 
-  // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
-  case class UntypedMultiFunctionValue(
-    mfs: MultiReference[MultiFunctionDefinition],
-    position: Position,
-  ) extends UntypedExpression
-
   case class UntypedFixedFunctionValue(
     instance: FunctionInstance,
-    position: Position,
-  ) extends UntypedExpression
-
-  // TODO (multi-import): Support explicit type arguments.
-  case class UntypedConstructorValue(
-    binding: StructConstructorBinding,
     position: Position,
   ) extends UntypedExpression
 

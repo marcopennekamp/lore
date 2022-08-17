@@ -3,7 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedConstructorValue, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedConstructorValue, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -173,9 +173,18 @@ object TypingFeedback {
   }
 
   object ConstructorValue {
-    case class TypeContextExpected(expression: UntypedConstructorValue) extends Feedback.Error(expression) {
-      override def message: String = s"The constructor value's type arguments cannot be inferred without a proper type" +
-        s" context. Please provide a function type in an outer expression (e.g. with a type ascription)."
+    case class FunctionTypeExpected(
+      expression: UntypedBindingAccess,
+      expectedType: Type,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"A constructor can only be coerced to a function type. The expected type is" +
+        s" `$expectedType`, which is not a function type. Most likely, the constructor cannot be used as a value in" +
+        s" this context."
+    }
+
+    case class TypeContextExpected(expression: UntypedBindingAccess) extends Feedback.Error(expression) {
+      override def message: String = s"The constructor cannot be coerced to a function without a proper type context." +
+        s" Please provide a function type in an outer expression (e.g. with a type ascription)."
     }
   }
 

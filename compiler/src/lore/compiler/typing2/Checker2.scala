@@ -50,58 +50,6 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
 
       case expression: UntypedLambdaValue => LambdaTyping.check(expression, expectedType, context)
 
-      // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
-      //                      typing phase.
-      case UntypedMultiFunctionValue(mfs, position) =>
-        /* expectedType match {
-          case expectedType@FunctionType(expectedInput, _) =>
-            mf.dispatch(
-              expectedInput,
-              MultiFunctionFeedback.Dispatch.EmptyFit(mf, expectedInput, position),
-              min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, expectedInput, min, position),
-            ) match {
-              case Some(instance) => MultiFunctionValueSynthesizer.handleFunctionInstance(
-                instance,
-                expression,
-                Some(expectedType),
-                assignments
-              )
-
-              case None =>
-                // `dispatch` already reported an error.
-                None
-            }
-
-          case BasicType.Any =>
-            // If the expected type isn't a function type, but still can be a supertype of the function type, the
-            // Synthesizer may be able to infer the multi-function value if the multi-function contains a single,
-            // monomorphic function.
-            fallback
-
-          case _ =>
-            reporter.error(TypingFeedback.MultiFunctionValue.FunctionTypeExpected(expression, expectedType))
-            None
-        } */
-        ???
-
-      // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
-      //                      typing phase.
-      case UntypedConstructorValue(_, _) =>
-        /* expectedType match {
-          case FunctionType(input, _) =>
-            ArgumentSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments, expression).flatMap {
-              case ArgumentSynthesizer.Result(assignments2, typeArguments) =>
-                InferenceVariable.assign(
-                  tpe,
-                  binding.instantiateStructType(typeArguments).constructorSignature.functionType,
-                  assignments2,
-                )
-            }
-
-          case _ => fallback
-        } */
-        ???
-
       case UntypedListValue(elements, position) =>
         expectedType match {
           case ListType(elementType) => check(elements, elementType, context).mapFirst(ListValue(_, position))
@@ -127,16 +75,16 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
         // }
         ???
 
-      case UntypedBindingAccess(binding, position) =>
-        // TODO (multi-import): Sync this with the version from Synthesizer. Now that we have access coercion here, we
-        //                      need an expected type for multi-function and constructor values.
-        ???
+      case expression: UntypedBindingAccess => BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context)
 
       case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
         checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
           val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
           (
             // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
+            //                      Mutability might be an issue, if we want consistency between mutability and
+            //                      assignments, although mutability should be checked here and then could be forgotten
+            //                      about.
             VariableDeclaration(typedVariable, typedValue, typeAnnotation, position),
             context2.withLocalVariable(typedVariable),
           )

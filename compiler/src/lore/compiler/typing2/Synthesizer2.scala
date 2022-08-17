@@ -54,32 +54,7 @@ object Synthesizer2 {
           None
         }
 
-      // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
-      //                      typing phase.
-      case UntypedMultiFunctionValue(mfs, _) =>
-//        // We can infer a multi-function value without a function type context if the multi-function has a single,
-//        // monomorphic function.
-//        mf.functions match {
-//          case Vector(function) if function.isMonomorphic =>
-//            MultiFunctionValueSynthesizer.handleFunctionInstance(function.monomorphicInstance, expression, None, assignments)
-//
-//          case _ =>
-//            reporter.error(TypingFeedback.MultiFunctionValue.TypeContextExpected(expression))
-//            None
-//        }
-        ???
-
       case UntypedFixedFunctionValue(instance, position) => simpleResult(FixedFunctionValue(instance, position))
-
-      // TODO (multi-import): We probably don't need this as a separate case when we move access coercion into the
-      //                      typing phase.
-      case expression@UntypedConstructorValue(binding, position) =>
-        if (binding.isConstant) {
-          simpleResult(ConstructorValue(binding, binding.underlyingType, position))
-        } else {
-          reporter.report(TypingFeedback.ConstructorValue.TypeContextExpected(expression))
-          None
-        }
 
       case UntypedListValue(elements, position) => infer(elements, context).mapFirst(ListValue(_, position))
 
@@ -156,9 +131,7 @@ object Synthesizer2 {
       case _: UntypedVariableDeclaration => delegate(TupleType.UnitType)
       case _: UntypedAssignment => delegate(TupleType.UnitType)
 
-      case UntypedBindingAccess(binding, position) =>
-        // TODO (multi-import): Don't forget to move access coercion here...
-        ???
+      case expression: UntypedBindingAccess => BindingAccessTyping.checkOrInfer(expression, None, context)
 
       case expression@UntypedMemberAccess(instance, name, position) =>
         infer(instance, context).flatMapFirst { typedInstance =>
