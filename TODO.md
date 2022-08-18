@@ -9,6 +9,11 @@
   - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
   - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
+  - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions, or maybe even just `int` and `real` (for syntactic convenience). This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors.
+  - Implement implicit real conversions for integer literals standing in `Real` contexts. (This will be easy given the new typechecking algorithm.)
+    - A list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
+    - A list like `[0, -2, 2.5, 6, 22]` could be typed as `[Int | Real]` or `[Real]`. Also consider `[2.5, 6, 22]`; is this `[Real | Int]` or `[Real]`?
+    - Rethink this given that we want to remove automatic casts between Real and Int.
   - Make sure that all Scala tests succeed.
   - Clear all `TODO (multi-import)` entries.
 - Move to Scala 3 and migrate to a different parser library.
@@ -94,8 +99,6 @@
     - `act` could also be confused with `actor` (actor models, etc.), leading someone new to the language to think that the function somehow supports or enables concurrency via the actor model.
   - Rename `let mut` to `var`.
   - Rename `Boolean` to `Bool`. Int is also abbreviated.
-  - Implement implicit real conversions for integer literals standing in `Real` contexts.
-    - A list like `[0, -2, 2.5, 6, 22]` should also be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
   - Provide a means to directly access tuple elements, such as `._1`.
     - Also consider adding default element names again, i.e. `tuple.a` for a tuple `(A, B)` referring to the first element. Might still be a slippery slope.
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax (such as `it`).
@@ -105,6 +108,8 @@
   - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
   - Consider adding `func`, `type`, `spec` etc. to the list of keywords. While the grammar might not be ambiguous now, it might become ambiguous later, and I'd like to avoid a design deadlock where adding e.g. `type` as a keyword isn't possible without breaking user code.
   - Allow double quotes `"` for strings alongside single quotes. Double quotes are so natural for strings that we will never be able to use them for any other kind of syntax, without majorly confusing every programmer in existence (myself included).
+    - Other uses for single quotes:
+      - Identifier characters (like Haskell).
   - Allow string concatenation with `+`, at least until operator overloading is supported.
   - Change comments from `//` and `/* */` to `#` and `#[ ]#`? This is way more visually consistent for documentation comments, because the `/** * */` style eats up two lines of code for every documentation comment, while `///` or `//*` adds THREE characters of visual noise to each line. `##` documentation comments clearly separate their intent from regular `#` comments, while being easy to type and only having moderate visual noise.
     - The `#` comment syntax would be unfortunate for symbols and collection types/literals. Using the hashtag for symbols is visually very consistent with a lower-case identifier (e.g. `#name` or `#bear`), as it lines up very well with the top and bottom of most lower-case letters. Here is a table of syntax changes that would be required to introduce `#` comments:
