@@ -1,6 +1,6 @@
 package lore.compiler.typing2
 
-import lore.compiler.feedback.{Reporter, TypingFeedback}
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator._
@@ -169,6 +169,18 @@ object Synthesizer2 {
           case (typedExpression, context2) => (typedExpressions :+ typedExpression, context2)
         }
     }
+  }
+
+  /**
+    * Attempts type checking via [[infer]], using an internal reporter that accumulates errors, which are then returned
+    * separately. `attempt` can be used to try a particular checking path without committing to it.
+    */
+  def attempt(
+    expression: UntypedExpression,
+    context: InferenceContext,
+  )(implicit checker: Checker2, registry: Registry): (Option[InferenceResult], Vector[Feedback]) = {
+    implicit val reporter: MemoReporter = MemoReporter()
+    (infer(expression, context), reporter.feedback)
   }
 
 }

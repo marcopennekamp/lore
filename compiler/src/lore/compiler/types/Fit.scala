@@ -44,6 +44,8 @@ object Fit {
     * returns `None` if no consistent assignment can be found.
     */
   private def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
+    // TODO (multi-import): If the new typing algorithm doesn't need inference variables: Revert to a "straight
+    //                      "forward" algorithm for fit.
     val typeVariables = Type.variables(t2).toVector
     val (s2, typeVariableAssignments) = InferenceVariable.fromTypeVariables(t2, typeVariables)
     Unification.unifyFits(t1, s2, Map.empty).flatMap { assignments =>

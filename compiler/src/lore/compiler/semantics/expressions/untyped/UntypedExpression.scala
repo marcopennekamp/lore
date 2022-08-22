@@ -51,7 +51,7 @@ object UntypedExpression {
 
   case class UntypedTupleValue(
     elements: Vector[UntypedExpression],
-    position: Position
+    position: Position,
   ) extends UntypedExpression
 
   case class UntypedLambdaValue(
