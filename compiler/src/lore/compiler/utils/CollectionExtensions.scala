@@ -192,9 +192,22 @@ object CollectionExtensions {
     }
   }
 
+  implicit class Tuple2Extension[A, B](tuple: (A, B)) {
+    def mapFirst[R](f: A => R): (R, B) = (f(tuple._1), tuple._2)
+  }
+
+  implicit class Tuple3Extension[A, B, C](tuple: (A, B, C)) {
+    def mapFirst[R](f: A => R): (R, B, C) = (f(tuple._1), tuple._2, tuple._3)
+  }
+
   implicit class Tuple2OptionExtension[A, B](option: Option[(A, B)]) {
     def flatMapFirst[R](f: A => Option[R]): Option[(R, B)] = option.flatMap { case (a, b) => f(a).map((_, b)) }
     def mapFirst[R](f: A => R): Option[(R, B)] = option.map { case (a, b) => (f(a), b) }
+  }
+
+  implicit class Tuple3OptionExtension[A, B, C](option: Option[(A, B, C)]) {
+    def flatMapFirst[R](f: A => Option[R]): Option[(R, B, C)] = option.flatMap { case (a, b, c) => f(a).map((_, b, c)) }
+    def mapFirst[R](f: A => R): Option[(R, B, C)] = option.map { case (a, b, c) => (f(a), b, c) }
   }
 
 }
