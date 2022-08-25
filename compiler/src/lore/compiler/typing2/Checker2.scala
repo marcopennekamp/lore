@@ -1,5 +1,6 @@
 package lore.compiler.typing2
 
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
@@ -9,6 +10,7 @@ import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types.{ListType, ShapeType, TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
+import lore.compiler.typing2.unification.InferenceVariable2
 
 /**
   * @param returnType The expected return type of the surrounding function, used to check `Return` expressions.
@@ -29,6 +31,11 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expectedType: Type,
     context: InferenceContext,
   )(implicit reporter: Reporter): Option[InferenceResult] = {
+    // TODO (multi-import): Temporary/assertion. Remove (in production).
+    if (!InferenceVariable2.isFullyInstantiated(expectedType)) {
+      throw CompilationException("`expectedType` must be fully instantiated!")
+    }
+
     def fallback = Synthesizer2.infer(expression, context)
 
     // Step 1: Check and/or infer the untyped expression to produce a typed expression.
@@ -107,6 +114,11 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     }
 
     result.flatMap { case (typedExpression, _) =>
+      // TODO (multi-import): Temporary/assertion. Remove (in production).
+      if (!InferenceVariable2.isFullyInstantiated(typedExpression.tpe)) {
+        throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
+      }
+
       Typing2.traceExpressionType(typedExpression, "Checked", s" (Expected type: $expectedType.)")
 
       // Step 2: Check that the typed expression agrees with the expected type.

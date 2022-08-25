@@ -1,5 +1,6 @@
 package lore.compiler.typing2
 
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -10,6 +11,7 @@ import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.typing2.unification.InferenceVariable2
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
 object Synthesizer2 {
@@ -151,6 +153,11 @@ object Synthesizer2 {
     }
 
     result.foreach { case (typedExpression, _) =>
+      // TODO (multi-import): Temporary/assertion. Remove (in production).
+      if (!InferenceVariable2.isFullyInstantiated(typedExpression.tpe)) {
+        throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
+      }
+
       Typing2.traceExpressionType(typedExpression, "Inferred")
     }
     result
