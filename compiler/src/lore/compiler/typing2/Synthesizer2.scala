@@ -121,9 +121,7 @@ object Synthesizer2 {
 //        }
         ???
 
-      case expression: UntypedConstructorCall =>
-//        ConstructorCallSynthesizer.infer(structBinding, expression, assignments)
-        ???
+      case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
 
       case UntypedIntrinsicCall(target, arguments, tpe, position) =>
         infer(arguments, context).mapFirst { typedArguments =>

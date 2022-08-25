@@ -233,9 +233,8 @@ object Expression {
   ) extends Call
 
   case class ConstructorCall(
-    target: StructConstructorBinding,
+    tpe: StructType,
     arguments: Vector[Expression],
-    tpe: Type,
     position: Position,
   ) extends Call
 

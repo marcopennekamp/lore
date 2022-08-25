@@ -8,9 +8,9 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
-import lore.compiler.types.{ListType, ShapeType, TupleType, Type}
-import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
+import lore.compiler.types.{DeclaredType, ListType, ShapeType, StructType, TupleType, Type}
 import lore.compiler.typing2.unification.InferenceVariable2
+import lore.compiler.utils.CollectionExtensions.{OptionExtension, Tuple2OptionExtension, VectorExtension}
 
 /**
   * @param returnType The expected return type of the surrounding function, used to check `Return` expressions.
@@ -69,18 +69,15 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
           case _ => fallback
         }
 
-      case UntypedMultiFunctionCall(target, arguments, position) =>
+      case expression: UntypedMultiFunctionCall =>
         // MultiFunctionCallChecker.check(mf, expression, expectedType, assignments)
         ???
 
-      case UntypedConstructorCall(target, arguments, position) =>
-        // TODO (multi-import): Do we want to use the expected type of a constructor call to help with type parameter
-        //                      assignments?
-        // expectedType match {
-        //   case dt: DeclaredType => ConstructorCallChecker.check(structBinding, expression, dt, assignments)
-        //   case _ => fallback
-        // }
-        ???
+      case expression: UntypedConstructorCall =>
+        expectedType match {
+          case expectedType: DeclaredType => ConstructorTyping.checkOrInferCall(expression, Some(expectedType), context)
+          case _ => fallback
+        }
 
       case expression: UntypedBindingAccess => BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context)
 

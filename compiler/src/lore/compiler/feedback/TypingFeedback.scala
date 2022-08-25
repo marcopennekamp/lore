@@ -3,7 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedConstructorValue, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -11,7 +11,7 @@ import lore.compiler.types._
 
 object TypingFeedback {
 
-  case class SubtypeExpected(actualType: Type, expectedType: Type, context: Positioned) extends Feedback.Error(context) {
+  case class SubtypeExpected(actualType: Type, expectedType: Type, positioned: Positioned) extends Feedback.Error(positioned) {
     override def message: String = s"This expression has the illegal type `$actualType`. We expected the following type" +
       s" (or a subtype thereof): $expectedType."
   }
@@ -35,7 +35,7 @@ object TypingFeedback {
         s" arguments were supplied."
     }
 
-    case class ConstantUseRequired(tpe: Type, context: Positioned) extends Feedback.Error(context) {
+    case class ConstantUseRequired(tpe: Type, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The type `$tpe` is constant and does not allow any type arguments."
     }
 
@@ -49,35 +49,32 @@ object TypingFeedback {
     }
   }
 
-  object Member {
-    case class NotFound(expression: UntypedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
-      override def message: String = s"The type `$instanceType` does not have a member `${expression.name}`."
-    }
-  }
-
   object Function {
+    // TODO (multi-import): Move to Call namespace.
     case class IllegalArity(
       argumentCount: Int,
       parameterCount: Int,
-      context: Positioned,
-    ) extends Feedback.Error(context) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"A function with $parameterCount parameters received $argumentCount arguments."
     }
 
+    // TODO (multi-import): Don't use this. Use `Call.IllegalArgumentType` instead.
     case class IllegalArgumentTypes(
       argumentTypes: Vector[Type],
       parameterTypes: Vector[Type],
-      context: Positioned,
-    ) extends Feedback.Error(context) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The argument types `(${argumentTypes.mkString(", ")})` don't fit into the expected" +
         s" parameter types `(${parameterTypes.mkString(", ")})`."
     }
 
+    // TODO (multi-import): Move to Call namespace.
     case class IllegalTypeArguments(
       typeArguments: Vector[Type],
       typeParameters: Vector[Type],
-      context: Positioned,
-    ) extends Feedback.Error(context) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The type arguments `${typeArguments.mkString(", ")}` don't fit the type" +
         s" parameters `${typeParameters.mkString(", ")}`."
     }
@@ -217,6 +214,19 @@ object TypingFeedback {
     }
   }
 
+  object Call {
+    case class IllegalArgumentType(
+      argumentType: Option[Type],
+      parameterType: Type,
+      argument: Positioned,
+    ) extends Feedback.Error(argument) {
+      override def message: String = {
+        val argumentTypeInfo = argumentType.map(t => s" of type `$t`").getOrElse("")
+        s"The argument$argumentTypeInfo doesn't fit into the expected parameter type `$parameterType`."
+      }
+    }
+  }
+
   object ValueCall {
     case class FunctionExpected(expression: Expression.Call, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"Only functions may be called. You are trying to call a value of type `$actualType`."
@@ -238,16 +248,22 @@ object TypingFeedback {
     case class CannotSpecialize(
       binding: StructConstructorBinding,
       expectedType: DeclaredType,
-      context: Expression,
-    ) extends Feedback.Error(context) {
+      expression: Positioned,
+    ) extends Feedback.Error(expression) {
       override def message: String = s"A construction of `${binding.name}` cannot result in expected type" +
         s" `$expectedType`, because `$expectedType` cannot be specialized to `${binding.name}`. Most likely," +
         s" `${binding.name}` is not a subtype of `$expectedType`."
     }
   }
 
+  object Member {
+    case class NotFound(expression: UntypedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"The type `$instanceType` does not have a member `${expression.name}`."
+    }
+  }
+
   object Loop {
-    case class CollectionExpected(actualType: Type, context: Positioned) extends Feedback.Error(context) {
+    case class CollectionExpected(actualType: Type, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"You can only iterate over lists and maps. The type `$actualType` is not a list" +
         s" or map."
     }

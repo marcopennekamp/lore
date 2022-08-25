@@ -135,12 +135,28 @@ object UntypedExpression {
     def arguments: Vector[UntypedExpression]
   }
 
+  // TODO (multi-import): We can turn UntypedMultiFunctionCall, UntypedValueCall, and UntypedConstructorCall into a
+  //                      single UntypedBindingCall. This might simplify the untyped expression tree slightly.
+
+//  /**
+//    * [[UntypedBindingCall]] represents untyped multi-function, value, and constructor calls. The specific kind of call
+//    * is determined during typing, when binding coercion is also resolved. Treating all calls in a single family makes
+//    * handling uniform call syntax easier. (TODO: Does it?)
+//    */
+//  case class UntypedBindingCall(
+//    target: TermBinding,
+//    arguments: Vector[UntypedExpression],
+//    position: Position,
+//  ) extends UntypedCall
+
   // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
   case class UntypedMultiFunctionCall(
     target: MultiReference[MultiFunctionDefinition],
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall
+
+  // TODO (multi-import): Swap positions of UntypedConstructorCall and UntypedIntrinsicCall. (Same with Expressions.)
 
   case class UntypedValueCall(
     target: UntypedExpression,
