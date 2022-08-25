@@ -3,7 +3,6 @@ package lore.compiler.typing2.unification
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
   * Inference variables are unique-by-reference types that can stand in for other types in complex situations. They are
@@ -226,36 +225,6 @@ object InferenceVariable2 {
         dt.schema.instantiate(newAssignments)
       case tpe => tpe
     }
-  }
-
-  /**
-    * For the given `typeVariables`, this
-    * function unifies the current assignments of each inference variable with the bounds of its respective type
-    * variable.
-    *
-    * TODO (multi-import): Give this a different name and move to InferenceVariable2. This should be an assignments
-    * "update" function, essentially.
-    */
-  def updateInferenceVariableBounds(
-    inferenceVariables: Vector[InferenceVariable2],
-    assignments: InferenceAssignments,
-  ): Option[InferenceAssignments] = {
-    inferenceVariables.foldSome(assignments) {
-      case (assignments2, iv) => handleInferenceVariableBounds(iv, assignments2)
-    }
-  }
-
-  private def handleInferenceVariableBounds(
-    iv: InferenceVariable2,
-    assignments: InferenceAssignments,
-  ): Option[InferenceAssignments] = {
-    val assignments2 = if (iv.lowerBound != BasicType.Nothing) {
-      Unification2.unifySubtypes(iv.lowerBound, iv, assignments).getOrElse(return None)
-    } else assignments
-
-    if (iv.upperBound != BasicType.Any) {
-      Unification2.unifySubtypes(iv, iv.upperBound, assignments2)
-    } else Some(assignments2)
   }
 
 }

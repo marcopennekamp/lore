@@ -47,6 +47,32 @@ object Unification2 {
     unifyFits(TupleType(ts1), TupleType(ts2), assignments)
   }
 
+  /**
+    * For the given `inferenceVariables`, [[unifyInferenceVariableBounds]] unifies the current candidate type of each
+    * inference variable with the bounds of its respective type variable.
+    */
+  def unifyInferenceVariableBounds(
+    inferenceVariables: Vector[InferenceVariable2],
+    assignments: InferenceAssignments,
+  ): Option[InferenceAssignments] = {
+    inferenceVariables.foldSome(assignments) {
+      case (assignments2, iv) => handleInferenceVariableBounds(iv, assignments2)
+    }
+  }
+
+  private def handleInferenceVariableBounds(
+    iv: InferenceVariable2,
+    assignments: InferenceAssignments,
+  ): Option[InferenceAssignments] = {
+    val assignments2 = if (iv.lowerBound != BasicType.Nothing) {
+      Unification2.unifySubtypes(iv.lowerBound, iv, assignments).getOrElse(return None)
+    } else assignments
+
+    if (iv.upperBound != BasicType.Any) {
+      Unification2.unifySubtypes(iv, iv.upperBound, assignments2)
+    } else Some(assignments2)
+  }
+
   private trait Combiner {
     def unify(iv1: InferenceVariable2, iv2: InferenceVariable2, assignments: InferenceAssignments): Option[InferenceAssignments]
     def ensure(iv: InferenceVariable2, tpe: Type, boundType: BoundType2, assignments: InferenceAssignments): Option[InferenceAssignments]
