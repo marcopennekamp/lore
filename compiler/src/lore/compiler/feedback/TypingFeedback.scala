@@ -3,7 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue, UntypedValueCall}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -215,6 +215,15 @@ object TypingFeedback {
   }
 
   object Call {
+    case class IllegalArity(
+      argumentCount: Int,
+      parameterCount: Int,
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"A function with $parameterCount parameters cannot be called with $argumentCount" +
+        s" arguments."
+    }
+
     case class IllegalArgumentType(
       argumentType: Option[Type],
       parameterType: Type,
@@ -227,12 +236,6 @@ object TypingFeedback {
     }
   }
 
-  object ValueCall {
-    case class FunctionExpected(expression: Expression.Call, actualType: Type) extends Feedback.Error(expression) {
-      override def message: String = s"Only functions may be called. You are trying to call a value of type `$actualType`."
-    }
-  }
-
   object MultiFunctionCall {
     case class AmbiguousArgumentTypes(
       mf: MultiFunctionDefinition,
@@ -241,6 +244,12 @@ object TypingFeedback {
     ) extends Feedback.Error(context) {
       override def message: String = s"In this call of multi-function `$mf.name`, the argument types cannot be inferred." +
         s" There are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
+    }
+  }
+
+  object ValueCall {
+    case class FunctionExpected(expression: UntypedValueCall, actualType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"Only functions may be called. You are trying to call a value of type `$actualType`."
     }
   }
 

@@ -1,6 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.CompilationException
+import lore.compiler.feedback.TypingFeedback.AnonymousFunction
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -10,7 +11,7 @@ import lore.compiler.semantics.expressions.Expression.XaryOperator.{Concatenatio
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
-import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}
 import lore.compiler.typing2.unification.InferenceVariable2
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
@@ -97,29 +98,20 @@ object Synthesizer2 {
         ???
 
       case expression: UntypedValueCall =>
-//        infer(target, assignments).flatMap { targetAssignments =>
-//          val argumentsResult = InferenceVariable.instantiateCandidate(target, targetAssignments) match {
-//            case FunctionType(input, output) =>
-//              if (arguments.length == input.elements.length) {
-//                val assignments3 = arguments.zip(input.elements).foldSome(targetAssignments) {
-//                  case (assignments2, (argument, parameterType)) =>
-//                    checker.check(argument, parameterType, assignments2)
-//                }
-//                assignments3.map((_, output))
-//              } else {
-//                reporter.error(TypingFeedback.Function.IllegalArity(expression.arguments.length, input.elements.length, expression))
-//                None
-//              }
-//
-//            case targetType =>
-//              reporter.error(TypingFeedback.ValueCall.FunctionExpected(expression, targetType))
-//              None
-//          }
-//          argumentsResult.flatMap {
-//            case (argumentAssignments, output) => Unification.unifyEquals(tpe, output, argumentAssignments)
-//          }
-//        }
-        ???
+        // TODO (multi-import): Once we support uniform call syntax, we additionally need a case in the Checker that
+        //                      grabs the expected type should the value call actually be a multi-function call.
+        infer(expression.target, context).flatMap { case (typedTarget, context2) =>
+          typedTarget.tpe match {
+            case targetType: FunctionType =>
+              CallTyping.checkOrInfer(targetType, expression, Some(targetType.output), context2)(
+                (typedArguments, _) => ValueCall(typedTarget, typedArguments, targetType.output, expression.position)
+              )
+
+            case targetType =>
+              reporter.error(TypingFeedback.ValueCall.FunctionExpected(expression, targetType))
+              None
+          }
+        }
 
       case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
 

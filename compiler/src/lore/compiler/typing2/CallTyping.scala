@@ -6,10 +6,10 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
-import lore.compiler.semantics.functions.FunctionSignature
+import lore.compiler.semantics.functions.FunctionLike
 import lore.compiler.types.{TupleType, Type, TypeVariable}
 import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
-import lore.compiler.utils.CollectionExtensions.Tuple3Extension
+import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, Tuple3Extension, VectorExtension}
 
 object CallTyping {
 
@@ -17,14 +17,22 @@ object CallTyping {
     * TODO (multi-import): Document.
     */
   def checkOrInfer(
-    signature: FunctionSignature,
+    function: FunctionLike,
     expression: UntypedCall,
     expectedType: Option[Type],
     context: InferenceContext,
   )(
     buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
   )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    val result = withPreparedParameterTypes(signature) {
+    if (!checkArity(expression.arity, function.arity, expression)) {
+      return None
+    }
+
+    if (function.isMonomorphic) {
+      return inferMonomorphic(function, expression, context)(buildCallExpression)
+    }
+
+    val result = withPreparedParameterTypes(function) {
       case (parameterTypes, outputType, typeParameters) =>
         inferArguments(expression, parameterTypes, typeParameters, context).flatMap {
           case (inferredArguments, assignments, context2) =>
@@ -66,31 +74,39 @@ object CallTyping {
     }
   }
 
-  private def checkArgument(
-    argument: UntypedExpression,
-    parameterType: Type,
-    typeParameters: Vector[InferenceVariable2],
-    assignments: InferenceAssignments,
+  private def checkArity(
+    argumentCount: Int,
+    parameterCount: Int,
+    positioned: Positioned,
+  )(implicit reporter: Reporter): Boolean = {
+    if (argumentCount != parameterCount) {
+      reporter.error(TypingFeedback.Call.IllegalArity(argumentCount, parameterCount, positioned))
+      false
+    } else true
+  }
+
+  /**
+    * An optimized version of [[checkOrInfer]] in case the signature is monomorphic. Inferring the call of a function
+    * that doesn't contain any type parameters is much easier and thereby faster. [[inferMonomorphic]] doesn't check
+    * for arity as [[checkOrInfer]] must already have handled this.
+    */
+  private def inferMonomorphic(
+    function: FunctionLike,
+    expression: UntypedExpression.UntypedCall,
     context: InferenceContext,
   )(
-    implicit checker: Checker2,
-    reporter: Reporter,
-  ): Option[(Expression, InferenceAssignments, InferenceContext)] = {
-    val parameterTypeCandidate = InferenceVariable2.instantiateCandidate(parameterType, assignments)
-    Typing2.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type" +
-      s" `$parameterTypeCandidate`:")
-
-    Typing2.indentationLogger.indented {
-      checker.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
-        // Unification only makes sense when the function has type parameters, as the parameter type won't contain any
-        // inference variables if it doesn't.
-        if (typeParameters.nonEmpty) {
-          Unification2.unifyFits(typedArgument.tpe, parameterType, assignments)
-            .flatMap(Unification2.unifyInferenceVariableBounds(typeParameters, _))
-            .map(assignments2 => (typedArgument, assignments2, context2))
-        } else Some(typedArgument, assignments, context2)
-      }
+    buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
+  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+    if (expression.arity != function.arity) {
+      reporter.error(TypingFeedback.Function.IllegalArity(expression.arity, function.arity, expression))
+      return None
     }
+
+    expression.arguments.zip(function.parameterTypes)
+      .foldSomeCollect(context) {
+        case (context, (argument, parameterType)) => checker.check(argument, parameterType, context)
+      }
+      .mapFirst(typedArguments => buildCallExpression(typedArguments, Map.empty))
   }
 
   /**
@@ -99,16 +115,16 @@ object CallTyping {
     *
     * TODO (multi-import): Does this even need to be a separate function? Is this used anywhere else?
     */
-  private def withPreparedParameterTypes[R](signature: FunctionSignature)(
+  private def withPreparedParameterTypes[R](function: FunctionLike)(
     f: (Vector[Type], Type, Vector[InferenceVariable2]) => Option[(InferenceAssignments, R)],
   ): Option[(TypeVariable.Assignments, R)] = {
     val (parameterTypeTuple, tvToIv) = InferenceVariable2.fromTypeVariables(
-      signature.inputType,
-      signature.typeParameters,
+      function.inputType,
+      function.typeParameters,
     )
     val parameterTypes = parameterTypeTuple.asInstanceOf[TupleType].elements
-    val outputType = Type.substitute(signature.outputType, tvToIv)
-    val inferenceVariables = signature.typeParameters.map(tvToIv)
+    val outputType = Type.substitute(function.outputType, tvToIv)
+    val inferenceVariables = function.typeParameters.map(tvToIv)
 
     f(parameterTypes, outputType, inferenceVariables).map { case (inferenceAssignments, result) =>
       val typeVariableAssignments = tvToIv.map {
@@ -165,8 +181,7 @@ object CallTyping {
   }
 
   /**
-    * Unifies `argumentTypes` with `parameterTypes`, checking their fit and the bounds of all `typeParameters`. If
-    * `argumentTypes` and `parameterTypes` have different lengths, [[unifyArgumentTypes]] reports an arity error.
+    * Unifies `argumentTypes` with `parameterTypes`, checking their fit and the bounds of all `typeParameters`.
     *
     * @param parameterTypes These parameter types must have been prepared using [[withPreparedParameterTypes]].
     *
@@ -180,11 +195,6 @@ object CallTyping {
     assignments: InferenceAssignments,
     positioned: Positioned,
   )(implicit reporter: Reporter): Option[InferenceAssignments] = {
-    if (argumentTypes.length != parameterTypes.length) {
-      reporter.error(TypingFeedback.Function.IllegalArity(argumentTypes.length, parameterTypes.length, positioned))
-      return None
-    }
-
     // This unification has two purposes:
     //   1. It checks that each argument type fits the parameter type.
     //   2. It assigns type arguments to type parameters.
@@ -214,17 +224,47 @@ object CallTyping {
     } else Some(assignments2)
   }
 
+  private def checkArgument(
+    argument: UntypedExpression,
+    parameterType: Type,
+    typeParameters: Vector[InferenceVariable2],
+    assignments: InferenceAssignments,
+    context: InferenceContext,
+  )(
+    implicit checker: Checker2,
+    reporter: Reporter,
+  ): Option[(Expression, InferenceAssignments, InferenceContext)] = {
+    val parameterTypeCandidate = InferenceVariable2.instantiateCandidate(parameterType, assignments)
+    Typing2.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type" +
+      s" `$parameterTypeCandidate`:")
+
+    Typing2.indentationLogger.indented {
+      checker.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
+        // Unification only makes sense when the function has type parameters, as the parameter type won't contain any
+        // inference variables if it doesn't.
+        if (typeParameters.nonEmpty) {
+          Unification2.unifyFits(typedArgument.tpe, parameterType, assignments)
+            .flatMap(Unification2.unifyInferenceVariableBounds(typeParameters, _))
+            .map(assignments2 => (typedArgument, assignments2, context2))
+        } else Some(typedArgument, assignments, context2)
+      }
+    }
+  }
+
   /**
     * Infers the type arguments of a `signature` given the actual argument types. If the argument types don't fit the
     * parameter types, `inferTypeArguments` reports an appropriate error.
+    *
+    * TODO (multi-import): Where is this actually used? Also, CallTyping might not be the right place for this function.
     */
   def inferTypeArguments(
-    signature: FunctionSignature,
+    function: FunctionLike,
     argumentTypes: Vector[Type],
     context: InferenceContext,
   )(implicit checker: Checker2, reporter: Reporter): Option[Vector[Type]] = {
-    // TODO (multi-import): Just do `withPreparedParameterTypes { ... => unifyArgumentTypes }`. That should work, as
-    //                      it's essentially the same implementation as the old one (prepareParameterTypes and then
+    // TODO (multi-import): Just do `withPreparedParameterTypes { ... => unifyArgumentTypes }` (and also check for
+    //                      arity, though with a different error message than in checkArity). That should work, as it's
+    //                      essentially the same implementation as the old one (prepareParameterTypes and then
     //                      checkArgumentTypes).
     ???
   }
