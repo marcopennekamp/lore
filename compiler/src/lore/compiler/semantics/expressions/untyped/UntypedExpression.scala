@@ -59,6 +59,8 @@ object UntypedExpression {
     body: UntypedExpression,
     position: Position,
   ) extends UntypedExpression {
+    def arity: Int = parameters.length
+
     /**
       * Whether the lambda function only has annotated parameters. This allows the inference algorithm to infer the
       * type of the function directly.
@@ -133,6 +135,7 @@ object UntypedExpression {
 
   trait UntypedCall extends UntypedExpression {
     def arguments: Vector[UntypedExpression]
+    def arity: Int = arguments.length
   }
 
   // TODO (multi-import): We can turn UntypedMultiFunctionCall, UntypedValueCall, and UntypedConstructorCall into a

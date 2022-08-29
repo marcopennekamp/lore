@@ -27,10 +27,8 @@ object LambdaTyping {
     // If a lambda function is missing a parameter type declaration, it requires the expected type to be a
     // function type.
     expectedType match {
-      case FunctionType(expectedInputType, expectedOutputType)
-        if expectedInputType.elements.length == expression.parameters.length
-      =>
-        val parameterTypes = expression.parameters.zip(expectedInputType.elements).map {
+      case expectedType: FunctionType if expectedType.arity == expression.arity =>
+        val parameterTypes = expression.parameters.zip(expectedType.parameterTypes).map {
           case (parameter, expectedParameterType) => parameter.typeAnnotation match {
             case Some(parameterType) =>
               // The function input is contravariant, so we have to check that the expected type is a subtype of the
@@ -53,7 +51,7 @@ object LambdaTyping {
         }
 
         val (typedParameters, context2) = buildTypedParameters(expression.parameters, parameterTypes, context)
-        checker.check(expression.body, expectedOutputType, context2).mapFirst { typedBody =>
+        checker.check(expression.body, expectedType.output, context2).mapFirst { typedBody =>
           LambdaValue(
             typedParameters,
             typedBody,
