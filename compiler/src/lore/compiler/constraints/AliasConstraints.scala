@@ -39,7 +39,7 @@ object AliasConstraints {
     * Verifies that the object type alias has no type parameters.
     */
   private def verifyConstantObjectAlias(alias: AliasSchema)(implicit reporter: Reporter): Unit = {
-    if (alias.isObjectAlias && alias.parameters.nonEmpty) {
+    if (alias.isObjectAlias && alias.typeParameters.nonEmpty) {
       reporter.error(AliasFeedback.ConstantObjectAliasExpected(alias))
     }
   }

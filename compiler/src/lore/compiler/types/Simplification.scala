@@ -64,7 +64,7 @@ object Simplification {
       case function: FunctionType => functions = functions :+ function
       case list: ListType => lists = lists :+ list
       case shape: ShapeType if kind == Kind.Intersection => shapes = shapes :+ shape
-      case dt: DeclaredType if !dt.schema.hasInvariantParameters => declaredTypesBySchema = declaredTypesBySchema.appended(dt.schema, dt)
+      case dt: DeclaredType if !dt.schema.hasInvariantTypeParameters => declaredTypesBySchema = declaredTypesBySchema.appended(dt.schema, dt)
       case t => result = result :+ t
     }
 
@@ -104,7 +104,7 @@ object Simplification {
       case (_, Vector(dt)) => result = result :+ dt
       case (schema, declaredTypes) =>
         val allArguments = declaredTypes.map(_.typeArguments).transpose
-        val combinedArguments = schema.parameters.zip(allArguments).map {
+        val combinedArguments = schema.typeParameters.zip(allArguments).map {
           case (parameter, arguments) => parameter.variance match {
             // We've already established that the declared type has no invariant parameters during categorization.
             case Variance.Covariant => constructCovariant(arguments)

@@ -56,13 +56,13 @@ object StructSchemaAssembler {
     val regInstance = registerProvider.fresh()
     val orderedProperties = PropertyOrder.sort(schema.properties)(_.name)
     val valueArguments = orderedProperties.map(property => propertyArgumentRegisters(property))
-    val bodyChunk = if (schema.isConstant) {
+    val bodyChunk = if (schema.isConstantSchema) {
       val structType = TypeAssembler.generate(schema.constantType)
       Chunk(regInstance, PoemInstruction.Struct(regInstance, structType, valueArguments))
     } else {
       // For each type parameter, we either have to load the constructor function's argument type, or if the type
       // parameter is open, get its type via a type path from the actual value type.
-      val typeArgumentChunks = schema.parameters.map { typeParameter =>
+      val typeArgumentChunks = schema.typeParameters.map { typeParameter =>
         if (!typeParameter.isOpen) {
           val regType = registerProvider.fresh()
           Chunk(regType, PoemInstruction.TypeArg(regType, typeParameter.index))

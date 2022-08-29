@@ -34,7 +34,7 @@ object StructSchemaResolver {
     */
   def initializeStructBinding(schema: StructSchema, structBinding: StructBinding): Unit = {
     structBinding match {
-      case binding: StructConstructorBinding => binding.initialize(schema.instantiate(schema.identityAssignments))
+      case binding: StructConstructorBinding => binding.initialize(schema.instantiate(schema.typeParameterIdentityAssignments))
       case binding: StructObjectBinding => binding.initialize(schema)
     }
   }

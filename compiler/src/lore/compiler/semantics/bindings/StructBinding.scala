@@ -48,7 +48,7 @@ class StructConstructorBinding(
   private val _underlyingType: Once[StructType] = new Once
 
   def underlyingType: StructType = _underlyingType
-  def typeParameters: Vector[TypeVariable] = definingSchema.parameters
+  def typeParameters: Vector[TypeVariable] = definingSchema.typeParameters
 
   def initialize(underlyingType: StructType): Unit = {
     super.initialize(underlyingType.schema)
@@ -87,7 +87,7 @@ object StructConstructorBinding {
     */
   private case class InstantiationSchema(
     name: NamePath,
-    parameters: Vector[TypeVariable],
+    typeParameters: Vector[TypeVariable],
     underlyingType: StructType,
   ) extends NamedSchema {
     override def instantiate(assignments: Assignments): StructType = {
@@ -95,10 +95,10 @@ object StructConstructorBinding {
     }
 
     override def instantiate(
-      arguments: Vector[Option[Type]],
+      typeArguments: Vector[Option[Type]],
       position: Position,
     )(implicit reporter: Reporter): StructType = {
-      super.instantiate(arguments, position).asInstanceOf[StructType]
+      super.instantiate(typeArguments, position).asInstanceOf[StructType]
     }
   }
 }

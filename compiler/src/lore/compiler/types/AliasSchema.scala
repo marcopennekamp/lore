@@ -13,18 +13,18 @@ class AliasSchema(
   val aliasVariant: AliasVariant,
   override val node: AliasNode,
 ) extends TypeDefinition {
-  private val _parameters: Once[Vector[TypeVariable]] = new Once
+  private val _typeParameters: Once[Vector[TypeVariable]] = new Once
   private val _originalType: Once[Type] = new Once
 
-  override def parameters: Vector[TypeVariable] = _parameters
+  override def typeParameters: Vector[TypeVariable] = _typeParameters
   def originalType: Type = _originalType
 
-  def initialize(parameters: Vector[TypeVariable], originalType: Type): Unit = {
-    _parameters.assign(parameters)
+  def initialize(typeParameters: Vector[TypeVariable], originalType: Type): Unit = {
+    _typeParameters.assign(typeParameters)
     _originalType.assign(originalType)
   }
 
-  override def isInitialized: Boolean = _parameters.isAssigned && _originalType.isAssigned
+  override def isInitialized: Boolean = _typeParameters.isAssigned && _originalType.isAssigned
 
   override def instantiate(assignments: Assignments): Type = Type.substitute(originalType, assignments)
 

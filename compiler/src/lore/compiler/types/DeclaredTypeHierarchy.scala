@@ -62,7 +62,7 @@ class DeclaredTypeHierarchy(schemas: Iterable[TypeDefinition]) {
     * The result of the operation is cached for constant declared schemas.
     */
   def getConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
-    if (tpe.schema.isConstant) concreteSubtypesCache.getOrElseUpdate(tpe, findConcreteSubtypes(tpe))
+    if (tpe.schema.isConstantSchema) concreteSubtypesCache.getOrElseUpdate(tpe, findConcreteSubtypes(tpe))
     else findConcreteSubtypes(tpe)
   }
 

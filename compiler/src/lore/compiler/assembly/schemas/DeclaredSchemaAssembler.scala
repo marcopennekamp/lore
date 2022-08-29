@@ -12,7 +12,7 @@ object DeclaredSchemaAssembler {
     * constructor.
     */
   def generate(schema: DeclaredSchema)(implicit registry: Registry): (PoemSchema, Vector[PoemFunction], Option[PoemGlobalVariable]) = {
-    val poemTypeParameters = schema.parameters.map(TypeAssembler.generateParameter)
+    val poemTypeParameters = schema.typeParameters.map(TypeAssembler.generateParameter)
     val poemSupertraits = schema.declaredSupertypes.map(TypeAssembler.generate).asInstanceOf[Vector[PoemNamedType]]
 
     schema match {

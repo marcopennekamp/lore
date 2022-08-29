@@ -7,10 +7,10 @@ import lore.compiler.utils.Once
 
 trait DeclaredSchema extends TypeDefinition {
 
-  private val _parameters: Once[Vector[TypeVariable]] = new Once
+  private val _typeParameters: Once[Vector[TypeVariable]] = new Once
   private val _supertypes: Once[Vector[Type]] = new Once
 
-  override def parameters: Vector[TypeVariable] = _parameters
+  override def typeParameters: Vector[TypeVariable] = _typeParameters
 
   override def node: DeclaredTypeDeclNode
 
@@ -27,15 +27,15 @@ trait DeclaredSchema extends TypeDefinition {
   def supertypes: Vector[Type] = _supertypes
 
   /**
-    * Initializes the parameters and supertypes of the declared schema. This corresponds to the initialization phase of
-    * the type binding.
+    * Initializes the type parameters and supertypes of the declared schema. This corresponds to the initialization
+    * phase of the type binding.
     */
-  def initialize(parameters: Vector[TypeVariable], supertypes: Vector[Type]): Unit = {
-    _parameters.assign(parameters)
+  def initialize(typeParameters: Vector[TypeVariable], supertypes: Vector[Type]): Unit = {
+    _typeParameters.assign(typeParameters)
     _supertypes.assign(supertypes)
   }
 
-  override def isInitialized: Boolean = _parameters.isAssigned && _supertypes.isAssigned
+  override def isInitialized: Boolean = _typeParameters.isAssigned && _supertypes.isAssigned
 
   override def constantType: DeclaredType = super.constantType.asInstanceOf[DeclaredType]
 

@@ -31,7 +31,7 @@ object TypingFeedback {
       arity: Int,
       override val position: Position,
     ) extends Feedback.Error(position) {
-      override def message: String = s"The type `$schema` expects ${schema.arity} type arguments, but $arity type" +
+      override def message: String = s"The type `$schema` expects ${schema.schemaArity} type arguments, but $arity type" +
         s" arguments were supplied."
     }
 
@@ -109,8 +109,8 @@ object TypingFeedback {
       expression: UntypedLambdaValue,
       expectedType: FunctionType,
     ) extends Feedback.Error(expression) {
-      override def message: String = s"The lambda function declares ${expression.parameters.length} parameters, but" +
-        s" the expected function type `$expectedType` expects ${expectedType.input.elements.length} parameters."
+      override def message: String = s"The lambda function declares ${expression.arity} parameters, but the expected" +
+        s" function type `$expectedType` expects ${expectedType.arity} parameters."
     }
 
     case class IllegalParameterTypes(

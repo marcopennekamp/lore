@@ -24,7 +24,7 @@ trait DeclaredType extends NamedType {
     */
   def assignments: TypeVariable.Assignments
 
-  lazy val typeArguments: Vector[Type] = schema.parameters.map(Type.substitute(_, assignments))
+  lazy val typeArguments: Vector[Type] = schema.typeParameters.map(Type.substitute(_, assignments))
 
   lazy val hasPolymorphicTypeArguments: Boolean = typeArguments.exists(_.isPolymorphic)
 
@@ -70,7 +70,7 @@ trait DeclaredType extends NamedType {
       return Some(this)
     }
 
-    if (!schema.hasMultipleParameterizedInheritance || supertypeSchema.isConstant) {
+    if (!schema.hasMultipleParameterizedInheritance || supertypeSchema.isConstantSchema) {
       declaredSupertypes.firstDefined(_.findSupertype(supertypeSchema))
     } else {
       def collect(dt: DeclaredType): Vector[DeclaredType] = {
@@ -82,8 +82,8 @@ trait DeclaredType extends NamedType {
         case Vector() => None
         case Vector(candidate) => Some(candidate)
         case candidates =>
-          val combinedArguments = (0 until supertypeSchema.arity).toVector.map { index =>
-            val parameter = supertypeSchema.parameters(index)
+          val combinedArguments = (0 until supertypeSchema.schemaArity).toVector.map { index =>
+            val parameter = supertypeSchema.typeParameters(index)
             val arguments = candidates.map(_.typeArguments(index))
             parameter.variance match {
               case Variance.Covariant => IntersectionType.construct(arguments)
@@ -243,7 +243,7 @@ trait DeclaredType extends NamedType {
   private def checkSpecializationParameters(subtypeSchema: DeclaredSchema, assignments: TypeVariable.Assignments): Option[TypeVariable.Assignments] = {
     // We have to keep track of the actual assignments from left to right so that we can instantiate a parameter's
     // lower and upper bound with the correct type arguments (if a bound depends on an earlier type parameter).
-    val newAssignments = subtypeSchema.parameters.foldLeft(assignments) { (assignments, parameter) =>
+    val newAssignments = subtypeSchema.typeParameters.foldLeft(assignments) { (assignments, parameter) =>
       val lowerBound = Type.substitute(parameter.lowerBound, assignments)
       val upperBound = Type.substitute(parameter.upperBound, assignments)
 

@@ -42,13 +42,13 @@ object DeclaredSchemaConstraints {
     val supertraitsBySchema = schema.indirectDeclaredSupertypes.filter {
       // This filter combines a type filter on TraitType with a check that the supertrait schema even has invariant
       // type parameters. Traits without invariant type parameters can be ignored.
-      case supertrait: TraitType => supertrait.schema.hasInvariantParameters
+      case supertrait: TraitType => supertrait.schema.hasInvariantTypeParameters
       case _ => false
     }.asInstanceOf[Set[TraitType]].groupBy(_.schema)
 
     supertraitsBySchema.foreach {
       case (supertraitSchema, traitTypes) if traitTypes.size > 1 =>
-        val invariantTypeParameters = supertraitSchema.parameters.filter(_.variance == Variance.Invariant)
+        val invariantTypeParameters = supertraitSchema.typeParameters.filter(_.variance == Variance.Invariant)
         invariantTypeParameters.foreach { typeParameter =>
           val typeArguments = traitTypes.map(_.assignments(typeParameter))
           if (typeArguments.size > 1) {

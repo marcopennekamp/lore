@@ -136,7 +136,7 @@ object InferenceVariable2 {
     case ListType(element) => isFullyInstantiated(element)
     case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
     case tpe: ShapeType => tpe.propertyTypes.forall(isFullyInstantiated)
-    case dt: DeclaredType if !dt.schema.isConstant => dt.typeArguments.forall(isFullyInstantiated)
+    case dt: DeclaredType if !dt.schema.isConstantSchema => dt.typeArguments.forall(isFullyInstantiated)
     case _ => true
   }
 
@@ -214,7 +214,7 @@ object InferenceVariable2 {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
-      case dt: DeclaredType if !dt.schema.isConstant =>
+      case dt: DeclaredType if !dt.schema.isConstantSchema =>
         val newAssignments = dt.assignments.map { case (typeParameter, typeArgument) =>
           val typeArgument2 = typeParameter.variance match {
             case Variance.Covariant | Variance.Invariant => rec(typeArgument)

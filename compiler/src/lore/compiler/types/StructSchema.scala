@@ -25,7 +25,7 @@ class StructSchema(
     _properties.assign(properties)
   }
 
-  lazy val openParameters: Vector[TypeVariable] = parameters.filter(_.isOpen)
+  lazy val openParameters: Vector[TypeVariable] = typeParameters.filter(_.isOpen)
 
   /**
     * The map contains the properties from which each open type parameter must be derived.
@@ -50,7 +50,7 @@ class StructSchema(
     * The constructor signature of the struct <i>without</i> instantiated type parameters.
     */
   lazy val constructorSignature: FunctionSignature = {
-    instantiate(identityAssignments).constructorSignature.copy(typeParameters = parameters)
+    instantiate(typeParameterIdentityAssignments).constructorSignature.copy(typeParameters = typeParameters)
   }
 
   override def constantType: StructType = super.constantType.asInstanceOf[StructType]

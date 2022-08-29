@@ -14,7 +14,7 @@ import lore.compiler.utils.CollectionExtensions._
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
 trait Type extends TypeSchema with HasMembers {
-  override def parameters: Vector[TypeVariable] = Vector.empty
+  override def typeParameters: Vector[TypeVariable] = Vector.empty
   override def instantiate(assignments: TypeVariable.Assignments): Type = this
 
   def isPrimitive: Boolean = Type.isPrimitive(this)
@@ -181,7 +181,7 @@ object Type {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
-      case dt: DeclaredType if !dt.schema.isConstant => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
+      case dt: DeclaredType if !dt.schema.isConstantSchema => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
       case t => t
     }
   }
