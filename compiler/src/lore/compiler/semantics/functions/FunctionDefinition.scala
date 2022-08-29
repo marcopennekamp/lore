@@ -16,6 +16,8 @@ import lore.compiler.utils.Once
   * for every defined function.
   *
   * The position is restricted to the function's name for better error highlighting and index building.
+  *
+  * TODO (multi-import): Make this a FunctionLike?
   */
 class FunctionDefinition(
   val signature: FunctionSignature,

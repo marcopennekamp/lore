@@ -1,5 +1,7 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.functions.FunctionLike
+
 import scala.util.hashing.MurmurHash3
 
 /**
@@ -10,6 +12,11 @@ import scala.util.hashing.MurmurHash3
   * The input type must always be a tuple type so that we can distinguish between functions which take a single tuple
   * argument vs. two distinct arguments. That is, `((A, B)) => C` vs. `(A, B) => C`.
   */
-case class FunctionType(input: TupleType, output: Type) extends Type {
+case class FunctionType(input: TupleType, output: Type) extends Type with FunctionLike {
+  override def parameterTypes: Vector[Type] = input.elements
+  override def outputType: Type = output
+
+  override def asFunctionType: FunctionType = this
+
   override val hashCode: Int = MurmurHash3.productHash((input, output), 0xf4527105)
 }

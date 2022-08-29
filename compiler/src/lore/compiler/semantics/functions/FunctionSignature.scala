@@ -5,23 +5,19 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.types._
 
-import scala.util.hashing.MurmurHash3
-
 case class FunctionSignature(
   name: NamePath,
   typeParameters: Vector[TypeVariable],
   parameters: Vector[ParameterDefinition],
   outputType: Type,
   position: Position,
-) extends Positioned {
+) extends FunctionLike with Positioned {
   val namedParameters: Vector[NamedParameterView] = parameters.filter(_.name.isDefined).map(NamedParameterView)
-  val inputType: TupleType = TupleType(parameters.map(_.tpe))
-  val isPolymorphic: Boolean = typeParameters.nonEmpty
-  val isMonomorphic: Boolean = !isPolymorphic
-  val arity: Int = parameters.size
-  val functionType: FunctionType = FunctionType(inputType, outputType)
-  override def toString: String = s"$name(${inputType.elements.mkString(", ")}): $outputType"
-  override val hashCode: Int = MurmurHash3.productHash((name, inputType, outputType))
+
+  override val parameterTypes: Vector[Type] = parameters.map(_.tpe)
+  override val asFunctionType: FunctionType = super.asFunctionType
+
+  override def toString: String = s"$name${super.toString}"
 
   /**
     * Substitutes the given type variable assignments into the parameter types and output type and returns a new
