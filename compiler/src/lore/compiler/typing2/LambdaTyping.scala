@@ -1,6 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression.{LambdaParameter, LambdaValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedLambdaParameter, UntypedLambdaValue}
@@ -23,7 +24,7 @@ object LambdaTyping {
     expression: UntypedLambdaValue,
     expectedType: Type,
     context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // If a lambda function is missing a parameter type declaration, it requires the expected type to be a
     // function type.
     expectedType match {
