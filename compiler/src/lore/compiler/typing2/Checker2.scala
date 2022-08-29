@@ -148,11 +148,8 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expectedTypes: Vector[Type],
     context: InferenceContext,
   )(implicit reporter: Reporter): Option[InferenceResults] = {
-    expressions.zip(expectedTypes).foldSome((Vector.empty[Expression], context)) {
-      case ((typedExpressions, context), (expression, expectedType)) =>
-        check(expression, expectedType, context).map {
-          case (typedExpression, context2) => (typedExpressions :+ typedExpression, context2)
-        }
+    expressions.zip(expectedTypes).foldSomeCollect(context) {
+      case (context, (expression, expectedType)) => check(expression, expectedType, context)
     }
   }
 

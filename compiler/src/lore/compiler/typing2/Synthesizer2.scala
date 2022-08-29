@@ -168,11 +168,8 @@ object Synthesizer2 {
     expressions: Vector[UntypedExpression],
     context: InferenceContext,
   )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResults] = {
-    expressions.foldSome((Vector.empty[Expression], context)) {
-      case ((typedExpressions, context), expression) =>
-        infer(expression, context).map {
-          case (typedExpression, context2) => (typedExpressions :+ typedExpression, context2)
-        }
+    expressions.foldSomeCollect(context) {
+      case (context, expression) => infer(expression, context)
     }
   }
 

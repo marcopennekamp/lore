@@ -75,6 +75,16 @@ object CollectionExtensions {
     }
 
     /**
+      * A specialized [[foldSome]] that expects `f` to produce one `B` value per `A` value, which are then collected in
+      * a result vector, in addition to the accumulator.
+      */
+    def foldSomeCollect[B, C](initial: C)(f: (C, A) => Option[(B, C)]): Option[(Vector[B], C)] = {
+      vector.foldSome((Vector.empty[B], initial)) {
+        case ((result, acc), element) => f(acc, element).map { case (value, acc2) => (result :+ value, acc2) }
+      }
+    }
+
+    /**
       * Checks whether the vector is sorted.
       */
     def isSorted(implicit ev: A => Ordered[A]): Boolean = {
