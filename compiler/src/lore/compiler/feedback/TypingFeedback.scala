@@ -27,14 +27,16 @@ object TypingFeedback {
     upperBound: Type,
     override val position: Position,
   ) extends Feedback.Error(position) {
-    def this(typeArgument: Type, tv: TypeVariable, position: Position) = {
-      this(typeArgument, Some(tv.simpleName), tv.lowerBound, tv.upperBound, position)
-    }
-
     override def message: String = {
       val typeParameterInfo = typeParameterName.map(name => s" of type parameter `$name`").getOrElse("")
       s"The type argument `$typeArgument` must adhere to the lower bound `$lowerBound` and the upper bound" +
         s" `$upperBound`$typeParameterInfo."
+    }
+  }
+
+  object IllegalBounds {
+    def apply(typeArgument: Type, tv: TypeVariable, position: Position): IllegalBounds = {
+      IllegalBounds(typeArgument, Some(tv.simpleName), tv.lowerBound, tv.upperBound, position)
     }
   }
 

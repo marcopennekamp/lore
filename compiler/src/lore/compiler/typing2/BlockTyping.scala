@@ -1,6 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.feedback.Reporter
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression.{Block, TupleValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedBlock
 import lore.compiler.types.{TupleType, Type}
@@ -12,7 +13,7 @@ object BlockTyping {
     block: UntypedBlock,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     if (block.expressions.isEmpty) {
       // An empty block must contain at least one expression: the unit value.
       Some(Block(Vector(TupleValue(Vector.empty, block.position)), block.position), context)
