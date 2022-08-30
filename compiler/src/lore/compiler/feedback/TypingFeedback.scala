@@ -11,9 +11,31 @@ import lore.compiler.types._
 
 object TypingFeedback {
 
-  case class SubtypeExpected(actualType: Type, expectedType: Type, positioned: Positioned) extends Feedback.Error(positioned) {
+  case class SubtypeExpected(
+    actualType: Type,
+    expectedType: Type,
+    override val position: Position,
+  ) extends Feedback.Error(position) {
     override def message: String = s"This expression has the illegal type `$actualType`. We expected the following type" +
       s" (or a subtype thereof): $expectedType."
+  }
+
+  case class IllegalBounds(
+    typeArgument: Type,
+    typeParameterName: Option[String],
+    lowerBound: Type,
+    upperBound: Type,
+    override val position: Position,
+  ) extends Feedback.Error(position) {
+    def this(typeArgument: Type, tv: TypeVariable, position: Position) = {
+      this(typeArgument, Some(tv.simpleName), tv.lowerBound, tv.upperBound, position)
+    }
+
+    override def message: String = {
+      val typeParameterInfo = typeParameterName.map(name => s" of type parameter `$name`").getOrElse("")
+      s"The type argument `$typeArgument` must adhere to the lower bound `$lowerBound` and the upper bound" +
+        s" `$upperBound`$typeParameterInfo."
+    }
   }
 
   case class InvalidVariance(
@@ -21,7 +43,7 @@ object TypingFeedback {
     origin: Variance,
     override val position: Position,
   ) extends Feedback.Error(position) {
-    override val message: String = s"The ${typeVariable.variance.humanReadable} type variable `$typeVariable` is in an" +
+    override def message: String = s"The ${typeVariable.variance.humanReadable} type variable `$typeVariable` is in an" +
       s" illegal ${origin.humanReadable} position."
   }
 
@@ -37,15 +59,6 @@ object TypingFeedback {
 
     case class ConstantUseRequired(tpe: Type, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The type `$tpe` is constant and does not allow any type arguments."
-    }
-
-    case class IllegalBounds(
-      tv: TypeVariable,
-      argument: Type,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
-      override def message: String = s"The type argument `$argument` must adhere to the lower bound `${tv.lowerBound}`" +
-        s" and the upper bound `${tv.upperBound}`."
     }
   }
 
@@ -69,7 +82,7 @@ object TypingFeedback {
         s" parameter types `(${parameterTypes.mkString(", ")})`."
     }
 
-    // TODO (multi-import): Move to Call namespace.
+    // TODO (multi-import): Remove.
     case class IllegalTypeArguments(
       typeArguments: Vector[Type],
       typeParameters: Vector[Type],
@@ -222,17 +235,6 @@ object TypingFeedback {
     ) extends Feedback.Error(positioned) {
       override def message: String = s"A function with $parameterCount parameters cannot be called with $argumentCount" +
         s" arguments."
-    }
-
-    case class IllegalArgumentType(
-      argumentType: Option[Type],
-      parameterType: Type,
-      argument: Positioned,
-    ) extends Feedback.Error(argument) {
-      override def message: String = {
-        val argumentTypeInfo = argumentType.map(t => s" of type `$t`").getOrElse("")
-        s"The argument$argumentTypeInfo doesn't fit into the expected parameter type `$parameterType`."
-      }
     }
   }
 

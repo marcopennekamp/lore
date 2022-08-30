@@ -120,7 +120,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
 
       // Step 2: Check that the typed expression agrees with the expected type.
       if (typedExpression.tpe </= expectedType) {
-        reporter.error(TypingFeedback.SubtypeExpected(typedExpression.tpe, expectedType, expression))
+        reporter.error(TypingFeedback.SubtypeExpected(typedExpression.tpe, expectedType, expression.position))
         None
       } else {
         result

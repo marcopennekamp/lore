@@ -12,9 +12,6 @@ import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
   * inference variable's bounds may contain other inference variables. As [[InferenceAssignments]] become narrower,
   * each inference variable's legal bounds may also narrow.
   *
-  * TODO (multi-import): Should inference variable bounds narrow AUTOMATICALLY as inference variables change? This
-  *                      could be quite ergonomic, but also detrimental to performance.
-  *
   * Expression types should never permanently contain inference variables. Their purpose is limited to a few complex
   * cases such as function/constructor call inference, which requires unification to infer type parameters (represented
   * as inference variables).
@@ -141,16 +138,19 @@ object InferenceVariable2 {
   }
 
   /**
-    * Substitutes in `tpe` all type variables from `typeVariables` with inference variables, returning the result type
-    * and a type variable assignments map.
+    * Substitutes in `types` all type variables from `typeVariables` with inference variables, returning the result
+    * types and a type variable assignments map.
     */
-  def fromTypeVariables(tpe: Type, typeVariables: Vector[TypeVariable]): (Type, Map[TypeVariable, InferenceVariable2]) = {
+  def fromTypeVariables(
+    types: Vector[Type],
+    typeVariables: Vector[TypeVariable],
+  ): (Vector[Type], Map[TypeVariable, InferenceVariable2]) = {
     val tvToIv = typeVariables.foldLeft(Map.empty[TypeVariable, InferenceVariable2]) { case (tvToIv, tv) =>
       val lowerBound = Type.substitute(tv.lowerBound, tvToIv)
       val upperBound = Type.substitute(tv.upperBound, tvToIv)
       tvToIv + (tv -> InferenceVariable2(tv.simpleName, lowerBound, upperBound))
     }
-    val resultType = Type.substitute(tpe, tvToIv)
+    val resultType = types.map(Type.substitute(_, tvToIv))
     (resultType, tvToIv)
   }
 

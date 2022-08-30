@@ -82,7 +82,7 @@ trait TypeSchema {
     instantiate(
       typeArguments,
       () => reporter.error(TypingFeedback.Schema.IllegalArity(this, typeArguments.length, position)),
-      (tv, argument) => reporter.error(TypingFeedback.Schema.IllegalBounds(tv, argument, position)),
+      (tv, argument) => reporter.error(TypingFeedback.IllegalBounds(argument, tv, position)),
     )
   }
 

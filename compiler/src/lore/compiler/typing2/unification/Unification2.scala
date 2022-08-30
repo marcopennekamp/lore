@@ -48,19 +48,10 @@ object Unification2 {
   }
 
   /**
-    * For the given `inferenceVariables`, [[unifyInferenceVariableBounds]] unifies the current candidate type of each
-    * inference variable with the bounds of its respective type variable.
+    * [[unifyInferenceVariableBounds]] unifies the inference variable's current candidate type with the bounds of its
+    * respective type variable.
     */
   def unifyInferenceVariableBounds(
-    inferenceVariables: Vector[InferenceVariable2],
-    assignments: InferenceAssignments,
-  ): Option[InferenceAssignments] = {
-    inferenceVariables.foldSome(assignments) {
-      case (assignments2, iv) => handleInferenceVariableBounds(iv, assignments2)
-    }
-  }
-
-  private def handleInferenceVariableBounds(
     iv: InferenceVariable2,
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {

@@ -3,6 +3,9 @@ package lore.compiler.typing2.unification
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
 
+// TODO (multi-import): Rename InferenceBounds to InferenceAssignment. Rename lower to lowerBound and upper to
+//                      upperBound. The reason for this is that bounds were already added to inference variables, and
+//                      the term "inference bounds" conflicts with that.
 case class InferenceBounds2(
   iv: InferenceVariable2,
   lower: Type,
