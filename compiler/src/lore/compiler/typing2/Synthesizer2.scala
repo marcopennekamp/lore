@@ -121,7 +121,8 @@ object Synthesizer2 {
       case _: UntypedVariableDeclaration => delegate(TupleType.UnitType)
       case _: UntypedAssignment => delegate(TupleType.UnitType)
 
-      case expression: UntypedBindingAccess => BindingAccessTyping.checkOrInfer(expression, None, context)
+      case expression: UntypedBindingAccess =>
+        BindingAccessTyping.checkOrInfer(expression, None, context).flatMap(simpleResult)
 
       case expression@UntypedMemberAccess(instance, name, position) =>
         infer(instance, context).flatMapFirst { typedInstance =>

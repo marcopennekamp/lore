@@ -78,7 +78,8 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
           case _ => fallback
         }
 
-      case expression: UntypedBindingAccess => BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context)
+      case expression: UntypedBindingAccess =>
+        BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context).map((_, context))
 
       case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
         checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>

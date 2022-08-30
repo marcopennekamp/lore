@@ -91,18 +91,17 @@ object Expression {
     instance: FunctionInstance,
     position: Position,
   ) extends Expression {
-    override def tpe: FunctionType = instance.signature.functionType
+    override def tpe: FunctionType = instance.signature.asFunctionType
   }
 
   /**
     * A struct constructor typed as a function. It can be passed around like any other function value.
     */
   case class ConstructorValue(
-    binding: StructConstructorBinding,
     structType: StructType,
     position: Position,
   ) extends Expression {
-    override def tpe: FunctionType = structType.constructorSignature.functionType
+    override def tpe: FunctionType = structType.constructorSignature.asFunctionType
   }
 
   case class ListValue(

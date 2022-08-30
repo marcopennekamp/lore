@@ -1,13 +1,14 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.feedback._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.MultiFunctionCall
+import lore.compiler.semantics.expressions.Expression.{MultiFunctionCall, MultiFunctionValue}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedMultiFunctionCall
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
 object MultiFunctionTyping {
@@ -193,6 +194,50 @@ object MultiFunctionTyping {
   )(implicit reporter: Reporter): Option[Expression] = {
     mf.dispatch(TupleType(arguments.map(_.tpe)), position)
       .map(instance => MultiFunctionCall(instance, arguments, position))
+  }
+
+  /**
+    * Checks or infers a multi-function value of `mf` given `expectedType`.
+    */
+  def checkOrInferValue(
+    mf: MultiFunctionDefinition,
+    expression: UntypedExpression,
+    expectedType: Option[Type],
+  )(implicit reporter: Reporter): Option[MultiFunctionValue] = {
+    def build(functionType: FunctionType) = {
+      Some(MultiFunctionValue(mf, functionType, expression.position))
+    }
+
+    expectedType match {
+      case Some(expectedType: FunctionType) =>
+        mf.dispatch(expectedType.input, expression.position).flatMap { instance =>
+          val functionType = instance.signature.asFunctionType
+          if (functionType.output <= expectedType.output) {
+            build(functionType)
+          } else {
+            reporter.error(TypingFeedback.MultiFunctionValue.IllegalOutput(mf, functionType, expectedType, expression))
+            None
+          }
+        }
+
+      case Some(expectedType) if expectedType != BasicType.Any =>
+        reporter.error(TypingFeedback.MultiFunctionValue.FunctionTypeExpected(mf, expectedType, expression))
+        None
+
+      case _ =>
+        // We can infer a multi-function value without a function type context if the multi-function has a single,
+        // monomorphic function. This is also a fallback case for an expected type `Any`, which can be a supertype of
+        // any function type. So in that case, even if we don't have a function context, the multi-function value might
+        // still be typeable.
+        mf.functions match {
+          case Vector(function) if function.isMonomorphic =>
+            build(function.monomorphicInstance.signature.asFunctionType)
+
+          case _ =>
+            reporter.error(TypingFeedback.MultiFunctionValue.TypeContextExpected(mf, expression))
+            None
+        }
+    }
   }
 
 }

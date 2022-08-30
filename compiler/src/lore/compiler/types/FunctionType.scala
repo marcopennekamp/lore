@@ -14,6 +14,7 @@ import scala.util.hashing.MurmurHash3
   */
 case class FunctionType(input: TupleType, output: Type) extends Type with FunctionLike {
   override def parameterTypes: Vector[Type] = input.elements
+  override val inputType: TupleType = input
   override def outputType: Type = output
 
   override def asFunctionType: FunctionType = this

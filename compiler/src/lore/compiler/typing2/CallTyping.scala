@@ -1,12 +1,12 @@
 package lore.compiler.typing2
 
-import lore.compiler.feedback.{Reporter, TypingFeedback}
+import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
-import lore.compiler.semantics.functions.FunctionLike
-import lore.compiler.types.{Type, TypeVariable}
+import lore.compiler.semantics.functions.{FunctionLike, FunctionSignature}
+import lore.compiler.types.{Fit, TupleType, Type, TypeVariable}
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
 import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
@@ -218,21 +218,19 @@ object CallTyping {
   }
 
   /**
-    * Infers the type arguments of a `signature` given the actual argument types. If the argument types don't fit the
-    * parameter types, `inferTypeArguments` reports an appropriate error.
-    *
-    * TODO (multi-import): Where is this actually used? Also, CallTyping might not be the right place for this function.
+    * Infers the type arguments of `function` given the actual argument types. If the argument types don't fit the
+    * function's parameter types, `inferTypeArguments` reports an appropriate error.
     */
   def inferTypeArguments(
     function: FunctionLike,
     argumentTypes: Vector[Type],
-    context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[Vector[Type]] = {
-    // TODO (multi-import): Just do `withPreparedParameterTypes { ... => unifyArgumentTypes }` (and also check for
-    //                      arity, though with a different error message than in checkArity). That should work, as it's
-    //                      essentially the same implementation as the old one (prepareParameterTypes and then
-    //                      checkArgumentTypes).
-    ???
+  )(illegalArity: => Feedback.Error)(implicit reporter: Reporter): Option[TypeVariable.Assignments] = {
+    if (argumentTypes.length != function.arity) {
+      reporter.error(illegalArity)
+      return None
+    }
+
+    Fit.fitsAssignments(TupleType(argumentTypes), function.inputType)
   }
 
 }

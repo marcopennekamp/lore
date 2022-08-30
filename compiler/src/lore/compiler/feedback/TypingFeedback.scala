@@ -4,7 +4,7 @@ import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue, UntypedValueCall}
-import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
@@ -156,29 +156,34 @@ object TypingFeedback {
   }
 
   object MultiFunctionValue {
-    case class FunctionTypeExpected(
-      expression: Expression.MultiFunctionValue,
-      expectedType: Type,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"A multi-function can only be coerced to a function type. The expected type is" +
-        s" `$expectedType`, which is not a function type. Most likely, the multi-function `${expression.mf.name}`" +
-        s" cannot be used as a value in this context."
-    }
-
     case class IllegalOutput(
-      expression: Expression.MultiFunctionValue,
-      expectedType: FunctionType,
+      mf: MultiFunctionDefinition,
       actualType: FunctionType,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"While coercing the multi-function `${expression.mf.name}` to a function, the" +
-        s" following function type was expected: $expectedType. The actual function type inferred via dispatch is" +
-        s" `$actualType`. The multi-function cannot be coerced to the expected function type because the output types" +
-        s" are incompatible."
+      expectedType: FunctionType,
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"While coercing the multi-function `${mf.name}` to a function, the following" +
+        s" function type was expected: $expectedType. The actual function type inferred via dispatch is `$actualType`." +
+        s" The multi-function cannot be coerced to the expected function type because the output types are" +
+        s" incompatible."
     }
 
-    case class TypeContextExpected(expression: Expression.MultiFunctionValue) extends Feedback.Error(expression) {
-      override def message: String = s"The multi-function cannot be coerced to a function value without a proper type" +
-        s" context. Please provide a function type in an outer expression (e.g. with a type ascription)."
+    case class FunctionTypeExpected(
+      mf: MultiFunctionDefinition,
+      expectedType: Type,
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"The multi-function `${mf.name}` can only be coerced to a function type. The" +
+        s" expected type is `$expectedType`, which is not a function type. Most likely, the multi-function cannot be" +
+        s" used as a value in this context."
+    }
+
+    case class TypeContextExpected(
+      mf: MultiFunctionDefinition,
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"The multi-function `${mf.name}` cannot be coerced to a function value without a" +
+        s" proper type context. Please provide a function type in an outer expression (e.g. with a type ascription)."
     }
   }
 
@@ -195,6 +200,15 @@ object TypingFeedback {
     case class TypeContextExpected(expression: UntypedBindingAccess) extends Feedback.Error(expression) {
       override def message: String = s"The constructor cannot be coerced to a function without a proper type context." +
         s" Please provide a function type in an outer expression (e.g. with a type ascription)."
+    }
+
+    case class IllegalArity(
+      signature: FunctionSignature,
+      expectedType: FunctionType,
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"A constructor with ${signature.arity} parameter cannot be coerced to a function" +
+        s" type `$expectedType`. The function type's arity must match the constructor's arity."
     }
   }
 
