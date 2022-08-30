@@ -67,11 +67,13 @@ object CollectionExtensions {
     def withDefault[B >: A](default: => B): Vector[B] = if (vector.nonEmpty) vector else Vector(default)
 
     /**
-      * Lifts the vector's fold operation into an Option context. The fold uses [[Option.flatMap]], so it continues
-      * until None is encountered.
+      * Lifts the vector's fold operation into an Option context. The fold continues until None is encountered.
       */
     def foldSome[B](initial: B)(f: (B, A) => Option[B]): Option[B] = {
-      vector.foldLeft(Some(initial): Option[B]) { case (option, element) => option.flatMap(f(_, element)) }
+      vector.foldLeft(Some(initial): Option[B]) {
+        case (Some(value), element) => f(value, element)
+        case (None, _) => return None
+      }
     }
 
     /**
