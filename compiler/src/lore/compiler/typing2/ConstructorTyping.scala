@@ -28,7 +28,7 @@ object ConstructorTyping {
 //      return None
 //    }
 
-    Typing2.logger.trace(s"Check/infer constructor call `${expression.position.truncatedCode}`:")
+    Typing2.traceCheckOrInfer("constructor call", expression, expectedType)
     Typing2.indentationLogger.indented {
       val binding = expression.target
       CallTyping.checkOrInfer(binding.signature, expression, expectedType, context) {

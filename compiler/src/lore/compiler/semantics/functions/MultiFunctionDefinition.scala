@@ -1,7 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition}
 import lore.compiler.semantics.NamePath
 import lore.compiler.syntax.DeclNode.FunctionNode
@@ -38,15 +38,26 @@ class MultiFunctionDefinition(
   override def isInitialized: Boolean = _functions.isAssigned && _hierarchy.isAssigned
 
   /**
-    * Resolves a multiple dispatch application of the multi-function for the given type. The empty fit and ambiguous
-    * call errors must be customized.
+    * Resolves a multiple dispatch application of the multi-function for `inputType`, reporting standard errors.
+    */
+  def dispatch(inputType: TupleType, position: Position)(implicit reporter: Reporter): Option[FunctionInstance] = {
+    dispatch(
+      inputType,
+      MultiFunctionFeedback.Dispatch.EmptyFit(this, inputType, position),
+      min => MultiFunctionFeedback.Dispatch.AmbiguousCall(this, inputType, min, position),
+    )
+  }
+
+  /**
+    * Resolves a multiple dispatch application of the multi-function for `inputType`. The empty fit and ambiguous call
+    * errors must be customized.
     */
   def dispatch(
-    tpe: TupleType,
+    inputType: TupleType,
     emptyFit: => Feedback.Error,
     ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
   )(implicit reporter: Reporter): Option[FunctionInstance] = {
-    Dispatch.resolve(hierarchy, tpe, emptyFit, ambiguousCall)
+    Dispatch.resolve(hierarchy, inputType, emptyFit, ambiguousCall)
   }
 
   /**

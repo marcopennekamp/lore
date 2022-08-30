@@ -8,16 +8,16 @@ import scala.collection.mutable
 object Dispatch {
 
   /**
-    * Resolves a multiple dispatch application for the given hierarchy and type. The empty fit and ambiguous call
+    * Resolves a multiple dispatch application for the given hierarchy and input type. The empty fit and ambiguous call
     * errors must be customized.
     */
   def resolve(
     hierarchy: DispatchHierarchy,
-    tpe: TupleType,
+    inputType: TupleType,
     emptyFit: => Feedback.Error,
     ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
   )(implicit reporter: Reporter): Option[FunctionInstance] = {
-    Dispatch.min(hierarchy, tpe) match {
+    Dispatch.min(hierarchy, inputType) match {
       case Vector(instance) => Some(instance)
       case min =>
         if (min.isEmpty) reporter.error(emptyFit)

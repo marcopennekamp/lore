@@ -1,7 +1,6 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.TypingFeedback.AnonymousFunction
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -94,8 +93,7 @@ object Synthesizer2 {
       }
 
       case expression: UntypedMultiFunctionCall =>
-//        MultiFunctionCallSynthesizer.infer(mf, expression, assignments)
-        ???
+        MultiFunctionTyping.checkOrInferCall(expression, None, context)
 
       case expression: UntypedValueCall =>
         // TODO (multi-import): Once we support uniform call syntax, we additionally need a case in the Checker that

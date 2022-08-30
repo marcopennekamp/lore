@@ -241,11 +241,11 @@ object TypingFeedback {
   object MultiFunctionCall {
     case class AmbiguousArgumentTypes(
       mf: MultiFunctionDefinition,
-      candidates: Vector[Type],
-      context: Expression,
-    ) extends Feedback.Error(context) {
-      override def message: String = s"In this call of multi-function `$mf.name`, the argument types cannot be inferred." +
-        s" There are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
+      inputTypes: Vector[Type],
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
+      override def message: String = s"In this call of multi-function `${mf.name}`, the argument types cannot be" +
+        s" inferred. There are multiple equally specific candidates. These are: ${inputTypes.mkString(", ")}."
     }
   }
 

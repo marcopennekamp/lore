@@ -13,10 +13,10 @@ import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorEx
 
 object CallTyping {
 
-  // TODO (multi-import): Tracing in `checkOrInfer`?
-
   /**
     * TODO (multi-import): Document.
+    * TODO (multi-import): Note that `checkOrInfer` does tracing, but the caller will have to ensure there's a trace
+    *                      "heading" and an indent, like ConstructorTyping does.
     */
   def checkOrInfer(
     function: FunctionLike,
@@ -34,23 +34,26 @@ object CallTyping {
     * Checks or infers a call expression, like [[checkOrInfer]], but with the distinction that arguments must have been
     * pre-inferred with [[inferArguments]]. This variant is intended to be used with multi-function call inference,
     * which often has to check many function definitions, but arguments only need to be inferred once.
+    *
+    * `toResult` builds an arbitrary result `R` instead of an [[Expression]] because multi-function call checking
+    * builds an expression at a later stage.
     */
-  def checkOrInfer(
+  def checkOrInfer[R](
     function: FunctionLike,
     expression: UntypedCall,
     inferredArguments: Vector[Option[Expression]],
     expectedType: Option[Type],
     context: InferenceContext,
   )(
-    buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+    toResult: (Vector[Expression], TypeVariable.Assignments) => R,
+  )(implicit checker: Checker2, reporter: Reporter): Option[(R, InferenceContext)] = {
     if (expression.arity != function.arity) {
       reporter.error(TypingFeedback.Call.IllegalArity(expression.arity, function.arity, expression))
       return None
     }
 
     if (function.isMonomorphic) {
-      return inferMonomorphic(function, expression, context)(buildCallExpression)
+      return inferMonomorphic(function, expression, context)(toResult)
     }
 
     // (1) Replace type variables with inference variables in the function's input and output types.
@@ -72,7 +75,7 @@ object CallTyping {
       .getOrElse(return None)
 
     // (3) If we have an expected output type, we can unify this type with the function's output type to potentially
-    //     assign additional type arguments. As mentioned above, inferred argument types have to be unified first.
+    //     assign additional type arguments.
     val assignments2 = expectedType match {
       case Some(expectedType) =>
         Unification2.unifySubtypes(outputType, expectedType, assignments).getOrElse(assignments)
@@ -98,7 +101,7 @@ object CallTyping {
     val typeVariableAssignments = tvToIv.map {
       case (tv, iv) => tv -> InferenceVariable2.instantiateCandidate(iv, assignments3)
     }
-    Some(buildCallExpression(typedArguments, typeVariableAssignments), context2)
+    Some(toResult(typedArguments, typeVariableAssignments), context2)
   }
 
   /**
@@ -123,13 +126,13 @@ object CallTyping {
     * that doesn't contain any type parameters is much easier and thereby faster. [[inferMonomorphic]] doesn't check
     * for arity as [[checkOrInfer]] must already have handled this.
     */
-  private def inferMonomorphic(
+  private def inferMonomorphic[R](
     function: FunctionLike,
     expression: UntypedExpression.UntypedCall,
     context: InferenceContext,
   )(
-    buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+    toResult: (Vector[Expression], TypeVariable.Assignments) => R,
+  )(implicit checker: Checker2, reporter: Reporter): Option[(R, InferenceContext)] = {
     if (expression.arity != function.arity) {
       reporter.error(TypingFeedback.Function.IllegalArity(expression.arity, function.arity, expression))
       return None
@@ -139,7 +142,7 @@ object CallTyping {
       .foldSomeCollect(context) {
         case (context, (argument, parameterType)) => checker.check(argument, parameterType, context)
       }
-      .mapFirst(typedArguments => buildCallExpression(typedArguments, Map.empty))
+      .mapFirst(typedArguments => toResult(typedArguments, Map.empty))
   }
 
   /**

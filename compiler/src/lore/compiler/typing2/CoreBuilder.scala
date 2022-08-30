@@ -18,16 +18,9 @@ object CoreBuilder {
     position: Position,
   )(implicit reporter: Reporter): Option[Expression] = {
     cmf.mf.flatMap { mf =>
-      val inputType = TupleType(arguments.map(_.tpe))
-      mf.dispatch(
-        inputType,
-        MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, position),
-        min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, inputType, min, position),
-      ).map { instance =>
-        // The specific instance's output type will be a subtype of the CMF's expected output type because the instance
-        // is necessarily a specialization of the CMF. Output types are kept consistent by multi-function constraints.
-        MultiFunctionCall(instance, arguments, position)
-      }
+      // The specific instance's output type will be a subtype of the CMF's expected output type because the instance
+      // is necessarily a specialization of the CMF. Output types are kept consistent by multi-function constraints.
+      MultiFunctionTyping.buildMultiFunctionCall(mf, arguments, position)
     }
   }
 
