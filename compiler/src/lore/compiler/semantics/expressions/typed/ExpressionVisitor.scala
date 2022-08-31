@@ -7,7 +7,7 @@ trait ExpressionVisitor[A, B] {
   type Result = B
 
   def visit(expression: Hole): B = throw CompilationException("Expression.Hole is not supported by this visitor.")
-
+  def visit(expression: TypeAscription)(value: A): B
   // Values.
   def visit(expression: IntValue): B
   def visit(expression: RealValue): B
@@ -61,6 +61,7 @@ object ExpressionVisitor {
     visitor.before.applyOrElse(expression, (_: Expression) => ())
     expression match {
       case node@Hole(_, _) => visitor.visit(node)
+      case node@TypeAscription(value, _, _) => visitor.visit(node)(rec(value))
 
       case node@IntValue(_, _) => visitor.visit(node)
       case node@RealValue(_, _) => visitor.visit(node)

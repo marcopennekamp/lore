@@ -9,8 +9,8 @@ import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
-import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -63,6 +63,7 @@ class ExpressionAssembler(
     def delegateToValueAssembler = ValueAssembler.generateConstForced(expression, registerProvider.fresh())
     expression match {
       case _: Hole => throw CompilationException("Expression.Hole cannot be assembled.")
+      case expression: TypeAscription => generate(expression.value)
       case _: IntValue => delegateToValueAssembler
       case _: RealValue => delegateToValueAssembler
       case _: BooleanValue => delegateToValueAssembler

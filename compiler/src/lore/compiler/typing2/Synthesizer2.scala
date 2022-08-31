@@ -35,7 +35,10 @@ object Synthesizer2 {
     val result: Option[InferenceResult] = expression match {
       case UntypedHole(tpe, position) => simpleResult(Hole(tpe, position))
 
-      case UntypedTypeAscription(expression, expectedType, _) => checker.check(expression, expectedType, context)
+      case UntypedTypeAscription(value, expectedType, position) =>
+        checker.check(value, expectedType, context).mapFirst {
+          typedValue => TypeAscription(typedValue, expectedType, position)
+        }
 
       case UntypedIntValue(value, position) => simpleResult(IntValue(value, position))
       case UntypedRealValue(value, position) => simpleResult(RealValue(value, position))

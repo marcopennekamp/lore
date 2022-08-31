@@ -38,6 +38,12 @@ object Expression {
     */
   case class Hole(tpe: Type, position: Position) extends Expression
 
+  /**
+    * A type ascription affects the outward type of a `value`. Hence, the typing phase cannot get rid of the type
+    * ascription, because it's needed as a wrapper to communicate the intended type.
+    */
+  case class TypeAscription(value: Expression, tpe: Type, position: Position) extends Expression
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Values.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

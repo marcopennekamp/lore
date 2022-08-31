@@ -13,6 +13,7 @@ trait ExpressionIdentityVisitor[R] extends ExpressionVisitor[Expression, R] {
   protected def wrap(expression: Expression): R
 
   override def visit(expression: Hole): R = wrap(expression)
+  override def visit(expression: TypeAscription)(value: Expression): R = wrap(expression.copy(value = value))
 
   override def visit(expression: IntValue): R = wrap(expression)
   override def visit(expression: RealValue): R = wrap(expression)

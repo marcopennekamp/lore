@@ -11,6 +11,7 @@ trait ExpressionCombiningVisitor[A, B] extends ExpressionVisitor[A, B] {
     combine(values.flatMap { case (a, b) => Vector(a, b) })
   }
 
+  override def visit(expression: TypeAscription)(value: A): B = combine(value)
   override def visit(expression: IntValue): B = combine()
   override def visit(expression: RealValue): B = combine()
   override def visit(expression: BooleanValue): B = combine()

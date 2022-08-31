@@ -34,7 +34,7 @@ object UntypedExpression {
   case class UntypedHole(fallbackType: Type, position: Position) extends UntypedExpression
 
   case class UntypedTypeAscription(
-    expression: UntypedExpression,
+    value: UntypedExpression,
     expectedType: Type,
     position: Position,
   ) extends UntypedExpression

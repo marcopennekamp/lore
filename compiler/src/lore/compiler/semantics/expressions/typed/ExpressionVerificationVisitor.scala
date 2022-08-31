@@ -9,6 +9,7 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Unit] {
   def verify(expression: Expression): Result = ()
 
   override def visit(expression: Hole): Result = verify(expression)
+  override def visit(expression: TypeAscription)(value: Unit): Result = verify(expression)
   override def visit(expression: IntValue): Result = verify(expression)
   override def visit(expression: RealValue): Result = verify(expression)
   override def visit(expression: BooleanValue): Result = verify(expression)
