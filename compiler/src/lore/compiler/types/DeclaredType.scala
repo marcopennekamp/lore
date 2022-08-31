@@ -4,10 +4,9 @@ import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.DeclaredType.getIndirectDeclaredSupertypes
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.typing.InferenceVariable.Assignments
-import lore.compiler.typing.unification.SubtypingUnification
-import lore.compiler.typing.unification.SubtypingUnification.FitsCombiner
-import lore.compiler.typing.{InferenceBounds, InferenceVariable}
+import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
+import lore.compiler.typing2.unification.Unification2.FitsCombiner
+import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension, VectorMapExtension}
 
 trait DeclaredType extends NamedType {
@@ -135,7 +134,7 @@ trait DeclaredType extends NamedType {
 
   /**
     * For each extends clause in the subtype schema that extends this type's schema, we build a type variable
-    * allocation that assigns types from this type's type arguments to the parameters of the subtype schema. If the
+    * allocation that assigns types from this type's type arguments to the subtype schema's type parameters. If the
     * type parameter occurs multiple times in the extends clause, the candidate types are merged based on variance.
     * Each set of resulting assignments is valid if the instantiated extends clause is a subtype of this type.
     *
@@ -147,11 +146,13 @@ trait DeclaredType extends NamedType {
     * agree, while an empty assignments map signifies that there can be a subtype, but none of its type parameters can
     * be derived from this type's arguments.
     *
-    * Example: If we have a declared type `Cage[Fish]` and a subtype with extends clause `Cage[Unicorn]`, the extends
-    * clause is not applicable, because `Unicorn </= Fish`. This restriction becomes very relevant when multiple type
-    * arguments are involved. For example, consider a type `Function[String, Int]` and a subtype schema with extends
+    * Example: If we have a declared type `Cage[Fish]` and a subtype `UnicornCage` with extends clause `Cage[Unicorn]`,
+    * the extends clause is not applicable, because `Unicorn </= Fish`. Hence, `UnicornCage` would not be a direct
+    * subtype of `Cage[Fish]`. This restriction becomes very relevant when multiple type arguments are involved. For
+    * example, consider a type `Function[String, Int]` and a subtype schema `StringRealFunction[+T1, +T2]` with extends
     * clauses `Function[String, T1]` and `Function[Real, T2]`. We can deduce `T1 = Int`, but <i>not</i> `T2 = Int`,
-    * because the second extends clause has an incompatible type argument.
+    * because the second extends clause has an incompatible type argument. Ultimately, `StringRealFunction[Int, Any]`
+    * would be a direct subtype of `Function[String, Int]`.
     */
   private def specializationAssignments(subtypeSchema: DeclaredSchema): Option[TypeVariable.Assignments] = {
     val extendsClauses = subtypeSchema.declaredSupertypes.filter(_.schema == this.schema)
@@ -178,25 +179,30 @@ trait DeclaredType extends NamedType {
       // type. These candidates will then be combined in the next step. We cannot use the standard type variable
       // allocation for this, as it will not tolerate different candidates for the same type variable. Instead, we
       // replace each occurrence of a type variable with its own inference variable, and rebuild the candidates after.
-      // Note that we don't use `unifySubtypes`, because type variable handling must be fit-like. For example, if we
-      // have a type `Cage[Y]` with `Y <: Fish`, we want `ConfusedCage1` to be a direct subtype of `Cage[Y]`, because
-      // with `Y = Fish`, `ConfusedCage1` IS a subtype of `Cage[Y]`. We have a direct subtype if one possible
-      // instantiation of a type variable leads to the subtype, instead of all possible instantiations. The latter is
-      // the approach taken by standard subtyping, so `Fish <: Y` would only be true if `Fish` was the lower bound of
-      // `Y`. Hence we have to use `matchTypes`.
-      var typeVariableSubstitutes: Map[TypeVariable, Vector[InferenceVariable]] = Map.empty
-      val extendsClauseTuple = Type.substitute(TupleType(extendsClause.typeArguments), tv => {
-        val iv = new InferenceVariable
-        typeVariableSubstitutes = typeVariableSubstitutes.appended(tv, iv)
-        iv
-      })
+      // Note that we don't use the standard `unifySubtypes`, because type variable handling must be fit-like. For
+      // example, if we have a type `Cage[Y]` with `Y <: Fish`, we want `ConfusedCage1` to be a direct subtype of
+      // `Cage[Y]`, because with `Y = Fish`, `ConfusedCage1` IS a subtype of `Cage[Y]`. We have a direct subtype if one
+      // possible instantiation of a type variable leads to the subtype, instead of all possible instantiations. The
+      // latter is the approach taken by standard subtyping, so `Fish <: Y` would only be true if `Fish` was the lower
+      // bound of `Y`. Hence we have to use `unifySubtypes` with a `FitsCombiner`.
+      var typeVariableSubstitutes: Map[TypeVariable, Vector[InferenceVariable2]] = Map.empty
+      val extendsClauseTuple = Type.substitute(
+        TupleType(extendsClause.typeArguments),
+        tv => {
+          val iv = new InferenceVariable2(Some(tv.simpleName), BasicType.Nothing, BasicType.Any)
+          typeVariableSubstitutes = typeVariableSubstitutes.appended(tv, iv)
+          iv
+        },
+      )
 
-      val assignments = SubtypingUnification.unify(ClauseUnificationCombiner)(extendsClauseTuple, TupleType(this.typeArguments), Map.empty).getOrElse {
-        return None
-      }
+      val assignments = Unification2.unifySubtypes(ClauseUnificationCombiner)(
+        extendsClauseTuple,
+        TupleType(this.typeArguments),
+        Map.empty,
+      ).getOrElse(return None)
 
       val candidates = typeVariableSubstitutes.map {
-        case (tv, ivs) => tv -> ivs.map(InferenceVariable.instantiateCandidate(_, assignments))
+        case (tv, ivs) => tv -> ivs.map(InferenceVariable2.instantiateCandidate(_, assignments))
       }
       processCandidates(candidates).flatMap { assignments =>
         val instantiatedClause = Type.substitute(extendsClause, assignments)
@@ -219,11 +225,26 @@ trait DeclaredType extends NamedType {
     processCandidates(possibleAssignments.merged)
   }
 
-  private object ClauseUnificationCombiner extends SubtypingUnification.Combiner {
-    override def unify(iv1: InferenceVariable, iv2: InferenceVariable, assignments: Assignments): Option[Assignments] = FitsCombiner.unify(iv1, iv2, assignments)
-    override def ensure(iv: InferenceVariable, tpe: Type, boundType: InferenceBounds.BoundType, assignments: Assignments): Option[Assignments] = FitsCombiner.ensure(iv, tpe, boundType, assignments)
-    override def ifFullyInferred(t1: Type, t2: Type, assignments: Assignments): Option[Assignments] = {
-      // Get rid of the premature subtyping check, which removes the standard subtyping check from the match, and
+  private object ClauseUnificationCombiner extends Unification2.SubtypingCombiner {
+    override def unify(
+      iv1: InferenceVariable2,
+      iv2: InferenceVariable2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = FitsCombiner.unify(iv1, iv2, assignments)
+
+    override def ensure(
+      iv: InferenceVariable2,
+      tpe: Type,
+      boundType: BoundType2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = FitsCombiner.ensure(iv, tpe, boundType, assignments)
+
+    override def ifFullyInferred(
+      t1: Type,
+      t2: Type,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
+      // Get rid of the premature subtyping check, which removes the standard subtyping check from the unification, and
       // thereby solves the type variable problem outlined above with the `Cage[Y]` example.
       Some(assignments)
     }

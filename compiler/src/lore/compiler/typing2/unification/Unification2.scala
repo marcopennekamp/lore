@@ -13,7 +13,7 @@ object Unification2 {
     * If the types cannot be unified, `None` is returned. Unification does not report errors on its own.
     */
   def unifySubtypes(t1: Type, t2: Type, assignments: InferenceAssignments): Option[InferenceAssignments] = {
-    unify(SubtypesCombiner)(t1, t2, assignments)
+    unifySubtypes(SubtypesCombiner)(t1, t2, assignments)
   }
 
   def unifySubtypes(
@@ -36,7 +36,7 @@ object Unification2 {
     * If the types cannot be unified, `None` is returned. Unification does not report errors on its own.
     */
   def unifyFits(t1: Type, t2: Type, assignments: InferenceAssignments): Option[InferenceAssignments] = {
-    unify(FitsCombiner)(t1, t2, assignments)
+    unifySubtypes(FitsCombiner)(t1, t2, assignments)
   }
 
   def unifyFits(
@@ -64,37 +64,104 @@ object Unification2 {
     } else Some(assignments2)
   }
 
-  private trait Combiner {
-    def unify(iv1: InferenceVariable2, iv2: InferenceVariable2, assignments: InferenceAssignments): Option[InferenceAssignments]
-    def ensure(iv: InferenceVariable2, tpe: Type, boundType: BoundType2, assignments: InferenceAssignments): Option[InferenceAssignments]
-    def ifFullyInferred(t1: Type, t2: Type, assignments: InferenceAssignments): Option[InferenceAssignments] = if (t1 <= t2) Some(assignments) else None
+  def unifyInferenceVariableBounds(
+    ivs: Vector[InferenceVariable2],
+    assignments: InferenceAssignments,
+  ): Option[InferenceAssignments] = {
+    ivs.foldSome(assignments) {
+      case (assignments, iv) => unifyInferenceVariableBounds(iv, assignments)
+    }
   }
 
-  private object SubtypesCombiner extends Combiner {
-    override def unify(iv1: InferenceVariable2, iv2: InferenceVariable2, assignments: InferenceAssignments): Option[InferenceAssignments] = {
-      InferenceVariable2.ensure(iv2, InferenceVariable2.instantiateByBound(iv1, BoundType2.Lower, assignments), BoundType2.Lower, assignments).flatMap {
-        assignments2 => InferenceVariable2.ensure(iv1, InferenceVariable2.instantiateByBound(iv2, BoundType2.Upper, assignments2), BoundType2.Upper, assignments2)
+  trait SubtypingCombiner {
+    def unify(
+      iv1: InferenceVariable2,
+      iv2: InferenceVariable2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments]
+
+    def ensure(
+      iv: InferenceVariable2,
+      tpe: Type,
+      boundType: BoundType2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments]
+
+    def ifFullyInferred(
+      t1: Type,
+      t2: Type,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
+      if (t1 <= t2) Some(assignments) else None
+    }
+  }
+
+  object SubtypesCombiner extends SubtypingCombiner {
+    override def unify(
+      iv1: InferenceVariable2,
+      iv2: InferenceVariable2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
+      InferenceVariable2.ensure(
+        iv2,
+        InferenceVariable2.instantiateByBound(iv1, BoundType2.Lower, assignments),
+        BoundType2.Lower,
+        assignments,
+      ).flatMap { assignments2 =>
+        InferenceVariable2.ensure(
+          iv1,
+          InferenceVariable2.instantiateByBound(iv2, BoundType2.Upper, assignments2),
+          BoundType2.Upper,
+          assignments2,
+        )
       }
     }
 
-    override def ensure(iv: InferenceVariable2, tpe: Type, boundType: BoundType2, assignments: InferenceAssignments): Option[InferenceAssignments] = {
-      InferenceVariable2.ensure(iv, InferenceVariable2.instantiateByBound(tpe, boundType, assignments), boundType, assignments)
+    override def ensure(
+      iv: InferenceVariable2,
+      tpe: Type,
+      boundType: BoundType2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
+      InferenceVariable2.ensure(
+        iv,
+        InferenceVariable2.instantiateByBound(tpe, boundType, assignments),
+        boundType,
+        assignments,
+      )
     }
   }
 
-  private object FitsCombiner extends Combiner {
-    override def unify(iv1: InferenceVariable2, iv2: InferenceVariable2, assignments: InferenceAssignments): Option[InferenceAssignments] = {
-      //Unification.unifyEquals(iv1, iv2, assignments)
-      ??? // TODO (multi-import): Implement.
+  object FitsCombiner extends SubtypingCombiner {
+    override def unify(
+      iv1: InferenceVariable2,
+      iv2: InferenceVariable2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
+      unifyInferenceVariablesEqual(
+        iv1,
+        iv2,
+        Vector(BoundType2.Lower, BoundType2.Upper),
+        assignments,
+      )
     }
 
-    override def ensure(iv: InferenceVariable2, tpe: Type, boundType: BoundType2, assignments: InferenceAssignments): Option[InferenceAssignments] = {
+    override def ensure(
+      iv: InferenceVariable2,
+      tpe: Type,
+      boundType: BoundType2,
+      assignments: InferenceAssignments,
+    ): Option[InferenceAssignments] = {
       val candidateType = InferenceVariable2.instantiateCandidate(tpe, assignments)
       InferenceVariable2.ensure(iv, candidateType, candidateType, assignments)
     }
   }
 
-  private def unify(combiner: Combiner)(t1: Type, t2: Type, assignments: InferenceAssignments): Option[InferenceAssignments] = {
+  def unifySubtypes(combiner: SubtypingCombiner)(
+    t1: Type,
+    t2: Type,
+    assignments: InferenceAssignments,
+  ): Option[InferenceAssignments] = {
     if (InferenceVariable2.isFullyInstantiated(t1) && InferenceVariable2.isFullyInstantiated(t2)) {
       return combiner.ifFullyInferred(t1, t2, assignments)
     }
@@ -105,7 +172,7 @@ object Unification2 {
       None
     }
 
-    val rec = unify(combiner) _
+    val rec = unifySubtypes(combiner) _
     (t1, t2) match {
       case (iv1: InferenceVariable2, iv2: InferenceVariable2) => combiner.unify(iv1, iv2, assignments)
       case (iv1: InferenceVariable2, t2) => combiner.ensure(iv1, t2, BoundType2.Upper, assignments)
@@ -117,7 +184,8 @@ object Unification2 {
         }
       } else None
 
-      case (f1: FunctionType, f2: FunctionType) => rec(f2.input, f1.input, assignments).flatMap(rec(f1.output, f2.output, _))
+      case (f1: FunctionType, f2: FunctionType) =>
+        rec(f2.input, f1.input, assignments).flatMap(rec(f1.output, f2.output, _))
 
       case (l1: ListType, l2: ListType) => rec(l1.element, l2.element, assignments)
 
@@ -150,6 +218,33 @@ object Unification2 {
       case (_, BasicType.Any) => Some(assignments)
 
       case _ => None
+    }
+  }
+
+  /**
+    * Unify the bounds of `iv1` and `iv2` such that their instantiated versions are equal in the given `boundTypes`.
+    */
+  private def unifyInferenceVariablesEqual(
+    iv1: InferenceVariable2,
+    iv2: InferenceVariable2,
+    boundTypes: Vector[BoundType2],
+    assignments: InferenceAssignments,
+  ): Option[InferenceAssignments] = {
+    val bounds1 = InferenceVariable2.getBounds(iv1, assignments)
+    val bounds2 = InferenceVariable2.getBounds(iv2, assignments)
+
+    def assignBoth(bound: Type, boundType: BoundType2, assignments: InferenceAssignments) = {
+      InferenceVariable2
+        .assign(iv1, bound, boundType, assignments)
+        .flatMap(InferenceVariable2.assign(iv2, bound, boundType, _))
+    }
+
+    val lowerAssignments = if (boundTypes.contains(BoundType2.Lower)) {
+      assignBoth(SumType.construct(bounds1.lower, bounds2.lower), BoundType2.Lower, assignments)
+    } else Some(assignments)
+
+    lowerAssignments.flatMap { lowerAssignments =>
+      assignBoth(IntersectionType.construct(bounds1.upper, bounds2.upper), BoundType2.Upper, lowerAssignments)
     }
   }
 

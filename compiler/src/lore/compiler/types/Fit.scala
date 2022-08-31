@@ -1,7 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.typing.InferenceVariable
-import lore.compiler.typing.unification.Unification
+import lore.compiler.typing2.unification.InferenceVariable2
+import lore.compiler.typing2.unification.Unification2
 
 object Fit {
 
@@ -44,16 +44,19 @@ object Fit {
     * returns `None` if no consistent assignment can be found.
     */
   private def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
-    // TODO (multi-import): If the new typing algorithm doesn't need inference variables: Revert to a "straight
-    //                      "forward" algorithm for fit.
-    val typeVariables = Type.variables(t2).toVector
-    val (s2, typeVariableAssignments) = InferenceVariable.fromTypeVariables(t2, typeVariables)
-    Unification.unifyFits(t1, s2, Map.empty).flatMap { assignments =>
-      Unification.unifyTypeVariableBounds(typeVariables, typeVariableAssignments, assignments).map { assignments2 =>
-        typeVariableAssignments.map {
-          case (tv, iv) => tv -> InferenceVariable.instantiateCandidate(iv, assignments2)
-        }
-      }
+    val typeVariables = Type.variables(t2)
+    if (typeVariables.isEmpty) {
+      return Some(Map.empty)
+    }
+
+    // Type variables need to be ordered by their index so that inference variable bounds can be built correctly (due
+    // to dependencies between type variables).
+    val orderedTypeVariables = typeVariables.toVector.sortBy(_.index)
+    val (s2, tvToIv) = InferenceVariable2.fromTypeVariables(t2, orderedTypeVariables)
+    Unification2.unifyFits(t1, s2, Map.empty).flatMap { assignments =>
+      Unification2
+        .unifyInferenceVariableBounds(tvToIv.values.toVector, assignments)
+        .map(InferenceVariable2.toTypeVariableAssignments(tvToIv, _))
     }
   }
 
