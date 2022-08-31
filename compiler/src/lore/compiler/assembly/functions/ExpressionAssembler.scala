@@ -60,96 +60,40 @@ class ExpressionAssembler(
   }
 
   def generate(expression: Expression): Chunk = {
+    def delegateToValueAssembler = ValueAssembler.generateConstForced(expression, registerProvider.fresh())
     expression match {
       case _: Hole => throw CompilationException("Expression.Hole cannot be assembled.")
-      case expression: Return => handle(expression)
-      case expression: VariableDeclaration => handle(expression)
-      case expression: Assignment => handle(expression)
-      case expression: Block => handle(expression)
-      case expression: BindingAccess => handle(expression)
-      case expression: MemberAccess => handle(expression)
-      case _: UnresolvedMemberAccess => throw CompilationException("Expression.UnresolvedMemberAccess cannot be assembled.")
-      case expression: Literal => handle(expression)
+      case _: IntValue => delegateToValueAssembler
+      case _: RealValue => delegateToValueAssembler
+      case _: BooleanValue => delegateToValueAssembler
+      case _: StringValue => delegateToValueAssembler
+      case _: SymbolValue => delegateToValueAssembler
       case expression: TupleValue => handle(expression)
       case expression: LambdaValue => handle(expression)
-      case expression: MultiFunctionValue => handle(expression)
-      case expression: FixedFunctionValue => handle(expression)
+      case _: MultiFunctionValue => delegateToValueAssembler
+      case _: FixedFunctionValue => delegateToValueAssembler
       case expression: ConstructorValue => handle(expression)
-      case _: UntypedConstructorValue => throw CompilationException("Expression.UntypedConstructorValue cannot be assembled.")
       case expression: ListValue => handle(expression)
-      case expression: MapConstruction => handle(expression)
+//      case expression: MapConstruction => handle(expression)
       case expression: ShapeValue => handle(expression)
       case expression: PropertyDefaultValue => handle(expression)
       case expression: UnaryOperation => handle(expression)
       case expression: BinaryOperation => handle(expression)
       case expression: XaryOperation => handle(expression)
       case expression: Call => handle(expression)
+      case expression: VariableDeclaration => handle(expression)
+      case expression: Assignment => handle(expression)
+      case expression: BindingAccess => handle(expression)
+      case expression: MemberAccess => handle(expression)
+      case expression: Return => handle(expression)
+      case expression: Block => handle(expression)
       case expression: Cond => handle(expression)
       case expression: WhileLoop => handle(expression)
       case expression: ForLoop => handle(expression)
-      case expression: Ascription => handle(expression)
     }
   }
 
   def generate(expressions: Vector[Expression]): Vector[Chunk] = expressions.map(generate)
-
-  private def handle(expression: Return): Chunk = {
-    val valueChunk = generate(expression.value)
-    val instruction = PoemInstruction.Return(valueChunk.forceResult(expression.position))
-    valueChunk ++ Chunk(instruction)
-  }
-
-  private def handle(expression: VariableDeclaration): Chunk = {
-    val valueChunk = generate(expression.value)
-    val regVariable = declare(expression.variable, expression.position)
-    val regValue = valueChunk.forceResult(expression.position)
-    val assignment = PoemInstruction.Assign(regVariable, regValue)
-    valueChunk ++ Chunk(assignment)
-  }
-
-  private def handle(expression: Assignment): Chunk = {
-    val valueChunk = generate(expression.value)
-    val regValue = valueChunk.forceResult(expression.value.position)
-    expression.target match {
-      case Expression.BindingAccess(binding, position) =>
-        val regVariable = binding match {
-          case variable: LocalVariable => variableRegisterMap(variable.uniqueKey)
-          case _ => throw CompilationException(s"Binding $binding cannot be mutable. Position: $position.")
-        }
-        valueChunk ++ Chunk(PoemInstruction.Assign(regVariable, regValue))
-
-      case Expression.MemberAccess(instance, member, position) =>
-        if (!instance.tpe.isInstanceOf[StructType]) {
-          throw CompilationException(s"Only struct members may be mutated directly, but the instance's type is ${instance.tpe}. Position: $position.")
-        }
-
-        val instanceKind = InstanceKind.of(instance.tpe)
-        val instanceChunk = generate(instance)
-        val regInstance = instanceChunk.forceResult(position)
-        valueChunk ++ instanceChunk ++ Chunk(
-          PoemInstruction.PropertySet(instanceKind, regInstance, member.name, regValue),
-        )
-
-      case _ => throw CompilationException(s"Invalid assignment target. Position: ${expression.target.position}.")
-    }
-  }
-
-  private def handle(expression: Block): Chunk = Chunk.concat(generate(expression.expressions))
-
-  private def handle(expression: BindingAccess): Chunk = TypedTermBindingAssembler.generate(expression.binding)
-
-  private def handle(expression: MemberAccess): Chunk = {
-    val target = registerProvider.fresh()
-    val instanceKind = InstanceKind.of(expression.instance.tpe)
-    val instanceChunk = generate(expression.instance)
-    val regInstance = instanceChunk.forceResult(expression.position)
-    val instruction = PoemInstruction.PropertyGet(target, instanceKind, regInstance, expression.member.name)
-    instanceChunk ++ Chunk(target, instruction)
-  }
-
-  private def handle(literal: Literal): Chunk = {
-    ValueAssembler.generateConstForced(literal, registerProvider.fresh())
-  }
 
   private def handle(expression: TupleValue): Chunk = {
     // A unit value that is unused can be safely ignored. This is an important optimization for unused `if` expressions
@@ -172,14 +116,6 @@ class ExpressionAssembler(
     chunk
   }
 
-  private def handle(expression: MultiFunctionValue): Chunk = {
-    ValueAssembler.generateConstForced(expression, registerProvider.fresh())
-  }
-
-  private def handle(expression: FixedFunctionValue): Chunk = {
-    ValueAssembler.generateConstForced(expression, registerProvider.fresh())
-  }
-
   private def handle(expression: ConstructorValue): Chunk = ConstructorAssembler.generateValue(expression)
 
   private def handle(expression: ListValue): Chunk = {
@@ -192,8 +128,8 @@ class ExpressionAssembler(
     }
   }
 
-  private def handle(expression: MapConstruction): Chunk = {
-    val entryChunks = expression.entries.map(entry => (generate(entry.key), generate(entry.value)))
+//  private def handle(expression: MapConstruction): Chunk = {
+//    val entryChunks = expression.entries.map(entry => (generate(entry.key), generate(entry.value)))
 //    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
 //    val entries = entryChunks.map { case (key, value) =>
 //      Chunk.combine(key, value)(elements => Chunk.expression(Target.List(elements)))
@@ -204,8 +140,7 @@ class ExpressionAssembler(
 //      val equal = RuntimeNames.multiFunction(registry.core.equal.name)
 //      Chunk.expression(RuntimeApi.maps.value(entries, tpe, hash, equal))
 //    }
-    ???
-  }
+//  }
 
   private def handle(expression: ShapeValue): Chunk = {
     val target = registerProvider.fresh()
@@ -265,27 +200,83 @@ class ExpressionAssembler(
     val regResult = registerProvider.fresh()
     val valueArgumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
-    val callChunk = expression.target match {
-      case CallTarget.MultiFunction(mf) => Chunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, valueArgumentRegs))
+    val callChunk = expression match {
+      case expression: MultiFunctionCall => Chunk(
+        regResult,
+        PoemInstruction.Dispatch(regResult, expression.mf.name, valueArgumentRegs),
+      )
 
-      case CallTarget.Value(ConstructorValue(_, structType, _)) =>
+      case ValueCall(ConstructorValue(structType, _), _, _, _) =>
         // Optimization: We can treat a direct constructor value call as a constructor call.
         ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
 
-      case CallTarget.Value(function) =>
-        val functionChunk = generate(function)
-        val regFunction = functionChunk.forceResult(function.position)
+      case ValueCall(target, _, _, _) =>
+        val functionChunk = generate(target)
+        val regFunction = functionChunk.forceResult(target.position)
         functionChunk ++ Chunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, valueArgumentRegs))
 
-      case CallTarget.Constructor(_) =>
-        val structType = expression.tpe.asInstanceOf[StructType]
-        ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
+      case expression: ConstructorCall =>
+        ConstructorAssembler.generateCall(expression.tpe, regResult, valueArgumentRegs)
 
-      case CallTarget.Intrinsic(intrinsic) => IntrinsicAssembler.generate(expression, intrinsic, regResult, valueArgumentRegs)
+      case expression: IntrinsicCall => IntrinsicAssembler.generate(expression, regResult, valueArgumentRegs)
     }
 
     Chunk.concat(argumentChunks) ++ callChunk
   }
+
+  private def handle(expression: VariableDeclaration): Chunk = {
+    val valueChunk = generate(expression.value)
+    val regVariable = declare(expression.variable, expression.position)
+    val regValue = valueChunk.forceResult(expression.position)
+    val assignment = PoemInstruction.Assign(regVariable, regValue)
+    valueChunk ++ Chunk(assignment)
+  }
+
+  private def handle(expression: Assignment): Chunk = {
+    val valueChunk = generate(expression.value)
+    val regValue = valueChunk.forceResult(expression.value.position)
+    expression.target match {
+      case Expression.BindingAccess(binding, position) =>
+        val regVariable = binding match {
+          case variable: LocalVariable => variableRegisterMap(variable.uniqueKey)
+          case _ => throw CompilationException(s"Binding $binding cannot be mutable. Position: $position.")
+        }
+        valueChunk ++ Chunk(PoemInstruction.Assign(regVariable, regValue))
+
+      case Expression.MemberAccess(instance, member, position) =>
+        if (!instance.tpe.isInstanceOf[StructType]) {
+          throw CompilationException(s"Only struct members may be mutated directly, but the instance's type is ${instance.tpe}. Position: $position.")
+        }
+
+        val instanceKind = InstanceKind.of(instance.tpe)
+        val instanceChunk = generate(instance)
+        val regInstance = instanceChunk.forceResult(position)
+        valueChunk ++ instanceChunk ++ Chunk(
+          PoemInstruction.PropertySet(instanceKind, regInstance, member.name, regValue),
+        )
+
+      case _ => throw CompilationException(s"Invalid assignment target. Position: ${expression.target.position}.")
+    }
+  }
+
+  private def handle(expression: BindingAccess): Chunk = TypedTermBindingAssembler.generate(expression.binding)
+
+  private def handle(expression: MemberAccess): Chunk = {
+    val target = registerProvider.fresh()
+    val instanceKind = InstanceKind.of(expression.instance.tpe)
+    val instanceChunk = generate(expression.instance)
+    val regInstance = instanceChunk.forceResult(expression.position)
+    val instruction = PoemInstruction.PropertyGet(target, instanceKind, regInstance, expression.member.name)
+    instanceChunk ++ Chunk(target, instruction)
+  }
+
+  private def handle(expression: Return): Chunk = {
+    val valueChunk = generate(expression.value)
+    val instruction = PoemInstruction.Return(valueChunk.forceResult(expression.position))
+    valueChunk ++ Chunk(instruction)
+  }
+
+  private def handle(expression: Block): Chunk = Chunk.concat(generate(expression.expressions))
 
   private def handle(cond: Cond): Chunk = {
     val caseChunks = cond.cases.map(condCase => (generate(condCase.condition), generate(condCase.body)))
@@ -308,6 +299,4 @@ class ExpressionAssembler(
     val bodyChunk = generate(loop.body)
     LoopAssembler.generate(loop, collectionChunks, bodyChunk)
   }
-
-  private def handle(expression: Ascription): Chunk = generate(expression.value)
 }

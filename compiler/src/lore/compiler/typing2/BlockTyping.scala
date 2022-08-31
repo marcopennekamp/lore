@@ -24,7 +24,7 @@ object BlockTyping {
             expectedType match {
               case Some(expectedType) if expectedType != TupleType.UnitType =>
                 checker.check(block.expressions.last, expectedType, context2)
-              case None => Synthesizer2.infer(block.expressions.last, context2)
+              case _ => Synthesizer2.infer(block.expressions.last, context2)
             }
           ).mapFirst(typedExpressions :+ _)
         }

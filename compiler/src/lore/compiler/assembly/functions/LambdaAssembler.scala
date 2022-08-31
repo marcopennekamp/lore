@@ -39,7 +39,12 @@ object LambdaAssembler {
     // be checked.
     val name = parentSignature.name.appendToLastSegment("/lambda-" + UUID.randomUUID().toString)
     val parameters = expression.parameters.map {
-      parameter => ParameterDefinition(parameter.uniqueKey, Some(parameter.name), parameter.tpe, parameter.position)
+      parameter => ParameterDefinition(
+        parameter.variable.uniqueKey,
+        Some(parameter.variable.name),
+        parameter.variable.tpe,
+        parameter.position,
+      )
     }
     val signature = FunctionSignature(
       name,

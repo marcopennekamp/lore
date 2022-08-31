@@ -1,6 +1,8 @@
 package lore.compiler.typing
 
-import lore.compiler.semantics.expressions.Expression
+/*
+
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.typing.InferenceBounds.BoundType
@@ -231,3 +233,5 @@ object InferenceVariable {
   }
 
 }
+
+*/

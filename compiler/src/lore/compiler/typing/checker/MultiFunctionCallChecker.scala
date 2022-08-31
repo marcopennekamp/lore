@@ -1,7 +1,9 @@
 package lore.compiler.typing.checker
 
+/*
+
 import lore.compiler.feedback._
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{TupleType, Type}
 import lore.compiler.typing.InferenceVariable.Assignments
@@ -180,3 +182,5 @@ object MultiFunctionCallChecker {
   }
 
 }
+
+*/

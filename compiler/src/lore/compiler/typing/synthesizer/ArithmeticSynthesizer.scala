@@ -1,7 +1,9 @@
 package lore.compiler.typing.synthesizer
 
+/*
+
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.BasicType
 import lore.compiler.typing.InferenceVariable
 import lore.compiler.typing.InferenceVariable.Assignments
@@ -43,3 +45,5 @@ object ArithmeticSynthesizer {
   }
 
 }
+
+*/

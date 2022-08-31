@@ -1,7 +1,9 @@
 package lore.compiler.typing.synthesizer
 
+/*
+
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.{Checker, MultiFunctionCallChecker}
@@ -17,3 +19,5 @@ object MultiFunctionCallSynthesizer {
   }
 
 }
+
+*/

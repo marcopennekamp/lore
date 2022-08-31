@@ -1,9 +1,11 @@
 package lore.compiler.typing.synthesizer
 
+/*
+
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
-import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable.Assignments
@@ -256,3 +258,5 @@ object Synthesizer {
   }
 
 }
+
+*/

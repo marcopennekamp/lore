@@ -1,8 +1,10 @@
 package lore.compiler.typing.synthesizer
 
+/*
+
 import lore.compiler.core.Positioned
 import lore.compiler.feedback.{Reporter, TypingFeedback}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{TupleType, Type, TypeVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
@@ -269,3 +271,5 @@ object ArgumentSynthesizer {
   }
 
 }
+
+*/

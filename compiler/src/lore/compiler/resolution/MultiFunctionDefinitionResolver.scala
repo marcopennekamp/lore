@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.feedback.{Feedback, MultiFunctionFeedback, Reporter}
+import lore.compiler.feedback.{MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode

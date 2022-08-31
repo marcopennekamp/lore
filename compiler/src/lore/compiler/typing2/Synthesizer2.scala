@@ -103,7 +103,7 @@ object Synthesizer2 {
         infer(expression.target, context).flatMap { case (typedTarget, context2) =>
           typedTarget.tpe match {
             case targetType: FunctionType =>
-              CallTyping.checkOrInfer(targetType, expression, Some(targetType.output), context2)(
+              CallTyping.checkOrInfer(targetType.identity, expression, Some(targetType.output), context2)(
                 (typedArguments, _) => ValueCall(typedTarget, typedArguments, targetType.output, expression.position)
               )
 

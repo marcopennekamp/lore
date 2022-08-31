@@ -23,7 +23,9 @@ object CapturedVariables {
 
     override def combine(values: Vector[Set[LocalVariable]]): Set[LocalVariable] = values.flatten.toSet
 
-    override def visit(expression: Expression.VariableDeclaration)(capturedVariables: Set[LocalVariable]): Set[LocalVariable] = {
+    override def visit(
+      expression: Expression.VariableDeclaration,
+    )(capturedVariables: Set[LocalVariable]): Set[LocalVariable] = {
       localDeclarations += expression.variable.uniqueKey
       capturedVariables
     }
@@ -32,7 +34,8 @@ object CapturedVariables {
       expression.binding match {
         case variable: LocalVariable if !localDeclarations.contains(variable.uniqueKey) =>
           if (variable.isMutable) {
-            throw CompilationException(s"Cannot capture mutable variable `${variable.name}`: not implemented yet. Position: ${expression.position}.")
+            throw CompilationException(s"Cannot capture mutable variable `${variable.name}`: not implemented yet." +
+              s" Position: ${expression.position}.")
           }
           Set(variable)
         case _ => Set.empty
@@ -42,7 +45,7 @@ object CapturedVariables {
     override def before: PartialFunction[Expression, Unit] = {
       case expression: LambdaValue =>
         // This also registers the parameters of the outer-most anonymous function.
-        localDeclarations ++= expression.parameters.map(_.uniqueKey)
+        localDeclarations ++= expression.parameters.map(_.variable.uniqueKey)
 
       case expression: ForLoop =>
         localDeclarations ++= expression.extractors.map(_.variable.uniqueKey)

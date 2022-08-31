@@ -1,8 +1,10 @@
 package lore.compiler.typing.checker
 
+/*
+
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
@@ -294,3 +296,5 @@ case class Checker(returnType: Type) {
   }
 
 }
+
+*/

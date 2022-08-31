@@ -27,10 +27,9 @@ object Fit {
     */
   def fitsAssignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
     // The unification in `assignments` handles (1), (2), and (3).
-    assignments(t1, t2).map { assignments =>
+    assignments(t1, t2).flatMap { assignments =>
       val substituted = if (assignments.nonEmpty) Type.substitute(t2, assignments) else t2
-      t1 <= substituted
-      assignments
+      if (t1 <= substituted) Some(assignments) else None
     }
   }
 

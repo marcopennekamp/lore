@@ -29,7 +29,7 @@ object LambdaTyping {
     // function type.
     expectedType match {
       case expectedType: FunctionType if expectedType.arity == expression.arity =>
-        val parameterTypes = expression.parameters.zip(expectedType.parameterTypes).map {
+        val parameterTypes = expression.parameters.zip(expectedType.identity.parameterTypes).map {
           case (parameter, expectedParameterType) => parameter.typeAnnotation match {
             case Some(parameterType) =>
               // The function input is contravariant, so we have to check that the expected type is a subtype of the

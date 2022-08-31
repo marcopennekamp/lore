@@ -3,7 +3,7 @@ package lore.compiler.assembly.values
 import lore.compiler.assembly.{Chunk, RuntimeNames}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
-import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, Literal, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.utils.CollectionExtensions.{OptionVectorExtension, VectorExtension}
 
@@ -28,17 +28,11 @@ object ValueAssembler {
     * constant value.
     */
   def generate(expression: Expression): Option[PoemValue] = expression match {
-    case Expression.Ascription(value, _, _) => generate(value)
-
-    case Expression.Literal(value, _) =>
-      val poemValue = value match {
-        case Literal.IntValue(value) => PoemIntValue(value)
-        case Literal.RealValue(value) => PoemRealValue(value)
-        case Literal.BooleanValue(value) => PoemBooleanValue(value)
-        case Literal.StringValue(value) => PoemStringValue(value)
-        case Literal.SymbolValue(name) => PoemSymbolValue(name)
-      }
-      Some(poemValue)
+    case Expression.IntValue(value, _) => Some(PoemIntValue(value))
+    case Expression.RealValue(value, _) => Some(PoemRealValue(value))
+    case Expression.BooleanValue(value, _) => Some(PoemBooleanValue(value))
+    case Expression.StringValue(value, _) => Some(PoemStringValue(value))
+    case Expression.SymbolValue(name, _) => Some(PoemSymbolValue(name))
 
     case expression@Expression.TupleValue(values, _) =>
       // The tuple's type is directly built from its element types, so we can just check the former for type
@@ -66,7 +60,7 @@ object ValueAssembler {
 
     case Expression.FixedFunctionValue(instance, _) =>
       val inputType = TypeAssembler.generate(instance.signature.inputType)
-      val tpe = TypeAssembler.generate(instance.signature.functionType)
+      val tpe = TypeAssembler.generate(instance.signature.asFunctionType)
       Some(PoemFixedFunctionValue(instance.definition.multiFunction.name, inputType, tpe))
 
     case expression: Expression.ConstructorValue =>
@@ -77,7 +71,7 @@ object ValueAssembler {
         val poemValue = PoemSingleFunctionValue(
           RuntimeNames.struct.constructor(structType.schema),
           structType.typeArguments.map(TypeAssembler.generate),
-          TypeAssembler.generate(constructorSignature.functionType),
+          TypeAssembler.generate(constructorSignature.asFunctionType),
         )
         Some(poemValue)
       } else None
@@ -91,7 +85,7 @@ object ValueAssembler {
       generate(values).map(values => PoemListValue(values, TypeAssembler.generate(expression.tpe)))
 
     // TODO (maps): Implement map poem values.
-    case Expression.MapConstruction(_, _) => None
+//    case Expression.MapConstruction(_, _) => None
 
     case Expression.ShapeValue(properties, _) =>
       if (expression.tpe.isPolymorphic) {
@@ -186,7 +180,9 @@ object ValueAssembler {
     * The forced cousin of [[generateConst]]. Use this if it's certain that the given expression always results in a
     * PoemValue.
     */
-  def generateConstForced(expression: Expression, regResult: Poem.Register): Chunk = generateConst(expression, regResult).get
+  def generateConstForced(expression: Expression, regResult: Poem.Register): Chunk = {
+    generateConst(expression, regResult).get
+  }
 
   private def evaluateArithmeticOperation(
     left: PoemValue,

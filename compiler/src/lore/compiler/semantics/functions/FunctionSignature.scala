@@ -11,7 +11,7 @@ case class FunctionSignature(
   parameters: Vector[ParameterDefinition],
   outputType: Type,
   position: Position,
-) extends FunctionLike with Positioned {
+) extends FunctionIdentity with Positioned {
   val namedParameters: Vector[NamedParameterView] = parameters.filter(_.name.isDefined).map(NamedParameterView)
 
   override val parameterTypes: Vector[Type] = parameters.map(_.tpe)

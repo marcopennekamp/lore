@@ -1,5 +1,7 @@
 package lore.compiler.typing.unification
 
+/*
+
 import lore.compiler.types._
 import lore.compiler.typing.InferenceBounds.BoundType
 import lore.compiler.typing.{InferenceVariable, Typing}
@@ -105,3 +107,5 @@ object SubtypingUnification {
   }
 
 }
+
+*/

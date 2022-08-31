@@ -5,7 +5,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
-import lore.compiler.semantics.functions.FunctionLike
+import lore.compiler.semantics.functions.FunctionIdentity
 import lore.compiler.types.{Fit, TupleType, Type, TypeVariable}
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
 import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
@@ -19,7 +19,7 @@ object CallTyping {
     *                      "heading" and an indent, like ConstructorTyping does.
     */
   def checkOrInfer(
-    function: FunctionLike,
+    function: FunctionIdentity,
     expression: UntypedCall,
     expectedType: Option[Type],
     context: InferenceContext,
@@ -39,7 +39,7 @@ object CallTyping {
     * builds an expression at a later stage.
     */
   def checkOrInfer[R](
-    function: FunctionLike,
+    function: FunctionIdentity,
     expression: UntypedCall,
     inferredArguments: Vector[Option[Expression]],
     expectedType: Option[Type],
@@ -124,7 +124,7 @@ object CallTyping {
     * for arity as [[checkOrInfer]] must already have handled this.
     */
   private def inferMonomorphic[R](
-    function: FunctionLike,
+    function: FunctionIdentity,
     expression: UntypedExpression.UntypedCall,
     context: InferenceContext,
   )(
@@ -219,7 +219,7 @@ object CallTyping {
     * function's parameter types, `inferTypeArguments` reports an appropriate error.
     */
   def inferTypeArguments(
-    function: FunctionLike,
+    function: FunctionIdentity,
     argumentTypes: Vector[Type],
   )(illegalArity: => Feedback.Error)(implicit reporter: Reporter): Option[TypeVariable.Assignments] = {
     if (argumentTypes.length != function.arity) {

@@ -24,7 +24,7 @@ spec 'nested_type_parameters: ???' do
   //      ... this seems to work
 
 
-  val option: Option[Option[Int => Int]] = Some(Some(x => x + 1))
+  //val option: Option[Option[Int => Int]] = Some(Some(x => x + 1))
   // TODO (multi-import): Check the value or something.
 
 

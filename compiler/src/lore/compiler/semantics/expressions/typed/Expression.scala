@@ -219,6 +219,7 @@ object Expression {
     arguments: Vector[Expression],
     position: Position,
   ) extends Call {
+    def mf: MultiFunctionDefinition = target.definition.multiFunction
     override def tpe: Type = target.signature.outputType
   }
 

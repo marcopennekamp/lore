@@ -1,8 +1,10 @@
 package lore.compiler.typing.checker
 
+/*
+
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.bindings.StructConstructorBinding
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.{DeclaredType, StructType}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.Typing
@@ -56,3 +58,5 @@ object ConstructorCallChecker {
   }
 
 }
+
+*/

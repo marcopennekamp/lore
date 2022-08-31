@@ -30,7 +30,7 @@ object BindingAccessTyping {
 
       case binding: StructConstructorBinding => expectedType match {
         case Some(expectedType: FunctionType) =>
-          CallTyping.inferTypeArguments(expectedType, expectedType.parameterTypes)(
+          CallTyping.inferTypeArguments(binding.signature, expectedType.identity.parameterTypes)(
             TypingFeedback.ConstructorValue.IllegalArity(binding.signature, expectedType, expression),
           ).map { typeArgumentAssignments =>
             ConstructorValue(binding.instantiateStructType(typeArgumentAssignments), expression.position)

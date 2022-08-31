@@ -1,9 +1,11 @@
 package lore.compiler.typing
 
+/*
+
 import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.Type
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
@@ -56,3 +58,5 @@ object Typing {
   }
 
 }
+
+*/

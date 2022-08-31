@@ -1,5 +1,7 @@
 package lore.compiler.typing
 
+/*
+
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.typing.InferenceBounds.BoundType
 
@@ -42,3 +44,5 @@ object InferenceBounds {
   }
 
 }
+
+*/

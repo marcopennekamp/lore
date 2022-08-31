@@ -4,7 +4,7 @@ import lore.compiler.assembly.Chunk
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemInstruction, PoemIntValue, PoemIntrinsic}
-import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.IntrinsicCall
 
 object IntrinsicAssembler {
 
@@ -13,11 +13,11 @@ object IntrinsicAssembler {
     * intrinsics, but translate to other instructions such as `ListGet`. This function handles these special cases.
     */
   def generate(
-    expression: Expression.Call,
-    intrinsic: PoemIntrinsic,
+    expression: IntrinsicCall,
     regResult: Poem.Register,
     valueArgumentRegs: Vector[Poem.Register],
   ): Chunk = {
+    val intrinsic = expression.target
     val instruction = intrinsic.name match {
       case "lore.tuple.get" =>
         val index = ValueAssembler.generate(expression.arguments(1)) match {
