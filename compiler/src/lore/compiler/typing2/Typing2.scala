@@ -3,7 +3,7 @@ package lore.compiler.typing2
 import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.types.Type
 import lore.compiler.utils.IndentationLogger

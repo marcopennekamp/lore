@@ -2,10 +2,10 @@ package lore.compiler.typing2
 
 import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
-import lore.compiler.semantics.functions.{FunctionLike, FunctionSignature}
+import lore.compiler.semantics.functions.FunctionLike
 import lore.compiler.types.{Fit, TupleType, Type, TypeVariable}
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
 import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
@@ -98,10 +98,7 @@ object CallTyping {
       .getOrElse(return None)
 
     // (5) Build the result expression.
-    val typeVariableAssignments = tvToIv.map {
-      case (tv, iv) => tv -> InferenceVariable2.instantiateCandidate(iv, assignments3)
-    }
-    Some(toResult(typedArguments, typeVariableAssignments), context2)
+    Some(toResult(typedArguments, InferenceVariable2.toTypeVariableAssignments(tvToIv, assignments3)), context2)
   }
 
   /**

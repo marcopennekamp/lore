@@ -3,7 +3,7 @@ package lore.compiler.typing2
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.core.CoreMultiFunction
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 
 object CoreBuilder {
 

@@ -1,7 +1,7 @@
-package lore.compiler.semantics.expressions
+package lore.compiler.semantics.expressions.typed
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.expressions.Expression._
+import lore.compiler.semantics.expressions.typed.Expression._
 
 trait ExpressionVisitor[A, B] {
   type Result = B
@@ -71,7 +71,7 @@ object ExpressionVisitor {
       case node@LambdaValue(_, body, _) => visitor.visit(node)(rec(body))
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
-      case node@ConstructorValue(_, _, _) => visitor.visit(node)
+      case node@ConstructorValue(_, _) => visitor.visit(node)
       case node@ListValue(elements, _) => visitor.visit(node)(elements.map(rec))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))
       case node@PropertyDefaultValue(_, _) => visitor.visit(node)
@@ -79,9 +79,9 @@ object ExpressionVisitor {
       case node@UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@XaryOperation(_, operands, _, _) => visitor.visit(node)(operands.map(rec))
-      case node@MultiFunctionCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
+      case node@MultiFunctionCall(_, arguments, _) => visitor.visit(node)(arguments.map(rec))
       case node@ValueCall(target, arguments, _, _) => visitor.visit(node)(rec(target), arguments.map(rec))
-      case node@ConstructorCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
+      case node@ConstructorCall(_, arguments, _) => visitor.visit(node)(arguments.map(rec))
       case node@IntrinsicCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
 
       case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))

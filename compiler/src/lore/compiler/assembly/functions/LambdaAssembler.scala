@@ -4,7 +4,7 @@ import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemSingleFunctionValue}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression.LambdaValue
+import lore.compiler.semantics.expressions.typed.Expression.LambdaValue
 import lore.compiler.semantics.functions.{FunctionSignature, ParameterDefinition}
 
 import java.util.UUID

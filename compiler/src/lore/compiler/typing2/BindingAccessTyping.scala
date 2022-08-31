@@ -3,8 +3,8 @@ package lore.compiler.typing2
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, StructConstructorBinding, TypedTermBinding, UntypedLocalVariable}
-import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BindingAccess, ConstructorValue}
+import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.{BindingAccess, ConstructorValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedBindingAccess
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{FunctionType, Type}

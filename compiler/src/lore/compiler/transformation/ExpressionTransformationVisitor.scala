@@ -5,7 +5,7 @@ import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Report
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings._
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.functions._

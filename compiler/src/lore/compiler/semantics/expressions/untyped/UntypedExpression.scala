@@ -3,7 +3,8 @@ package lore.compiler.semantics.expressions.untyped
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, TypedTermBinding, UntypedLocalVariable}
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.types.{StructProperty, StructType, Type}
@@ -12,12 +13,12 @@ import lore.compiler.types.{StructProperty, StructType, Type}
   * This is an intermediate representation of expressions that sits between scope resolution/general transformation and
   * typing.
   *
-  * The need for this IR comes from the issue that some expressions such as [[lore.compiler.semantics.expressions.Expression.MemberAccess]]
-  * and [[lore.compiler.semantics.expressions.Expression.MultiFunctionValue]] require type information for other
-  * properties to be resolved, such as the MemberAccess's member. There are two workarounds:
+  * The need for this IR comes from the issue that some expressions such as [[Expression.MemberAccess]]
+  * and [[Expression.MultiFunctionValue]] require type information for other properties to be resolved, such as the
+  * MemberAccess's member. There are two workarounds:
   *
   *   1. Make Expressions mutable and attach these properties during typing. This clashes with the need to attempt but
-  *      not necessarily commit to a typing path during dispatch typing.
+  *      not necessarily commit to a typing path during call typing.
   *   2. Introduce expressions such as an "UnresolvedMemberAccess" which need to be specially transformed after typing.
   *      The issue here is that the assembly phase then has to take care not to accept these unresolved expressions,
   *      and in general the compiler's type system cannot provide as many guarantees as compared to a transformation

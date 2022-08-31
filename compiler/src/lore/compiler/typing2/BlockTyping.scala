@@ -2,7 +2,7 @@ package lore.compiler.typing2
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression.{Block, TupleValue}
+import lore.compiler.semantics.expressions.typed.Expression.{Block, TupleValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedBlock
 import lore.compiler.types.{TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension

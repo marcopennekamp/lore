@@ -3,7 +3,7 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemInstruction}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.{BasicType, TupleType}
 
 object CondAssembler {

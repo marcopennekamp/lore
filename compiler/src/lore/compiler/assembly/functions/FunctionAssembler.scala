@@ -6,7 +6,7 @@ import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
 import lore.compiler.types.TupleType
 

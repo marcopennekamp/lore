@@ -3,7 +3,7 @@ package lore.compiler.typing2
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
-import lore.compiler.semantics.expressions.Expression.{LambdaParameter, LambdaValue}
+import lore.compiler.semantics.expressions.typed.Expression.{LambdaParameter, LambdaValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedLambdaParameter, UntypedLambdaValue}
 import lore.compiler.types.{FunctionType, Type}
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension

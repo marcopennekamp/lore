@@ -3,7 +3,7 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 
 object LoopAssembler {
 

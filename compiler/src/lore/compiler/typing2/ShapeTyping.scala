@@ -1,7 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.expressions.Expression.{ShapeProperty, ShapeValue}
+import lore.compiler.semantics.expressions.typed.Expression.{ShapeProperty, ShapeValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedShapeValue
 import lore.compiler.types.ShapeType
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}

@@ -2,7 +2,7 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.bindings.StructConstructorBinding
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 
 // TODO (multi-import): Remove.
 

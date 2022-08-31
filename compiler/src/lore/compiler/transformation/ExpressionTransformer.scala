@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.feedback.{MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor

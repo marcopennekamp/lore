@@ -3,6 +3,7 @@ package lore.compiler.typing2.unification
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
+import lore.compiler.utils.CollectionExtensions.Tuple2Extension
 
 /**
   * Inference variables are unique-by-reference types that can stand in for other types in complex situations. They are
@@ -138,6 +139,17 @@ object InferenceVariable2 {
   }
 
   /**
+    * Substitutes in `tpe` all type variables from `typeVariables` with inference variables, returning the result type
+    * and a type variable assignments map.
+    */
+  def fromTypeVariables(
+    tpe: Type,
+    typeVariables: Vector[TypeVariable],
+  ): (Type, Map[TypeVariable, InferenceVariable2]) = {
+    fromTypeVariables(Vector(tpe), typeVariables).mapFirst { case Vector(result) => result }
+  }
+
+  /**
     * Substitutes in `types` all type variables from `typeVariables` with inference variables, returning the result
     * types and a type variable assignments map.
     */
@@ -152,6 +164,13 @@ object InferenceVariable2 {
     }
     val resultType = types.map(Type.substitute(_, tvToIv))
     (resultType, tvToIv)
+  }
+
+  def toTypeVariableAssignments(
+    tvToIv: Map[TypeVariable, InferenceVariable2],
+    assignments: InferenceAssignments,
+  ): TypeVariable.Assignments = tvToIv.map {
+    case (tv, iv) => tv -> InferenceVariable2.instantiateCandidate(iv, assignments)
   }
 
   /**

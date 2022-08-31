@@ -2,7 +2,7 @@ package lore.compiler.semantics.specs
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.definitions.{Definition, HasLocalModule}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.syntax.DeclNode.SpecNode
 import lore.compiler.utils.Once
 

@@ -3,11 +3,11 @@ package lore.compiler.typing2
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.BinaryOperator._
-import lore.compiler.semantics.expressions.Expression.UnaryOperator.{LogicalNot, Negation}
-import lore.compiler.semantics.expressions.Expression.XaryOperator.{Concatenation, Conjunction, Disjunction}
-import lore.compiler.semantics.expressions.Expression._
+import lore.compiler.semantics.expressions.typed.Expression.BinaryOperator._
+import lore.compiler.semantics.expressions.typed.Expression.UnaryOperator.{LogicalNot, Negation}
+import lore.compiler.semantics.expressions.typed.Expression.XaryOperator.{Concatenation, Conjunction, Disjunction}
+import lore.compiler.semantics.expressions.typed.Expression._
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}

@@ -2,7 +2,7 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.semantics.definitions.HasLocalModule
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.scopes.{FunctionTermScope, ImmutableTypeScope, TermScope, TypeScope}
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode.FunctionNode

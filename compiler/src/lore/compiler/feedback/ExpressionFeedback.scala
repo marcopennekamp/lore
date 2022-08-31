@@ -3,7 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.Position
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types.BasicType

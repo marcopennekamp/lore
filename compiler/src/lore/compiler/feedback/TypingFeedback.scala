@@ -2,7 +2,7 @@ package lore.compiler.feedback
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.bindings.StructConstructorBinding
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue, UntypedValueCall}
 import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.TypeExprNode

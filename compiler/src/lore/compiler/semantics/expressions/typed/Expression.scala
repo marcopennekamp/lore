@@ -1,14 +1,12 @@
-package lore.compiler.semantics.expressions
+package lore.compiler.semantics.expressions.typed
 
-import lore.compiler.core.{CompilationException, Position, Positioned, UniqueKey}
+import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.analysis.CapturedVariables
-import lore.compiler.semantics.bindings.{LocalVariable, StructConstructorBinding, TypedTermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, TypedTermBinding}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.types._
-
-// TODO (multi-import): Move to expressions.typed package.
 
 sealed trait Expression extends Positioned {
   def tpe: Type

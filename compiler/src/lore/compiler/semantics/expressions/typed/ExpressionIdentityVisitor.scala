@@ -1,6 +1,6 @@
-package lore.compiler.semantics.expressions
+package lore.compiler.semantics.expressions.typed
 
-import lore.compiler.semantics.expressions.Expression._
+import lore.compiler.semantics.expressions.typed.Expression._
 
 /**
   * By default, this visitor copies expressions as-is. You can override individual methods to modify individual

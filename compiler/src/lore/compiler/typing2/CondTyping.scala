@@ -1,7 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.expressions.Expression.Cond
+import lore.compiler.semantics.expressions.typed.Expression.Cond
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCond
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension

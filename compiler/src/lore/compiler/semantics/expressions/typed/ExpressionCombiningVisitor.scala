@@ -1,6 +1,6 @@
-package lore.compiler.semantics.expressions
+package lore.compiler.semantics.expressions.typed
 
-import lore.compiler.semantics.expressions.Expression._
+import lore.compiler.semantics.expressions.typed.Expression._
 
 trait ExpressionCombiningVisitor[A, B] extends ExpressionVisitor[A, B] {
   def combine(values: Vector[A]): B
@@ -24,7 +24,6 @@ trait ExpressionCombiningVisitor[A, B] extends ExpressionVisitor[A, B] {
   override def visit(expression: ListValue)(elements: Vector[A]): B = combine(elements)
   override def visit(expression: ShapeValue)(properties: Vector[A]): B = combine(properties)
   override def visit(expression: PropertyDefaultValue): B = combine()
-
   override def visit(expression: UnaryOperation)(value: A): B = combine(value)
   override def visit(expression: BinaryOperation)(left: A, right: A): B = combine(left, right)
   override def visit(expression: XaryOperation)(operands: Vector[A]): B = combine(operands)
@@ -32,12 +31,10 @@ trait ExpressionCombiningVisitor[A, B] extends ExpressionVisitor[A, B] {
   override def visit(expression: ValueCall)(target: A, arguments: Vector[A]): B = combine(target +: arguments)
   override def visit(expression: ConstructorCall)(arguments: Vector[A]): B = combine(arguments)
   override def visit(expression: IntrinsicCall)(arguments: Vector[A]): B = combine(arguments)
-
   override def visit(expression: VariableDeclaration)(value: A): B = combine(value)
   override def visit(expression: Assignment)(target: A, value: A): B = combine(target, value)
   override def visit(expression: BindingAccess): B = combine()
   override def visit(expression: MemberAccess)(instance: A): B = combine(instance)
-
   override def visit(expression: Return)(value: A): B = combine(value)
   override def visit(expression: Block)(expressions: Vector[A]): B = combine(expressions)
   override def visit(expression: Cond)(cases: Vector[(A, A)]): B = combinePairs(cases)

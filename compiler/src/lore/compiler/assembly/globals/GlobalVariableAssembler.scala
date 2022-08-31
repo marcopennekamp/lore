@@ -5,7 +5,7 @@ import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{Chunk, RuntimeNames}
 import lore.compiler.core.Position
 import lore.compiler.poem.{PoemEagerGlobalVariable, PoemFunction, PoemGlobalVariable, PoemLazyGlobalVariable}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.semantics.{NamePath, Registry}

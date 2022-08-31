@@ -1,7 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.{Position, Positioned, UniqueIdentifiable, UniqueKey}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode

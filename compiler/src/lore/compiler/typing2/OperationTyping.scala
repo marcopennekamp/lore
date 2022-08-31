@@ -2,8 +2,8 @@ package lore.compiler.typing2
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BinaryOperation, BinaryOperator, XaryOperation}
+import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperation, BinaryOperator, XaryOperation}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBinaryOperation, UntypedXaryOperation}
 import lore.compiler.types.{BasicType, ListType, SumType, Type}
