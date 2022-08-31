@@ -5,7 +5,8 @@ import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.{StructConstructorBinding, StructObjectBinding}
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.untyped.UntypedExpression
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedConstructorValue, UntypedPropertyDefaultValue}
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.StructSchema
@@ -39,22 +40,29 @@ object StructTransformation {
     binding: StructConstructorBinding,
     typeArgumentNodes: Vector[TypeExprNode],
     position: Position,
-  )(implicit termScope: TermScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
+  )(implicit termScope: TermScope, typeScope: TypeScope, reporter: Reporter): UntypedConstructorValue = {
     val typeArguments = typeArgumentNodes.map(TypeResolver.resolve)
     val structType = binding.instantiateStructType(typeArguments, position)
-    Expression.ConstructorValue(binding, structType, position)
+    UntypedConstructorValue(structType, position)
   }
 
   /**
     * Transforms the name/expression pairs in `entries` to an ordered list of arguments with which the struct's
     * constructor may be invoked.
     */
-  def entriesToArguments(struct: StructSchema, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Vector[Expression] = {
+  def entriesToArguments(
+    struct: StructSchema,
+    entries: Vector[(String, UntypedExpression)],
+    position: Position,
+  )(implicit reporter: Reporter): Vector[UntypedExpression] = {
     verifyNamesUnique(entries, position)
     correlateEntries(struct, entries.toMap, position)
   }
 
-  private def verifyNamesUnique(entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Unit = {
+  private def verifyNamesUnique(
+    entries: Vector[(String, UntypedExpression)],
+    position: Position,
+  )(implicit reporter: Reporter): Unit = {
     entries.map(_._1).groupBy(identity).foreach {
       case (_, Vector(_)) =>
       case (name, _) => reporter.error(StructFeedback.Instantiation.DuplicateProperty(name, position))
@@ -68,22 +76,17 @@ object StructTransformation {
     */
   private def correlateEntries(
     struct: StructSchema,
-    entries: Map[String, Expression],
+    entries: Map[String, UntypedExpression],
     position: Position,
-  )(implicit reporter: Reporter): Vector[Expression] = {
-    var arguments = Vector.empty[Expression]
+  )(implicit reporter: Reporter): Vector[UntypedExpression] = {
+    var arguments = Vector.empty[UntypedExpression]
     var missing = Vector.empty[String]
     val illegal = entries.keys.toVector.diff(struct.properties.map(_.name))
 
     struct.properties.foreach { property =>
       entries.get(property.name) match {
-        case Some(expression) =>
-          arguments = arguments :+ expression
-
-        case None if property.hasDefault =>
-          val expression = Expression.PropertyDefaultValue(property, position)
-          arguments = arguments :+ expression
-
+        case Some(expression) => arguments = arguments :+ expression
+        case None if property.hasDefault => arguments = arguments :+ UntypedPropertyDefaultValue(property, position)
         case None => missing = missing :+ property.name
       }
     }

@@ -6,7 +6,7 @@ import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, 
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
-import lore.compiler.types.{StructProperty, Type}
+import lore.compiler.types.{StructProperty, StructType, Type}
 
 /**
   * This is an intermediate representation of expressions that sits between scope resolution/general transformation and
@@ -76,6 +76,16 @@ object UntypedExpression {
 
   case class UntypedFixedFunctionValue(
     instance: FunctionInstance,
+    position: Position,
+  ) extends UntypedExpression
+
+  /**
+    * [[UntypedConstructorValue]]s are built for constructor values with <i>explicitly</i> specified type arguments.
+    * Constructor bindings without explicit type arguments are treated as [[UntypedBindingAccess]]es and only resolved
+    * during typing.
+    */
+  case class UntypedConstructorValue(
+    structType: StructType,
     position: Position,
   ) extends UntypedExpression
 
@@ -246,7 +256,12 @@ object UntypedExpression {
   case class UntypedCondCase(
     condition: UntypedExpression,
     body: UntypedExpression,
-  )
+  ) {
+    val isTotalCase: Boolean = condition match {
+      case UntypedBooleanValue(true, _) => true
+      case _ => false
+    }
+  }
 
   sealed trait UntypedLoop extends UntypedExpression {
     def body: UntypedExpression

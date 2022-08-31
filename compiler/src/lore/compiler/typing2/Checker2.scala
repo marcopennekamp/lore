@@ -1,7 +1,7 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
+import lore.compiler.feedback.{ExpressionFeedback, Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.Expression
@@ -95,8 +95,10 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
         }
 
       case UntypedAssignment(target, value, position) =>
-        // TODO (multi-import): Check mutability.
         Synthesizer2.infer(target, context).flatMap { case (typedTarget: Expression.Access, context2) =>
+          if (!typedTarget.isMutable) {
+            reporter.error(ExpressionFeedback.ImmutableAssignment(typedTarget))
+          }
           check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
         }
 

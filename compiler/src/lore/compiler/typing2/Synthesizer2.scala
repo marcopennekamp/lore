@@ -58,6 +58,8 @@ object Synthesizer2 {
 
       case UntypedFixedFunctionValue(instance, position) => simpleResult(FixedFunctionValue(instance, position))
 
+      case UntypedConstructorValue(structType, position) => simpleResult(ConstructorValue(structType, position))
+
       case UntypedListValue(elements, position) => infer(elements, context).mapFirst(ListValue(_, position))
 
       case expression: UntypedShapeValue => ShapeTyping.checkOrInfer(expression, None, context)

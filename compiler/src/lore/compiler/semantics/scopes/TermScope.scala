@@ -3,7 +3,7 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding}
+import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding, UntypedLocalVariable}
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.modules.GlobalModule
 
@@ -42,7 +42,7 @@ case class FunctionTermScope(signature: FunctionSignature, parent: TermScope) ex
   */
 class BlockTermScope(parent: TermScope) extends MutableScope[TermBinding] with TermScope {
   override protected def optionalParent: Option[TermScope] = Some(parent)
-  def register(variable: LocalVariable, position: Position)(implicit reporter: Reporter): Unit = {
+  def register(variable: UntypedLocalVariable, position: Position)(implicit reporter: Reporter): Unit = {
     super.register(variable.name, variable, position)
   }
 }

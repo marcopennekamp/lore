@@ -1,19 +1,53 @@
 package lore.compiler.typing2
 
 import com.typesafe.scalalogging.Logger
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.types.Type
 import lore.compiler.utils.IndentationLogger
-
-// TODO (multi-import): Check that important attempts and results are traced (especially call/function value typing).
-//                      Refactor and overhaul all current traces.
+import lore.compiler.utils.Timer.timed
 
 object Typing2 {
 
   val indentationLogger: IndentationLogger = IndentationLogger("lore.compiler.typing")
   val logger: Logger = Logger(indentationLogger)
   val loggerBlank: Logger = Logger("lore.compiler.typing.blank")
+
+  def check(
+    expression: UntypedExpression,
+    returnType: Type,
+    label: String,
+    parentReporter: Reporter,
+  )(implicit registry: Registry): Option[Expression] = {
+    logger.debug(s"Check types for `$label` at ${expression.position}:")
+
+    val result = timed(s"Checking types for `$label`", log = s => logger.debug(s)) {
+      MemoReporter.nested(parentReporter) { implicit reporter =>
+        val checker = Checker2(returnType)
+        val result = checker.check(expression, returnType, InferenceContext(Map.empty))
+
+        logger.whenDebugEnabled {
+          result match {
+            case Some((typedExpression, context)) =>
+              val localVariableInfos = context.localVariables.values.map(v => s"${v.name}: ${v.tpe}")
+              logger.debug(s"Checking types for `$label` was successful with the following expression type:" +
+                s" ${typedExpression.tpe}. Local variables:\n${localVariableInfos.mkString("\n")}")
+
+            case None =>
+              logger.debug(s"Checking types for `$label` failed with the following feedback:")
+              Feedback.logAll(reporter.feedback)
+          }
+        }
+
+        result
+      }
+    }
+
+    loggerBlank.debug("")
+    result.map(_._1)
+  }
 
   def traceExpressionType(
     expression: Expression,

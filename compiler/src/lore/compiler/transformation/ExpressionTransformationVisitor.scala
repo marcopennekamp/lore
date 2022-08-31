@@ -1,19 +1,20 @@
 package lore.compiler.transformation
 
 import lore.compiler.core._
-import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
-import lore.compiler.poem.PoemIntrinsic
+import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter}
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings._
-import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression
+import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
+import lore.compiler.syntax.ExprNode._
+import lore.compiler.syntax.TopLevelExprNode._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
-import lore.compiler.typing.InferenceVariable
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 
@@ -27,30 +28,26 @@ class ExpressionTransformationVisitor(
     * The term scope of the surrounding code, such as a function's term scope.
     */
   termScope: TermScope,
-)(implicit registry: Registry, reporter: Reporter) extends TopLevelExprVisitor[Expression, Id] {
-
-  import ExprNode._
-  import TopLevelExprNode._
+)(implicit registry: Registry, reporter: Reporter) extends TopLevelExprVisitor[UntypedExpression, Id] {
 
   val scopeContext = new ScopeContext(termScope)
   implicit def currentScope: TermScope = scopeContext.currentScope
   implicit val typeScopeImplicit: TypeScope = typeScope
 
-  override def visitLeaf(node: LeafNode): Expression = node match {
+  override def visitLeaf(node: LeafNode): UntypedExpression = node match {
     case VariableNode(namePathNode, position) =>
-      AccessTransformation
-        .transform(BindingProcessors.accessCoercion(position))(namePathNode)
-        .getOrElse(Expression.Hole(BasicType.Nothing, position))
+      AccessTransformation.transform(namePathNode).getOrElse(UntypedHole(BasicType.Nothing, position))
 
     case node@IntLiteralNode(value, position) =>
       if (value < BasicType.Int.minimum || BasicType.Int.maximum < value) {
         reporter.error(ExpressionFeedback.UnsafeInteger(node))
       }
-      Expression.Literal.integer(value, position)
-    case RealLiteralNode(value, position) => Expression.Literal.real(value, position)
-    case BoolLiteralNode(value, position) => Expression.Literal.boolean(value, position)
-    case StringLiteralNode(value, position) => Expression.Literal.string(value, position)
-    case SymbolLiteralNode(name, position) => Expression.Literal.symbol(name, position)
+      UntypedIntValue(value, position)
+
+    case RealLiteralNode(value, position) => UntypedRealValue(value, position)
+    case BoolLiteralNode(value, position) => UntypedBooleanValue(value, position)
+    case StringLiteralNode(value, position) => UntypedStringValue(value, position)
+    case SymbolLiteralNode(name, position) => UntypedSymbolValue(name, position)
 
     case FixedFunctionNode(namePathNode, typeExpressions, position) =>
       scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
@@ -60,107 +57,121 @@ class ExpressionTransformationVisitor(
             inputType,
             MultiFunctionFeedback.FixedFunction.EmptyFit(mf, inputType, position),
             min => MultiFunctionFeedback.FixedFunction.AmbiguousCall(mf, inputType, min, position),
-          ).map(instance => Expression.FixedFunctionValue(instance, position))
+          ).map(instance => UntypedFixedFunctionValue(instance, position))
+
+        // TODO (multi-import): Ambiguous multi-function...
 
         case _ =>
-          reporter.error(ExpressionFeedback.FixedFunction.MultiFunctionExpected(namePathNode.namePath, namePathNode.position))
+          reporter.error(
+            ExpressionFeedback.FixedFunction.MultiFunctionExpected(namePathNode.namePath, namePathNode.position)
+          )
           None
-      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+      }.getOrElse(UntypedHole(BasicType.Nothing, position))
 
     case ConstructorNode(namePathNode, typeArgumentNodes, position) =>
       StructTransformation.getConstructorBinding(namePathNode.namePath, namePathNode.position) match {
         case Some(binding) => StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
-        case None => Expression.Hole(BasicType.Nothing, position)
+        case None => UntypedHole(BasicType.Nothing, position)
       }
   }
 
-  override def visitUnary(node: UnaryNode)(expression: Expression): Expression = node match {
-    case ReturnNode(_, position) => Expression.Return(expression, position)
+  override def visitUnary(node: UnaryNode)(expression: UntypedExpression): UntypedExpression = node match {
+    case ReturnNode(_, position) => UntypedReturn(expression, position)
 
     case VariableDeclarationNode(nameNode, isMutable, maybeTypeExpr, _, position) =>
       // If the type annotation cannot be compiled, it is effectively treated as non-existing.
       val typeAnnotation = maybeTypeExpr.flatMap(TypeResolver.resolve)
-      val tpe = typeAnnotation match {
-        case Some(tpe) => tpe
-        case None => new InferenceVariable
-      }
-
-      val variable = LocalVariable(nameNode.value, tpe, isMutable)
+      val variable = UntypedLocalVariable(nameNode.value, isMutable)
       scopeContext.currentScope.register(variable, nameNode.position)
-      Expression.VariableDeclaration(variable, expression, typeAnnotation, position)
+      UntypedVariableDeclaration(variable, expression, typeAnnotation, position)
 
-    case NegationNode(_, position) => Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position)
-    case LogicalNotNode(_, position) => Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
+    case NegationNode(_, position) => UntypedUnaryOperation(UnaryOperator.Negation, expression, position)
+    case LogicalNotNode(_, position) => UntypedUnaryOperation(UnaryOperator.LogicalNot, expression, position)
 
-    case MemberAccessNode(_, nameNode, _) => AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
+    case MemberAccessNode(_, nameNode, _) =>
+      AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
 
     case AscriptionNode(_, expectedTypeNode, position) =>
       val expectedType = TypeResolver.resolve(expectedTypeNode).getOrElse(BasicType.Any)
-      Expression.Ascription(expression, expectedType, position)
+      UntypedTypeAscription(expression, expectedType, position)
   }
 
-  override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Expression = node match {
+  override def visitBinary(node: BinaryNode)(
+    left: UntypedExpression,
+    right: UntypedExpression,
+  ): UntypedExpression = node match {
     case AssignmentNode(_, _, position) =>
       left match {
-        case access: Expression.Access => Expression.Assignment(access, right, position)
+        case access: UntypedAccess => UntypedAssignment(access, right, position)
         case _ =>
           // The left-hand-side expression of an assignment must be a variable or a member. The underlying issue, for
           // example that a variable doesn't exist, will have been reported by now.
-          Expression.Hole(TupleType.UnitType, position)
+          UntypedHole(TupleType.UnitType, position)
       }
 
     // Arithmetic operations.
-    case AdditionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Addition, left, right, new InferenceVariable, position)
-    case SubtractionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Subtraction, left, right, new InferenceVariable, position)
-    case MultiplicationNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Multiplication, left, right, new InferenceVariable, position)
-    case DivisionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Division, left, right, new InferenceVariable, position)
+    case AdditionNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.Addition, left, right, position)
+
+    case SubtractionNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.Subtraction, left, right, position)
+
+    case MultiplicationNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.Multiplication, left, right, position)
+
+    case DivisionNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.Division, left, right, position)
 
     // Boolean operations.
-    case EqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position)
+    case EqualsNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.Equals, left, right, position)
+
     case NotEqualsNode(_, _, position) =>
-      Expression.UnaryOperation(
+      UntypedUnaryOperation(
         UnaryOperator.LogicalNot,
-        Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position),
-        BasicType.Boolean,
+        UntypedBinaryOperation(BinaryOperator.Equals, left, right, position),
         position,
       )
-    case LessThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, left, right, BasicType.Boolean, position)
-    case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position)
+
+    case LessThanNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.LessThan, left, right, position)
+
+    case LessThanEqualsNode(_, _, position) =>
+      UntypedBinaryOperation(BinaryOperator.LessThanEquals, left, right, position)
 
     // Collection operations.
-    case AppendNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(new InferenceVariable), position)
+    case AppendNode(_, _, position) => UntypedBinaryOperation(BinaryOperator.Append, left, right, position)
 
     // Loops.
     case WhileNode(_, _, position) =>
       // Close the previously opened scope.
       scopeContext.closeScope()
 
-      Expression.WhileLoop(left, right, position)
+      UntypedWhileLoop(left, right, position)
   }
 
   override def visitTernary(node: TernaryNode)(
-    argument1: Expression, argument2: Expression, argument3: Expression,
-  ): Expression = node match {
+    argument1: UntypedExpression,
+    argument2: UntypedExpression,
+    argument3: UntypedExpression,
+  ): UntypedExpression = node match {
     case IfElseNode(_, _, onFalse, position) =>
       val cases = Vector(
-        CondCase(argument1, argument2),
-        CondCase(Expression.Literal.boolean(value = true, onFalse.map(_.position).getOrElse(position)), argument3)
+        UntypedCondCase(argument1, argument2),
+        UntypedCondCase(UntypedBooleanValue(value = true, onFalse.map(_.position).getOrElse(position)), argument3)
       )
-      Expression.Cond(cases, position)
+      UntypedCond(cases, position)
   }
 
-  override def visitXary(node: XaryNode)(expressions: Vector[Expression]): Expression = node match {
+  override def visitXary(node: XaryNode)(expressions: Vector[UntypedExpression]): UntypedExpression = node match {
     case BlockNode(_, position) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       scopeContext.closeScope()
-      Expression.Block(expressions.withDefault(Expression.TupleValue(Vector.empty, position)), new InferenceVariable, position)
+      UntypedBlock(expressions.withDefault(UntypedTupleValue(Vector.empty, position)), position)
 
     // Value constructors.
-    case TupleNode(_, position) =>
-      Expression.TupleValue(expressions, position)
-
-    case ListNode(_, position) =>
-      Expression.ListValue(expressions, position)
+    case TupleNode(_, position) => UntypedTupleValue(expressions, position)
+    case ListNode(_, position) => UntypedListValue(expressions, position)
 
     case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
       StructTransformation.getConstructorBinding(namePathNode.namePath, namePathNode.position) match {
@@ -172,140 +183,103 @@ class ExpressionTransformationVisitor(
           typeArgumentNodes match {
             case Some(typeArgumentNodes) =>
               val target = StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
-              Expression.Call(CallTarget.Value(target), arguments, new InferenceVariable, position)
+              UntypedValueCall(target, arguments, position)
 
-            case None =>
-              val target = CallTarget.Constructor(binding)
-              Expression.Call(target, arguments, new InferenceVariable, position)
+            case None => UntypedConstructorCall(binding, arguments, position)
           }
 
-        case None => Expression.Hole(BasicType.Nothing, position)
+        case None => UntypedHole(BasicType.Nothing, position)
       }
 
     case ShapeValueNode(propertyNodes, position) =>
-      val properties = propertyNodes.zip(expressions).map { case (propertyNode, value) => Expression.ShapeProperty(propertyNode.name, value) }
-      Expression.ShapeValue(properties, position)
+      val properties = propertyNodes.zip(expressions).map {
+        case (propertyNode, value) => UntypedShapeProperty(propertyNode.name, value, propertyNode.position)
+      }
+      UntypedShapeValue(properties, position)
 
     // Xary operations.
-    case ConjunctionNode(_, position) => Expression.XaryOperation(XaryOperator.Conjunction, expressions, BasicType.Boolean, position)
-    case DisjunctionNode(_, position) => Expression.XaryOperation(XaryOperator.Disjunction, expressions, BasicType.Boolean, position)
-    case ConcatenationNode(_, position) => Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
+    case ConjunctionNode(_, position) => UntypedXaryOperation(XaryOperator.Conjunction, expressions, position)
+    case DisjunctionNode(_, position) => UntypedXaryOperation(XaryOperator.Disjunction, expressions, position)
+    case ConcatenationNode(_, position) => UntypedXaryOperation(XaryOperator.Concatenation, expressions, position)
 
     // Xary function calls.
-    case SimpleCallNode(namePathNode, _, position) =>
-      def handleValueCall(target: Expression): Expression.Call = {
-        Expression.Call(CallTarget.Value(target), expressions, new InferenceVariable, position)
-      }
-
-      def handleSingleAccess(binding: TermBinding): Option[Expression.Call] = {
-        binding match {
-          case mf: MultiFunctionDefinition =>
-            Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
-
-          case AmbiguousMultiFunction(multiReference) => ??? // TODO (multi-import): Implement.
-
-          case structBinding: StructConstructorBinding =>
-            Some(Expression.Call(CallTarget.Constructor(structBinding), expressions, new InferenceVariable, position))
-
-          case structObject: StructObjectBinding =>
-            reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
-            None
-
-          case binding: TypedTermBinding =>
-            Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
-        }
-      }
-
-      AccessTransformation.transform(
-        handleSingleAccess,
-        BindingProcessors.accessCoercion(namePathNode.position),
-        expression => Some(handleValueCall(expression)),
-      )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))
-
-    case node@IntrinsicCallNode(nameLiteral, resultTypeNode, _, position) =>
-      val name = nameLiteral.value
-      val resultType = TypeResolver.resolve(resultTypeNode).getOrElse(BasicType.Nothing)
-
-      // We have to check the existence and arity of the invoked intrinsic before we can create the Call expression.
-      PoemIntrinsic.intrinsicsMap.get(name) match {
-        case Some(intrinsic) =>
-          if (intrinsic.arity != expressions.length) {
-            reporter.error(ExpressionFeedback.Intrinsic.IllegalArity(node, intrinsic, expressions.length))
-          }
-          Expression.Call(CallTarget.Intrinsic(intrinsic), expressions, resultType, position)
-
-        case None =>
-          reporter.error(ExpressionFeedback.Intrinsic.NotFound(node, name))
-          Expression.Hole(resultType, position)
-      }
+    case node: SimpleCallNode => CallTransformation.transformSimpleCall(node, expressions)
+    case node: IntrinsicCallNode => CallTransformation.transformIntrinsicCall(node, expressions)
   }
 
-  override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Expression): Expression = {
+  override def visitAnonymousFunction(node: AnonymousFunctionNode)(
+    visitBody: () => UntypedExpression,
+  ): UntypedExpression = {
     scopeContext.openScope()
 
     val parameters = node.parameters.map {
       case AnonymousFunctionParameterNode(nameNode, typeNode, position) =>
-        // If the type annotation isn't specified or cannot be compiled, we default to an inference variable.
-        val tpe = typeNode
-          .flatMap(TypeResolver.resolve)
-          .getOrElse(new InferenceVariable)
-        val variable = LocalVariable(nameNode.value, tpe, isMutable = false)
+        val typeAnnotation = typeNode.flatMap(TypeResolver.resolve)
+        val variable = UntypedLocalVariable(nameNode.value, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)
-        Expression.LambdaParameter(variable.uniqueKey, variable.name, variable.tpe, position)
+        UntypedLambdaParameter(variable, typeAnnotation, position)
     }
 
     val body = visitBody()
     scopeContext.closeScope()
 
-    Expression.LambdaValue(parameters, body, node.position)
+    UntypedLambdaValue(parameters, body, node.position)
   }
 
-  override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Expression = {
-    Expression.MapConstruction(kvs.map(Expression.MapEntry.tupled), node.position)
+  override def visitMap(node: MapNode)(kvs: Vector[(UntypedExpression, UntypedExpression)]): UntypedExpression = {
+    ???
   }
 
-  override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Expression = {
-    Expression.Call(CallTarget.Value(target), arguments, new InferenceVariable, node.position)
+  override def visitCall(node: CallNode)(
+    target: UntypedExpression,
+    arguments: Vector[UntypedExpression],
+  ): UntypedExpression = {
+    UntypedValueCall(target, arguments, node.position)
   }
 
-  override def visitCond(node: CondNode)(rawCases: Vector[(Expression, Expression)]): Expression = {
-    var cases = rawCases.map(CondCase.tupled)
+  override def visitCond(node: CondNode)(
+    rawCases: Vector[(UntypedExpression, UntypedExpression)],
+  ): UntypedExpression = {
+    var cases = rawCases.map(UntypedCondCase.tupled)
     if (cases.init.exists(_.isTotalCase)) {
       reporter.error(ExpressionFeedback.InvalidTotalCase(node))
     }
 
     // If the last case isn't total, we have to add a default case `true => ()`.
     if (!cases.lastOption.exists(_.isTotalCase)) {
-      cases = cases :+ CondCase(
-        Expression.Literal(Expression.Literal.BooleanValue(true), node.position),
-        Expression.TupleValue(Vector.empty, node.position),
+      cases = cases :+ UntypedCondCase(
+        UntypedBooleanValue(value = true, node.position),
+        UntypedTupleValue(Vector.empty, node.position),
       )
     }
 
-    Expression.Cond(cases, node.position)
+    UntypedCond(cases, node.position)
   }
 
   override def visitIteration(node: ForNode)(
-    visitExtractors: Vector[() => Expression],
-    visitBody: () => Expression,
-  ): Expression = {
+    visitExtractors: Vector[() => UntypedExpression],
+    visitBody: () => UntypedExpression,
+  ): UntypedExpression = {
     scopeContext.openScope()
 
-    def transformExtractor(variableName: String, visitExtractor: () => Expression, position: Position) = {
+    def transformExtractor(
+      variableName: String,
+      visitExtractor: () => UntypedExpression,
+      position: Position,
+    ) = {
       val collection = visitExtractor()
 
       // Each extractor declares a new scope, as extractor variables may be redefined from left to right. The
       // extractor's collection must be resolved outside this new scope so that it can use a previous extractor
       // variable or a variable from the outer scope. This enables loops such as `for xs <- xs, xs <- foo(xs)`.
       scopeContext.openScope()
-      val elementType = new InferenceVariable
-      val variable = LocalVariable(variableName, elementType, isMutable = false)
+      val variable = UntypedLocalVariable(variableName, isMutable = false)
       scopeContext.currentScope.register(variable, position)
-      Expression.Extractor(variable, collection)
+      UntypedExtractor(variable, collection)
     }
 
-    val extractors = visitExtractors.zip(node.extractors).map {
-      case (visitExtractor, extractorNode) => transformExtractor(extractorNode.name, visitExtractor, extractorNode.nameNode.position)
+    val extractors = visitExtractors.zip(node.extractors).map { case (visitExtractor, extractorNode) =>
+      transformExtractor(extractorNode.name, visitExtractor, extractorNode.nameNode.position)
     }
     val body = visitBody()
 
@@ -314,7 +288,7 @@ class ExpressionTransformationVisitor(
       scopeContext.closeScope()
     }
 
-    Expression.ForLoop(extractors, body, node.position)
+    UntypedForLoop(extractors, body, node.position)
   }
 
   override def before: PartialFunction[TopLevelExprNode, Unit] = {

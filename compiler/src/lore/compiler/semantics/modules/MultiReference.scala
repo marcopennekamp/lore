@@ -2,6 +2,7 @@ package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
+import lore.compiler.semantics.functions.MultiFunctionDefinition
 
 /**
   * A multi-reference represents a reference to multiple definitions of the same simple name. The multi-reference may
@@ -77,5 +78,14 @@ case class MultiReference[A <: BindingDefinition](
       throw CompilationException(s"All members of a multi-reference must have the same simple name. Name paths:" +
         s" ${bindings.map(_.name).mkString(", ")}.")
     }
+  }
+}
+
+object MultiReference {
+  // TODO (multi-import): We might want to lay out the whole thing in a way that precludes the need for this function.
+  //                      That is, instead of returning single multi-function bindings from a scope, always return
+  //                      multi-references, as `UntypedMultiFunctionCall` expects multi-references.
+  def single(mf: MultiFunctionDefinition): MultiReference[MultiFunctionDefinition] = {
+    MultiReference(BindingDefinitionKind.MultiFunction, Set(mf), Set.empty)
   }
 }

@@ -21,7 +21,7 @@ object UsageAnalyzer {
     */
   private case class UsageVisitor() extends ExpressionVerificationVisitor {
     override def before: PartialFunction[Expression, Unit] = {
-      case expression@Block(expressions, _, _) =>
+      case expression@Block(expressions, _) =>
         // Only the last expression in a block can be used, and only if the block itself is used. A block that is typed
         // as `Unit` and contains a single expression `e` will actually be a block with two expressions: `e` and `()`
         // after type rehydration. Hence, `e.isUsed` will properly be set to `false` by this visitor.
@@ -38,9 +38,6 @@ object UsageAnalyzer {
       // result list and hence no need to use the body's result.
       case expression@WhileLoop(_, body, _) if expression.isUnused => body.setUnused()
       case expression@ForLoop(_, body, _) if expression.isUnused => body.setUnused()
-
-      // Type ascription doesn't change `value` in any way, so `value`'s usage is entirely determined by `expression`.
-      case expression@Ascription(value, _, _) if expression.isUnused => value.setUnused()
 
       case _ => // All sub-expressions are used by default or the expression has no sub-expressions.
     }
