@@ -41,7 +41,7 @@ object MultiFunctionTyping {
     expression: UntypedMultiFunctionCall,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
 
     Typing2.traceCheckOrInfer("multi-function call", expression, expectedType)
     Typing2.indentationLogger.indented {
@@ -53,7 +53,7 @@ object MultiFunctionTyping {
     expression: UntypedMultiFunctionCall,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // TODO (multi-import): Take care of multi-references here...
     val mf = expression.target.singleBinding
 
@@ -112,7 +112,7 @@ object MultiFunctionTyping {
     inferredArguments: Vector[Option[Expression]],
     functionCandidates: Vector[FunctionDefinition],
     context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResults] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = {
     if (functionCandidates.length == 1) {
       val (argumentsCandidate, feedback) = attemptFunctionCandidate(
         functionCandidates.head,
@@ -137,7 +137,7 @@ object MultiFunctionTyping {
     inferredArguments: Vector[Option[Expression]],
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2): (Option[ArgumentsCandidate], Vector[Feedback]) = {
+  )(implicit registry: Registry): (Option[ArgumentsCandidate], Vector[Feedback]) = {
     implicit val reporter: MemoReporter = MemoReporter()
     val candidateOption = CallTyping
       .checkOrInfer(function.signature, expression, inferredArguments, expectedType, context) {

@@ -3,6 +3,7 @@ package lore.compiler
 import lore.compiler.core.{CompilationException, UniqueKey}
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.types.Type
 
 package object typing2 {
   /**
@@ -19,8 +20,11 @@ package object typing2 {
     *   information could be kept local when multi-function calls etc. are resolved. (Sort of: get initial type
     *   variable information into a map, then infer all untyped arguments, then finish the type variable assignments
     *   map, and then use that information to ultimately type the whole call and especially the output type.)
+    *
+    * @param returnType The expected return type of the surrounding function, used to check `Return` expressions.
     */
   case class InferenceContext(
+    returnType: Type,
     localVariables: Map[UniqueKey, LocalVariable],
   ) {
     def withLocalVariable(variable: LocalVariable): InferenceContext = {

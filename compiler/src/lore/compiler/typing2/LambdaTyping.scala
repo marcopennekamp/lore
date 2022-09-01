@@ -24,7 +24,7 @@ object LambdaTyping {
     expression: UntypedLambdaValue,
     expectedType: Type,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // If a lambda function is missing a parameter type declaration, it requires the expected type to be a
     // function type.
     expectedType match {
@@ -52,7 +52,7 @@ object LambdaTyping {
         }
 
         val (typedParameters, context2) = buildTypedParameters(expression.parameters, parameterTypes, context)
-        checker.check(expression.body, expectedType.output, context2).mapFirst { typedBody =>
+        Checker2.check(expression.body, expectedType.output, context2).mapFirst { typedBody =>
           LambdaValue(
             typedParameters,
             typedBody,

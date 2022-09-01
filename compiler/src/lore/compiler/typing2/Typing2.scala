@@ -25,8 +25,7 @@ object Typing2 {
 
     val result = timed(s"Checking types for `$label`", log = s => logger.debug(s)) {
       MemoReporter.nested(parentReporter) { implicit reporter =>
-        val checker = Checker2(returnType)
-        val result = checker.check(expression, returnType, InferenceContext(Map.empty))
+        val result = Checker2.check(expression, returnType, InferenceContext(returnType, Map.empty))
 
         logger.whenDebugEnabled {
           result match {

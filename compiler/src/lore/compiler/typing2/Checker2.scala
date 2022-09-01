@@ -1,9 +1,8 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{ExpressionFeedback, Feedback, MemoReporter, Reporter, TypingFeedback}
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
@@ -12,12 +11,7 @@ import lore.compiler.types._
 import lore.compiler.typing2.unification.InferenceVariable2
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
-/**
-  * @param returnType The expected return type of the surrounding function, used to check `Return` expressions.
-  */
-case class Checker2(returnType: Type)(implicit registry: Registry) {
-
-  private implicit val checker: Checker2 = this
+object Checker2 {
 
   /**
     * Checks that `expression` has the type `expectedType` (or a subtype thereof) and produces a typed [[Expression]].
@@ -30,7 +24,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expression: UntypedExpression,
     expectedType: Type,
     context: InferenceContext,
-  )(implicit reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // TODO (multi-import): Temporary/assertion. Remove (in production).
     if (!InferenceVariable2.isFullyInstantiated(expectedType)) {
       throw CompilationException("`expectedType` must be fully instantiated!")
@@ -81,29 +75,6 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
       case expression: UntypedBindingAccess =>
         BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context).map((_, context))
 
-      case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
-        checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
-          val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
-          (
-            // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
-            //                      Mutability might be an issue, if we want consistency between mutability and
-            //                      assignments, although mutability should be checked here and then could be forgotten
-            //                      about.
-            VariableDeclaration(typedVariable, typedValue, typeAnnotation, position),
-            context2.withLocalVariable(typedVariable),
-          )
-        }
-
-      case UntypedAssignment(target, value, position) =>
-        Synthesizer2.infer(target, context).flatMap { case (typedTarget: Expression.Access, context2) =>
-          if (!typedTarget.isMutable) {
-            reporter.error(ExpressionFeedback.ImmutableAssignment(typedTarget))
-          }
-          check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
-        }
-
-      case UntypedReturn(value, position) => check(value, returnType, context).mapFirst(Return(_, position))
-
       case block: UntypedBlock => BlockTyping.checkOrInfer(block, Some(expectedType), context)
       case expression: UntypedCond => CondTyping.checkOrInfer(expression, Some(expectedType), context)
       case expression: UntypedWhileLoop => LoopTyping.checkOrInfer(expression, Some(expectedType), context)
@@ -137,7 +108,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expressions: Vector[UntypedExpression],
     expectedType: Type,
     context: InferenceContext,
-  )(implicit reporter: Reporter): Option[InferenceResults] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = {
     check(expressions, Vector.fill(expressions.length)(expectedType), context)
   }
 
@@ -149,7 +120,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expressions: Vector[UntypedExpression],
     expectedTypes: Vector[Type],
     context: InferenceContext,
-  )(implicit reporter: Reporter): Option[InferenceResults] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = {
     expressions.zip(expectedTypes).foldSomeCollect(context) {
       case (context, (expression, expectedType)) => check(expression, expectedType, context)
     }
@@ -163,7 +134,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expression: UntypedExpression,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit reporter: Reporter): Option[InferenceResult] = expectedType match {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = expectedType match {
     case Some(expectedType) => check(expression, expectedType, context)
     case None => Synthesizer2.infer(expression, context)
   }
@@ -176,7 +147,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expressions: Vector[UntypedExpression],
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit reporter: Reporter): Option[InferenceResults] = expectedType match {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = expectedType match {
     case Some(expectedType) => check(expressions, expectedType, context)
     case None => Synthesizer2.infer(expressions, context)
   }
@@ -189,7 +160,7 @@ case class Checker2(returnType: Type)(implicit registry: Registry) {
     expression: UntypedExpression,
     expectedType: Type,
     context: InferenceContext,
-  ): (Option[InferenceResult], Vector[Feedback]) = {
+  )(implicit registry: Registry): (Option[InferenceResult], Vector[Feedback]) = {
     implicit val reporter: MemoReporter = MemoReporter()
     (check(expression, expectedType, context), reporter.feedback)
   }

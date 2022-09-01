@@ -16,8 +16,8 @@ object LoopTyping {
     expression: UntypedWhileLoop,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    checker.check(expression.condition, BasicType.Boolean, context).flatMap { case (typedCondition, context2) =>
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    Checker2.check(expression.condition, BasicType.Boolean, context).flatMap { case (typedCondition, context2) =>
       checkOrInferBody(expression.body, expectedType, context2)
         .mapFirst(typedBody => WhileLoop(typedCondition, typedBody, expression.position))
     }
@@ -27,7 +27,7 @@ object LoopTyping {
     expression: UntypedForLoop,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     inferExtractors(expression, context).flatMap { case (typedExtractors, context2) =>
       checkOrInferBody(expression.body, expectedType, context2).mapFirst { typedBody =>
         ForLoop(typedExtractors, typedBody, expression.position)
@@ -39,9 +39,9 @@ object LoopTyping {
     body: UntypedExpression,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     expectedType match {
-      case Some(ListType(elementType)) => checker.check(body, elementType, context)
+      case Some(ListType(elementType)) => Checker2.check(body, elementType, context)
       case _ => Synthesizer2.infer(body, context)
     }
   }
@@ -49,7 +49,7 @@ object LoopTyping {
   private def inferExtractors(
     expression: UntypedForLoop,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter) = {
+  )(implicit registry: Registry, reporter: Reporter) = {
     expression.extractors.foldSome((Vector.empty[Extractor], context)) {
       case ((typedExtractors, context2), extractor) =>
         Synthesizer2.infer(extractor.collection, context2).flatMap { case (typedCollection, context3) =>

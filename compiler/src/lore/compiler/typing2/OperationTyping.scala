@@ -18,9 +18,9 @@ object OperationTyping {
   def checkArithmeticOperand(
     operand: UntypedExpression,
     context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
-    checker.attempt(operand, BasicType.Int, context)._1.orElse {
-      checker.check(operand, BasicType.Real, context)
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    Checker2.attempt(operand, BasicType.Int, context)._1.orElse {
+      Checker2.check(operand, BasicType.Real, context)
     }
   }
 
@@ -35,7 +35,7 @@ object OperationTyping {
   def inferArithmeticOperation(
     operation: UntypedBinaryOperation,
     context: InferenceContext,
-  )(implicit checker: Checker2, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     checkArithmeticOperand(operation.operand1, context).flatMap { case (typedOperand1, context2) =>
       checkArithmeticOperand(operation.operand2, context2).mapFirst { typedOperand2 =>
         val resultType = OperationTyping.getArithmeticResultType(typedOperand1, typedOperand2)
@@ -51,7 +51,7 @@ object OperationTyping {
   def inferComparison(
     operation: UntypedBinaryOperation,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     Synthesizer2.infer(operation.operand1, context).flatMap { case (typedOperand1, context2) =>
       infer(operation.operand2, context2).flatMapFirst { typedOperand2 =>
         buildComparison(operation, typedOperand1, typedOperand2)
@@ -92,7 +92,7 @@ object OperationTyping {
   def inferAppend(
     operation: UntypedBinaryOperation,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     Synthesizer2.infer(operation.operand1, context).flatMap { case (typedCollection, context2) =>
       // The appended element's type might need to be informed by the collection's type, for example when the
       // collection is a list of functions and the appended element is an anonymous function without type
@@ -100,7 +100,7 @@ object OperationTyping {
       // This is not always valid, though, because appending might widen the type of the list. When checking
       // fails, we thus need to default to inference.
       def checkAppendedElement(expectedElementType: Type): Option[InferenceResult] = {
-        checker.attempt(operation.operand2, expectedElementType, context2)._1.orElse(infer(operation.operand2, context2))
+        Checker2.attempt(operation.operand2, expectedElementType, context2)._1.orElse(infer(operation.operand2, context2))
       }
 
       typedCollection.tpe match {
@@ -124,7 +124,7 @@ object OperationTyping {
   def inferConcatenation(
     operation: UntypedXaryOperation,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     Synthesizer2.infer(operation.operands, context).flatMapFirst { typedOperands =>
       stringifyOperands(typedOperands).map { stringifiedOperands =>
         XaryOperation(

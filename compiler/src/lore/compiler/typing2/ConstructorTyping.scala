@@ -13,7 +13,7 @@ object ConstructorTyping {
     expression: UntypedConstructorCall,
     expectedType: Option[DeclaredType],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // TODO (multi-import): Do we need to incorporate this? I don't think so, because this is already handled by
     //                      unifying the constructor's output type with the expected type, which has been added with
     //                      the new typing approach.

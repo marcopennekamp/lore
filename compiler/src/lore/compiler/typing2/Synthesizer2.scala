@@ -1,16 +1,17 @@
 package lore.compiler.typing2
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
+import lore.compiler.feedback._
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.bindings.LocalVariable
+import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.typed.Expression.BinaryOperator._
 import lore.compiler.semantics.expressions.typed.Expression.UnaryOperator.{LogicalNot, Negation}
 import lore.compiler.semantics.expressions.typed.Expression.XaryOperator.{Concatenation, Conjunction, Disjunction}
 import lore.compiler.semantics.expressions.typed.Expression._
-import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
-import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}
+import lore.compiler.types.{BasicType, FunctionType, Type}
 import lore.compiler.typing2.unification.InferenceVariable2
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
@@ -23,20 +24,14 @@ object Synthesizer2 {
   def infer(
     expression: UntypedExpression,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    def delegate(expectedType: Type) = checker.check(expression, expectedType, context)
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     def simpleResult(expression: Expression) = Some(expression, context)
 
-    // Note that some expressions, such as `Return`, are handled by the Checker, so we need to delegate back to it.
-    // Because the Synthesizer doesn't know about the expected type, this can only ever be a predetermined one. The
-    // other case is returning a "static result", which happens when we try to infer leaf expressions such as literals
-    // or binding accesses.
-    // To avoid confusion between these two default cases, this match doesn't have a default case.
     val result: Option[InferenceResult] = expression match {
       case UntypedHole(tpe, position) => simpleResult(Hole(tpe, position))
 
       case UntypedTypeAscription(value, expectedType, position) =>
-        checker.check(value, expectedType, context).mapFirst {
+        Checker2.check(value, expectedType, context).mapFirst {
           typedValue => TypeAscription(typedValue, expectedType, position)
         }
 
@@ -79,7 +74,7 @@ object Synthesizer2 {
           case Negation => OperationTyping.checkArithmeticOperand(operand, context).mapFirst(
             typedOperand => create(typedOperand, typedOperand.tpe)
           )
-          case LogicalNot => checker.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
+          case LogicalNot => Checker2.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
         }
 
       case operation: UntypedBinaryOperation => operation.operator match {
@@ -91,7 +86,7 @@ object Synthesizer2 {
 
       case operation@UntypedXaryOperation(operator, operands, position) => operator match {
         case Conjunction | Disjunction =>
-          checker.check(operands, BasicType.Boolean, context)
+          Checker2.check(operands, BasicType.Boolean, context)
             .mapFirst(XaryOperation(operator, _, BasicType.Boolean, position))
 
         case Concatenation => OperationTyping.inferConcatenation(operation, context)
@@ -123,8 +118,26 @@ object Synthesizer2 {
           IntrinsicCall(target, typedArguments, tpe, position)
         }
 
-      case _: UntypedVariableDeclaration => delegate(TupleType.UnitType)
-      case _: UntypedAssignment => delegate(TupleType.UnitType)
+      case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
+        Checker2.checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
+          val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
+          (
+            // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
+            //                      Mutability might be an issue, if we want consistency between mutability and
+            //                      assignments, although mutability should be checked here and then could be forgotten
+            //                      about.
+            VariableDeclaration(typedVariable, typedValue, typeAnnotation, position),
+            context2.withLocalVariable(typedVariable),
+          )
+        }
+
+      case UntypedAssignment(target, value, position) =>
+        infer(target, context).flatMap { case (typedTarget: Expression.Access, context2) =>
+          if (!typedTarget.isMutable) {
+            reporter.error(ExpressionFeedback.ImmutableAssignment(typedTarget))
+          }
+          Checker2.check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
+        }
 
       case expression: UntypedBindingAccess =>
         BindingAccessTyping.checkOrInfer(expression, None, context).flatMap(simpleResult)
@@ -139,7 +152,9 @@ object Synthesizer2 {
           }
         }
 
-      case _: UntypedReturn => delegate(BasicType.Nothing)
+      case UntypedReturn(value, position) =>
+        Checker2.check(value, context.returnType, context).mapFirst(Return(_, position))
+
       case expression: UntypedBlock => BlockTyping.checkOrInfer(expression, None, context)
       case expression: UntypedCond => CondTyping.checkOrInfer(expression, None, context)
       case expression: UntypedWhileLoop => LoopTyping.checkOrInfer(expression, None, context)
@@ -163,7 +178,7 @@ object Synthesizer2 {
   def infer(
     expressions: Vector[UntypedExpression],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResults] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = {
     expressions.foldSomeCollect(context) {
       case (context, expression) => infer(expression, context)
     }
@@ -176,7 +191,7 @@ object Synthesizer2 {
   def attempt(
     expression: UntypedExpression,
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry): (Option[InferenceResult], Vector[Feedback]) = {
+  )(implicit registry: Registry): (Option[InferenceResult], Vector[Feedback]) = {
     implicit val reporter: MemoReporter = MemoReporter()
     (infer(expression, context), reporter.feedback)
   }

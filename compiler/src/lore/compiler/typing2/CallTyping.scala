@@ -25,7 +25,7 @@ object CallTyping {
     context: InferenceContext,
   )(
     buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     val (inferredArguments, context2) = inferArguments(expression, context)
     checkOrInfer(function, expression, inferredArguments, expectedType, context2)(buildCallExpression)
   }
@@ -46,7 +46,7 @@ object CallTyping {
     context: InferenceContext,
   )(
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
-  )(implicit checker: Checker2, reporter: Reporter): Option[(R, InferenceContext)] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
     if (expression.arity != function.arity) {
       reporter.error(TypingFeedback.Call.IllegalArity(expression.arity, function.arity, expression))
       return None
@@ -108,10 +108,10 @@ object CallTyping {
     * Only definitely inferable arguments are inferred by this function. Other arguments require type information from
     * the call target and cannot be inferred immediately.
     */
-  def inferArguments(expression: UntypedCall, context: InferenceContext)(
-    implicit checker: Checker2,
-    registry: Registry,
-  ): (Vector[Option[Expression]], InferenceContext) = {
+  def inferArguments(
+    expression: UntypedCall,
+    context: InferenceContext,
+  )(implicit registry: Registry): (Vector[Option[Expression]], InferenceContext) = {
     // TODO (multi-import): If an argument is definitely inferable and the attempt results in a `None`, report that as
     //                      an error right away and don't continue with the call typing after that.
     val result = expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
@@ -138,10 +138,10 @@ object CallTyping {
     context: InferenceContext,
   )(
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
-  )(implicit checker: Checker2, reporter: Reporter): Option[(R, InferenceContext)] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
     expression.arguments.zip(function.parameterTypes)
       .foldSomeCollect(context) {
-        case (context, (argument, parameterType)) => checker.check(argument, parameterType, context)
+        case (context, (argument, parameterType)) => Checker2.check(argument, parameterType, context)
       }
       .mapFirst(typedArguments => toResult(typedArguments, Map.empty))
   }
@@ -155,17 +155,14 @@ object CallTyping {
     typeParameters: Vector[InferenceVariable2],
     assignments: InferenceAssignments,
     context: InferenceContext,
-  )(
-    implicit checker: Checker2,
-    reporter: Reporter,
-  ): Option[(Expression, (InferenceAssignments, InferenceContext))] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[(Expression, (InferenceAssignments, InferenceContext))] = {
     val parameterTypeCandidate = InferenceVariable2.instantiateCandidate(parameterType, assignments)
     Typing2.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type" +
       s" `$parameterTypeCandidate`:")
 
     Typing2.indentationLogger.indented {
       // Note that `check` reports a subtyping error if the argument's type isn't legal.
-      checker.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
+      Checker2.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
         // The `check` already ensures that the argument type is a subtype of the parameter type. Hence, argument type
         // unification only makes sense when type parameters are present, as it otherwise serves no purpose.
         if (typeParameters.nonEmpty) {

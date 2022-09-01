@@ -13,7 +13,7 @@ object BlockTyping {
     block: UntypedBlock,
     expectedType: Option[Type],
     context: InferenceContext,
-  )(implicit checker: Checker2, registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     if (block.expressions.isEmpty) {
       // An empty block must contain at least one expression: the unit value.
       Some(Block(Vector(TupleValue(Vector.empty, block.position)), block.position), context)
@@ -23,7 +23,7 @@ object BlockTyping {
           (
             expectedType match {
               case Some(expectedType) if expectedType != TupleType.UnitType =>
-                checker.check(block.expressions.last, expectedType, context2)
+                Checker2.check(block.expressions.last, expectedType, context2)
               case _ => Synthesizer2.infer(block.expressions.last, context2)
             }
           ).mapFirst(typedExpressions :+ _)
