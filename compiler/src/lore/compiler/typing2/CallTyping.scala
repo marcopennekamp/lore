@@ -104,18 +104,27 @@ object CallTyping {
   /**
     * Attempts to infer the call's arguments without a type context. The resulting list contains an inferred expression
     * for each argument, or `None` if the argument couldn't be inferred.
+    *
+    * Only definitely inferable arguments are inferred by this function. Other arguments require type information from
+    * the call target and cannot be inferred immediately.
     */
   def inferArguments(expression: UntypedCall, context: InferenceContext)(
     implicit checker: Checker2,
     registry: Registry,
   ): (Vector[Option[Expression]], InferenceContext) = {
-    expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
-      case ((typedArguments, context2), argument) =>
+    // TODO (multi-import): If an argument is definitely inferable and the attempt results in a `None`, report that as
+    //                      an error right away and don't continue with the call typing after that.
+    val result = expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
+      case ((typedArguments, context2), argument) if Inferability.isDefinitelyInferable(argument) =>
         Synthesizer2.attempt(argument, context2)._1 match {
           case Some((typedArgument, context3)) => (typedArguments :+ Some(typedArgument), context3)
           case None => (typedArguments :+ None, context2)
         }
+      case ((typedArguments, context2), _) => (typedArguments :+ None, context2)
     }
+    Typing2.logger.trace(s"Pre-inferred argument types:" +
+      s" (${result._1.map(_.map(_.tpe.toString).getOrElse("None")).mkString(", ")}).")
+    result
   }
 
   /**
@@ -130,11 +139,6 @@ object CallTyping {
   )(
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
   )(implicit checker: Checker2, reporter: Reporter): Option[(R, InferenceContext)] = {
-    if (expression.arity != function.arity) {
-      reporter.error(TypingFeedback.Function.IllegalArity(expression.arity, function.arity, expression))
-      return None
-    }
-
     expression.arguments.zip(function.parameterTypes)
       .foldSomeCollect(context) {
         case (context, (argument, parameterType)) => checker.check(argument, parameterType, context)

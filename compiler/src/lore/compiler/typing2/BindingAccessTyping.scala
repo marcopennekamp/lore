@@ -58,7 +58,8 @@ object BindingAccessTyping {
         Some(BindingAccess(typedVariable, expression.position))
 
       case binding: TypedTermBinding =>
-        // Global variables and struct objects don't need to be coerced or inferred.
+        // Global variables, struct objects, and function parameters (in the form of LocalVariables) don't need to be
+        // coerced or inferred.
         Some(BindingAccess(binding, expression.position))
     }
   }

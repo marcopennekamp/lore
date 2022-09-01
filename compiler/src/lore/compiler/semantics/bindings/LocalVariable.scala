@@ -4,7 +4,7 @@ import lore.compiler.core.{UniqueIdentifiable, UniqueKey}
 import lore.compiler.types.Type
 
 /**
-  * A LocalVariable is a variable declared in a local scope.
+  * A LocalVariable is a typed variable declared in a local scope.
   *
   * The [[UniqueKey]] is used to differentiate between local variables defined in nested local scopes.
   *
@@ -26,7 +26,8 @@ import lore.compiler.types.Type
   * the first `x` would receive key 0, `y` key 1, and the second `x` key 2.
   *
   * Exactly one [[LocalVariable]] instance should exist per local variable declaration. The conversion from
-  * [[UntypedLocalVariable]] must be one-to-one.
+  * [[UntypedLocalVariable]] must be one-to-one. Function parameters are immediately registered as [[LocalVariable]]s,
+  * while variable declarations register [[UntypedLocalVariable]]s.
   */
 case class LocalVariable(
   uniqueKey: UniqueKey,

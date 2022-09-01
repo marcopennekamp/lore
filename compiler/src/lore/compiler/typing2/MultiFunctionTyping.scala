@@ -60,9 +60,11 @@ object MultiFunctionTyping {
     val (inferredArguments, context2) = CallTyping.inferArguments(expression, context)
     inferredArguments.sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
+      Typing2.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")
       return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
     }
 
+    // TODO (multi-import): Instead of considering functions from a flat list, walk the dispatch hierarchy...
     val functionCandidates = filterFunctionCandidates(mf, expression, inferredArguments)
     val (arguments, context3) = findArguments(
       mf,

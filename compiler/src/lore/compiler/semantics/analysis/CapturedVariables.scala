@@ -3,14 +3,14 @@ package lore.compiler.semantics.analysis
 import lore.compiler.core.{CompilationException, UniqueKey}
 import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.typed.{Expression, ExpressionCombiningVisitor, ExpressionVisitor}
-import lore.compiler.semantics.expressions.typed.Expression.{LambdaValue, ForLoop}
+import lore.compiler.semantics.expressions.typed.Expression.{BindingAccess, ForLoop, LambdaValue, VariableDeclaration}
 
 object CapturedVariables {
 
   /**
     * Finds all unique local variables that the given lambda expression must invariably capture.
     */
-  def findCapturedVariables(expression: Expression.LambdaValue): Set[LocalVariable] = {
+  def findCapturedVariables(expression: LambdaValue): Set[LocalVariable] = {
     val visitor = CapturedVariableVisitor()
     ExpressionVisitor.visit(visitor)(expression)
   }
@@ -24,13 +24,13 @@ object CapturedVariables {
     override def combine(values: Vector[Set[LocalVariable]]): Set[LocalVariable] = values.flatten.toSet
 
     override def visit(
-      expression: Expression.VariableDeclaration,
+      expression: VariableDeclaration,
     )(capturedVariables: Set[LocalVariable]): Set[LocalVariable] = {
       localDeclarations += expression.variable.uniqueKey
       capturedVariables
     }
 
-    override def visit(expression: Expression.BindingAccess): Set[LocalVariable] = {
+    override def visit(expression: BindingAccess): Set[LocalVariable] = {
       expression.binding match {
         case variable: LocalVariable if !localDeclarations.contains(variable.uniqueKey) =>
           if (variable.isMutable) {

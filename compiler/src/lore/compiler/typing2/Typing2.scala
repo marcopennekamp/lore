@@ -30,10 +30,9 @@ object Typing2 {
 
         logger.whenDebugEnabled {
           result match {
-            case Some((typedExpression, context)) =>
-              val localVariableInfos = context.localVariables.values.map(v => s"${v.name}: ${v.tpe}")
+            case Some((typedExpression, _)) =>
               logger.debug(s"Checking types for `$label` was successful with the following expression type:" +
-                s" ${typedExpression.tpe}. Local variables:\n${localVariableInfos.mkString("\n")}")
+                s" ${typedExpression.tpe}.")
 
             case None =>
               logger.debug(s"Checking types for `$label` failed with the following feedback:")

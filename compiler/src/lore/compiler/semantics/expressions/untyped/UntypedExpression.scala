@@ -27,7 +27,7 @@ import lore.compiler.types.{StructProperty, StructType, Type}
   * Both workarounds have their issues. The UntypedExpression representation is more verbose, but cleaner and
   * ultimately preferable.
   */
-trait UntypedExpression extends Positioned
+sealed trait UntypedExpression extends Positioned
 
 object UntypedExpression {
 
@@ -116,7 +116,7 @@ object UntypedExpression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Operators and calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  trait UntypedOperation extends UntypedExpression {
+  sealed trait UntypedOperation extends UntypedExpression {
     def operator: Operator
     def operands: Vector[UntypedExpression]
   }
@@ -144,7 +144,7 @@ object UntypedExpression {
     position: Position,
   ) extends UntypedOperation
 
-  trait UntypedCall extends UntypedExpression {
+  sealed trait UntypedCall extends UntypedExpression {
     def arguments: Vector[UntypedExpression]
     def arity: Int = arguments.length
   }
