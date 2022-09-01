@@ -121,6 +121,7 @@ object Synthesizer2 {
       case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
         Checker2.checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
           val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
+          Typing2.logger.trace(s"Local variable: `${typedVariable.name}: ${typedVariable.tpe}`.")
           (
             // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
             //                      Mutability might be an issue, if we want consistency between mutability and
