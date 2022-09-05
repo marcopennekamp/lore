@@ -111,7 +111,7 @@ object OperationTyping {
           }
 
         case _ =>
-          reporter.report(TypingFeedback.List.AppendListExpected(typedCollection, operation))
+          reporter.report(TypingFeedback.Append.ListExpected(typedCollection, operation))
           None
       }
     }

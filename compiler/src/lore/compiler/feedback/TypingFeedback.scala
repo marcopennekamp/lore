@@ -1,9 +1,8 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics.bindings.StructConstructorBinding
 import lore.compiler.semantics.expressions.typed.Expression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedTupleValue, UntypedValueCall}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -64,60 +63,13 @@ object TypingFeedback {
     }
   }
 
-  object Function {
-    // TODO (multi-import): Move to Call namespace.
-    case class IllegalArity(
-      argumentCount: Int,
-      parameterCount: Int,
-      positioned: Positioned,
-    ) extends Feedback.Error(positioned) {
-      override def message: String = s"A function with $parameterCount parameters received $argumentCount arguments."
-    }
-
-    // TODO (multi-import): Don't use this. Use `Call.IllegalArgumentType` instead.
-    case class IllegalArgumentTypes(
-      argumentTypes: Vector[Type],
-      parameterTypes: Vector[Type],
-      positioned: Positioned,
-    ) extends Feedback.Error(positioned) {
-      override def message: String = s"The argument types `(${argumentTypes.mkString(", ")})` don't fit into the expected" +
-        s" parameter types `(${parameterTypes.mkString(", ")})`."
-    }
-
-    // TODO (multi-import): Remove.
-    case class IllegalTypeArguments(
-      typeArguments: Vector[Type],
-      typeParameters: Vector[Type],
-      positioned: Positioned,
-    ) extends Feedback.Error(positioned) {
-      override def message: String = s"The type arguments `${typeArguments.mkString(", ")}` don't fit the type" +
-        s" parameters `${typeParameters.mkString(", ")}`."
-    }
-  }
-
   object AnonymousFunction {
-    case class FunctionTypeExpected(
-      expression: Expression.LambdaValue,
-      expectedType: Type,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"The type of the anonymous function cannot be inferred from a type `$expectedType`." +
-        s" Either annotate all parameters with a type, or provide a function type in an outer expression."
-    }
-
     case class FunctionTypeExpected2(
       expression: UntypedLambdaValue,
       expectedType: Type,
     ) extends Feedback.Error(expression) {
       override def message: String = s"The type of the lambda function cannot be inferred from a type `$expectedType`." +
         s" Either annotate all parameters with a type, or provide a function type in an outer expression."
-    }
-
-    case class IllegalArity(
-      expression: Expression.LambdaValue,
-      expectedType: FunctionType,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"The anonymous function declares ${expression.parameters.length} parameters, but" +
-        s" the expected function type `$expectedType` expects ${expectedType.input.elements.length} parameters."
     }
 
     case class IllegalArity2(
@@ -128,15 +80,6 @@ object TypingFeedback {
         s" function type `$expectedType` expects ${expectedType.arity} parameters."
     }
 
-    case class IllegalParameterTypes(
-      expression: Expression.LambdaValue,
-      expectedType: FunctionType,
-      parameterTypes: TupleType,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"The anonymous function declares parameters of type `$parameterTypes`, but the" +
-        s" expected function type `$expectedType` has incompatible parameters."
-    }
-
     case class IllegalParameterType(
       expectedParameterType: Type,
       parameterType: Type,
@@ -144,11 +87,6 @@ object TypingFeedback {
     ) extends Feedback.Error(parameterPosition) {
       override def message: String = s"The lambda function declares a parameter of type `$parameterType`, but the" +
         s" expected function type expects `$expectedParameterType` for this parameter."
-    }
-
-    case class TypeContextExpected(expression: Expression.LambdaValue) extends Feedback.Error(expression) {
-      override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
-        s" parameters with a type, or provide a function type in an outer expression."
     }
 
     case class TypeContextExpected2(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
@@ -219,27 +157,19 @@ object TypingFeedback {
       override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."
     }
-    case class IncorrectLength(expression: Expression.TupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
-      override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
-        s" `$expectedType` requires ${expectedType.elements.length} elements."
-    }
-  }
-
-  object List {
-    case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
-      override def message: String = s"You can only append elements to lists. The type `$actualType` is not a list."
-    }
-
-    case class AppendListExpected(collection: Expression, positioned: Positioned) extends Feedback.Error(positioned) {
-      override def message: String = s"You can only append elements to lists. The collection of type" +
-        s" `${collection.tpe}` is not a list."
-    }
   }
 
   object Shape {
     case class DuplicateProperty(node: TypeExprNode.ShapePropertyNode) extends Feedback.Error(node) {
       override def message: String = s"The property `${node.name}` is declared twice in the shape type. Shape type" +
         s" properties must be unique."
+    }
+  }
+
+  object Append {
+    case class ListExpected(collection: Expression, positioned: Positioned) extends Feedback.Error(positioned) {
+      override def message: String = s"You can only append elements to lists. The collection of type" +
+        s" `${collection.tpe}` is not a list."
     }
   }
 
@@ -268,18 +198,6 @@ object TypingFeedback {
   object ValueCall {
     case class FunctionExpected(expression: UntypedValueCall, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"Only functions may be called. You are trying to call a value of type `$actualType`."
-    }
-  }
-
-  object ConstructorCall {
-    case class CannotSpecialize(
-      binding: StructConstructorBinding,
-      expectedType: DeclaredType,
-      expression: Positioned,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"A construction of `${binding.name}` cannot result in expected type" +
-        s" `$expectedType`, because `$expectedType` cannot be specialized to `${binding.name}`. Most likely," +
-        s" `${binding.name}` is not a subtype of `$expectedType`."
     }
   }
 
