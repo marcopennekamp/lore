@@ -4,10 +4,8 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
+import lore.compiler.semantics.expressions.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.typed.Expression
-import lore.compiler.semantics.expressions.typed.Expression.BinaryOperator._
-import lore.compiler.semantics.expressions.typed.Expression.UnaryOperator.{LogicalNot, Negation}
-import lore.compiler.semantics.expressions.typed.Expression.XaryOperator.{Concatenation, Conjunction, Disjunction}
 import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
@@ -71,25 +69,28 @@ object Synthesizer {
         }
 
         operator match {
-          case Negation => OperationTyping.checkArithmeticOperand(operand, context).mapFirst(
+          case UnaryOperator.Negation => OperationTyping.checkArithmeticOperand(operand, context).mapFirst(
             typedOperand => create(typedOperand, typedOperand.tpe)
           )
-          case LogicalNot => Checker.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
+          case UnaryOperator.LogicalNot => Checker.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
         }
 
       case operation: UntypedBinaryOperation => operation.operator match {
-        case Addition | Subtraction | Multiplication | Division =>
+        case BinaryOperator.Addition | BinaryOperator.Subtraction | BinaryOperator.Multiplication | BinaryOperator.Division =>
           OperationTyping.inferArithmeticOperation(operation, context)
-        case Equals | LessThan | LessThanEquals => OperationTyping.inferComparison(operation, context)
-        case Append => OperationTyping.inferAppend(operation, context)
+
+        case BinaryOperator.Equals | BinaryOperator.LessThan | BinaryOperator.LessThanEquals =>
+          OperationTyping.inferComparison(operation, context)
+
+        case BinaryOperator.Append => OperationTyping.inferAppend(operation, context)
       }
 
       case operation@UntypedXaryOperation(operator, operands, position) => operator match {
-        case Conjunction | Disjunction =>
+        case XaryOperator.Conjunction | XaryOperator.Disjunction =>
           Checker.check(operands, BasicType.Boolean, context)
             .mapFirst(XaryOperation(operator, _, BasicType.Boolean, position))
 
-        case Concatenation => OperationTyping.inferConcatenation(operation, context)
+        case XaryOperator.Concatenation => OperationTyping.inferConcatenation(operation, context)
       }
 
       case expression: UntypedMultiFunctionCall =>

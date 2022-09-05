@@ -3,7 +3,7 @@ package lore.compiler.assembly.values
 import lore.compiler.assembly.{Chunk, RuntimeNames}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
-import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.utils.CollectionExtensions.{OptionVectorExtension, VectorExtension}
 

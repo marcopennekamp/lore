@@ -8,6 +8,7 @@ import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.LocalVariable
+import lore.compiler.semantics.expressions.BinaryOperator
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView

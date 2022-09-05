@@ -4,7 +4,7 @@ import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
 import lore.compiler.poem.PoemOperation.PoemOperation
-import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.{BasicType, Kind, Type}
 

@@ -3,8 +3,8 @@ package lore.compiler.semantics.expressions.untyped
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.bindings.{StructConstructorBinding, TermBinding, TypedTermBinding, UntypedLocalVariable}
+import lore.compiler.semantics.expressions.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.typed.Expression
-import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperator, Operator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.types.{StructProperty, StructType, Type}
