@@ -202,16 +202,16 @@ object Expression {
     override def tpe: Type = target.signature.outputType
   }
 
+  case class ConstructorCall(
+    tpe: StructType,
+    arguments: Vector[Expression],
+    position: Position,
+  ) extends Call
+
   case class ValueCall(
     target: Expression,
     arguments: Vector[Expression],
     tpe: Type,
-    position: Position,
-  ) extends Call
-
-  case class ConstructorCall(
-    tpe: StructType,
-    arguments: Vector[Expression],
     position: Position,
   ) extends Call
 

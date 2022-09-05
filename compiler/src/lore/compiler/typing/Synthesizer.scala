@@ -93,8 +93,8 @@ object Synthesizer {
         case XaryOperator.Concatenation => OperationTyping.inferConcatenation(operation, context)
       }
 
-      case expression: UntypedMultiFunctionCall =>
-        MultiFunctionTyping.checkOrInferCall(expression, None, context)
+      case expression: UntypedMultiFunctionCall => MultiFunctionTyping.checkOrInferCall(expression, None, context)
+      case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
 
       case expression: UntypedValueCall =>
         // TODO (multi-import): Once we support uniform call syntax, we additionally need a case in the Checker that
@@ -111,8 +111,6 @@ object Synthesizer {
               None
           }
         }
-
-      case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
 
       case UntypedIntrinsicCall(target, arguments, tpe, position) =>
         infer(arguments, context).mapFirst { typedArguments =>

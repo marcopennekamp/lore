@@ -170,16 +170,14 @@ object UntypedExpression {
     position: Position,
   ) extends UntypedCall
 
-  // TODO (multi-import): Swap positions of UntypedConstructorCall and UntypedIntrinsicCall. (Same with Expressions.)
-
-  case class UntypedValueCall(
-    target: UntypedExpression,
+  case class UntypedConstructorCall(
+    target: StructConstructorBinding,
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall
 
-  case class UntypedConstructorCall(
-    target: StructConstructorBinding,
+  case class UntypedValueCall(
+    target: UntypedExpression,
     arguments: Vector[UntypedExpression],
     position: Position,
   ) extends UntypedCall

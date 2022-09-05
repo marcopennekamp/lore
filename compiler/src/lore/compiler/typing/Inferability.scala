@@ -39,8 +39,8 @@ object Inferability {
     case UntypedShapeValue(properties, _) => properties.forall(p => isDefinitelyInferable(p.value))
 
     case call: UntypedMultiFunctionCall => call.arguments.forall(isDefinitelyInferable)
-    case call: UntypedValueCall => isDefinitelyInferable(call.target)
     case call: UntypedConstructorCall => call.target.isConstant || call.arguments.forall(isDefinitelyInferable)
+    case call: UntypedValueCall => isDefinitelyInferable(call.target)
 
     case access: UntypedBindingAccess => access.binding match {
       case _: UntypedLocalVariable | _: LocalVariable | _: GlobalVariableDefinition | _: StructObjectBinding => true

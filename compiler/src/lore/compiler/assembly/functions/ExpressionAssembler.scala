@@ -208,6 +208,9 @@ class ExpressionAssembler(
         PoemInstruction.Dispatch(regResult, expression.mf.name, valueArgumentRegs),
       )
 
+      case expression: ConstructorCall =>
+        ConstructorAssembler.generateCall(expression.tpe, regResult, valueArgumentRegs)
+
       case ValueCall(ConstructorValue(structType, _), _, _, _) =>
         // Optimization: We can treat a direct constructor value call as a constructor call.
         ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
@@ -216,9 +219,6 @@ class ExpressionAssembler(
         val functionChunk = generate(target)
         val regFunction = functionChunk.forceResult(target.position)
         functionChunk ++ Chunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, valueArgumentRegs))
-
-      case expression: ConstructorCall =>
-        ConstructorAssembler.generateCall(expression.tpe, regResult, valueArgumentRegs)
 
       case expression: IntrinsicCall => IntrinsicAssembler.generate(expression, regResult, valueArgumentRegs)
     }

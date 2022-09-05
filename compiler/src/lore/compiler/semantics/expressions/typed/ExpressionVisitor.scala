@@ -28,8 +28,8 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: BinaryOperation)(left: A, right: A): B
   def visit(expression: XaryOperation)(operands: Vector[A]): B
   def visit(expression: MultiFunctionCall)(arguments: Vector[A]): B
-  def visit(expression: ValueCall)(target: A, arguments: Vector[A]): B
   def visit(expression: ConstructorCall)(arguments: Vector[A]): B
+  def visit(expression: ValueCall)(target: A, arguments: Vector[A]): B
   def visit(expression: IntrinsicCall)(arguments: Vector[A]): B
 
   // Variables and members.
@@ -81,8 +81,8 @@ object ExpressionVisitor {
       case node@BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@XaryOperation(_, operands, _, _) => visitor.visit(node)(operands.map(rec))
       case node@MultiFunctionCall(_, arguments, _) => visitor.visit(node)(arguments.map(rec))
-      case node@ValueCall(target, arguments, _, _) => visitor.visit(node)(rec(target), arguments.map(rec))
       case node@ConstructorCall(_, arguments, _) => visitor.visit(node)(arguments.map(rec))
+      case node@ValueCall(target, arguments, _, _) => visitor.visit(node)(rec(target), arguments.map(rec))
       case node@IntrinsicCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
 
       case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))

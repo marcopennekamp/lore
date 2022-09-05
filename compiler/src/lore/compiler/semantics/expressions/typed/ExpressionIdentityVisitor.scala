@@ -33,8 +33,8 @@ trait ExpressionIdentityVisitor[R] extends ExpressionVisitor[Expression, R] {
   override def visit(expression: BinaryOperation)(left: Expression, right: Expression): R = wrap(expression.copy(left = left, right = right))
   override def visit(expression: XaryOperation)(operands: Vector[Expression]): R = wrap(expression.copy(operands = operands))
   override def visit(expression: MultiFunctionCall)(arguments: Vector[Expression]): R = wrap(expression.copy(arguments = arguments))
-  override def visit(expression: ValueCall)(target: Expression, arguments: Vector[Expression]): R = wrap(expression.copy(target = target, arguments = arguments))
   override def visit(expression: ConstructorCall)(arguments: Vector[Expression]): R = wrap(expression.copy(arguments = arguments))
+  override def visit(expression: ValueCall)(target: Expression, arguments: Vector[Expression]): R = wrap(expression.copy(target = target, arguments = arguments))
   override def visit(expression: IntrinsicCall)(arguments: Vector[Expression]): R = wrap(expression.copy(arguments = arguments))
 
   override def visit(expression: VariableDeclaration)(value: Expression): R = wrap(expression.copy(value = value))
