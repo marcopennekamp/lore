@@ -25,11 +25,6 @@ object Checker {
     expectedType: Type,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    // TODO (multi-import): Temporary/assertion. Remove (in production).
-    if (!InferenceVariable.isFullyInstantiated(expectedType)) {
-      throw CompilationException("`expectedType` must be fully instantiated!")
-    }
-
     def fallback = Synthesizer.infer(expression, context)
 
     // Step 1: Check and/or infer the untyped expression to produce a typed expression.
@@ -84,11 +79,6 @@ object Checker {
     }
 
     result.flatMap { case (typedExpression, _) =>
-      // TODO (multi-import): Temporary/assertion. Remove (in production).
-      if (!InferenceVariable.isFullyInstantiated(typedExpression.tpe)) {
-        throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
-      }
-
       Typing.traceExpressionType(typedExpression, "Checked", s" (Expected type: $expectedType.)")
 
       // Step 2: Check that the typed expression agrees with the expected type.

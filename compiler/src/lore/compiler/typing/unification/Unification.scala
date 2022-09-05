@@ -230,8 +230,8 @@ object Unification {
     boundTypes: Vector[BoundType],
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
-    val bounds1 = InferenceVariable.getBounds(iv1, assignments)
-    val bounds2 = InferenceVariable.getBounds(iv2, assignments)
+    val assignment1 = assignments.getEffective(iv1)
+    val assignment2 = assignments.getEffective(iv2)
 
     def assignBoth(bound: Type, boundType: BoundType, assignments: InferenceAssignments) = {
       InferenceVariable
@@ -240,11 +240,11 @@ object Unification {
     }
 
     val lowerAssignments = if (boundTypes.contains(BoundType.Lower)) {
-      assignBoth(SumType.construct(bounds1.lower, bounds2.lower), BoundType.Lower, assignments)
+      assignBoth(SumType.construct(assignment1.lower, assignment2.lower), BoundType.Lower, assignments)
     } else Some(assignments)
 
     lowerAssignments.flatMap { lowerAssignments =>
-      assignBoth(IntersectionType.construct(bounds1.upper, bounds2.upper), BoundType.Upper, lowerAssignments)
+      assignBoth(IntersectionType.construct(assignment1.upper, assignment2.upper), BoundType.Upper, lowerAssignments)
     }
   }
 

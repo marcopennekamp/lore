@@ -30,19 +30,17 @@ trait TypeSchema {
     */
   def constantType: Type = _constantType
 
-  // TODO (multi-import): Can't this simply be inlined into the `constantType` definition?
   private lazy val _constantType: Type = {
     if (isConstantSchema) instantiate(Map.empty)
     else throw CompilationException(s"Cannot get the constant type of a non-constant schema. Schema: $this.")
   }
 
   /**
-    * These assignments can be used to instantiate the type schema with the parameters themselves as type arguments.
-    * This is beneficial in a few select use cases.
-    *
-    * TODO (multi-import): Is this still used enough? Seems kinda specific.
+    * The schema's identity type is the schema instantiated with its own type parameters as type arguments.
     */
-  lazy val typeParameterIdentityAssignments: TypeVariable.Assignments = typeParameters.zip(typeParameters).toMap
+  def identityType: Type = _identityType
+
+  private lazy val _identityType = instantiate(typeParameters.zip(typeParameters).toMap)
 
   /**
     * Instantiates the schema with the given type variable assignments, which must already be fully checked by a safe

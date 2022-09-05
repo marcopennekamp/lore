@@ -32,15 +32,6 @@ object InferenceVariable {
   }
 
   /**
-    * Returns the effective bounds of `iv`, which may or may not be contained in `assignments`.
-    *
-    * TODO (multi-import): Maybe an `assignments.getBounds` rather?
-    */
-  def getBounds(iv: InferenceVariable, assignments: InferenceAssignments): InferenceBounds = {
-    assignments.getOrElse(iv, InferenceBounds(iv, BasicType.Nothing, BasicType.Any))
-  }
-
-  /**
     * Assigns `lowerBound` to `iv`'s lower bound and `upperBound` to its upper bound. Returns None if the old and new
     * bounds are incompatible.
     */
@@ -75,11 +66,11 @@ object InferenceVariable {
     boundType: BoundType,
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
-    val bounds = getBounds(iv, assignments)
-    if (bounds.lower <= bound && bound <= bounds.upper) {
+    val assignment = assignments.getEffective(iv)
+    if (assignment.lower <= bound && bound <= assignment.upper) {
       val updatedBounds = boundType match {
-        case BoundType.Lower => InferenceBounds(iv, bound, bounds.upper)
-        case BoundType.Upper => InferenceBounds(iv, bounds.lower, bound)
+        case BoundType.Lower => InferenceBounds(iv, bound, assignment.upper)
+        case BoundType.Upper => InferenceBounds(iv, assignment.lower, bound)
       }
       Some(assignments.updated(iv, updatedBounds))
     } else None
@@ -112,11 +103,11 @@ object InferenceVariable {
     boundType: BoundType,
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
-    val bounds = getBounds(iv, assignments)
+    val assignment = assignments.getEffective(iv)
 
     boundType match {
-      case BoundType.Lower => if (bound <= bounds.lower) return Some(assignments)
-      case BoundType.Upper => if (bounds.upper <= bound) return Some(assignments)
+      case BoundType.Lower => if (bound <= assignment.lower) return Some(assignments)
+      case BoundType.Upper => if (assignment.upper <= bound) return Some(assignments)
     }
 
     assign(iv, bound, boundType, assignments)
@@ -198,18 +189,9 @@ object InferenceVariable {
   }
 
   /**
-    * Instantiates all inference variables in all `types` with their candidate types.
-    */
-  def instantiateCandidate(types: Vector[Type], assignments: InferenceAssignments): Vector[Type] = {
-    types.map(instantiateCandidate(_, assignments))
-  }
-
-  /**
     * Instantiates all inference variables in `tpe` with a type given by `get`, which should take the bound type into
     * account. Contravariant types flip the bound type relationship, because their upper bounds effectively relate to
     * the lower bound of inference variables and vice versa.
-    *
-    * TODO (multi-import): Are all of these instantiate variants still needed?
     */
   private def instantiate(
     tpe: Type,
@@ -225,7 +207,7 @@ object InferenceVariable {
     val rec = (t: Type) => instantiate(t, boundType, assignments)(get: (InferenceBounds, BoundType) => Type)
     val recContravariant = (t: Type) => instantiate(t, BoundType.flip(boundType), assignments)(get)
     tpe match {
-      case iv: InferenceVariable => get(InferenceVariable.getBounds(iv, assignments), boundType)
+      case iv: InferenceVariable => get(assignments.getEffective(iv), boundType)
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))
       case TupleType(elements) => TupleType(elements.map(rec))

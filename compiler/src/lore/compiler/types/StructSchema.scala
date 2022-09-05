@@ -50,10 +50,11 @@ class StructSchema(
     * The constructor signature of the struct <i>without</i> instantiated type parameters.
     */
   lazy val constructorSignature: FunctionSignature = {
-    instantiate(typeParameterIdentityAssignments).constructorSignature.copy(typeParameters = typeParameters)
+    identityType.constructorSignature.copy(typeParameters = typeParameters)
   }
 
   override def constantType: StructType = super.constantType.asInstanceOf[StructType]
+  override def identityType: StructType = super.identityType.asInstanceOf[StructType]
   override def instantiate(assignments: TypeVariable.Assignments): StructType = StructType(this, assignments)
 
   override def position: Position = node.position

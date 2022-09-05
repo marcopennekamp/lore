@@ -162,11 +162,6 @@ object Synthesizer {
     }
 
     result.foreach { case (typedExpression, _) =>
-      // TODO (multi-import): Temporary/assertion. Remove (in production).
-      if (!InferenceVariable.isFullyInstantiated(typedExpression.tpe)) {
-        throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
-      }
-
       Typing.traceExpressionType(typedExpression, "Inferred")
     }
     result

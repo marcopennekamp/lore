@@ -42,8 +42,6 @@ object UntypedExpression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Values.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO (multi-import): This untyped IntValue could help us to allow ints in real positions, e.g. `[5.0, 3]` typed as
-  //                      `Real`.
   case class UntypedIntValue(value: Long, position: Position) extends UntypedExpression
   case class UntypedRealValue(value: Double, position: Position) extends UntypedExpression
   case class UntypedBooleanValue(value: Boolean, position: Position) extends UntypedExpression
@@ -149,20 +147,6 @@ object UntypedExpression {
     def arity: Int = arguments.length
   }
 
-  // TODO (multi-import): We can turn UntypedMultiFunctionCall, UntypedValueCall, and UntypedConstructorCall into a
-  //                      single UntypedBindingCall. This might simplify the untyped expression tree slightly.
-
-//  /**
-//    * [[UntypedBindingCall]] represents untyped multi-function, value, and constructor calls. The specific kind of call
-//    * is determined during typing, when binding coercion is also resolved. Treating all calls in a single family makes
-//    * handling uniform call syntax easier. (TODO: Does it?)
-//    */
-//  case class UntypedBindingCall(
-//    target: TermBinding,
-//    arguments: Vector[UntypedExpression],
-//    position: Position,
-//  ) extends UntypedCall
-
   // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
   case class UntypedMultiFunctionCall(
     target: MultiReference[MultiFunctionDefinition],
@@ -192,7 +176,6 @@ object UntypedExpression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variables and members.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO (multi-import): The variable needs a position!
   case class UntypedVariableDeclaration(
     variable: UntypedLocalVariable,
     value: UntypedExpression,
@@ -213,11 +196,8 @@ object UntypedExpression {
   }
 
   /**
-    * @param binding The binding is a [[TermBinding]], not a [[TypedTermBinding]], because
-    *
-    *                TODO (multi-import): The untyped nature of the binding might allow us to move access coercion of multi-functions
-    *                to the typing phase, because this binding access could carry a multi-function binding. That
-    *                would mean that we don't need an UntypedMultiFunctionValue.
+    * @param binding The binding is a [[TermBinding]], not a [[TypedTermBinding]], because it isn't typed yet and may
+    *                thus, for example, be a multi-function or struct constructor binding.
     */
   case class UntypedBindingAccess(
     binding: TermBinding,

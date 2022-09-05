@@ -39,18 +39,7 @@ case class LocalVariable(
 }
 
 object LocalVariable {
-  def apply(name: String, tpe: Type, isMutable: Boolean): LocalVariable = {
-    LocalVariable(UniqueKey.fresh(), name, tpe, isMutable)
-  }
-
   def apply(untypedVariable: UntypedLocalVariable, tpe: Type): LocalVariable = {
     LocalVariable(untypedVariable.uniqueKey, untypedVariable.name, tpe, untypedVariable.isMutable)
   }
-
-  /**
-    * Creates an <b>immutable</b> local variable.
-    *
-    * TODO (multi-import): Needed?
-    */
-  def apply(name: String, tpe: Type): LocalVariable = LocalVariable(name, tpe, isMutable = false)
 }

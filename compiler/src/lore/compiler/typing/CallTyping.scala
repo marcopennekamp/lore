@@ -14,9 +14,10 @@ import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorEx
 object CallTyping {
 
   /**
-    * TODO (multi-import): Document.
-    * TODO (multi-import): Note that `checkOrInfer` does tracing, but the caller will have to ensure there's a trace
-    *                      "heading" and an indent, like ConstructorTyping does.
+    * Checks or infers a call expression and builds a resulting call expression with `buildCallExpression`.
+    *
+    * [[checkOrInfer]] performs trace logging, but doesn't add a preceding heading, nor indentation. See
+    * [[ConstructorTyping.checkOrInferCall]] on how to provide context to call typing logs.
     */
   def checkOrInfer(
     function: FunctionIdentity,

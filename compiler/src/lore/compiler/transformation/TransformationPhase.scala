@@ -8,8 +8,6 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.definitions.Definition
 import lore.compiler.types.StructSchema
 
-// TODO (multi-import): Find a better name for this phase.
-
 object TransformationPhase {
 
   def process(definition: Definition)(implicit registry: Registry, reporter: Reporter): Unit = definition match {

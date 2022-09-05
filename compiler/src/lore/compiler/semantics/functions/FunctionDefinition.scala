@@ -16,13 +16,11 @@ import lore.compiler.utils.Once
   * for every defined function.
   *
   * The position is restricted to the function's name for better error highlighting and index building.
-  *
-  * TODO (multi-import): Make this a FunctionLike?
   */
 class FunctionDefinition(
+  val multiFunction: MultiFunctionDefinition,
   val signature: FunctionSignature,
   val node: FunctionNode,
-  val multiFunction: MultiFunctionDefinition, // TODO (multi-import): Make this the first property.
 ) extends Positioned with HasLocalModule {
   val name: NamePath = signature.name
   override val position: Position = signature.position

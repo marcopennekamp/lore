@@ -17,8 +17,6 @@ sealed trait Expression extends Positioned {
     * instructions may be omitted during assembly.
     *
     * `isUsed` is set by [[lore.compiler.transformation.UsageAnalyzer]] during the transformation stage.
-    *
-    * TODO (multi-import): Can we roll this into the UntypedExpression -> Expression transformation?
     */
   var isUsed: Boolean = true
 

@@ -29,7 +29,7 @@ object MultiFunctionDefinitionResolver {
         val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
         val outputType = TypeResolver.resolve(node.outputType).getOrElse(BasicType.Any)
         val signature = FunctionSignature(multiFunction.name, typeParameters, parameters, outputType, node.nameNode.position)
-        new FunctionDefinition(signature, node, multiFunction)
+        new FunctionDefinition(multiFunction, signature, node)
     }
   }
 

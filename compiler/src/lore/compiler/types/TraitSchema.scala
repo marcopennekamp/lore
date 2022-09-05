@@ -10,6 +10,7 @@ class TraitSchema(
 ) extends DeclaredSchema {
   override def kind: Kind = Kind.Trait
   override def constantType: TraitType = super.constantType.asInstanceOf[TraitType]
+  override def identityType: TraitType = super.identityType.asInstanceOf[TraitType]
   override def instantiate(assignments: TypeVariable.Assignments): TraitType = TraitType(this, assignments)
 
   override def position: Position = node.position
