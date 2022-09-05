@@ -17,8 +17,18 @@ trait TypeSyntax {
   val boolean: BasicType = BasicType.Boolean
   val string: BasicType = BasicType.String
 
-  def typeVariable(name: String, lowerBound: Type = BasicType.Nothing, upperBound: Type = BasicType.Any): TypeVariable = {
-    new TypeVariable(UniqueKey.fresh(), name, lowerBound, upperBound, Variance.Invariant, false, 0)
+  /**
+    * Constructs a new type variable. Specifying the `index` is mandatory because [[Fit]] requires it to bring type
+    * variables into the correct dependency order. For example, if we have type variables `A` and `B >: A`, `A` must be
+    * ordered before `B`, so `A` must have index 0 and `B` must have index 1.
+    */
+  def typeVariable(
+    name: String,
+    index: Int,
+    lowerBound: Type = BasicType.Nothing,
+    upperBound: Type = BasicType.Any,
+  ): TypeVariable = {
+    new TypeVariable(UniqueKey.fresh(), name, lowerBound, upperBound, Variance.Invariant, false, index)
   }
 
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.rootModule.types.get(name).get.constantType

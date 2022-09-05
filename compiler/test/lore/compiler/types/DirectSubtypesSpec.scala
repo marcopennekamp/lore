@@ -21,15 +21,15 @@ class DirectSubtypesSpec extends TypeSpec {
       UnicornPen, ConfusedCage3
     )
 
-    val X = typeVariable("X", upperBound = Animal)
+    val X = typeVariable("X", 0, upperBound = Animal)
     assertDirectSubtypes(Cage(X))(
       Aquarium(Fish), UnicornPen, ConfusedCage1, ConfusedCage2, ConfusedCage3, ConfusedCage4
     )
-    val Y = typeVariable("Y", upperBound = Fish)
+    val Y = typeVariable("Y", 1, upperBound = Fish)
     assertDirectSubtypes(Cage(Y))(
       Aquarium(Y), ConfusedCage1, ConfusedCage4
     )
-    val Z = typeVariable("Z", lowerBound = Fish, upperBound = Animal)
+    val Z = typeVariable("Z", 2, lowerBound = Fish, upperBound = Animal)
     assertDirectSubtypes(Cage(Z))(
       Aquarium(Fish), ConfusedCage1, ConfusedCage2, ConfusedCage4
     )

@@ -50,6 +50,9 @@ object Fit {
 
     // Type variables need to be ordered by their index so that inference variable bounds can be built correctly (due
     // to dependencies between type variables).
+    // TODO: We could also get the sorted list of type variables through the Fit API. Maybe we can even provide both
+    //       options, because not all usages of Fit have a list of type variables available. In any case, sorting by
+    //       the `index` is valid, but feels kind of hacky.
     val orderedTypeVariables = typeVariables.toVector.sortBy(_.index)
     val (s2, tvToIv) = InferenceVariable2.fromTypeVariables(t2, orderedTypeVariables)
     Unification2.unifyFits(t1, s2, Map.empty).flatMap { assignments =>
