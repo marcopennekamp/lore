@@ -1,13 +1,13 @@
-package lore.compiler.typing2.unification
+package lore.compiler.typing.unification
 
 import lore.compiler.types.{BasicType, Type}
-import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
+import lore.compiler.typing.unification.InferenceBounds.BoundType
 
 // TODO (multi-import): Rename InferenceBounds to InferenceAssignment. Rename lower to lowerBound and upper to
 //                      upperBound. The reason for this is that bounds were already added to inference variables, and
 //                      the term "inference bounds" conflicts with that.
-case class InferenceBounds2(
-  iv: InferenceVariable2,
+case class InferenceBounds(
+  iv: InferenceVariable,
   lower: Type,
   upper: Type,
 ) {
@@ -25,24 +25,24 @@ case class InferenceBounds2(
   /**
     * Returns the bound with the given bound type.
     */
-  def get(boundType: BoundType2): Type = boundType match {
-    case BoundType2.Lower => lower
-    case BoundType2.Upper => upper
+  def get(boundType: BoundType): Type = boundType match {
+    case BoundType.Lower => lower
+    case BoundType.Upper => upper
   }
 
   override def toString: String = s"$iv($lower, $upper)"
 }
 
-object InferenceBounds2 {
-  sealed trait BoundType2
+object InferenceBounds {
+  sealed trait BoundType
 
-  object BoundType2 {
-    case object Lower extends BoundType2
-    case object Upper extends BoundType2
+  object BoundType {
+    case object Lower extends BoundType
+    case object Upper extends BoundType
 
-    def flip(boundType: BoundType2): BoundType2 = boundType match {
-      case BoundType2.Lower => BoundType2.Upper
-      case BoundType2.Upper => BoundType2.Lower
+    def flip(boundType: BoundType): BoundType = boundType match {
+      case BoundType.Lower => BoundType.Upper
+      case BoundType.Upper => BoundType.Lower
     }
   }
 }

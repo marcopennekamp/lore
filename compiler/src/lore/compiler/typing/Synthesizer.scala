@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
@@ -12,10 +12,10 @@ import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types.{BasicType, FunctionType, Type}
-import lore.compiler.typing2.unification.InferenceVariable2
+import lore.compiler.typing.unification.InferenceVariable
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
-object Synthesizer2 {
+object Synthesizer {
 
   /**
     * Infers the type of `expression` solely from the shape of the expression and the inference context, producing a
@@ -31,7 +31,7 @@ object Synthesizer2 {
       case UntypedHole(tpe, position) => simpleResult(Hole(tpe, position))
 
       case UntypedTypeAscription(value, expectedType, position) =>
-        Checker2.check(value, expectedType, context).mapFirst {
+        Checker.check(value, expectedType, context).mapFirst {
           typedValue => TypeAscription(typedValue, expectedType, position)
         }
 
@@ -50,7 +50,7 @@ object Synthesizer2 {
           val (typedParameters, context2) = LambdaTyping.buildTypedParameters(parameters, parameterTypes, context)
           infer(body, context2).mapFirst(LambdaValue(typedParameters, _, position))
         } else {
-          reporter.report(TypingFeedback.AnonymousFunction.TypeContextExpected2(expression))
+          reporter.report(TypingFeedback.AnonymousFunction.TypeContextExpected(expression))
           None
         }
 
@@ -74,7 +74,7 @@ object Synthesizer2 {
           case Negation => OperationTyping.checkArithmeticOperand(operand, context).mapFirst(
             typedOperand => create(typedOperand, typedOperand.tpe)
           )
-          case LogicalNot => Checker2.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
+          case LogicalNot => Checker.check(operand, BasicType.Boolean, context).mapFirst(create(_, BasicType.Boolean))
         }
 
       case operation: UntypedBinaryOperation => operation.operator match {
@@ -86,7 +86,7 @@ object Synthesizer2 {
 
       case operation@UntypedXaryOperation(operator, operands, position) => operator match {
         case Conjunction | Disjunction =>
-          Checker2.check(operands, BasicType.Boolean, context)
+          Checker.check(operands, BasicType.Boolean, context)
             .mapFirst(XaryOperation(operator, _, BasicType.Boolean, position))
 
         case Concatenation => OperationTyping.inferConcatenation(operation, context)
@@ -119,9 +119,9 @@ object Synthesizer2 {
         }
 
       case UntypedVariableDeclaration(variable, value, typeAnnotation, position) =>
-        Checker2.checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
+        Checker.checkOrInfer(value, typeAnnotation, context).map { case (typedValue, context2) =>
           val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
-          Typing2.logger.trace(s"Local variable: `${typedVariable.name}: ${typedVariable.tpe}`.")
+          Typing.logger.trace(s"Local variable: `${typedVariable.name}: ${typedVariable.tpe}`.")
           (
             // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
             //                      Mutability might be an issue, if we want consistency between mutability and
@@ -137,7 +137,7 @@ object Synthesizer2 {
           if (!typedTarget.isMutable) {
             reporter.error(ExpressionFeedback.ImmutableAssignment(typedTarget))
           }
-          Checker2.check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
+          Checker.check(value, typedTarget.tpe, context2).mapFirst(Assignment(typedTarget, _, position))
         }
 
       case expression: UntypedBindingAccess =>
@@ -154,7 +154,7 @@ object Synthesizer2 {
         }
 
       case UntypedReturn(value, position) =>
-        Checker2.check(value, context.returnType, context).mapFirst(Return(_, position))
+        Checker.check(value, context.returnType, context).mapFirst(Return(_, position))
 
       case expression: UntypedBlock => BlockTyping.checkOrInfer(expression, None, context)
       case expression: UntypedCond => CondTyping.checkOrInfer(expression, None, context)
@@ -164,11 +164,11 @@ object Synthesizer2 {
 
     result.foreach { case (typedExpression, _) =>
       // TODO (multi-import): Temporary/assertion. Remove (in production).
-      if (!InferenceVariable2.isFullyInstantiated(typedExpression.tpe)) {
+      if (!InferenceVariable.isFullyInstantiated(typedExpression.tpe)) {
         throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
       }
 
-      Typing2.traceExpressionType(typedExpression, "Inferred")
+      Typing.traceExpressionType(typedExpression, "Inferred")
     }
     result
   }

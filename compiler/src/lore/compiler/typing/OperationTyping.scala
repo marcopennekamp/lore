@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
@@ -7,7 +7,7 @@ import lore.compiler.semantics.expressions.typed.Expression.{BinaryOperation, Bi
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBinaryOperation, UntypedXaryOperation}
 import lore.compiler.types.{BasicType, ListType, SumType, Type}
-import lore.compiler.typing2.Synthesizer2.infer
+import lore.compiler.typing.Synthesizer.infer
 import lore.compiler.utils.CollectionExtensions.{OptionVectorExtension, Tuple2OptionExtension}
 
 object OperationTyping {
@@ -19,8 +19,8 @@ object OperationTyping {
     operand: UntypedExpression,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Checker2.attempt(operand, BasicType.Int, context)._1.orElse {
-      Checker2.check(operand, BasicType.Real, context)
+    Checker.attempt(operand, BasicType.Int, context)._1.orElse {
+      Checker.check(operand, BasicType.Real, context)
     }
   }
 
@@ -52,7 +52,7 @@ object OperationTyping {
     operation: UntypedBinaryOperation,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Synthesizer2.infer(operation.operand1, context).flatMap { case (typedOperand1, context2) =>
+    Synthesizer.infer(operation.operand1, context).flatMap { case (typedOperand1, context2) =>
       infer(operation.operand2, context2).flatMapFirst { typedOperand2 =>
         buildComparison(operation, typedOperand1, typedOperand2)
       }
@@ -93,14 +93,14 @@ object OperationTyping {
     operation: UntypedBinaryOperation,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Synthesizer2.infer(operation.operand1, context).flatMap { case (typedCollection, context2) =>
+    Synthesizer.infer(operation.operand1, context).flatMap { case (typedCollection, context2) =>
       // The appended element's type might need to be informed by the collection's type, for example when the
       // collection is a list of functions and the appended element is an anonymous function without type
       // annotations. Hence, we first attempt to check the appended element with the expected element type.
       // This is not always valid, though, because appending might widen the type of the list. When checking
       // fails, we thus need to default to inference.
       def checkAppendedElement(expectedElementType: Type): Option[InferenceResult] = {
-        Checker2.attempt(operation.operand2, expectedElementType, context2)._1.orElse(infer(operation.operand2, context2))
+        Checker.attempt(operation.operand2, expectedElementType, context2)._1.orElse(infer(operation.operand2, context2))
       }
 
       typedCollection.tpe match {
@@ -125,7 +125,7 @@ object OperationTyping {
     operation: UntypedXaryOperation,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Synthesizer2.infer(operation.operands, context).flatMapFirst { typedOperands =>
+    Synthesizer.infer(operation.operands, context).flatMapFirst { typedOperands =>
       stringifyOperands(typedOperands).map { stringifiedOperands =>
         XaryOperation(
           operation.operator,

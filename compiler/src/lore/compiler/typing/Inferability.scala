@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.semantics.bindings.{LocalVariable, StructObjectBinding, UntypedLocalVariable}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
@@ -12,7 +12,7 @@ object Inferability {
     * inference algorithm. This allows [[isDefinitelyInferable]] to assume that all local variables are definitely
     * inferable, which covers a lot of the most common cases.
     *
-    * The objective of this function is to provide a base for [[lore.compiler.typing2.CallTyping]] (and potentially
+    * The objective of this function is to provide a base for [[lore.compiler.typing.CallTyping]] (and potentially
     * other parts of typing or phases of compilation) to find which expressions can be inferred safely without
     * providing an external type context. Some expressions, such as the lambda in the call to `map_wrapper` in the test
     * `test/language/inference/wrapper.lore`, will be technically inferable without a type context, but the resulting
@@ -20,7 +20,7 @@ object Inferability {
     * but then the call cannot be typed correctly. If such an argument was instead checked with the expected argument
     * type, the call could be typed correctly. [[isDefinitelyInferable]] can be used to avoid such premature inference.
     *
-    * This needs to be kept in sync with the capabilities of [[lore.compiler.typing2.Checker2]].
+    * This needs to be kept in sync with the capabilities of [[lore.compiler.typing.Checker]].
     */
   def isDefinitelyInferable(expression: UntypedExpression): Boolean = expression match {
     case UntypedTupleValue(elements, _) => elements.forall(isDefinitelyInferable)

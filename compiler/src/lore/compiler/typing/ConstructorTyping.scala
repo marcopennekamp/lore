@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
@@ -28,8 +28,8 @@ object ConstructorTyping {
 //      return None
 //    }
 
-    Typing2.traceCheckOrInfer("constructor call", expression, expectedType)
-    Typing2.indentationLogger.indented {
+    Typing.traceCheckOrInfer("constructor call", expression, expectedType)
+    Typing.indentationLogger.indented {
       val binding = expression.target
       CallTyping.checkOrInfer(binding.signature, expression, expectedType, context) {
         case (typedArguments, assignments) =>

@@ -64,7 +64,7 @@ object TypingFeedback {
   }
 
   object AnonymousFunction {
-    case class FunctionTypeExpected2(
+    case class FunctionTypeExpected(
       expression: UntypedLambdaValue,
       expectedType: Type,
     ) extends Feedback.Error(expression) {
@@ -72,7 +72,7 @@ object TypingFeedback {
         s" Either annotate all parameters with a type, or provide a function type in an outer expression."
     }
 
-    case class IllegalArity2(
+    case class IllegalArity(
       expression: UntypedLambdaValue,
       expectedType: FunctionType,
     ) extends Feedback.Error(expression) {
@@ -89,7 +89,7 @@ object TypingFeedback {
         s" expected function type expects `$expectedParameterType` for this parameter."
     }
 
-    case class TypeContextExpected2(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
+    case class TypeContextExpected(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
         s" parameters with a type, or provide a function type in an outer expression."
     }
@@ -153,7 +153,7 @@ object TypingFeedback {
   }
 
   object Tuple {
-    case class IncorrectLength2(expression: UntypedTupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
+    case class IncorrectLength(expression: UntypedTupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
       override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."
     }

@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
@@ -8,10 +8,10 @@ import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types._
-import lore.compiler.typing2.unification.InferenceVariable2
+import lore.compiler.typing.unification.InferenceVariable
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
-object Checker2 {
+object Checker {
 
   /**
     * Checks that `expression` has the type `expectedType` (or a subtype thereof) and produces a typed [[Expression]].
@@ -26,11 +26,11 @@ object Checker2 {
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     // TODO (multi-import): Temporary/assertion. Remove (in production).
-    if (!InferenceVariable2.isFullyInstantiated(expectedType)) {
+    if (!InferenceVariable.isFullyInstantiated(expectedType)) {
       throw CompilationException("`expectedType` must be fully instantiated!")
     }
 
-    def fallback = Synthesizer2.infer(expression, context)
+    def fallback = Synthesizer.infer(expression, context)
 
     // Step 1: Check and/or infer the untyped expression to produce a typed expression.
     val result: Option[InferenceResult] = expression match {
@@ -42,7 +42,7 @@ object Checker2 {
             if (elements.length == elementTypes.length) {
               check(elements, elementTypes, context).mapFirst(TupleValue(_, position))
             } else {
-              reporter.report(TypingFeedback.Tuple.IncorrectLength2(expression, expectedType))
+              reporter.report(TypingFeedback.Tuple.IncorrectLength(expression, expectedType))
               None
             }
 
@@ -85,11 +85,11 @@ object Checker2 {
 
     result.flatMap { case (typedExpression, _) =>
       // TODO (multi-import): Temporary/assertion. Remove (in production).
-      if (!InferenceVariable2.isFullyInstantiated(typedExpression.tpe)) {
+      if (!InferenceVariable.isFullyInstantiated(typedExpression.tpe)) {
         throw CompilationException("`typedExpression.tpe` must be fully instantiated!")
       }
 
-      Typing2.traceExpressionType(typedExpression, "Checked", s" (Expected type: $expectedType.)")
+      Typing.traceExpressionType(typedExpression, "Checked", s" (Expected type: $expectedType.)")
 
       // Step 2: Check that the typed expression agrees with the expected type.
       if (typedExpression.tpe </= expectedType) {
@@ -127,7 +127,7 @@ object Checker2 {
   }
 
   /**
-    * Depending on whether `expectedType` is defined, performs [[check]] or [[Synthesizer2.infer]].
+    * Depending on whether `expectedType` is defined, performs [[check]] or [[Synthesizer.infer]].
     */
   // noinspection DuplicatedCode
   def checkOrInfer(
@@ -136,11 +136,11 @@ object Checker2 {
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = expectedType match {
     case Some(expectedType) => check(expression, expectedType, context)
-    case None => Synthesizer2.infer(expression, context)
+    case None => Synthesizer.infer(expression, context)
   }
 
   /**
-    * Depending on whether `expectedType` is defined, performs [[check]] or [[Synthesizer2.infer]].
+    * Depending on whether `expectedType` is defined, performs [[check]] or [[Synthesizer.infer]].
     */
   // noinspection DuplicatedCode
   def checkOrInfer(
@@ -149,7 +149,7 @@ object Checker2 {
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = expectedType match {
     case Some(expectedType) => check(expressions, expectedType, context)
-    case None => Synthesizer2.infer(expressions, context)
+    case None => Synthesizer.infer(expressions, context)
   }
 
   /**

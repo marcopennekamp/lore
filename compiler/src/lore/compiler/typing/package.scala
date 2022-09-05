@@ -5,7 +5,7 @@ import lore.compiler.semantics.bindings.LocalVariable
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.Type
 
-package object typing2 {
+package object typing {
   /**
     * For each untyped local variable (by unique key), this map records the actual typed [[LocalVariable]].
     *

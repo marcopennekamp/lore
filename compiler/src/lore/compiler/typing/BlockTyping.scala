@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
@@ -18,13 +18,13 @@ object BlockTyping {
       // An empty block must contain at least one expression: the unit value.
       Some(Block(Vector(TupleValue(Vector.empty, block.position)), block.position), context)
     } else {
-      Synthesizer2.infer(block.expressions.init, context)
+      Synthesizer.infer(block.expressions.init, context)
         .flatMap { case (typedExpressions, context2) =>
           (
             expectedType match {
               case Some(expectedType) if expectedType != TupleType.UnitType =>
-                Checker2.check(block.expressions.last, expectedType, context2)
-              case _ => Synthesizer2.infer(block.expressions.last, context2)
+                Checker.check(block.expressions.last, expectedType, context2)
+              case _ => Synthesizer.infer(block.expressions.last, context2)
             }
           ).mapFirst(typedExpressions :+ _)
         }

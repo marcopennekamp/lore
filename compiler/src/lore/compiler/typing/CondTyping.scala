@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
@@ -14,12 +14,12 @@ object CondTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Checker2.check(
+    Checker.check(
       expression.cases.map(_.condition),
       BasicType.Boolean,
       context,
     ).flatMap { case (typedConditions, context2) =>
-      Checker2.checkOrInfer(
+      Checker.checkOrInfer(
         expression.cases.map(_.body),
         expectedType,
         context2,

@@ -1,7 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.typing2.unification.InferenceVariable2
-import lore.compiler.typing2.unification.Unification2
+import lore.compiler.typing.unification.InferenceVariable
+import lore.compiler.typing.unification.Unification
 
 object Fit {
 
@@ -54,11 +54,11 @@ object Fit {
     //       options, because not all usages of Fit have a list of type variables available. In any case, sorting by
     //       the `index` is valid, but feels kind of hacky.
     val orderedTypeVariables = typeVariables.toVector.sortBy(_.index)
-    val (s2, tvToIv) = InferenceVariable2.fromTypeVariables(t2, orderedTypeVariables)
-    Unification2.unifyFits(t1, s2, Map.empty).flatMap { assignments =>
-      Unification2
+    val (s2, tvToIv) = InferenceVariable.fromTypeVariables(t2, orderedTypeVariables)
+    Unification.unifyFits(t1, s2, Map.empty).flatMap { assignments =>
+      Unification
         .unifyInferenceVariableBounds(tvToIv.values.toVector, assignments)
-        .map(InferenceVariable2.toTypeVariableAssignments(tvToIv, _))
+        .map(InferenceVariable.toTypeVariableAssignments(tvToIv, _))
     }
   }
 

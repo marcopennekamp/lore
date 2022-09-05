@@ -1,11 +1,11 @@
-package lore.compiler.typing2.unification
+package lore.compiler.typing.unification
 
 import lore.compiler.types._
-import lore.compiler.typing2.Typing2
-import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
+import lore.compiler.typing.Typing
+import lore.compiler.typing.unification.InferenceBounds.BoundType
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-object Unification2 {
+object Unification {
 
   /**
     * Unifies `t1` and `t2` such that `t1` is a subtype of `t2`, assigning inference variables accordingly.
@@ -52,20 +52,20 @@ object Unification2 {
     * respective type variable.
     */
   def unifyInferenceVariableBounds(
-    iv: InferenceVariable2,
+    iv: InferenceVariable,
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
     val assignments2 = if (iv.lowerBound != BasicType.Nothing) {
-      Unification2.unifySubtypes(iv.lowerBound, iv, assignments).getOrElse(return None)
+      Unification.unifySubtypes(iv.lowerBound, iv, assignments).getOrElse(return None)
     } else assignments
 
     if (iv.upperBound != BasicType.Any) {
-      Unification2.unifySubtypes(iv, iv.upperBound, assignments2)
+      Unification.unifySubtypes(iv, iv.upperBound, assignments2)
     } else Some(assignments2)
   }
 
   def unifyInferenceVariableBounds(
-    ivs: Vector[InferenceVariable2],
+    ivs: Vector[InferenceVariable],
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
     ivs.foldSome(assignments) {
@@ -75,15 +75,15 @@ object Unification2 {
 
   trait SubtypingCombiner {
     def unify(
-      iv1: InferenceVariable2,
-      iv2: InferenceVariable2,
+      iv1: InferenceVariable,
+      iv2: InferenceVariable,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments]
 
     def ensure(
-      iv: InferenceVariable2,
+      iv: InferenceVariable,
       tpe: Type,
-      boundType: BoundType2,
+      boundType: BoundType,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments]
 
@@ -98,34 +98,34 @@ object Unification2 {
 
   object SubtypesCombiner extends SubtypingCombiner {
     override def unify(
-      iv1: InferenceVariable2,
-      iv2: InferenceVariable2,
+      iv1: InferenceVariable,
+      iv2: InferenceVariable,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = {
-      InferenceVariable2.ensure(
+      InferenceVariable.ensure(
         iv2,
-        InferenceVariable2.instantiateByBound(iv1, BoundType2.Lower, assignments),
-        BoundType2.Lower,
+        InferenceVariable.instantiateByBound(iv1, BoundType.Lower, assignments),
+        BoundType.Lower,
         assignments,
       ).flatMap { assignments2 =>
-        InferenceVariable2.ensure(
+        InferenceVariable.ensure(
           iv1,
-          InferenceVariable2.instantiateByBound(iv2, BoundType2.Upper, assignments2),
-          BoundType2.Upper,
+          InferenceVariable.instantiateByBound(iv2, BoundType.Upper, assignments2),
+          BoundType.Upper,
           assignments2,
         )
       }
     }
 
     override def ensure(
-      iv: InferenceVariable2,
+      iv: InferenceVariable,
       tpe: Type,
-      boundType: BoundType2,
+      boundType: BoundType,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = {
-      InferenceVariable2.ensure(
+      InferenceVariable.ensure(
         iv,
-        InferenceVariable2.instantiateByBound(tpe, boundType, assignments),
+        InferenceVariable.instantiateByBound(tpe, boundType, assignments),
         boundType,
         assignments,
       )
@@ -134,26 +134,26 @@ object Unification2 {
 
   object FitsCombiner extends SubtypingCombiner {
     override def unify(
-      iv1: InferenceVariable2,
-      iv2: InferenceVariable2,
+      iv1: InferenceVariable,
+      iv2: InferenceVariable,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = {
       unifyInferenceVariablesEqual(
         iv1,
         iv2,
-        Vector(BoundType2.Lower, BoundType2.Upper),
+        Vector(BoundType.Lower, BoundType.Upper),
         assignments,
       )
     }
 
     override def ensure(
-      iv: InferenceVariable2,
+      iv: InferenceVariable,
       tpe: Type,
-      boundType: BoundType2,
+      boundType: BoundType,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = {
-      val candidateType = InferenceVariable2.instantiateCandidate(tpe, assignments)
-      InferenceVariable2.ensure(iv, candidateType, candidateType, assignments)
+      val candidateType = InferenceVariable.instantiateCandidate(tpe, assignments)
+      InferenceVariable.ensure(iv, candidateType, candidateType, assignments)
     }
   }
 
@@ -162,21 +162,21 @@ object Unification2 {
     t2: Type,
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
-    if (InferenceVariable2.isFullyInstantiated(t1) && InferenceVariable2.isFullyInstantiated(t2)) {
+    if (InferenceVariable.isFullyInstantiated(t1) && InferenceVariable.isFullyInstantiated(t2)) {
       return combiner.ifFullyInferred(t1, t2, assignments)
     }
 
     def unsupported: Option[InferenceAssignments] = {
-      Typing2.logger.debug(s"Subtyping unification of intersection and sum types is not yet supported." +
+      Typing.logger.debug(s"Subtyping unification of intersection and sum types is not yet supported." +
         s" Given types: `$t1` and `$t2`.")
       None
     }
 
     val rec = unifySubtypes(combiner) _
     (t1, t2) match {
-      case (iv1: InferenceVariable2, iv2: InferenceVariable2) => combiner.unify(iv1, iv2, assignments)
-      case (iv1: InferenceVariable2, t2) => combiner.ensure(iv1, t2, BoundType2.Upper, assignments)
-      case (t1, iv2: InferenceVariable2) => combiner.ensure(iv2, t1, BoundType2.Lower, assignments)
+      case (iv1: InferenceVariable, iv2: InferenceVariable) => combiner.unify(iv1, iv2, assignments)
+      case (iv1: InferenceVariable, t2) => combiner.ensure(iv1, t2, BoundType.Upper, assignments)
+      case (t1, iv2: InferenceVariable) => combiner.ensure(iv2, t1, BoundType.Lower, assignments)
 
       case (t1: TupleType, t2: TupleType) => if (t1.elements.size == t2.elements.size) {
         t1.elements.zip(t2.elements).foldSome(assignments) {
@@ -225,26 +225,26 @@ object Unification2 {
     * Unify the bounds of `iv1` and `iv2` such that their instantiated versions are equal in the given `boundTypes`.
     */
   private def unifyInferenceVariablesEqual(
-    iv1: InferenceVariable2,
-    iv2: InferenceVariable2,
-    boundTypes: Vector[BoundType2],
+    iv1: InferenceVariable,
+    iv2: InferenceVariable,
+    boundTypes: Vector[BoundType],
     assignments: InferenceAssignments,
   ): Option[InferenceAssignments] = {
-    val bounds1 = InferenceVariable2.getBounds(iv1, assignments)
-    val bounds2 = InferenceVariable2.getBounds(iv2, assignments)
+    val bounds1 = InferenceVariable.getBounds(iv1, assignments)
+    val bounds2 = InferenceVariable.getBounds(iv2, assignments)
 
-    def assignBoth(bound: Type, boundType: BoundType2, assignments: InferenceAssignments) = {
-      InferenceVariable2
+    def assignBoth(bound: Type, boundType: BoundType, assignments: InferenceAssignments) = {
+      InferenceVariable
         .assign(iv1, bound, boundType, assignments)
-        .flatMap(InferenceVariable2.assign(iv2, bound, boundType, _))
+        .flatMap(InferenceVariable.assign(iv2, bound, boundType, _))
     }
 
-    val lowerAssignments = if (boundTypes.contains(BoundType2.Lower)) {
-      assignBoth(SumType.construct(bounds1.lower, bounds2.lower), BoundType2.Lower, assignments)
+    val lowerAssignments = if (boundTypes.contains(BoundType.Lower)) {
+      assignBoth(SumType.construct(bounds1.lower, bounds2.lower), BoundType.Lower, assignments)
     } else Some(assignments)
 
     lowerAssignments.flatMap { lowerAssignments =>
-      assignBoth(IntersectionType.construct(bounds1.upper, bounds2.upper), BoundType2.Upper, lowerAssignments)
+      assignBoth(IntersectionType.construct(bounds1.upper, bounds2.upper), BoundType.Upper, lowerAssignments)
     }
   }
 

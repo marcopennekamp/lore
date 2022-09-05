@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
@@ -9,7 +9,7 @@ import lore.compiler.types.Type
 import lore.compiler.utils.IndentationLogger
 import lore.compiler.utils.Timer.timed
 
-object Typing2 {
+object Typing {
 
   val indentationLogger: IndentationLogger = IndentationLogger("lore.compiler.typing")
   val logger: Logger = Logger(indentationLogger)
@@ -25,7 +25,7 @@ object Typing2 {
 
     val result = timed(s"Checking types for `$label`", log = s => logger.debug(s)) {
       MemoReporter.nested(parentReporter) { implicit reporter =>
-        val result = Checker2.check(expression, returnType, InferenceContext(returnType, Map.empty))
+        val result = Checker.check(expression, returnType, InferenceContext(returnType, Map.empty))
 
         logger.whenDebugEnabled {
           result match {

@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
@@ -17,7 +17,7 @@ object LoopTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Checker2.check(expression.condition, BasicType.Boolean, context).flatMap { case (typedCondition, context2) =>
+    Checker.check(expression.condition, BasicType.Boolean, context).flatMap { case (typedCondition, context2) =>
       checkOrInferBody(expression.body, expectedType, context2)
         .mapFirst(typedBody => WhileLoop(typedCondition, typedBody, expression.position))
     }
@@ -41,8 +41,8 @@ object LoopTyping {
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     expectedType match {
-      case Some(ListType(elementType)) => Checker2.check(body, elementType, context)
-      case _ => Synthesizer2.infer(body, context)
+      case Some(ListType(elementType)) => Checker.check(body, elementType, context)
+      case _ => Synthesizer.infer(body, context)
     }
   }
 
@@ -52,7 +52,7 @@ object LoopTyping {
   )(implicit registry: Registry, reporter: Reporter) = {
     expression.extractors.foldSome((Vector.empty[Extractor], context)) {
       case ((typedExtractors, context2), extractor) =>
-        Synthesizer2.infer(extractor.collection, context2).flatMap { case (typedCollection, context3) =>
+        Synthesizer.infer(extractor.collection, context2).flatMap { case (typedCollection, context3) =>
           resolveElementType(typedCollection).map { elementType =>
             val typedVariable = LocalVariable(extractor.variable, elementType)
             (

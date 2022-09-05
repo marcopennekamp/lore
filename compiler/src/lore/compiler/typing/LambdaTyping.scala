@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
@@ -15,7 +15,7 @@ object LambdaTyping {
     *
     * Even if the lambda value is fully annotated, this function is useful because it uses the expected function type's
     * output type to check the lambda body. If the lambda value is fully annotated, but the expected type is not a
-    * function type, [[check]] delegates to [[Synthesizer2.infer]]. (Such a delegation will give the compiler the
+    * function type, [[check]] delegates to [[Synthesizer.infer]]. (Such a delegation will give the compiler the
     * chance to infer the lambda without a context function type. Even if the context type is, say, a trait type `T`,
     * we want the compiler to infer the best type `X => Y` for the lambda, and <i>then</i> report that function type
     * `X => Y` is not a subtype of expected type `T`.)
@@ -52,7 +52,7 @@ object LambdaTyping {
         }
 
         val (typedParameters, context2) = buildTypedParameters(expression.parameters, parameterTypes, context)
-        Checker2.check(expression.body, expectedType.output, context2).mapFirst { typedBody =>
+        Checker.check(expression.body, expectedType.output, context2).mapFirst { typedBody =>
           LambdaValue(
             typedParameters,
             typedBody,
@@ -61,14 +61,14 @@ object LambdaTyping {
         }
 
       case expectedType: FunctionType =>
-        reporter.error(TypingFeedback.AnonymousFunction.IllegalArity2(expression, expectedType))
+        reporter.error(TypingFeedback.AnonymousFunction.IllegalArity(expression, expectedType))
         None
 
       case _ =>
         if (expression.isFullyAnnotated) {
-          Synthesizer2.infer(expression, context)
+          Synthesizer.infer(expression, context)
         } else {
-          reporter.error(TypingFeedback.AnonymousFunction.FunctionTypeExpected2(expression, expectedType))
+          reporter.error(TypingFeedback.AnonymousFunction.FunctionTypeExpected(expression, expectedType))
           None
         }
     }

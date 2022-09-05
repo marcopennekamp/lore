@@ -4,9 +4,9 @@ import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.DeclaredType.getIndirectDeclaredSupertypes
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
-import lore.compiler.typing2.unification.Unification2.FitsCombiner
-import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
+import lore.compiler.typing.unification.InferenceBounds.BoundType
+import lore.compiler.typing.unification.Unification.FitsCombiner
+import lore.compiler.typing.unification.{InferenceAssignments, InferenceVariable, Unification}
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension, VectorMapExtension}
 
 trait DeclaredType extends NamedType {
@@ -185,24 +185,24 @@ trait DeclaredType extends NamedType {
       // possible instantiation of a type variable leads to the subtype, instead of all possible instantiations. The
       // latter is the approach taken by standard subtyping, so `Fish <: Y` would only be true if `Fish` was the lower
       // bound of `Y`. Hence we have to use `unifySubtypes` with a `FitsCombiner`.
-      var typeVariableSubstitutes: Map[TypeVariable, Vector[InferenceVariable2]] = Map.empty
+      var typeVariableSubstitutes: Map[TypeVariable, Vector[InferenceVariable]] = Map.empty
       val extendsClauseTuple = Type.substitute(
         TupleType(extendsClause.typeArguments),
         tv => {
-          val iv = new InferenceVariable2(Some(tv.simpleName), BasicType.Nothing, BasicType.Any)
+          val iv = new InferenceVariable(Some(tv.simpleName), BasicType.Nothing, BasicType.Any)
           typeVariableSubstitutes = typeVariableSubstitutes.appended(tv, iv)
           iv
         },
       )
 
-      val assignments = Unification2.unifySubtypes(ClauseUnificationCombiner)(
+      val assignments = Unification.unifySubtypes(ClauseUnificationCombiner)(
         extendsClauseTuple,
         TupleType(this.typeArguments),
         Map.empty,
       ).getOrElse(return None)
 
       val candidates = typeVariableSubstitutes.map {
-        case (tv, ivs) => tv -> ivs.map(InferenceVariable2.instantiateCandidate(_, assignments))
+        case (tv, ivs) => tv -> ivs.map(InferenceVariable.instantiateCandidate(_, assignments))
       }
       processCandidates(candidates).flatMap { assignments =>
         val instantiatedClause = Type.substitute(extendsClause, assignments)
@@ -225,17 +225,17 @@ trait DeclaredType extends NamedType {
     processCandidates(possibleAssignments.merged)
   }
 
-  private object ClauseUnificationCombiner extends Unification2.SubtypingCombiner {
+  private object ClauseUnificationCombiner extends Unification.SubtypingCombiner {
     override def unify(
-      iv1: InferenceVariable2,
-      iv2: InferenceVariable2,
+      iv1: InferenceVariable,
+      iv2: InferenceVariable,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = FitsCombiner.unify(iv1, iv2, assignments)
 
     override def ensure(
-      iv: InferenceVariable2,
+      iv: InferenceVariable,
       tpe: Type,
-      boundType: BoundType2,
+      boundType: BoundType,
       assignments: InferenceAssignments,
     ): Option[InferenceAssignments] = FitsCombiner.ensure(iv, tpe, boundType, assignments)
 

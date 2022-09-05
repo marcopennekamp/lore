@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
@@ -17,7 +17,7 @@ object ShapeTyping {
     expression.properties
       .foldSome((Vector.empty[ShapeProperty], context)) {
         case ((typedProperties, context2), property) =>
-          Checker2.checkOrInfer(
+          Checker.checkOrInfer(
             property.value,
             expectedType.flatMap(_.propertyType(property.name)),
             context2,

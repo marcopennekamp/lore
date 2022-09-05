@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
@@ -7,8 +7,8 @@ import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
 import lore.compiler.semantics.functions.FunctionIdentity
 import lore.compiler.types.{Fit, TupleType, Type, TypeVariable}
-import lore.compiler.typing2.unification.InferenceBounds2.BoundType2
-import lore.compiler.typing2.unification.{InferenceAssignments, InferenceVariable2, Unification2}
+import lore.compiler.typing.unification.InferenceBounds.BoundType
+import lore.compiler.typing.unification.{InferenceAssignments, InferenceVariable, Unification}
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
 object CallTyping {
@@ -57,7 +57,7 @@ object CallTyping {
     }
 
     // (1) Replace type variables with inference variables in the function's input and output types.
-    val (parameterTypes, tvToIv) = InferenceVariable2.fromTypeVariables(function.parameterTypes, function.typeParameters)
+    val (parameterTypes, tvToIv) = InferenceVariable.fromTypeVariables(function.parameterTypes, function.typeParameters)
     val outputType = Type.substitute(function.outputType, tvToIv)
     val typeParameters = function.typeParameters.map(tvToIv)
 
@@ -78,7 +78,7 @@ object CallTyping {
     //     assign additional type arguments.
     val assignments2 = expectedType match {
       case Some(expectedType) =>
-        Unification2.unifySubtypes(outputType, expectedType, assignments).getOrElse(assignments)
+        Unification.unifySubtypes(outputType, expectedType, assignments).getOrElse(assignments)
       case _ => assignments
     }
 
@@ -98,7 +98,7 @@ object CallTyping {
       .getOrElse(return None)
 
     // (5) Build the result expression.
-    Some(toResult(typedArguments, InferenceVariable2.toTypeVariableAssignments(tvToIv, assignments3)), context2)
+    Some(toResult(typedArguments, InferenceVariable.toTypeVariableAssignments(tvToIv, assignments3)), context2)
   }
 
   /**
@@ -116,13 +116,13 @@ object CallTyping {
     //                      an error right away and don't continue with the call typing after that.
     val result = expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
       case ((typedArguments, context2), argument) if Inferability.isDefinitelyInferable(argument) =>
-        Synthesizer2.attempt(argument, context2)._1 match {
+        Synthesizer.attempt(argument, context2)._1 match {
           case Some((typedArgument, context3)) => (typedArguments :+ Some(typedArgument), context3)
           case None => (typedArguments :+ None, context2)
         }
       case ((typedArguments, context2), _) => (typedArguments :+ None, context2)
     }
-    Typing2.logger.trace(s"Pre-inferred argument types:" +
+    Typing.logger.trace(s"Pre-inferred argument types:" +
       s" (${result._1.map(_.map(_.tpe.toString).getOrElse("None")).mkString(", ")}).")
     result
   }
@@ -141,7 +141,7 @@ object CallTyping {
   )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
     expression.arguments.zip(function.parameterTypes)
       .foldSomeCollect(context) {
-        case (context, (argument, parameterType)) => Checker2.check(argument, parameterType, context)
+        case (context, (argument, parameterType)) => Checker.check(argument, parameterType, context)
       }
       .mapFirst(typedArguments => toResult(typedArguments, Map.empty))
   }
@@ -152,17 +152,17 @@ object CallTyping {
   private def checkArgument(
     argument: UntypedExpression,
     parameterType: Type,
-    typeParameters: Vector[InferenceVariable2],
+    typeParameters: Vector[InferenceVariable],
     assignments: InferenceAssignments,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[(Expression, (InferenceAssignments, InferenceContext))] = {
-    val parameterTypeCandidate = InferenceVariable2.instantiateCandidate(parameterType, assignments)
-    Typing2.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type" +
+    val parameterTypeCandidate = InferenceVariable.instantiateCandidate(parameterType, assignments)
+    Typing.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type" +
       s" `$parameterTypeCandidate`:")
 
-    Typing2.indentationLogger.indented {
+    Typing.indentationLogger.indented {
       // Note that `check` reports a subtyping error if the argument's type isn't legal.
-      Checker2.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
+      Checker.check(argument, parameterTypeCandidate, context).flatMap { case (typedArgument, context2) =>
         // The `check` already ensures that the argument type is a subtype of the parameter type. Hence, argument type
         // unification only makes sense when type parameters are present, as it otherwise serves no purpose.
         if (typeParameters.nonEmpty) {
@@ -185,14 +185,14 @@ object CallTyping {
   private def unifyArgumentType(
     argument: Expression,
     parameterType: Type,
-    typeParameters: Vector[InferenceVariable2],
+    typeParameters: Vector[InferenceVariable],
     assignments: InferenceAssignments,
   )(implicit reporter: Reporter): Option[InferenceAssignments] = {
-    val assignments2 = Unification2.unifyFits(argument.tpe, parameterType, assignments).getOrElse {
+    val assignments2 = Unification.unifyFits(argument.tpe, parameterType, assignments).getOrElse {
       reporter.error(
         TypingFeedback.SubtypeExpected(
           argument.tpe,
-          InferenceVariable2.instantiateCandidate(parameterType, assignments),
+          InferenceVariable.instantiateCandidate(parameterType, assignments),
           argument.position,
         )
       )
@@ -200,13 +200,13 @@ object CallTyping {
     }
 
     typeParameters.foldSome(assignments2) { case (assignments3, iv) =>
-      Unification2.unifyInferenceVariableBounds(iv, assignments3).orElse {
+      Unification.unifyInferenceVariableBounds(iv, assignments3).orElse {
         reporter.error(
           TypingFeedback.IllegalBounds(
-            InferenceVariable2.instantiateCandidate(iv, assignments3),
+            InferenceVariable.instantiateCandidate(iv, assignments3),
             iv.name,
-            InferenceVariable2.instantiateByBound(iv.lowerBound, BoundType2.Lower, assignments3),
-            InferenceVariable2.instantiateByBound(iv.upperBound, BoundType2.Upper, assignments3),
+            InferenceVariable.instantiateByBound(iv.lowerBound, BoundType.Lower, assignments3),
+            InferenceVariable.instantiateByBound(iv.upperBound, BoundType.Upper, assignments3),
             argument.position,
           )
         )

@@ -7,7 +7,7 @@ import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.Type
-import lore.compiler.typing2.Typing2
+import lore.compiler.typing.Typing
 
 object ExpressionTransformer {
 
@@ -33,7 +33,7 @@ object ExpressionTransformer {
       // report a lot of useless errors.
       val hole = Expression.Hole(expectedType, node.position)
       if (!reporter.hasErrors) {
-        Typing2.check(untypedExpression, expectedType, label, reporter).map { typedExpression =>
+        Typing.check(untypedExpression, expectedType, label, reporter).map { typedExpression =>
           UsageAnalyzer.analyzeUsage(typedExpression)
           typedExpression
         }.getOrElse(hole)

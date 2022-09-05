@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.core.Position
 import lore.compiler.feedback._
@@ -43,8 +43,8 @@ object MultiFunctionTyping {
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
 
-    Typing2.traceCheckOrInfer("multi-function call", expression, expectedType)
-    Typing2.indentationLogger.indented {
+    Typing.traceCheckOrInfer("multi-function call", expression, expectedType)
+    Typing.indentationLogger.indented {
       checkOrInferCallImpl(expression, expectedType, context)
     }
   }
@@ -60,7 +60,7 @@ object MultiFunctionTyping {
     val (inferredArguments, context2) = CallTyping.inferArguments(expression, context)
     inferredArguments.sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
-      Typing2.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")
+      Typing.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")
       return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
     }
 
@@ -162,7 +162,7 @@ object MultiFunctionTyping {
       mostSpecific match {
         case Vector(argumentsCandidate) => Some(argumentsCandidate)
         case _ =>
-          Typing2.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n" +
+          Typing.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n" +
             s"${argumentsCandidates.mkString("\n")}")
           reporter.error(
             TypingFeedback.MultiFunctionCall.AmbiguousArgumentTypes(
@@ -174,7 +174,7 @@ object MultiFunctionTyping {
           None
       }
     } else {
-      Typing2.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
+      Typing.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
       val inputType = TupleType(
         inferredArguments.map {
           case Some(typedArgument) => typedArgument.tpe

@@ -1,4 +1,4 @@
-package lore.compiler.typing2
+package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Reporter, TypingFeedback}
