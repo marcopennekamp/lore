@@ -15,7 +15,7 @@ end
 
 func pi(): Real = 3.14
 
-// Illegal: `if ...` has the illegal type Fox | Ox. Expected: Fox.
+// Illegal: `Ox()` has the illegal type Ox. Expected: Fox.
 act test2() do
   let animal: Fox = if 1 == 2 then Fox() else Ox()
 end
