@@ -223,15 +223,9 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variables and members.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /**
-    * TODO: Do we even need to generate VariableDeclarations from untyped Assignments?
-    *
-    * @param typeAnnotation The type that the variable declaration was annotated with.
-    */
   case class VariableDeclaration(
     variable: LocalVariable,
     value: Expression,
-    typeAnnotation: Option[Type], // TODO (multi-import): This can be removed.
     position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
 

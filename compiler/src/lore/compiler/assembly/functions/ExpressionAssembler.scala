@@ -3,7 +3,7 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{Chunk, PropertyOrder, RegisterProvider}
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.CompilationException
 import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
@@ -39,20 +39,20 @@ class ExpressionAssembler(
   private implicit var variableRegisterMap: VariableRegisterMap = HashMap.empty
   private implicit val capturedVariableMap: CapturedVariableMap = capturedVariables
 
-  private def declare(variable: LocalVariable, position: Position): Poem.Register = {
-    if (variableRegisterMap.contains(variable.uniqueKey)) {
-      throw CompilationException(s"The variable `${variable.name}` at $position is already declared somewhere else.")
+  private def getVariableRegister(variable: LocalVariable): Poem.Register = {
+    variableRegisterMap.get(variable.uniqueKey) match {
+      case Some(register) => register
+      case None =>
+        val register = registerProvider.fresh()
+        variableRegisterMap += (variable.uniqueKey -> register)
+        register
     }
-
-    val register = registerProvider.fresh()
-    variableRegisterMap += (variable.uniqueKey -> register)
-    register
   }
 
   // The first N registers of the function are reserved for the parameters.
   signature.parameters.foreach { parameter =>
     parameter.name match {
-      case Some(_) => declare(NamedParameterView(parameter).asVariable, parameter.position)
+      case Some(_) => getVariableRegister(NamedParameterView(parameter).asVariable)
       case None =>
         // This register won't be used, but calling `fresh` is still important so that the register IDs are counted up,
         // which have to match for subsequent parameters.
@@ -228,7 +228,7 @@ class ExpressionAssembler(
 
   private def handle(expression: VariableDeclaration): Chunk = {
     val valueChunk = generate(expression.value)
-    val regVariable = declare(expression.variable, expression.position)
+    val regVariable = getVariableRegister(expression.variable)
     val regValue = valueChunk.forceResult(expression.position)
     val assignment = PoemInstruction.Assign(regVariable, regValue)
     valueChunk ++ Chunk(assignment)
@@ -240,14 +240,15 @@ class ExpressionAssembler(
     expression.target match {
       case Expression.BindingAccess(binding, position) =>
         val regVariable = binding match {
-          case variable: LocalVariable => variableRegisterMap(variable.uniqueKey)
-          case _ => throw CompilationException(s"Binding $binding cannot be mutable. Position: $position.")
+          case variable: LocalVariable => getVariableRegister(variable)
+          case _ => throw CompilationException(s"Binding $binding cannot be assigned to. Position: $position.")
         }
         valueChunk ++ Chunk(PoemInstruction.Assign(regVariable, regValue))
 
       case Expression.MemberAccess(instance, member, position) =>
         if (!instance.tpe.isInstanceOf[StructType]) {
-          throw CompilationException(s"Only struct members may be mutated directly, but the instance's type is ${instance.tpe}. Position: $position.")
+          throw CompilationException(s"Only struct members may be mutated directly, but the instance's type is" +
+            s" ${instance.tpe}. Position: $position.")
         }
 
         val instanceKind = InstanceKind.of(instance.tpe)
