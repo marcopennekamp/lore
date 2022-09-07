@@ -42,13 +42,13 @@ object Synthesizer {
       case UntypedTupleValue(elements, position) => infer(elements, context).mapFirst(TupleValue(_, position))
 
       case expression@UntypedLambdaValue(parameters, body, position) =>
-        // To infer the type of an anonymous function, its parameters must be fully annotated.
+        // To infer the type of a lambda function, its parameters must be fully annotated.
         if (expression.isFullyAnnotated) {
           val parameterTypes = parameters.map(_.typeAnnotation.get)
           val (typedParameters, context2) = LambdaTyping.buildTypedParameters(parameters, parameterTypes, context)
           infer(body, context2).mapFirst(LambdaValue(typedParameters, _, position))
         } else {
-          reporter.report(TypingFeedback.AnonymousFunction.TypeContextExpected(expression))
+          reporter.report(TypingFeedback.Lambda.TypeContextExpected(expression))
           None
         }
 

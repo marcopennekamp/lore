@@ -117,7 +117,7 @@ Returns may be placed in the following kinds of expressions, provided the expres
 - **`if` and `cond` expressions:** The conditions may *not* contain returns, but the bodies may.
 - **`while` and `for` expressions:** The conditions/extractors may *not* contain returns, but the bodies may.
 
-Anonymous function bodies may also not contain return expressions at this time, as the goal is to implement non-local returns. Allowing local returns now and changing their semantics later would break existing Lore code, so we are disallowing any returns inside anonymous functions. 
+Lambda function bodies may also not contain return expressions at this time, as the goal is to implement non-local returns. Allowing local returns now and changing their semantics later would break existing Lore code, so we are disallowing any returns inside lambda functions. 
 
 
 
@@ -247,11 +247,11 @@ Lore supports a **unit** value, which is simply the empty tuple. It is written `
 
 
 
-### Anonymous Functions
+### Lambda Functions
 
-In addition to multi-functions, Lore supports **anonymous functions**. An anonymous function is created as an immediate function value without dispatch mechanics. Parameter types may be specified optionally, but can also be inferred from *local* context. The return type of the anonymous function is always inferred.
+In addition to multi-functions, Lore supports **lambda functions**. A lambda function is an immediate function value without dispatch mechanics. Parameter types may be specified optionally, but can also be inferred from the *local* type context. The return type of the lambda function is always inferred.
 
-Anonymous functions may not contain return expressions, as noted in the section about return expressions. They will eventually be supported as non-local returns.
+Lambda functions may not contain return expressions, as noted in the section about return expressions. They will eventually be supported as non-local returns.
 
 ###### Example
 
@@ -374,7 +374,7 @@ target(a1, a2, ...)
 
 - If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct target function so that argument and output types can be checked and inferred. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md). Even though the compiler will find a target function at compile time, ultimately the runtime also performs dispatch to find the function applicable with the concrete run-time arguments.
   - Lore also supports importing more than one multi-function with the same simple name, using compile-time disambiguation whenever a set of multi-functions is used. See *Name Resolution for Multi-Functions* in [modules](modules.md) for more information.
-- If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed at run time.
+- If the target is a **function value**, the function will be called depending on its type. Lambda functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course be performed at run time.
 
 ##### Pipes
 
@@ -426,7 +426,7 @@ a1 op a2
 
 A **multi-function value** is a *function value* created from a multi-function referenced by name but not called, e.g. `to_string` in `map(list, to_string)`. Compile-time dispatch is simulated with the expected argument types, which decides the output type of the function value. For example, if the argument types are `(A)` and dispatch finds a function `foo(a: A): B`, the resulting type of the multi-function value would be `A => B`. At run time, calling a multi-function value performs multiple dispatch normally, even though the multi-function is "hidden" behind a function value interface.
 
-Multi-function values allow passing multi-functions as regular functions without wrapping them in an anonymous function. Their use is central to concise functional programming in Lore.
+Multi-function values allow passing multi-functions as regular functions without wrapping them in a lambda function. Their use is central to concise functional programming in Lore.
 
 ###### Example
 
@@ -527,7 +527,7 @@ cond
 end
 ```
 
-A newline must always follow `cond` and it must always be closed with an `end`. Each case must be placed on its own line. If a condition should be a conditional expression, a loop, or an anonymous function, the condition must be enclosed in parentheses: `(if a then b else c) => 'fabulous!'`.
+A newline must always follow `cond` and it must always be closed with an `end`. Each case must be placed on its own line. If a condition should be a conditional expression, a loop, or a lambda function, the condition must be enclosed in parentheses: `(if a then b else c) => 'fabulous!'`.
 
 
 

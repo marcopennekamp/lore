@@ -207,13 +207,13 @@ class ExpressionTransformationVisitor(
     case node: IntrinsicCallNode => CallTransformation.transformIntrinsicCall(node, expressions)
   }
 
-  override def visitAnonymousFunction(node: AnonymousFunctionNode)(
+  override def visitLambdaValue(node: LambdaValueNode)(
     visitBody: () => UntypedExpression,
   ): UntypedExpression = {
     scopeContext.openScope()
 
     val parameters = node.parameters.map {
-      case AnonymousFunctionParameterNode(nameNode, typeNode, position) =>
+      case LambdaParameterNode(nameNode, typeNode, position) =>
         val typeAnnotation = typeNode.flatMap(TypeResolver.resolve)
         val variable = UntypedLocalVariable(nameNode.value, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)

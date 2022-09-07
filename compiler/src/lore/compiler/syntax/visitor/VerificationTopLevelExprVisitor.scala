@@ -17,7 +17,7 @@ trait VerificationTopLevelExprVisitor extends TopLevelExprVisitor[Unit, Id] {
   override final def visitBinary(node: TopLevelExprNode.BinaryNode)(left: Unit, right: Unit): Unit = verify(node)
   override final def visitTernary(node: TopLevelExprNode.TernaryNode)(argument1: Unit, argument2: Unit, argument3: Unit): Unit = verify(node)
   override final def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[Unit]): Unit = verify(node)
-  override final def visitAnonymousFunction(node: ExprNode.AnonymousFunctionNode)(visitBody: () => Unit): Unit = {
+  override final def visitLambdaValue(node: ExprNode.LambdaValueNode)(visitBody: () => Unit): Unit = {
     visitBody()
     verify(node)
   }

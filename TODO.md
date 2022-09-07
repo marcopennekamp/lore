@@ -144,7 +144,7 @@
       Dividers are important in Lore code because functions aren't defined inside "classes", but OOP-like structures might often be designed. This depends on the specific architecture of a piece of code, but generally dividers will be used in at least some areas to improve visual clarity in source files. All variants above provide good visual clarity. It's worth mentioning that `--` produces very nice dividers without headings, as a full-width line of `----` provides good separation at low visual cost.
     - Also keep in mind that `//` and `#` style comments would use up the least novelty budget. Languages with `do..end` such as Ruby, Crystal, and Elixir generally use `#` style comments, so that comment style might be least surprising for most developers coming into Lore. `--` would likely use up the most novelty budget, but a majority of developers should acclimate quickly.
   - Clear all `TODO (syntax)` entries.
-- Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
+- Add `case` expressions and pattern matching in lambda function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
 - Allow calling a function `f` with an argument `v: A | B` if both `v: A` and `v: B` can be successfully dispatched. This essentially removes the need to declare superfunctions such as `hello(String | Int)`, not only bringing a benefit in succinctness, but also making extending existing library functions easier. It also makes working with sum types easier.
 - Refactor Pyramid and add more types and functions.

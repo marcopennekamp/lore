@@ -7,7 +7,7 @@ import scala.util.hashing.MurmurHash3
 /**
   * A type that describes functions as a fixed input/output relation. A function type makes no assumptions about
   * internal dispatch mechanics. A multi-function may as well be viewed through the lens of a function type, while
-  * anonymous functions have no dispatch mechanics at all.
+  * lambda functions have no dispatch mechanics at all.
   *
   * The input type must always be a tuple type so that we can distinguish between functions which take a single tuple
   * argument vs. two distinct arguments. That is, `((A, B)) => C` vs. `(A, B) => C`.

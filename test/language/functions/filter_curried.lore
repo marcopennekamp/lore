@@ -13,7 +13,7 @@ module language.functions do
   use lore.test._
 
   // The objective of this test is to ensure that the compiler can type the `map`/`filter_curried` combination and the
-  // inner anonymous function, especially the parameter `x`.
+  // inner lambda function, especially the parameter `x`.
   spec 'filter_curried: `filter_curried` filters lists of numbers' do
     let data = [
       [1, 2, 3, 4, 5],

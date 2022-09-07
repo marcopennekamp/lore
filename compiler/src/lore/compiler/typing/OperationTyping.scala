@@ -96,10 +96,10 @@ object OperationTyping {
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     Synthesizer.infer(operation.operand1, context).flatMap { case (typedCollection, context2) =>
       // The appended element's type might need to be informed by the collection's type, for example when the
-      // collection is a list of functions and the appended element is an anonymous function without type
-      // annotations. Hence, we first attempt to check the appended element with the expected element type.
-      // This is not always valid, though, because appending might widen the type of the list. When checking
-      // fails, we thus need to default to inference.
+      // collection is a list of functions and the appended element is a lambda function without type annotations.
+      // Hence, we first attempt to check the appended element with the expected element type. This is not always
+      // valid, though, because appending might widen the type of the list. When checking fails, we thus need to
+      // default to inference.
       def checkAppendedElement(expectedElementType: Type): Option[InferenceResult] = {
         Checker.attempt(operation.operand2, expectedElementType, context2)._1.orElse(infer(operation.operand2, context2))
       }

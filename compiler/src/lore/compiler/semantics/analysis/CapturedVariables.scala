@@ -17,7 +17,7 @@ object CapturedVariables {
 
   private case class CapturedVariableVisitor() extends ExpressionCombiningVisitor[Set[LocalVariable], Set[LocalVariable]] {
     // The set of variables which are declared locally and don't need to be captured. Because local variables have
-    // unique keys, we can disregard scopes here. The parameters of the analyzed anonymous function are handled in the
+    // unique keys, we can disregard scopes here. The parameters of the analyzed lambda function are handled in the
     // `before` function.
     private var localDeclarations: Set[UniqueKey] = Set.empty
 
@@ -44,7 +44,7 @@ object CapturedVariables {
 
     override def before: PartialFunction[Expression, Unit] = {
       case expression: LambdaValue =>
-        // This also registers the parameters of the outer-most anonymous function.
+        // This also registers the parameters of the outer-most lambda function.
         localDeclarations ++= expression.parameters.map(_.variable.uniqueKey)
 
       case expression: ForLoop =>

@@ -24,8 +24,8 @@ module language.inference do
   use lore.test._
 
   // Objective: Verify that type checking is able to infer the complex interactions between `map_wrapper`, `Wrapper`,
-  // and the anonymous function. In particular, `numbers` should inform the type of the lambda parameter `n`.
-  spec 'wrapper: `map_wrapper` maps a Wrapper struct wrapping an inferred anonymous function over a list of numbers to produce a sequence of repeated strings' do
+  // and the lambda function. In particular, `numbers` should inform the type of the lambda parameter `n`.
+  spec 'wrapper: `map_wrapper` maps a Wrapper struct wrapping an inferred lambda function over a list of numbers to produce a sequence of repeated strings' do
     map_numbers() should_eq ['Hey!', 'Hey! Hey!', 'Hey! Hey! Hey!']
   end
 end

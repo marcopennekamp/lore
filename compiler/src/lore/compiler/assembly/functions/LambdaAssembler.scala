@@ -20,7 +20,7 @@ object LambdaAssembler {
     variableRegisterMap: VariableRegisterMap,
     parentCapturedVariableMap: CapturedVariableMap,
   ): (Chunk, Vector[PoemFunction]) = {
-    // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
+    // To generate a lambda function, we have to first perform capture analysis, then compile its body as a
     // single-function multi-function, and finally generate the appropriate `FunctionLambda` instruction.
     val capturedVariables = expression.capturedVariables
     val capturedVariableMap = capturedVariables.zipWithIndex.map { case (variable, index) => variable.uniqueKey -> index }.toMap

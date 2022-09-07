@@ -24,7 +24,7 @@ module Tokenizer do
     while position < term_length
       position = skip_whitespace(term, position)
 
-      // Mutable variables like `position` cannot be captured in anonymous functions yet.
+      // Mutable variables like `position` cannot be captured in lambda functions yet.
       let current_position = position
       let result_tuple_option =
         try_operand(term, position)
@@ -73,7 +73,7 @@ module Tokenizer do
       pos += 1
     end
 
-    // Mutable variables like `pos` cannot be captured in anonymous functions yet.
+    // Mutable variables like `pos` cannot be captured in lambda functions yet.
     let result_pos = pos
 
     // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.

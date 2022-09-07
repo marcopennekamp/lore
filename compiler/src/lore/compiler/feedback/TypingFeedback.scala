@@ -63,38 +63,6 @@ object TypingFeedback {
     }
   }
 
-  object AnonymousFunction {
-    case class FunctionTypeExpected(
-      expression: UntypedLambdaValue,
-      expectedType: Type,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"The type of the lambda function cannot be inferred from a type `$expectedType`." +
-        s" Either annotate all parameters with a type, or provide a function type in an outer expression."
-    }
-
-    case class IllegalArity(
-      expression: UntypedLambdaValue,
-      expectedType: FunctionType,
-    ) extends Feedback.Error(expression) {
-      override def message: String = s"The lambda function declares ${expression.arity} parameters, but the expected" +
-        s" function type `$expectedType` expects ${expectedType.arity} parameters."
-    }
-
-    case class IllegalParameterType(
-      expectedParameterType: Type,
-      parameterType: Type,
-      parameterPosition: Position,
-    ) extends Feedback.Error(parameterPosition) {
-      override def message: String = s"The lambda function declares a parameter of type `$parameterType`, but the" +
-        s" expected function type expects `$expectedParameterType` for this parameter."
-    }
-
-    case class TypeContextExpected(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
-      override def message: String = s"The type of the anonymous function cannot be inferred. Either annotate all" +
-        s" parameters with a type, or provide a function type in an outer expression."
-    }
-  }
-
   object MultiFunctionValue {
     case class IllegalOutput(
       mf: MultiFunctionDefinition,
@@ -156,6 +124,38 @@ object TypingFeedback {
     case class IncorrectLength(expression: UntypedTupleValue, expectedType: TupleType) extends Feedback.Error(expression) {
       override def message: String = s"The tuple has ${expression.elements.length} elements, but the expected tuple type" +
         s" `$expectedType` requires ${expectedType.elements.length} elements."
+    }
+  }
+
+  object Lambda {
+    case class FunctionTypeExpected(
+      expression: UntypedLambdaValue,
+      expectedType: Type,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"The type of the lambda function cannot be inferred from a type `$expectedType`." +
+        s" Either annotate all parameters with a type, or provide a function type in an outer expression."
+    }
+
+    case class IllegalArity(
+      expression: UntypedLambdaValue,
+      expectedType: FunctionType,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"The lambda function declares ${expression.arity} parameters, but the expected" +
+        s" function type `$expectedType` expects ${expectedType.arity} parameters."
+    }
+
+    case class IllegalParameterType(
+      expectedParameterType: Type,
+      parameterType: Type,
+      parameterPosition: Position,
+    ) extends Feedback.Error(parameterPosition) {
+      override def message: String = s"The lambda function declares a parameter of type `$parameterType`, but the" +
+        s" expected function type expects `$expectedParameterType` for this parameter."
+    }
+
+    case class TypeContextExpected(expression: UntypedLambdaValue) extends Feedback.Error(expression) {
+      override def message: String = s"The type of the lambda function cannot be inferred. Either annotate all" +
+        s" parameters with a type, or provide a function type in an outer expression."
     }
   }
 

@@ -91,15 +91,15 @@ object ExprNode {
   case class TupleNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Anonymous functions and function values.
+  // Lambda functions and function values.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class AnonymousFunctionNode(
-    parameters: Vector[AnonymousFunctionParameterNode],
+  case class LambdaValueNode(
+    parameters: Vector[LambdaParameterNode],
     body: ExprNode,
     position: Position,
   ) extends ExprNode
 
-  case class AnonymousFunctionParameterNode(
+  case class LambdaParameterNode(
     nameNode: NameNode,
     tpe: Option[TypeExprNode],
     position: Position,
@@ -170,7 +170,7 @@ object ExprNode {
   // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * A call node represents calling any sort of value, which can be an anonymous function, a multi-function typed as a
+    * A call node represents calling any sort of value, which can be a lambda function, a multi-function typed as a
     * function, or a struct constructor. Full multi-function calls are always represented via [[SimpleCallNode]].
     */
   case class CallNode(

@@ -18,7 +18,7 @@ end
 module language.functions do
   use lore.test._
 
-  spec 'greet: `greet` returns greetings when called from an anonymous function wrapper' do
+  spec 'greet: `greet` returns greetings when called from a lambda function wrapper' do
     greetings() should_eq ['Hello, Mr. Smith.', 'Hello, Ms. Chang.']
   end
 end

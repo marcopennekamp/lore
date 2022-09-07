@@ -144,7 +144,7 @@ The empty tuple `()` is an important type, as it signifies the absence of a valu
 
 ### Function Types
 
-A **function type** describes function values (multi-function values and anonymous functions). The function type consists of an **input type** and an **output type**.
+A **function type** describes function values (multi-function values and lambda functions). The function type consists of an **input type** and an **output type**.
 
 ###### Syntax Example
 

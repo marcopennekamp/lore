@@ -83,7 +83,7 @@ object CombiningNodeVisitor {
       case TypeExprNode.ShapePropertyNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
 
       case exprNode: TopLevelExprNode => visitExprNode(exprNode)
-      case ExprNode.AnonymousFunctionParameterNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
+      case ExprNode.LambdaParameterNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
       case ExprNode.KeyValueNode(key, value, _) => visitor.visit(node, concat(visit(key), visit(value)))
       case ExprNode.ObjectEntryNode(_, expression, _) => visitor.visit(node, concat(visit(expression)))
       case ExprNode.ShapeValuePropertyNode(_, expression, _) => visitor.visit(node, concat(visit(expression)))
@@ -108,7 +108,7 @@ object CombiningNodeVisitor {
     private def visitExprNode(node: TopLevelExprNode): A = node match {
       // These ExprNodes contain nodes that are not TopLevelExprNodes, so we have to handle them specially.
       case TopLevelExprNode.VariableDeclarationNode(_, _, tpe, value, _) => visitor.visit(node, concat(visit(tpe), visit(value)))
-      case ExprNode.AnonymousFunctionNode(parameters, body, _) => visitor.visit(node, concat(visit(parameters), visit(body)))
+      case ExprNode.LambdaValueNode(parameters, body, _) => visitor.visit(node, concat(visit(parameters), visit(body)))
       case ExprNode.FixedFunctionNode(_, argumentTypes, _) => visitor.visit(node, concat(visit(argumentTypes)))
       case ExprNode.ConstructorNode(_, typeArguments, _) => visitor.visit(node, concat(visit(typeArguments)))
       case ExprNode.MapNode(kvs, _) => visitor.visit(node, concat(visit(kvs)))

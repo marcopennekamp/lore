@@ -61,7 +61,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(variable | prop)
   }
 
-  def expression[_: P]: P[ExprNode] = P(ifElse | cond | whileLoop | forLoop | anonymousFunction | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(ifElse | cond | whileLoop | forLoop | lambdaValue | operatorExpression)
   def singleLineExpression[_: P]: P[ExprNode] = singleLineParser.expression
 
   private def ifElse[_: P]: P[ExprNode] = {
@@ -114,15 +114,15 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(extractor.rep(1, sep = ",")).map(_.toVector)
   }
 
-  private def anonymousFunction[_: P]: P[ExprNode.AnonymousFunctionNode] = {
-    P(Index ~~ anonymousFunctionParameters ~ "=>" ~ expression ~~ Index).map(withPosition(ExprNode.AnonymousFunctionNode))
+  private def lambdaValue[_: P]: P[ExprNode.LambdaValueNode] = {
+    P(Index ~~ lambdaParameters ~ "=>" ~ expression ~~ Index).map(withPosition(ExprNode.LambdaValueNode))
   }
 
-  private def anonymousFunctionParameters[_: P]: P[Vector[ExprNode.AnonymousFunctionParameterNode]] = {
+  private def lambdaParameters[_: P]: P[Vector[ExprNode.LambdaParameterNode]] = {
     def simpleParameter = P(Index ~~ name ~~ Index).map {
-      case (startIndex, name, endIndex) => withPosition(ExprNode.AnonymousFunctionParameterNode)(startIndex, name, None, endIndex)
+      case (startIndex, name, endIndex) => withPosition(ExprNode.LambdaParameterNode)(startIndex, name, None, endIndex)
     }
-    def parameter = P(Index ~~ name ~ typeParser.typing.? ~~ Index).map(withPosition(ExprNode.AnonymousFunctionParameterNode))
+    def parameter = P(Index ~~ name ~ typeParser.typing.? ~~ Index).map(withPosition(ExprNode.LambdaParameterNode))
     P(simpleParameter.map(Vector(_)) | "(" ~ parameter.rep(sep = ",").map(_.toVector) ~ ",".? ~ ")")
   }
 
@@ -210,23 +210,23 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | intrinsicCall | simpleCall | call | objectMap | constructor | fixedFunction | variable | block | list | map | shape | enclosed)
+    P(literal | intrinsicCall | simpleCall | call | objectMap | constructorValue | fixedFunction | variable | block | listValue | mapValue | shapeValue | enclosed)
   }
 
   /**
     * All expressions immediately accessible via postfix dot notation that can be used as call targets.
     */
   private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | objectMap | constructor | fixedFunction | variable | block | list | map | shape | enclosed)
+    P(literal | objectMap | constructorValue | fixedFunction | variable | block | listValue | mapValue | shapeValue | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
     def real = P(Index ~~ LexicalParser.real ~~ Index).map(withPosition(ExprNode.RealLiteralNode))
     def int = P(Index ~~ LexicalParser.integer ~~ Index).map(withPosition(ExprNode.IntLiteralNode))
-    def booleanLiteral = P(Index ~~ StringIn("true", "false").!.map(_.toBoolean) ~~ Index).map(withPosition(ExprNode.BoolLiteralNode))
+    def boolean = P(Index ~~ StringIn("true", "false").!.map(_.toBoolean) ~~ Index).map(withPosition(ExprNode.BoolLiteralNode))
     def symbol = P(Index ~~ "#" ~ identifier ~~ Index).map(withPosition(ExprNode.SymbolLiteralNode))
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
-    P(real | int | booleanLiteral | string | symbol)
+    P(real | int | boolean | string | symbol)
   }
 
   private def intrinsicCall[_: P]: P[ExprNode] = {
@@ -236,8 +236,6 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       .map { case (startIndex, resultType, name, arguments, endIndex) => (startIndex, name, resultType, arguments.toVector, endIndex) }
       .map(withPosition(ExprNode.IntrinsicCallNode))
   }
-
-  private def constructor[_: P]: P[ExprNode] = P(Index ~~ namePath ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
   private def simpleCall[_: P]: P[ExprNode] = P(Index ~~ namePath ~~ Space.WS ~~ (arguments ~~ Space.WS).repX(1) ~~ Index).map {
     case (startIndex, name, argumentLists, endIndex) =>
@@ -263,6 +261,8 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ",".? ~ ")").map(_.toVector)
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ ",".? ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
+
+  private def constructorValue[_: P]: P[ExprNode] = P(Index ~~ namePath ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
   private def fixedFunction[_: P]: P[ExprNode] = P(Index ~~ namePath ~ ".fixed" ~~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.FixedFunctionNode))
 
@@ -290,16 +290,16 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(topLevelExpression.repX(0, Space.terminators).map(_.toVector))
   }
 
-  private def list[_: P]: P[ExprNode] = {
+  private def listValue[_: P]: P[ExprNode] = {
     P(Index ~~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ ",".? ~ "]" ~~ Index).map(withPosition(ExprNode.ListNode))
   }
 
-  private def map[_: P]: P[ExprNode] = {
+  private def mapValue[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~~ expression ~ "->" ~ expression ~~ Index).map(withPosition(ExprNode.KeyValueNode))
     P(Index ~~ "#[" ~ keyValue.rep(sep = ",").map(_.toVector) ~ ",".? ~ "]" ~~ Index).map(withPosition(ExprNode.MapNode))
   }
 
-  private def shape[_: P]: P[ExprNode.ShapeValueNode] = {
+  private def shapeValue[_: P]: P[ExprNode.ShapeValueNode] = {
     def property = P(Index ~~ name ~ ":" ~ expression ~~ Index).map(withPosition(ExprNode.ShapeValuePropertyNode))
     def shorthand = P(Index ~~ name ~~ Index).map { case (startIndex, nameNode, endIndex) =>
       val position = Position(fragment, startIndex, endIndex)

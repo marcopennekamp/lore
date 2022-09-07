@@ -22,7 +22,7 @@ trait CombiningTopLevelExprVisitor[A] extends TopLevelExprVisitor[A, Id] {
   override def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): A = {
     visit(node, arguments)
   }
-  override def visitAnonymousFunction(node: ExprNode.AnonymousFunctionNode)(visitBody: () => A): A = {
+  override def visitLambdaValue(node: ExprNode.LambdaValueNode)(visitBody: () => A): A = {
     visit(node, Vector(visitBody()))
   }
   override def visitCall(node: ExprNode.CallNode)(target: A, arguments: Vector[A]): A = {

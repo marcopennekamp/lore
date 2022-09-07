@@ -25,7 +25,7 @@ module language.inference do
   use lore.test._
 
   // Objective: Ensure that constructor calls involving struct aliases are correctly typed.
-  spec 'wrapper_alias: `map_wrapper` maps a StringWrapper struct alias wrapping an inferred anonymous function over a list of numbers to produce a sequence of repeated strings' do
+  spec 'wrapper_alias: `map_wrapper` maps a StringWrapper struct alias wrapping an inferred lambda function over a list of numbers to produce a sequence of repeated strings' do
     map_numbers() should_eq ['Hey!', 'Hey! Hey! Hey!', 'Hey! Hey! Hey! Hey! Hey!']
   end
 end

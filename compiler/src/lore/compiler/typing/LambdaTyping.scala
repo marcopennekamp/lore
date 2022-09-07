@@ -38,7 +38,7 @@ object LambdaTyping {
                 parameterType
               } else {
                 reporter.error(
-                  TypingFeedback.AnonymousFunction.IllegalParameterType(
+                  TypingFeedback.Lambda.IllegalParameterType(
                     expectedParameterType,
                     parameterType,
                     parameter.position,
@@ -61,14 +61,14 @@ object LambdaTyping {
         }
 
       case expectedType: FunctionType =>
-        reporter.error(TypingFeedback.AnonymousFunction.IllegalArity(expression, expectedType))
+        reporter.error(TypingFeedback.Lambda.IllegalArity(expression, expectedType))
         None
 
       case _ =>
         if (expression.isFullyAnnotated) {
           Synthesizer.infer(expression, context)
         } else {
-          reporter.error(TypingFeedback.AnonymousFunction.FunctionTypeExpected(expression, expectedType))
+          reporter.error(TypingFeedback.Lambda.FunctionTypeExpected(expression, expectedType))
           None
         }
     }

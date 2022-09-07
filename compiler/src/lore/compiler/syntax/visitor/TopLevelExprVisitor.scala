@@ -36,11 +36,11 @@ trait TopLevelExprVisitor[A, M[_]] {
   def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): M[A]
 
   /**
-    * Visits an anonymous function node with its body.
+    * Visits a lambda function node with its body.
     *
     * Similar to [[visitIteration]] in that we're passing control to the visitor about when to visit the body.
     */
-  def visitAnonymousFunction(node: ExprNode.AnonymousFunctionNode)(visitBody: () => M[A]): M[A]
+  def visitLambdaValue(node: ExprNode.LambdaValueNode)(visitBody: () => M[A]): M[A]
 
   /**
     * Visits a map node with its key/value entries.
@@ -95,7 +95,7 @@ object TopLevelExprVisitor {
         case node: TernaryNode => visitor.visitTernary(node)(visit(node.child1, props), visit(node.child2, props), visit(node.child3, props))
         case node: XaryNode => visitor.visitXary(node)(node.children.map(visit(_, props)))
 
-        case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => visit(body, props))
+        case node@LambdaValueNode(_, body, _) => visitor.visitLambdaValue(node)(() => visit(body, props))
 
         case node@MapNode(entries, _) =>
           val visitedEntries = entries.map {

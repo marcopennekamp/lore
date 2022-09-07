@@ -61,9 +61,9 @@ private class ReturnDeadCodeVisitor(implicit reporter: Reporter) extends Combini
         } else returns.last
       }
 
-    case ExprNode.AnonymousFunctionNode(_, _, _) =>
-      // The body of an anonymous function doesn't affect the outer control flow, and so a return occurring in an
-      // anonymous function body does not lead to dead code.
+    case ExprNode.LambdaValueNode(_, _, _) =>
+      // The body of a lambda function doesn't affect the outer control flow, and so a return occurring in a lambda
+      // function body does not lead to dead code.
       false
 
     case ExprNode.IfElseNode(_, _, _, _) => returns.tail.forall(identity) // `tail` ignores the condition.

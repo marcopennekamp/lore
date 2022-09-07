@@ -19,10 +19,10 @@ import scala.collection.immutable.HashMap
 /**
   * The expression assembler is not an ExpressionVisitor because select expressions either don't need their child
   * chunks in certain situations (e.g. when a list can be turned into a [[PoemListValue]]), or generating a child chunk
-  * is even nonsensical (in the case of anonymous functions).
+  * is even nonsensical (in the case of lambda functions).
   *
-  * To support anonymous function expressions, the assembler keeps a list of additionally generated functions, which
-  * must be included in the [[FunctionAssembler]]'s result.
+  * To support lambda function values, the assembler keeps a list of additionally generated functions, which must be
+  * included in the [[FunctionAssembler]]'s result.
   *
   * The assembler generates Jump instructions with <i>label</i> locations. They will later be converted to absolute
   * locations when instructions are flattened.

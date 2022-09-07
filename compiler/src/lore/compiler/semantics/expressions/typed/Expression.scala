@@ -59,7 +59,6 @@ object Expression {
     override val tpe: TupleType = if (elements.isEmpty) TupleType.UnitType else TupleType(elements.map(_.tpe))
   }
 
-  // TODO (multi-import): Rename all mentions to an anonymous function with lambda (function/value).
   case class LambdaValue(
     parameters: Vector[LambdaParameter],
     body: Expression,
@@ -68,7 +67,7 @@ object Expression {
     override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.variable.tpe)), body.tpe)
 
     /**
-      * All local variables that this anonymous function must capture.
+      * All local variables that this lambda function must capture.
       */
     lazy val capturedVariables: Vector[LocalVariable] = CapturedVariables.findCapturedVariables(this).toVector
   }
