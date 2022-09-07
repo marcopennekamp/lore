@@ -2,14 +2,13 @@ package lore.compiler.typing.unification
 
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
-import lore.compiler.typing.unification.InferenceBounds.BoundType
 import lore.compiler.utils.CollectionExtensions.Tuple2Extension
 
 /**
   * Inference variables are unique-by-reference types that can stand in for other types in complex situations. They are
   * then resolved by possibly multiple steps of unification during type inference.
   *
-  * An inference variable's lower and upper bound limit the types that may be assigned to [[InferenceBounds]]. The
+  * An inference variable's lower and upper bound limit the types that may be assigned to [[InferenceAssignment]]. The
   * inference variable's bounds may contain other inference variables. As [[InferenceAssignments]] become narrower,
   * each inference variable's legal bounds may also narrow.
   *
@@ -26,14 +25,24 @@ class InferenceVariable(
 }
 
 object InferenceVariable {
+  sealed trait BoundType
+  object BoundType {
+    case object Lower extends BoundType
+    case object Upper extends BoundType
+
+    def flip(boundType: BoundType): BoundType = boundType match {
+      case BoundType.Lower => BoundType.Upper
+      case BoundType.Upper => BoundType.Lower
+    }
+  }
 
   def apply(name: String, lowerBound: Type, upperBound: Type): InferenceVariable = {
     new InferenceVariable(Some(name), lowerBound, upperBound)
   }
 
   /**
-    * Assigns `lowerBound` to `iv`'s lower bound and `upperBound` to its upper bound. Returns None if the old and new
-    * bounds are incompatible.
+    * Assigns `lowerBound` to `iv`'s lower assignment and `upperBound` to its upper assignment. Returns `None` if the
+    * old and new assignments are incompatible.
     */
   def assign(
     iv: InferenceVariable,
@@ -46,7 +55,8 @@ object InferenceVariable {
   }
 
   /**
-    * Assigns `bound` to `iv`'s lower and upper bound. Returns None if the old and new bounds are incompatible.
+    * Assigns `bound` to `iv`'s lower and upper assignment. Returns `None` if the old and new assignments are
+    * incompatible.
     */
   def assign(
     iv: InferenceVariable,
@@ -57,8 +67,8 @@ object InferenceVariable {
   }
 
   /**
-    * Assigns `bound` to the lower or upper bound of `iv`, depending on `boundType`. Returns None if the old and new
-    * bounds are incompatible.
+    * Assigns `bound` to the lower or upper assignment of `iv`, depending on `boundType`. Returns `None` if the old and
+    * new assignments are incompatible.
     */
   def assign(
     iv: InferenceVariable,
@@ -68,17 +78,17 @@ object InferenceVariable {
   ): Option[InferenceAssignments] = {
     val assignment = assignments.getEffective(iv)
     if (assignment.lower <= bound && bound <= assignment.upper) {
-      val updatedBounds = boundType match {
-        case BoundType.Lower => InferenceBounds(iv, bound, assignment.upper)
-        case BoundType.Upper => InferenceBounds(iv, assignment.lower, bound)
+      val updatedAssignment = boundType match {
+        case BoundType.Lower => InferenceAssignment(iv, bound, assignment.upper)
+        case BoundType.Upper => InferenceAssignment(iv, assignment.lower, bound)
       }
-      Some(assignments.updated(iv, updatedBounds))
+      Some(assignments.updated(iv, updatedAssignment))
     } else None
   }
 
   /**
-    * Ensures that `lowerBound` is a subtype of `iv`'s lower bound and `upperBound` is a supertype of `iv`'s upper
-    * bound. If this is not the case, the respective bound will be assigned to `iv`.
+    * Ensures that `lowerBound` is a subtype of `iv`'s lower assignment and `upperBound` is a supertype of `iv`'s upper
+    * assignment. If this is not the case, the respective bound will be assigned to `iv`.
     */
   def ensure(
     iv: InferenceVariable,
@@ -91,11 +101,11 @@ object InferenceVariable {
   }
 
   /**
-    * Ensures that `bound` is a subtype/supertype of `iv`'s lower or upper bound, depending on `boundType`. If this is
-    * not the case, `bound` will be assigned to `iv`.
+    * Ensures that `bound` is a subtype/supertype of `iv`'s lower or upper assignment, depending on `boundType`. If
+    * this is not the case, `bound` will be assigned to `iv`.
     *
     * In practical terms, the function thus assures that a given subtyping relationship holds, either by validating it
-    * directly or by changing the bounds to "make it fit".
+    * directly or by changing the assignments to "make it fit".
     */
   def ensure(
     iv: InferenceVariable,
@@ -165,10 +175,10 @@ object InferenceVariable {
   }
 
   /**
-    * Instantiates all inference variables in `tpe` with the respective bound.
+    * Instantiates all inference variables in `tpe` with a respective assignment by bound type.
     */
   def instantiateByBound(tpe: Type, boundType: BoundType, assignments: InferenceAssignments): Type = {
-    instantiate(tpe, boundType, assignments)((bounds, boundType2) => bounds.get(boundType2))
+    instantiate(tpe, boundType, assignments)((assignment, boundType2) => assignment.get(boundType2))
   }
 
   /**
@@ -178,7 +188,7 @@ object InferenceVariable {
     // Note that the bound type determines whether the candidate type is instantiated with a default of Nothing or Any,
     // if an inference variable doesn't have a candidate type.
     instantiate(tpe, BoundType.Upper, assignments) {
-      (bounds, boundType) => bounds.candidateType match {
+      (assignment, boundType) => assignment.candidateType match {
         case Some(candidateType) => candidateType
         case None => boundType match {
           case BoundType.Lower => BasicType.Nothing
@@ -197,14 +207,14 @@ object InferenceVariable {
     tpe: Type,
     boundType: BoundType,
     assignments: InferenceAssignments,
-  )(get: (InferenceBounds, BoundType) => Type): Type = {
+  )(get: (InferenceAssignment, BoundType) => Type): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    val rec = (t: Type) => instantiate(t, boundType, assignments)(get: (InferenceBounds, BoundType) => Type)
+    val rec = (t: Type) => instantiate(t, boundType, assignments)(get: (InferenceAssignment, BoundType) => Type)
     val recContravariant = (t: Type) => instantiate(t, BoundType.flip(boundType), assignments)(get)
     tpe match {
       case iv: InferenceVariable => get(assignments.getEffective(iv), boundType)
@@ -227,5 +237,4 @@ object InferenceVariable {
       case tpe => tpe
     }
   }
-
 }

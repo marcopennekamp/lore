@@ -4,7 +4,7 @@ import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.DeclaredType.getIndirectDeclaredSupertypes
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.typing.unification.InferenceBounds.BoundType
+import lore.compiler.typing.unification.InferenceVariable.BoundType
 import lore.compiler.typing.unification.Unification.FitsCombiner
 import lore.compiler.typing.unification.{InferenceAssignments, InferenceVariable, Unification}
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension, VectorMapExtension}

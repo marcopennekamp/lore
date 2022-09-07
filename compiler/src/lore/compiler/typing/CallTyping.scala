@@ -7,7 +7,7 @@ import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedCall
 import lore.compiler.semantics.functions.FunctionIdentity
 import lore.compiler.types.{Fit, TupleType, Type, TypeVariable}
-import lore.compiler.typing.unification.InferenceBounds.BoundType
+import lore.compiler.typing.unification.InferenceVariable.BoundType
 import lore.compiler.typing.unification.{InferenceAssignments, InferenceVariable, Unification}
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 

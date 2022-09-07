@@ -2,7 +2,7 @@ package lore.compiler.typing.unification
 
 import lore.compiler.types._
 import lore.compiler.typing.Typing
-import lore.compiler.typing.unification.InferenceBounds.BoundType
+import lore.compiler.typing.unification.InferenceVariable.BoundType
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object Unification {
@@ -26,7 +26,7 @@ object Unification {
 
   /**
     * Unifies `t1` and `t2` such that `t1` is a subtype of `t2`, assigning inference variables accordingly. In contrast
-    * to [[unifySubtypes]], `unifyFits` assigns both bounds to fix inference variable bounds immediately.
+    * to [[unifySubtypes]], `unifyFits` assigns both bounds to fix an inference variable's assignment immediately.
     *
     * This approach is necessary to correctly assign type parameters whose instantiation will be `Nothing` or `Any`.
     * For example, if we have an argument of type `None` (i.e. an `Option[Nothing]`) and a parameter of type
@@ -48,8 +48,7 @@ object Unification {
   }
 
   /**
-    * [[unifyInferenceVariableBounds]] unifies the inference variable's current candidate type with the bounds of its
-    * respective type variable.
+    * [[unifyInferenceVariableBounds]] unifies the inference variable's current candidate type with its bounds.
     */
   def unifyInferenceVariableBounds(
     iv: InferenceVariable,
@@ -222,7 +221,8 @@ object Unification {
   }
 
   /**
-    * Unify the bounds of `iv1` and `iv2` such that their instantiated versions are equal in the given `boundTypes`.
+    * Unify the assignments of `iv1` and `iv2` such that their instantiated versions are equal in the given
+    * `boundTypes`.
     */
   private def unifyInferenceVariablesEqual(
     iv1: InferenceVariable,

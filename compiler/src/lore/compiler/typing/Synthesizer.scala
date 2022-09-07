@@ -122,10 +122,6 @@ object Synthesizer {
           val typedVariable = LocalVariable(variable, typeAnnotation.getOrElse(typedValue.tpe))
           Typing.logger.trace(s"Local variable: `${typedVariable.name}: ${typedVariable.tpe}`.")
           (
-            // TODO (multi-import): Do we even need to generate variable declarations or can we just use an assignment?
-            //                      Mutability might be an issue, if we want consistency between mutability and
-            //                      assignments, although mutability should be checked here and then could be forgotten
-            //                      about.
             VariableDeclaration(typedVariable, typedValue, position),
             context2.withLocalVariable(typedVariable),
           )
