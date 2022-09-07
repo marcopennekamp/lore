@@ -126,7 +126,7 @@ object Synthesizer {
             //                      Mutability might be an issue, if we want consistency between mutability and
             //                      assignments, although mutability should be checked here and then could be forgotten
             //                      about.
-            VariableDeclaration(typedVariable, typedValue, typeAnnotation, position),
+            VariableDeclaration(typedVariable, typedValue, position),
             context2.withLocalVariable(typedVariable),
           )
         }

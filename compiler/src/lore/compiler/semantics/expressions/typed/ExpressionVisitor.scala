@@ -85,7 +85,7 @@ object ExpressionVisitor {
       case node@ValueCall(target, arguments, _, _) => visitor.visit(node)(rec(target), arguments.map(rec))
       case node@IntrinsicCall(_, arguments, _, _) => visitor.visit(node)(arguments.map(rec))
 
-      case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))
+      case node@VariableDeclaration(_, value, _) => visitor.visit(node)(rec(value))
       case node@Assignment(target, value, _) => visitor.visit(node)(rec(target), rec(value))
       case node@BindingAccess(_, _) => visitor.visit(node)
       case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
