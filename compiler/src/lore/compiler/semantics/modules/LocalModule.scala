@@ -40,21 +40,18 @@ class LocalModule(
   }
 
   /**
-    * Turns a relative type path into an absolute type path. This works similar to type path resolution in TypeScopes.
-    * If the name cannot be found, the function returns None.
-    *
-    * TODO (multi-import): Return a module member instead of a name path.
+    * Finds a [[TypeDefinition]] given a relative path. The path's last segment refers to a type, while the preceding
+    * segments essentially refer to term members (mostly modules). This works similar to type path resolution in
+    * type scopes.
     */
-  def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
-    if (!relativePath.isMultiple) {
-      types.getAccessibleMembers(relativePath.simpleName).map(_.singleBinding.name)
+  def getTypeMember(relativePath: NamePath): Option[TypeDefinition] = {
+    if (relativePath.isSingle) {
+      types.getAccessibleMembers(relativePath.simpleName).map(_.singleBinding)
     } else {
-      // TODO (multi-import): An error should be reported if the head name does not refer to a module (or a companion
-      //                      module through a struct binding). In general, reconsider the need for this function.
       terms
         .getAccessibleMembers(relativePath.headName)
         .map(_.singleBinding.name ++ relativePath.tail)
-        .filter(registry.has)
+        .flatMap(registry.getType)
     }
   }
 }

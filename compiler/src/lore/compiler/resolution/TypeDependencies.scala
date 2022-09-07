@@ -65,7 +65,8 @@ object TypeDependencies {
         // We have to remove all type variable names from the name path list, because they are declared locally and
         // thus cannot be depended on.
         .filterNot(namePath => namePath.isSingle && typeVariableNames.contains(namePath.simpleName))
-        .flatMap(localModule.toAbsoluteTypePath)
+        .flatMap(localModule.getTypeMember)
+        .map(_.name)
         .toSet
     }
 

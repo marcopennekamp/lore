@@ -1,6 +1,7 @@
 package lore.compiler.semantics
 
 import lore.compiler.semantics.core.CoreDefinitions
+import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.semantics.scopes.{LocalModuleTermScope, LocalModuleTypeScope}
@@ -55,9 +56,9 @@ class Registry {
   }
 
   /**
-    * Returns the schema `name`. If the member doesn't exist, `None` is returned.
+    * Returns the type definition `name`. If the member doesn't exist, `None` is returned.
     */
-  def getSchema(name: NamePath): Option[NamedSchema] = {
+  def getType(name: NamePath): Option[TypeDefinition] = {
     getModule(name.parentOrEmpty).flatMap(_.types.get(name.simpleName))
   }
 
