@@ -18,6 +18,14 @@ sealed trait BindingDefinitionKind {
     */
   def isMultiReferable: Boolean = this == BindingDefinitionKind.MultiFunction
   def isSingleReferable: Boolean = !isMultiReferable
+
+  def label: String = this match {
+    case BindingDefinitionKind.Type => "type"
+    case BindingDefinitionKind.Module => "module"
+    case BindingDefinitionKind.Struct => "struct"
+    case BindingDefinitionKind.GlobalVariable => "global variable"
+    case BindingDefinitionKind.MultiFunction => "multi-function"
+  }
 }
 
 object BindingDefinitionKind {

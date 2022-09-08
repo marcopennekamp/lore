@@ -61,6 +61,9 @@ object Checker {
       case expression: UntypedMultiFunctionCall =>
         MultiFunctionTyping.checkOrInferCall(expression, Some(expectedType), context)
 
+      case expression: UntypedAmbiguousMultiFunctionCall =>
+        MultiFunctionTyping.checkOrInferAmbiguousCall(expression, Some(expectedType), context)
+
       case expression: UntypedConstructorCall =>
         expectedType match {
           case expectedType: DeclaredType => ConstructorTyping.checkOrInferCall(expression, Some(expectedType), context)

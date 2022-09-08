@@ -6,8 +6,9 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression.{MultiFunctionCall, MultiFunctionValue}
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.UntypedMultiFunctionCall
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedCall, UntypedMultiFunctionCall}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
@@ -42,21 +43,58 @@ object MultiFunctionTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    checkOrInferCall(expression.target, expression, expectedType, context)
+  }
 
-    Typing.traceCheckOrInfer("multi-function call", expression, expectedType)
+  /**
+    * Checks an ambiguous multi-function call `expression` using [[MultiReferenceTyping.disambiguate]] and
+    * [[checkOrInferCall]].
+    */
+  def checkOrInferAmbiguousCall(
+    expression: UntypedAmbiguousMultiFunctionCall,
+    expectedType: Option[Type],
+    context: InferenceContext,
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    val mfs = expression.target
+    Typing.logger.trace(s"Disambiguate multi-function call `${expression.position.truncatedCode}`" +
+      s" (${mfs.local.length} local, ${mfs.global.length} global):")
     Typing.indentationLogger.indented {
-      checkOrInferCallImpl(expression, expectedType, context)
+      Typing.logger.whenTraceEnabled {
+        Typing.logger.trace("Disambiguation candidates:")
+        Typing.indentationLogger.indented {
+          mfs.local.foreach(mf => Typing.logger.trace(s"- $mf (local)"))
+          mfs.global.foreach(mf => Typing.logger.trace(s"- $mf (global)"))
+        }
+      }
+
+      // TODO (multi-import): Only pre-infer argument types once instead of processing them with each individual
+      //                      multi-function.
+      MultiReferenceTyping.disambiguate(mfs, expression.position) { case (mf, candidateReporter) =>
+        checkOrInferCall(mf, expression, expectedType, context)(registry, candidateReporter)
+      }
+    }
+  }
+
+  private def checkOrInferCall(
+    mf: MultiFunctionDefinition,
+    expression: UntypedCall,
+    expectedType: Option[Type],
+    context: InferenceContext,
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    Typing.traceCheckOrInfer(s"multi-function call `${mf.name}` in", expression, expectedType)
+    Typing.indentationLogger.indented {
+      // Being a separate *Impl function allows it to return early without disturbing the automatic dedent of the
+      // indentation logger.
+      checkOrInferCallImpl(mf, expression, expectedType, context)
     }
   }
 
   private def checkOrInferCallImpl(
-    expression: UntypedMultiFunctionCall,
+    mf: MultiFunctionDefinition,
+    expression: UntypedCall,
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    // TODO (multi-import): Take care of multi-references here...
-    val mf = expression.target.singleBinding
-
     val (inferredArguments, context2) = CallTyping.inferArguments(expression, context)
     inferredArguments.sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
@@ -90,7 +128,7 @@ object MultiFunctionTyping {
     */
   private def filterFunctionCandidates(
     mf: MultiFunctionDefinition,
-    expression: UntypedMultiFunctionCall,
+    expression: UntypedCall,
     inferredArguments: Vector[Option[Expression]],
   ): Vector[FunctionDefinition] = {
     mf.functions.filter(_.signature.arity == expression.arity)
@@ -107,7 +145,7 @@ object MultiFunctionTyping {
     */
   private def findArguments(
     mf: MultiFunctionDefinition,
-    expression: UntypedMultiFunctionCall,
+    expression: UntypedCall,
     expectedType: Option[Type],
     inferredArguments: Vector[Option[Expression]],
     functionCandidates: Vector[FunctionDefinition],
@@ -133,7 +171,7 @@ object MultiFunctionTyping {
 
   private def attemptFunctionCandidate(
     function: FunctionDefinition,
-    expression: UntypedMultiFunctionCall,
+    expression: UntypedCall,
     inferredArguments: Vector[Option[Expression]],
     expectedType: Option[Type],
     context: InferenceContext,
@@ -150,7 +188,7 @@ object MultiFunctionTyping {
 
   private def chooseArgumentsCandidate(
     mf: MultiFunctionDefinition,
-    expression: UntypedMultiFunctionCall,
+    expression: UntypedCall,
     inferredArguments: Vector[Option[Expression]],
     argumentsCandidates: Vector[ArgumentsCandidate],
   )(implicit reporter: Reporter): Option[ArgumentsCandidate] = {
@@ -239,6 +277,20 @@ object MultiFunctionTyping {
             reporter.error(TypingFeedback.MultiFunctionValue.TypeContextExpected(mf, expression))
             None
         }
+    }
+  }
+
+  /**
+    * Checks or infers a multi-function value of an ambiguous `multiReference` given `expectedType` using
+    * [[MultiReferenceTyping.disambiguate]] and [[checkOrInferValue]].
+    */
+  def checkOrInferAmbiguousValue(
+    multiReference: MultiReference[MultiFunctionDefinition],
+    expression: UntypedExpression,
+    expectedType: Option[Type],
+  )(implicit reporter: Reporter): Option[MultiFunctionValue] = {
+    MultiReferenceTyping.disambiguate(multiReference, expression.position) { case (mf, candidateReporter) =>
+      checkOrInferValue(mf, expression, expectedType)(candidateReporter)
     }
   }
 

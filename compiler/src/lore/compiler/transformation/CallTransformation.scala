@@ -5,9 +5,8 @@ import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedConstructorCall, UntypedHole, UntypedIntrinsicCall, UntypedMultiFunctionCall, UntypedValueCall}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedBindingAccess, UntypedConstructorCall, UntypedHole, UntypedIntrinsicCall, UntypedMultiFunctionCall, UntypedValueCall}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.ExprNode.{IntrinsicCallNode, SimpleCallNode}
 import lore.compiler.types.BasicType
@@ -22,10 +21,10 @@ object CallTransformation {
 
     AccessTransformation.transform(node.namePathNode).map {
       case UntypedBindingAccess(mf: MultiFunctionDefinition, _) =>
-        UntypedMultiFunctionCall(MultiReference.single(mf), arguments, node.position)
+        UntypedMultiFunctionCall(mf, arguments, node.position)
 
       case UntypedBindingAccess(AmbiguousMultiFunction(multiReference), _) =>
-        UntypedMultiFunctionCall(multiReference, arguments, node.position)
+        UntypedAmbiguousMultiFunctionCall(multiReference, arguments, node.position)
 
       case UntypedBindingAccess(binding: StructConstructorBinding, _) =>
         UntypedConstructorCall(binding, arguments, node.position)

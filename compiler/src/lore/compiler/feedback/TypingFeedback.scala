@@ -1,9 +1,11 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.definitions.BindingDefinition
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
@@ -46,6 +48,32 @@ object TypingFeedback {
   ) extends Feedback.Error(position) {
     override def message: String = s"The ${typeVariable.variance.humanReadable} type variable `$typeVariable` is in an" +
       s" illegal ${origin.humanReadable} position."
+  }
+
+  case class AmbiguousMultiReference(
+    multiReference: MultiReference[BindingDefinition],
+    localCandidates: Vector[BindingDefinition],
+    globalCandidates: Vector[BindingDefinition],
+    override val position: Position,
+  ) extends Feedback.Error(position) {
+    override def message: String = {
+      val label = multiReference.definitionKind.label
+      val candidateInfo = if (localCandidates.isEmpty && globalCandidates.isEmpty) {
+        s"None of the following locally or globally available ${label}s were valid candidates:\n" +
+          s" ${makeCandidateList(multiReference.local, multiReference.global)}"
+      } else {
+        s"The following ${label}s are valid candidates:\n${makeCandidateList(localCandidates, globalCandidates)}" +
+          s" \nGlobally available ${label}s are tried after locally available ${label}s."
+      }
+      s"The $label `${multiReference.simpleName}` is available from multiple modules and the specific $label to use" +
+        s" cannot be disambiguated by type. $candidateInfo"
+    }
+
+    private def makeCandidateList(local: Vector[BindingDefinition], global: Vector[BindingDefinition]): String = {
+      val localStrings = local.map(definition => s"- ${definition.name} (local)")
+      val globalStrings = global.map(definition => s"- ${definition.name} (global)")
+      (localStrings ++ globalStrings).mkString("\n")
+    }
   }
 
   object Schema {

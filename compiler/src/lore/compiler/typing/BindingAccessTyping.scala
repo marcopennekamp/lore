@@ -22,8 +22,7 @@ object BindingAccessTyping {
         MultiFunctionTyping.checkOrInferValue(mf, expression, expectedType)
 
       case AmbiguousMultiFunction(mfs) =>
-        // TODO (multi-import): Multi-function value stuff...
-        ???
+        MultiFunctionTyping.checkOrInferAmbiguousValue(mfs, expression, expectedType)
 
       case binding: StructConstructorBinding if binding.isConstant =>
         Some(ConstructorValue(binding.underlyingType, expression.position))

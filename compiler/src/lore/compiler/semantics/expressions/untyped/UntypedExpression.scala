@@ -147,8 +147,13 @@ object UntypedExpression {
     def arity: Int = arguments.length
   }
 
-  // TODO (multi-import): The idea is that the multi-reference supports both unambiguous and ambiguous multi-functions.
   case class UntypedMultiFunctionCall(
+    target: MultiFunctionDefinition,
+    arguments: Vector[UntypedExpression],
+    position: Position,
+  ) extends UntypedCall
+
+  case class UntypedAmbiguousMultiFunctionCall(
     target: MultiReference[MultiFunctionDefinition],
     arguments: Vector[UntypedExpression],
     position: Position,

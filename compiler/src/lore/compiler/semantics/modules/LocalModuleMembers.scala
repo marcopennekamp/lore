@@ -36,6 +36,10 @@ class LocalModuleMembers[A <: BindingDefinition](
     *
     * Per the specification, globally declared members of contracted module names (e.g. `foo` in `module foo.bar`) are
     * not taken into account. To decide global membership, the [[Registry]] is taken into consideration.
+    *
+    * TODO (multi-import): Building multi-references multiple times for each member name and walking the scopes and
+    *                      modules each time must be quite expensive. We should introduce a result cache
+    *                      (member name -> result).
     */
   def getAccessibleMembers(memberName: String): Option[MultiReference[A]] = {
     getAccessibleMembersLocally(memberName) match {

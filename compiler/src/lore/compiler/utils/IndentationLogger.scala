@@ -17,6 +17,7 @@ case class IndentationLogger(name: String, step: Int = 4) extends SubstituteLogg
   def indent(): Unit = indentation += step
   def dedent(): Unit = indentation -= step
   def indented[R](block: => R): R = {
+    // TODO (multi-import): Turn this into `traceIndented` and only indent and dedent when trace is enabled.
     indent()
     val result = block
     dedent()

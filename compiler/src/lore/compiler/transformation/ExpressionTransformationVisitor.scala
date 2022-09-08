@@ -15,6 +15,7 @@ import lore.compiler.syntax.TopLevelExprNode._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
+import lore.compiler.typing.MultiReferenceTyping
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 
@@ -50,16 +51,23 @@ class ExpressionTransformationVisitor(
     case SymbolLiteralNode(name, position) => UntypedSymbolValue(name, position)
 
     case FixedFunctionNode(namePathNode, typeExpressions, position) =>
-      scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
-        case mf: MultiFunctionDefinition =>
-          val inputType = TupleType(typeExpressions.map(TypeResolver.resolve).map(_.getOrElse(BasicType.Nothing)))
-          mf.dispatch(
-            inputType,
-            MultiFunctionFeedback.FixedFunction.EmptyFit(mf, inputType, position),
-            min => MultiFunctionFeedback.FixedFunction.AmbiguousCall(mf, inputType, min, position),
-          ).map(instance => UntypedFixedFunctionValue(instance, position))
+      val inputType = TupleType(typeExpressions.map(TypeResolver.resolve).map(_.getOrElse(BasicType.Nothing)))
 
-        // TODO (multi-import): Ambiguous multi-function...
+      def attemptDispatch(mf: MultiFunctionDefinition)(implicit reporter: Reporter) = {
+        mf.dispatch(
+          inputType,
+          MultiFunctionFeedback.FixedFunction.EmptyFit(mf, inputType, position),
+          min => MultiFunctionFeedback.FixedFunction.AmbiguousCall(mf, inputType, min, position),
+        ).map(instance => UntypedFixedFunctionValue(instance, position))
+      }
+
+      scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
+        case mf: MultiFunctionDefinition => attemptDispatch(mf)
+
+        case AmbiguousMultiFunction(mfs) =>
+          MultiReferenceTyping.disambiguate(mfs, position) {
+            case (mf, candidateReporter) => attemptDispatch(mf)(candidateReporter)
+          }
 
         case _ =>
           reporter.error(

@@ -39,6 +39,7 @@ object Inferability {
     case UntypedShapeValue(properties, _) => properties.forall(p => isDefinitelyInferable(p.value))
 
     case call: UntypedMultiFunctionCall => call.arguments.forall(isDefinitelyInferable)
+    case call: UntypedAmbiguousMultiFunctionCall => call.arguments.forall(isDefinitelyInferable)
     case call: UntypedConstructorCall => call.target.isConstant || call.arguments.forall(isDefinitelyInferable)
     case call: UntypedValueCall => isDefinitelyInferable(call.target)
 

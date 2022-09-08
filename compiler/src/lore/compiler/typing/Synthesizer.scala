@@ -94,6 +94,10 @@ object Synthesizer {
       }
 
       case expression: UntypedMultiFunctionCall => MultiFunctionTyping.checkOrInferCall(expression, None, context)
+
+      case expression: UntypedAmbiguousMultiFunctionCall =>
+        MultiFunctionTyping.checkOrInferAmbiguousCall(expression, None, context)
+
       case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
 
       case expression: UntypedValueCall =>

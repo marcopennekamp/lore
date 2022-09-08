@@ -11,6 +11,8 @@
     - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
   - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions, or maybe even just `int` and `real` (for syntactic convenience). This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors.
   - Make sure that all Scala tests succeed.
+    - When Scala tests are currently executed, Pyramid is compiled freshly for each `.lore` test source. This scales badly. Maybe we can exclude Pyramid from Scala tests that don't import any of its functionality.
+  - Test disambiguation for multi-function calls, multi-function values, and fixed functions. Both the happy path and potential errors should be considered. Attention should also be paid to the interplay between local and global availability.
   - Clear all `TODO (multi-import)` entries.
 - Move to Scala 3 and migrate to a different parser library.
 - Disjunction and conjunction operations aren't short-circuiting. This was probably an oversight when we moved from Javascript to the VM. Reimplement this feature.
