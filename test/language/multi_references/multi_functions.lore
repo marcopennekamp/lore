@@ -1,0 +1,19 @@
+module language.multi_references.multi_functions
+
+use lore.Option.Some
+
+use lore.List.get!
+use lore.Option.get!
+
+@root
+module language.multi_references do
+  use lore.test._
+
+  spec 'multi_functions: disambiguate between `List.get!` and `Option.get!`' do
+    let list = [1, 2, 3]
+    let option = Some(1)
+
+    get!(list, 2) should_eq 3
+    get!(option) should_eq 1
+  end
+end
