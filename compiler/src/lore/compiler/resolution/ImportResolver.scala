@@ -132,7 +132,7 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
   ): Unit = {
     val memberName = moduleMember.name.simpleName
     val importSource = if (importNode.isWildcard) AccessibleSource.WildcardImport else AccessibleSource.DirectImport
-    lazy val singleReference = MultiReference(moduleMember.definitionKind, Set(moduleMember), Set.empty)
+    lazy val singleReference = MultiReference(moduleMember.definitionKind, Vector(moduleMember), Vector.empty)
 
     localModuleMembers.accessibles.get(memberName) match {
       case Some(existingMembers) =>

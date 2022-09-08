@@ -24,7 +24,7 @@ class LocalModuleMembers[A <: BindingDefinition](
     * resolution.
     */
   var accessibles: Map[String, MultiReference[A]] = members.map {
-    case (name, moduleMember) => name -> MultiReference(moduleMember.definitionKind, Set(moduleMember), Set.empty)
+    case (name, moduleMember) => name -> MultiReference(moduleMember.definitionKind, Vector(moduleMember), Vector.empty)
   }
 
   /**
@@ -91,7 +91,7 @@ class LocalModuleMembers[A <: BindingDefinition](
     global.get(memberName) match {
       case Some(moduleMember) if localDefinitionKind.exists(_ != moduleMember.definitionKind) => None
       case Some(moduleMember) =>
-        val multiReference = MultiReference(moduleMember.definitionKind, Set.empty, Set(moduleMember))
+        val multiReference = MultiReference(moduleMember.definitionKind, Vector.empty, Vector(moduleMember))
         Some(mergeWithParentMembers(multiReference, _.getAccessibleMembersGlobally(memberName, localDefinitionKind)))
       case None =>
         parent.flatMap(_.getAccessibleMembersGlobally(memberName, localDefinitionKind))
