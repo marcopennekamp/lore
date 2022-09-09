@@ -1,6 +1,6 @@
 module language.schemas.array
 
-use lore.List
+use lore.list._
 
 trait Array[+A]
 
@@ -27,11 +27,11 @@ end
 //       run-time error. This is acceptable, but might not be good enough.
 @where A
 domain array: NaiveArray[A]
-  func at(index: Int): A = List.get!(array.underlying, index)
+  func at(index: Int): A = get!(array.underlying, index)
 
   @where E <: A
   act prepend(element: E) do
-    array.underlying = List.concat([element], array.underlying)
+    array.underlying = concat([element], array.underlying)
   end
 
   @where E <: A
@@ -40,11 +40,11 @@ domain array: NaiveArray[A]
   end
 
   act remove_first() do
-    array.underlying = List.tail(array.underlying)
+    array.underlying = tail(array.underlying)
   end
 
   act remove_last() do
-    array.underlying = List.init(array.underlying)
+    array.underlying = init(array.underlying)
   end
 end
 

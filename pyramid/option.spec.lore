@@ -1,7 +1,6 @@
-module lore.Option
+module lore.option
 
-use lore.Option
-use lore.Enum.[empty?, present?]
+use lore.option._
 use lore.test._
 
 spec '`get_or_else` returns a Some\'s value or the alternative value for None' do

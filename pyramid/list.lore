@@ -1,318 +1,12 @@
-module lore
+module lore.list
+
+use lore.core.panic
+use lore.number
+use lore.number.odd?
+use lore.option._
+use lore.sort.merge_sort
 
 module List do
-  use lore.core.panic
-  use lore.Enum._
-  use lore.number
-  use lore.number.odd?
-  use lore.Option._
-  use lore.sort.merge_sort
-
-  /**
-    * Returns the length of `list` in constant time.
-    */
-  func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
-
-  /**
-    * Returns the element at the given index. If `index` is out of range, `get!` panics.
-    */
-  @where A
-  func get!(list: [A], index: Int): A = do
-    if index < 0 || index >= length(list)
-      panic('Index out of bounds for `List.get!`: $index.')
-    end
-    get_unchecked!(list, index)
-  end
-
-  /**
-    * The same as `get!`, but without bounds checks.
-    */
-  @where A
-  func get_unchecked!(list: [A], index: Int): A = intrinsic[A]('lore.list.get', list, index)
-
-  /**
-    * Returns the element at the given index. If `index` is out of range, the result is `None`.
-    */
-  @where A
-  func get(list: [A], index: Int): Option[A] = do
-    if index >= 0 && index < length(list) then Some(list |> get_unchecked!(index)) else None
-  end
-
-  /**
-    * Returns the first element of `list`. Panics if the list is empty.
-    */
-  @where A
-  func head!(list: [A]): A = get!(list, 0)
-
-  /**
-    * Returns the first element of `list`, or `None` if the list is empty.
-    */
-  @where A
-  func head(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, 0)) else None
-
-  /**
-    * Returns the last element of `list`. Panics if the list is empty.
-    */
-  @where A
-  func last!(list: [A]): A = get!(list, length(list) - 1)
-
-  /**
-    * Returns the last element of the list, or `None` if the list is empty.
-    */
-  @where A
-  func last(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, length(list) - 1)) else None
-
-  /**
-    * Returns a slice of `list` that includes all elements except for the last one. If `list` is empty, the resulting
-    * list is also empty.
-    */
-  @where A
-  func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
-
-  /**
-    * Returns a slice of `list` that includes all elements except for the first one. If `list` is empty, the resulting
-    * list is also empty.
-    */
-  @where A
-  func tail(list: [A]): [A] = slice(list, 1)
-
-  /**
-    * Concatenates `as` and `bs`, producing a new list.
-    */
-  @where A, B
-  func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
-
-  /**
-    * Checks whether `predicate` is true for all elements of the list.
-    */
-  @where A, B >: A
-  func all?(list: [A], predicate: B => Boolean): Boolean = do
-    for e <- list
-      if !predicate(e) then return false
-    end
-    true
-  end
-
-  /**
-    * Creates a slice of `list` from index `start`, taking `length` elements if available.
-    */
-  @where A
-  func slice(list: [A], start: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, start, length)
-
-  /**
-    * Creates a slice of `list` from index `start` until the end of the list. If `start` is out of bounds, an empty
-    * list is returned.
-    */
-  @where A
-  func slice(list: [A], start: Int): [A] = slice(list, start, length(list))
-
-  /**
-    * Splits `list` into two lists, leaving `count` elements in the first list.
-    */
-  @where A
-  func split(list: [A], count: Int): ([A], [A]) = (
-    list |> slice(0, count),
-    list |> slice(count),
-  )
-
-  /**
-    * Splits `list` into two equally sized lists. If `list`'s length is odd, the odd element ends up in the first list.
-    */
-  @where A
-  func split(list: [A]): ([A], [A]) = do
-    if odd?(length(list))
-      split(list, length(list) / 2 + 1)
-    else
-      split(list, length(list) / 2)
-    end
-  end
-
-  /**
-    * Zips elements from `as` and `bs` into a list of tuples. Spare elements of the longer list are ignored.
-    */
-  @where A, B
-  func zip(as: [A], bs: [B]): [(A, B)] = do
-    // TODO (multi-import): `number.min` should be usable as `min`.
-    let mut i = 0
-    let len = number.min(length(as), length(bs))
-    while i < len
-      let a = get_unchecked!(as, i)
-      let b = get_unchecked!(bs, i)
-      i += 1
-      (a, b)
-    end
-  end
-
-  /**
-    * Finds the smallest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
-    */
-  @where A
-  func min(list: [A]): Option[A] = if present?(list) then Some(min!(list)) else None
-
-  /**
-    * Finds the smallest element in `list`, using `<` for comparisons. Panics if `list` is empty.
-    */
-  @where A
-  func min!(list: [A]): A = extremum!(list, lore.core.less_than?)
-
-  /**
-    * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
-    * empty.
-    */
-  @where A, B >: A
-  func min(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(min!(list, lt?)) else None
-
-  /**
-    * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
-    */
-  @where A, B >: A
-  func min!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, lt?)
-
-  // TODO (pyramid): For `min_by`/`max_by`, ensure that `by` is only called once per element so that `by` can be an
-  //                 expensive computation. This simplifies some use cases where otherwise intermediate structures
-  //                 would have to be created.
-
-  /**
-    * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Returns `None` if
-    * `list` is empty.
-    */
-  @where A, B >: A, C
-  func min_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(min_by!(list, by)) else None
-
-  /**
-    * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Panics if `list` is
-    * empty.
-    */
-  @where A, B >: A, C
-  func min_by!(list: [A], by: B => C): A = min!(list, (x, y) => by(x) < by(y))
-
-  /**
-    * Finds the largest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
-    */
-  @where A
-  func max(list: [A]): Option[A] = if present?(list) then Some(max!(list)) else None
-
-  /**
-    * Finds the largest element in `list`, using `<` for comparisons. Panics if `list` is empty.
-    */
-  @where A
-  func max!(list: [A]): A = extremum!(list, (x, y) => x > y)
-
-  /**
-    * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
-    * empty.
-    */
-  @where A, B >: A
-  func max(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(max!(list, lt?)) else None
-
-  /**
-    * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
-    */
-  @where A, B >: A
-  func max!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, (x, y) => lt?(y, x))
-
-  /**
-    * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Returns `None` if
-    * `list` is empty.
-    */
-  @where A, B >: A, C
-  func max_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(max_by!(list, by)) else None
-
-  /**
-    * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Panics if `list` is
-    * empty.
-    */
-  @where A, B >: A, C
-  func max_by!(list: [A], by: B => C): A = max!(list, (x, y) => by(x) < by(y))
-
-  /**
-    * Finds the extremum in `list` given a comparison function `ex?`. `ex?` should return true if the left argument is
-    * more extreme than the other argument. Panics if `list` is empty.
-    *
-    * TODO (pyramid): This can be a private function, as it's mostly meant to be an implementation.
-    */
-  @where A, B >: A
-  func extremum!(list: [A], ex?: (B, B) => Boolean): A = do
-    if empty?(list)
-      panic('Cannot call `List.extremum!` on an empty list.')
-    end
-
-    let mut result = get!(list, 0)
-    let mut i = 1
-    let len = length(list)
-    while i < len
-      let candidate = get!(list, i)
-      if ex?(candidate, result)
-        result = candidate
-      end
-      i += 1
-    end
-    result
-  end
-
-  /**
-    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `<` for comparisons.
-    */
-  @where A
-  func sort(list: [A]): [A] = merge_sort(list)
-
-  /**
-    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `lt?` ("less than") for comparisons.
-    */
-  @where A, B >: A
-  func sort(list: [A], lt?: (B, B) => Boolean): [A] = merge_sort(list, lt?)
-
-  /**
-    * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `by` to map the list's elements to
-    * values that are compared with `<`. `by` may be called multiple times for the same element.
-    *
-    * TODO (pyramid): Ensure that `by` is only called once per element so that `by` can be an expensive computation.
-    *                 This simplifies some use cases where otherwise intermediate structures would have to be created.
-    */
-  @where A, B >: A, C
-  func sort_by(list: [A], by: B => C): [A] = sort(list, (x, y) => by(x) < by(y))
-
-  /**
-    * Whether `list` is sorted, comparing elements with `<`.
-    */
-  @where A
-  func sorted?(list: [A]): Boolean = do
-    // TODO (syntax): Ranges, ranges, ranges...
-    // We could also use a sliding window here, but that would be better suited to an iterator than a function that
-    // produces a new intermediate data structure.
-    let mut i = 0
-    let len = length(list) - 1
-    while i < len
-      let e1 = list |> get_unchecked!(i)
-      let e2 = list |> get_unchecked!(i + 1)
-      if e2 < e1 then return false
-      i += 1
-    end
-    true
-  end
-
-  /**
-    * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are
-    * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
-    * result.
-    */
-  @where A
-  func symmetric_pairs(list: [A]): [(A, A)] = do
-    let mut result: [(A, A)] = []
-    let len = length(list)
-    let mut i = 0
-    // TODO (syntax): We really need iterators for this.
-    while i < len
-      let mut j = i
-      while j < len
-        result = result :+ (get!(list, i), get!(list, j))
-        j += 1
-      end
-      i += 1
-    end
-    result
-  end
-
   /**
     * Creates a list that contains `element` `n` times.
     */
@@ -327,39 +21,360 @@ module List do
 end
 
 /**
-  * Enum provides functions for finite collections, of which lists are the most basic one.
+  * Returns the length of `list` in constant time.
   */
-module Enum do
-  use lore.List._
+func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
 
-  func size(list: [Any]): Int = List.length(list)
+/**
+  * Whether `list` has no elements.
+  */
+func empty?(list: [Any]): Boolean = length(list) == 0
 
-  func empty?(list: [Any]): Boolean = List.length(list) == 0
-  func present?(list: [Any]): Boolean = List.length(list) > 0
+/**
+  * Whether `list` has at least one elements.
+  */
+func present?(list: [Any]): Boolean = length(list) > 0
 
-  @where A
-  func flatten(lists: [[A]]): [A] = intrinsic[[A]]('lore.list.flatten', lists)
+/**
+  * Returns the element at the given index. If `index` is out of range, `get!` panics.
+  */
+@where A
+func get!(list: [A], index: Int): A = do
+  if index < 0 || index >= length(list)
+    panic('Index out of bounds for `List.get!`: $index.')
+  end
+  get_unchecked!(list, index)
+end
 
-  @where A, B >: A, C
-  func map(list: [A], f: B => C): [C] = intrinsic[[C]]('lore.list.map', list, f)
+/**
+  * The same as `get!`, but without bounds checks.
+  */
+@where A
+func get_unchecked!(list: [A], index: Int): A = intrinsic[A]('lore.list.get', list, index)
 
-  @where A, B >: A, C
-  func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flat_map', list, f)
+/**
+  * Returns the element at the given index. If `index` is out of range, the result is `None`.
+  */
+@where A
+func get(list: [A], index: Int): Option[A] = do
+  if index >= 0 && index < length(list) then Some(list |> get_unchecked!(index)) else None
+end
 
-  @where A, B >: A
-  act each(list: [A], f: B => Unit) do
-    intrinsic[Unit]('lore.list.each', list, f)
+/**
+  * Returns the first element of `list`. Panics if the list is empty.
+  */
+@where A
+func head!(list: [A]): A = get!(list, 0)
+
+/**
+  * Returns the first element of `list`, or `None` if the list is empty.
+  */
+@where A
+func head(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, 0)) else None
+
+/**
+  * Returns the last element of `list`. Panics if the list is empty.
+  */
+@where A
+func last!(list: [A]): A = get!(list, length(list) - 1)
+
+/**
+  * Returns the last element of the list, or `None` if the list is empty.
+  */
+@where A
+func last(list: [A]): Option[A] = if present?(list) then Some(get_unchecked!(list, length(list) - 1)) else None
+
+/**
+  * Returns a slice of `list` that includes all elements except for the last one. If `list` is empty, the resulting
+  * list is also empty.
+  */
+@where A
+func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
+
+/**
+  * Returns a slice of `list` that includes all elements except for the first one. If `list` is empty, the resulting
+  * list is also empty.
+  */
+@where A
+func tail(list: [A]): [A] = slice(list, 1)
+
+/**
+  * Concatenates `as` and `bs`, producing a new list.
+  */
+@where A, B
+func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
+
+/**
+  * Concatenates all lists in `lists`.
+  */
+@where A
+func flatten(lists: [[A]]): [A] = intrinsic[[A]]('lore.list.flatten', lists)
+
+/**
+  * Maps `f` over each element of `list`, producing a new list.
+  */
+@where A, B >: A, C
+func map(list: [A], f: B => C): [C] = intrinsic[[C]]('lore.list.map', list, f)
+
+/**
+  * Maps `f` over each element of `list` and flattens the resulting lists.
+  */
+@where A, B >: A, C
+func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flat_map', list, f)
+
+/**
+  * Executes `f` for each element of `list`.
+  */
+@where A, B >: A
+act each(list: [A], f: B => Unit) do
+  intrinsic[Unit]('lore.list.each', list, f)
+end
+
+/**
+  * Filters elements of `list` with `predicate`, producing a new list of elements for which `predicate` is true.
+  */
+@where A, B >: A
+func filter(list: [A], predicate: B => Boolean): [A] = intrinsic[[A]]('lore.list.filter', list, predicate)
+
+/**
+  * Folds `list` with an `initial` accumulating value, calling `f` with each element and the accumulating value.
+  */
+@where A, B >: A, I, R >: I
+func fold(list: [A], initial: I, f: (R, B) => R): R = do
+  let mut result: R = initial
+  for element <- list
+    result = f(result, element)
+  end
+  result
+end
+
+/**
+  * Checks whether `predicate` is true for all elements of the list.
+  */
+@where A, B >: A
+func all?(list: [A], predicate: B => Boolean): Boolean = do
+  for e <- list
+    if !predicate(e) then return false
+  end
+  true
+end
+
+/**
+  * Creates a slice of `list` from index `start`, taking `length` elements if available.
+  */
+@where A
+func slice(list: [A], start: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, start, length)
+
+/**
+  * Creates a slice of `list` from index `start` until the end of the list. If `start` is out of bounds, an empty
+  * list is returned.
+  */
+@where A
+func slice(list: [A], start: Int): [A] = slice(list, start, length(list))
+
+/**
+  * Splits `list` into two lists, leaving `count` elements in the first list.
+  */
+@where A
+func split(list: [A], count: Int): ([A], [A]) = (
+  list |> slice(0, count),
+  list |> slice(count),
+)
+
+/**
+  * Splits `list` into two equally sized lists. If `list`'s length is odd, the odd element ends up in the first list.
+  */
+@where A
+func split(list: [A]): ([A], [A]) = do
+  if odd?(length(list))
+    split(list, length(list) / 2 + 1)
+  else
+    split(list, length(list) / 2)
+  end
+end
+
+/**
+  * Zips elements from `as` and `bs` into a list of tuples. Spare elements of the longer list are ignored.
+  */
+@where A, B
+func zip(as: [A], bs: [B]): [(A, B)] = do
+  // TODO (multi-import): `number.min` should be usable as `min`.
+  let mut i = 0
+  let len = number.min(length(as), length(bs))
+  while i < len
+    let a = get_unchecked!(as, i)
+    let b = get_unchecked!(bs, i)
+    i += 1
+    (a, b)
+  end
+end
+
+/**
+  * Finds the smallest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
+  */
+@where A
+func min(list: [A]): Option[A] = if present?(list) then Some(min!(list)) else None
+
+/**
+  * Finds the smallest element in `list`, using `<` for comparisons. Panics if `list` is empty.
+  */
+@where A
+func min!(list: [A]): A = extremum!(list, lore.core.less_than?)
+
+/**
+  * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
+  * empty.
+  */
+@where A, B >: A
+func min(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(min!(list, lt?)) else None
+
+/**
+  * Finds the smallest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
+  */
+@where A, B >: A
+func min!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, lt?)
+
+// TODO (pyramid): For `min_by`/`max_by`, ensure that `by` is only called once per element so that `by` can be an
+//                 expensive computation. This simplifies some use cases where otherwise intermediate structures
+//                 would have to be created.
+
+/**
+  * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Returns `None` if
+  * `list` is empty.
+  */
+@where A, B >: A, C
+func min_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(min_by!(list, by)) else None
+
+/**
+  * Finds the first element `e` in `list` for which `by(e)` is smallest when comparing with `<`. Panics if `list` is
+  * empty.
+  */
+@where A, B >: A, C
+func min_by!(list: [A], by: B => C): A = min!(list, (x, y) => by(x) < by(y))
+
+/**
+  * Finds the largest element in `list`, using `<` for comparisons. Returns `None` if `list` is empty.
+  */
+@where A
+func max(list: [A]): Option[A] = if present?(list) then Some(max!(list)) else None
+
+/**
+  * Finds the largest element in `list`, using `<` for comparisons. Panics if `list` is empty.
+  */
+@where A
+func max!(list: [A]): A = extremum!(list, (x, y) => x > y)
+
+/**
+  * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Returns `None` if `list` is
+  * empty.
+  */
+@where A, B >: A
+func max(list: [A], lt?: (B, B) => Boolean): Option[A] = if present?(list) then Some(max!(list, lt?)) else None
+
+/**
+  * Finds the largest element in `list`, using `lt?` ("less than") for comparisons. Panics if `list` is empty.
+  */
+@where A, B >: A
+func max!(list: [A], lt?: (B, B) => Boolean): A = extremum!(list, (x, y) => lt?(y, x))
+
+/**
+  * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Returns `None` if
+  * `list` is empty.
+  */
+@where A, B >: A, C
+func max_by(list: [A], by: B => C): Option[A] = if present?(list) then Some(max_by!(list, by)) else None
+
+/**
+  * Finds the first element `e` in `list` for which `by(e)` is largest when comparing with `<`. Panics if `list` is
+  * empty.
+  */
+@where A, B >: A, C
+func max_by!(list: [A], by: B => C): A = max!(list, (x, y) => by(x) < by(y))
+
+/**
+  * Finds the extremum in `list` given a comparison function `ex?`. `ex?` should return true if the left argument is
+  * more extreme than the other argument. Panics if `list` is empty.
+  *
+  * TODO (pyramid): This can be a private function, as it's mostly meant to be an implementation.
+  */
+@where A, B >: A
+func extremum!(list: [A], ex?: (B, B) => Boolean): A = do
+  if empty?(list)
+    panic('Cannot call `List.extremum!` on an empty list.')
   end
 
-  @where A, B >: A
-  func filter(list: [A], predicate: B => Boolean): [A] = intrinsic[[A]]('lore.list.filter', list, predicate)
-
-  @where A, B >: A, I, R >: I
-  func fold(list: [A], initial: I, f: (R, B) => R): R = do
-    let mut result: R = initial
-    for element <- list
-      result = f(result, element)
+  let mut result = get!(list, 0)
+  let mut i = 1
+  let len = length(list)
+  while i < len
+    let candidate = get!(list, i)
+    if ex?(candidate, result)
+      result = candidate
     end
-    result
+    i += 1
   end
+  result
+end
+
+/**
+  * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `<` for comparisons.
+  */
+@where A
+func sort(list: [A]): [A] = merge_sort(list)
+
+/**
+  * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `lt?` ("less than") for comparisons.
+  */
+@where A, B >: A
+func sort(list: [A], lt?: (B, B) => Boolean): [A] = merge_sort(list, lt?)
+
+/**
+  * Sorts `list` with a stable sorting algorithm, currently a merge sort, using `by` to map the list's elements to
+  * values that are compared with `<`. `by` may be called multiple times for the same element.
+  *
+  * TODO (pyramid): Ensure that `by` is only called once per element so that `by` can be an expensive computation.
+  *                 This simplifies some use cases where otherwise intermediate structures would have to be created.
+  */
+@where A, B >: A, C
+func sort_by(list: [A], by: B => C): [A] = sort(list, (x, y) => by(x) < by(y))
+
+/**
+  * Whether `list` is sorted, comparing elements with `<`.
+  */
+@where A
+func sorted?(list: [A]): Boolean = do
+  // TODO (syntax): Ranges, ranges, ranges...
+  // We could also use a sliding window here, but that would be better suited to an iterator than a function that
+  // produces a new intermediate data structure.
+  let mut i = 0
+  let len = length(list) - 1
+  while i < len
+    let e1 = list |> get_unchecked!(i)
+    let e2 = list |> get_unchecked!(i + 1)
+    if e2 < e1 then return false
+    i += 1
+  end
+  true
+end
+
+/**
+  * Creates pairs with elements from the given list of *distinct* elements. The function assumes that pairs are
+  * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
+  * result.
+  */
+@where A
+func symmetric_pairs(list: [A]): [(A, A)] = do
+  let mut result: [(A, A)] = []
+  let len = length(list)
+  let mut i = 0
+  // TODO (syntax): We really need iterators for this.
+  while i < len
+    let mut j = i
+    while j < len
+      result = result :+ (get!(list, i), get!(list, j))
+      j += 1
+    end
+    i += 1
+  end
+  result
 end

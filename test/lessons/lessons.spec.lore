@@ -1,6 +1,6 @@
 module lessons
 
-use lore.Enum.flat_map
+use lore.list.flat_map
 use lore.test._
 
 use lessons.hello_name.hello

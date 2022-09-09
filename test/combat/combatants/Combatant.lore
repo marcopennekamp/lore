@@ -1,6 +1,6 @@
 module combat.combatants
 
-use lore.Enum.fold
+use lore.list.fold
 
 use combat.effects._
 use combat.stats._

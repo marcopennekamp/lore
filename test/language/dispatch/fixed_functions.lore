@@ -1,6 +1,6 @@
 module language.dispatch.fixed_functions
 
-use lore.String
+use lore.string.concat
 
 trait A
 trait B extends A
@@ -12,22 +12,22 @@ func stringify(a: A): String = 'A'
 
 func stringify(b: B): String = do
   let super = stringify.fixed[A](b)
-  String.concat(super, 'B')
+  concat(super, 'B')
 end
 
 func stringify(c: C): String = do
   let super = stringify.fixed[B](c)
-  String.concat(super, 'C')
+  concat(super, 'C')
 end
 
 func stringify(d: D): String = do
   let super = stringify.fixed[B](d)
-  String.concat(super, 'D')
+  concat(super, 'D')
 end
 
 func stringify(e: E): String = do
   let super = stringify.fixed[D](e)
-  String.concat('E', super)
+  concat('E', super)
 end
 
 @root

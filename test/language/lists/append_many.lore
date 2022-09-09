@@ -14,7 +14,7 @@ end
 
 @root
 module language.lists do
-  use lore.List._
+  use lore.list._
   use lore.number.sum
   use lore.test._
 

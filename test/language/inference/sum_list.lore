@@ -1,7 +1,7 @@
 module language.inference.sum_list
 
 use lore.core.to_string
-use lore.Enum.map
+use lore.list.map
 
 trait Animal
 object Cat extends Animal

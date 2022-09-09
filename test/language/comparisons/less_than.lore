@@ -1,8 +1,8 @@
 // This test ensures that the default implementation of `less_than?` is correct and calls back into `lore.core.less_than?`.
 module language.comparisons.less_than
 
-use lore.IO.println
-use lore.String
+use lore.io.println
+use lore.string.to_lower
 use lore.test._
 
 trait Position
@@ -17,8 +17,8 @@ struct Parameterized[A](value: Int)
 
 @root
 module lore.core do
-  func less_than?(a: IgnoreCase, b: IgnoreCase): Boolean = String.to_lower(a.string) < String.to_lower(b.string)
-  func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
+  func less_than?(a: IgnoreCase, b: IgnoreCase): Boolean = to_lower(a.string) < to_lower(b.string)
+  func hash(value: IgnoreCase): Int = to_lower(value.string) |> hash
 end
 
 // We have to use `Any` as a type for the variables so that the compiler doesn't generate the direct comparison

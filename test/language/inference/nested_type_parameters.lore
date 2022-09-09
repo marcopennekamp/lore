@@ -1,7 +1,6 @@
 module language.inference
 
-use lore.Option
-use lore.Option._
+use lore.option._
 
 // TODO (multi-import): IS THIS EVEN A PROBLEM? The basic gist is that type variables from nested constructors, for
 //                      example, MIGHT conflict because they are not made unique per call. The previous algorithm would

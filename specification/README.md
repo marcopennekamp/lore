@@ -3,7 +3,7 @@
 **Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming. Take a look at it:
 
 ```
-use lore.Enum.map
+use lore.list.map
 
 func hello(String | Int): String
 func hello(name: String): String = 'Hello, $name.'

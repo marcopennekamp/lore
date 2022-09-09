@@ -1,6 +1,6 @@
 module language.schemas.type_filter
 
-use lore.Enum._
+use lore.list.[flat_map]
 
 // TODO: The need for TypeFilter as a struct opens up a bigger discussion about explicit type argument passing.
 //       Multiple dispatch is nice, but if we need these kinds of workarounds to implement such utility functions, and

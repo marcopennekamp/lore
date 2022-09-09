@@ -32,8 +32,8 @@ The requirement for the `do` when declaring module `Name2` is purely due to pars
 ###### Example (Access)
 
 ```
-lore.Enum.map([1, 2, 3], lore.number.inc)          // --> [2, 3, 4]
-lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
+lore.list.map([1, 2, 3], lore.number.inc)          // --> [2, 3, 4]
+lore.string.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 ```
 
 
@@ -107,19 +107,19 @@ The `use` declaration can be used to introduce simple names for other module mem
 1. **Single:** Import a single member directly.
 
    ```
-   use lore.Enum.map
+   use lore.list.map
    ```
 
 2. **List:** Import many members of the same module directly.
 
    ```
-   use lore.Enum.[map, flat_map]
+   use lore.list.[map, flat_map]
    ```
 
 3. **Wildcard:** Import all members of a module.
 
    ```
-   use lore.Enum._
+   use lore.list._
    ```
 
 Import paths must have at least two segments. The wildcard counts as a segment. Single imports such as `use A` are nonsensical and thus illegal. The first segment of an import path must refer to a module.
@@ -134,7 +134,7 @@ Imports may reference each other. For example, a wildcard import `use lore.optio
 
 ```
 // Simple:
-use lore.Enum.map
+use lore.list.map
 use lore.number.inc
 [1, 2, 3] |> map(inc)
 
@@ -144,7 +144,7 @@ use lore.[Enum, number]
 
 // Wildcard:
 use lore.number._
-use lore.Math._
+use lore.math._
 let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
 ```
 
@@ -158,11 +158,11 @@ Unless the import is targeting a companion module, it is good practice to use a 
 
 When a simple-named multi-function is called or used as a value, the compiler simulates dispatch with all multi-function candidates that are accessible from the current scope, in two layers: local and global. These two layers are defined by the name resolution described above. The local layer contains all local definitions and imports, while the global layer contains global definitions that are not part of the local layer. The local layer has precedence.
 
-The disambiguation is only successful if *one* dispatch attempt in the layer is successful and *all* other dispatch attempts fail with an empty fit. If any dispatch attempt is ambiguous or if two dispatch attempts are successful, the disambiguation has failed.
+The disambiguation is only successful if *one* dispatch attempt in the layer is successful and *all* other dispatch attempts fail. If none or multiple dispatch attempts are successful, the disambiguation has failed.
 
-This process is separated into a local and a global layer so that new global declarations of multi-functions cannot conflict with imports or local definitions in existing code. If a multi-function `lore.list.map` is imported, and later a function `map` is defined globally and in scope, and if these two functions would conflict for a call `map([1, 2, 3], x => x * 2)`, `lore.list.map` will be preferred because it's imported locally. We could increase the number of layers to one per local or global module to achieve more granularity, but making the system more complex carries the possibility of confusing users.
+This process is separated into a local and a global layer so that new global declarations of multi-functions cannot conflict with imports or local definitions in existing code. If a multi-function `lore.list.map` is imported, and later a function `map` is defined globally and in scope, and if these two functions would conflict for a call `map([1, 2, 3], x => x * 2)`, `lore.list.map` will be preferred because it's imported locally. We could increase the number of layers to one per local or global module to achieve more granularity, but making the system more complex carries the possibility of confusing users and increases the burden on the compiler.
 
-Keep in mind that the disambiguation happens at *compile time*. The specific multi-function will be chosen and compiled, unambiguously, into the `Call` or `Dispatch` bytecode instruction executed by the VM. The bytecode itself has no notion of simple names, scopes, or name resolution, and so at this point the choice will be final.
+Keep in mind that the disambiguation happens at *compile time*. The specific multi-function will be chosen and compiled, unambiguously, into the `Call` or `Dispatch` bytecode instruction executed by the VM. The bytecode itself has no notion of simple names, scopes, or name resolution, and so at this point the choice will be final. This is similar to how some languages handle method overloading.
 
 ###### Example
 
@@ -229,19 +229,17 @@ In summary, we have `nature.bear.foo` as a local candidate and `nature.apple.foo
 
 ### Companion Modules
 
-A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
+A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module usually contains definitions that will be used with the module name. For example, the `Option` type has a companion module `Option` that contains a secondary constructor `Option.some`.
 
 **Struct objects** may also have a companion module, but an object's properties and its companion module's term bindings may not share a name.
 
 ###### Example
 
 ```
-module animal
+trait Option[+A]
 
-trait Animal
-
-module Animal do
-  func breed(mother: Animal, father: Animal): Option[Animal] = None
+module Option do
+  func some(value: A): Option[A] where A = Some(value)
 end
 ```
 
@@ -261,7 +259,7 @@ module lore.core
 end
 ```
 
-The module `lore.core` will actually be `culinary.lore.core`. Even worse, if you're using an import such as `use lore.Enum.map`, the compiler will complain that `culinary.lore.Enum.map` does not exist! This is because you've declared a local module `lore` which takes precedence over the root `lore` module defined by the standard library.
+The module `lore.core` will actually be `culinary.lore.core`. Even worse, if you're using an import such as `use lore.list.map`, the compiler will complain that `culinary.lore.list.map` does not exist! This is because you've declared a local module `lore` which takes precedence over the root `lore` module defined by the standard library.
 
 To avoid this pitfall, an **at-root module declaration** ignores the outer module name and inserts the defined module directly into the root module:
 
@@ -282,11 +280,10 @@ As the at-root module is not a child of the outer module, its name will not beco
 
 ### Naming Conventions
 
-Modules are essentially used in two ways, which determines their naming convention:
+Depending on the purpose of a module, it might be named in snake case or upper camel case. The conventions are as follows:
 
-1. Modules that **contain functions and global variables** are usually named in upper camel case. Often they will be used explicitly, so that functions from multiple modules don't clash. A good example is the module `lore.Enum`. Its functions will often be used together with the module name, e.g. `Enum.map([1, 2, 3], x => x + 1)` and `Enum.flatten(lists)`. Sometimes these modules are also companion modules. 
-   - An exception to this convention is when functions or global variables are intended to be used without the qualifying module name. In such cases the module is best understood as a namespace.
-2. Modules that only contain types and other modules are also informally known as **namespaces**. They are written in snake case, such as the `lore` namespace defined by the Pyramid standard library.
+1. Most modules should be named in snake case. These modules might contain types, and functions to work with these types. For example, the module `lore.option` contains types `Option`, `Some`, and `None`, as well as functions that work on options, such as `get_or_else` and `map`. With compile-time disambiguation of multi-functions, the compiler is smart enough to associate the right `map` function with an `Option`, so there is no need to keep that function in an additional `Option` companion module. Modules that don't contain types are also usually named in snake case, as long as function names are specific enough. For example, the module `lore.sort` defines a function `merge_sort`, which is specific enough to be used without a qualifying upper-case `Sort` module.
+2. Modules that are named in upper camel case contain types, global variables, and functions that are usually supposed to be used *with* the module name. For example, the function `lore.list.List.repeat` is meant to be used as `List.repeat`, because `repeat`'s arguments don't associate it with lists. The same applies to secondary constructors in companion modules. Other examples from Pyramid are `Option.some` and `Math.pi`. Lore doesn't stop you from importing these bindings directly, however. You can import and use `pi` directly at your discretion.
 
 
 

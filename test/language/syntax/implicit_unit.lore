@@ -1,10 +1,10 @@
 module language.syntax.implicit_unit
 
-use lore.List
+use lore.list.concat
 
 // Even though concat returns a list, the compiler should recognize that the action implicitly returns a unit value.
 act test() do
-  List.concat([12], [15])
+  concat([12], [15])
 end
 
 @root

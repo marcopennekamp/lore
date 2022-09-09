@@ -1,5 +1,7 @@
-module lore.Math
+module lore.math
 
-let pi: Real = 3.14159265359
+module Math do
+  let pi: Real = 3.14159265359
+end
 
 func sqrt(x: Real): Real = intrinsic[Real]('lore.math.sqrt', x)

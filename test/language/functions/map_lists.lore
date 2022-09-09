@@ -1,6 +1,6 @@
 module language.functions.map_lists
 
-use lore.Enum.map
+use lore.list.map
 
 func numbers(): [Int] = [1, 2, 3, 4, 5] |> map(v => v + 3)
 

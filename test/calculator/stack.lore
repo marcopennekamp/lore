@@ -1,7 +1,6 @@
 module calculator
 
-use lore.Enum.empty?
-use lore.List
+use lore.list.[empty?, last!, init]
 
 struct Stack
   mut elements: [Real]
@@ -20,8 +19,8 @@ module Stack do
         return 0.0
       end
 
-      let result = List.last!(stack.elements)
-      stack.elements = List.init(stack.elements)
+      let result = last!(stack.elements)
+      stack.elements = init(stack.elements)
       result
     end
   end

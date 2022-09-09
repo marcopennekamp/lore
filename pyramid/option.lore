@@ -1,104 +1,90 @@
-module lore
+module lore.option
 
 use lore.core.panic
 
-// TODO (pyramid): Implement compile-time multi-function disambiguation, so that a function "lore.list.get" and a
-//                 function "lore.option.get" can both be imported and the specific multi-function to call is decided
-//                 at the call site. This will then allow us to move many option functions out of the Option companion
-//                 module. Option, Some, and None should be part of a module `lore.option`. `get` and cousins are moved
-//                 to `lore.option` as well. Then only functions like `some` which should be called like `Option.some`
-//                 remain in the companion module. Ultimately, such a change would allow a user to simply import
-//                 `lore.option` instead of importing `lore.Option` and then the rest via `lore.Option.Some` etc.,
-//                 which is super clunky.
-
 /**
   * An Option makes the presence or absence of a value explicit. It can either be a `Some`, which wraps the present
-  * value, or a None, which signifies the absence of a value.
+  * value, or a `None`, which signifies the absence of a value.
   */
 trait Option[+A]
 
 module Option do
-  use Enum._
-
   /**
-    * An Option with a present value. The type variable A is open to allow dispatching on an Option's run-time value
-    * type.
-    */
-  struct Some[open +A](value: A) extends Option[A]
-
-  /**
-    * Constructs an Option from the given value. This function can be used in contrast to the constructor `Some` to
-    * immediately create a Some that has the wider `Option` type.
+    * Constructs an Option from the given value. `some` can be used in contrast to the constructor `Some` to create a
+    * `Some` that has the wider `Option` type.
     */
   @where A
   func some(value: A): Option[A] = Some(value)
-
-  /**
-    * An Option signifying an absent value.
-    */
-  object None extends Option[Nothing]
-
-  /**
-    * Returns the option's value if it is something, or otherwise the alternative value.
-    */
-  @where A, B
-  func get_or_else(Option[A], alternative: B): A | B
-
-  @where A, B
-  func get_or_else(option: Some[A], B): A = option.value
-
-  @where B
-  func get_or_else(None, alternative: B): B = alternative
-
-  /**
-    * Returns the option's value if it is something, or otherwise an error.
-    */
-  func get!(Option[A]): A where A
-  func get!(option: Some[A]): A where A = option.value
-  func get!(None): Nothing = panic('Tried to `get!` a `None`.')
-
-  /**
-    * Returns the option if it is something, or otherwise the lazy alternative.
-    */
-  @where A, B
-  func or_else(option: Option[A], alternative: () => Option[B]): Option[A | B]
-
-  @where A, B
-  func or_else(option: Some[A], () => Option[B]): Option[A] = option
-
-  @where B
-  func or_else(None, alternative: () => Option[B]): Option[B] = alternative()
 end
 
-module Enum do
-  use Option._
+/**
+  * An Option with a present value. The type variable A is open to allow dispatching on an Option's run-time value
+  * type.
+  */
+struct Some[open +A](value: A) extends Option[A]
 
-  /**
-    * TODO (pyramid): Document.
-    */
-  @where A, B >: A, C
-  func map(option: Option[A], f: B => C): Option[C]
+/**
+  * An Option signifying an absent value.
+  */
+object None extends Option[Nothing]
 
-  @where A, B >: A, C
-  func map(option: Some[A], f: B => C): Some[C] = option.value |> f |> Some
+/**
+  * Whether the given option is `None`.
+  */
+func empty?(Option[Any]): Boolean = false
+func empty?(None): Boolean = true
 
-  @where B, C
-  func map(None, f: B => C): None = None
+/**
+  * Whether the given option is `Some`.
+  */
+func present?(option: Option[Any]): Boolean = !empty?(option)
 
-  /**
-    * Returns true if the given option is None, and false otherwise.
-    */
-  func empty?(Option[Any]): Boolean = false
-  func empty?(None): Boolean = true
+/**
+  * Returns the option's value if it is something, or otherwise the alternative value.
+  */
+@where A, B
+func get_or_else(Option[A], alternative: B): A | B
 
-  /**
-    * Returns true if the given option is Some, and false otherwise.
-    */
-  func present?(option: Option[Any]): Boolean = !empty?(option)
-end
+@where A, B
+func get_or_else(option: Some[A], B): A = option.value
 
-module core do
-  use Option._
+@where B
+func get_or_else(None, alternative: B): B = alternative
+
+/**
+  * Returns the option's value if it is something, or otherwise an error.
+  */
+func get!(Option[A]): A where A
+func get!(option: Some[A]): A where A = option.value
+func get!(None): Nothing = panic('Tried to `get!` a `None`.')
+
+/**
+  * Returns the option if it is something, or otherwise the lazy alternative.
+  */
+@where A, B
+func or_else(option: Option[A], alternative: () => Option[B]): Option[A | B]
+
+@where A, B
+func or_else(option: Some[A], () => Option[B]): Option[A] = option
+
+@where B
+func or_else(None, alternative: () => Option[B]): Option[B] = alternative()
+
+/**
+  * TODO (pyramid): Document.
+  */
+@where A, B >: A, C
+func map(option: Option[A], f: B => C): Option[C]
+
+@where A, B >: A, C
+func map(option: Some[A], f: B => C): Some[C] = option.value |> f |> Some
+
+@where B, C
+func map(None, f: B => C): None = None
+
+@root
+module lore.core do
+  use lore.option._
 
   /**
     * Stringifies the option either to `'Some($value)'` or `'None'`.

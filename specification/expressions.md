@@ -185,7 +185,7 @@ a || b  // Disjunction
 
 ### Strings
 
-Lore supports UTF-8 **strings**. Their type is `String`. Conceptually, a string is *not* a list of characters. Accessing a single character at a specific position or index with the `lore.String.at` functions will result in a string. 
+Lore supports UTF-8 **strings**. Their type is `String`. Conceptually, a string is *not* a list of characters. Accessing a single character at a specific position or index with the `lore.string.at` functions will result in a string. 
 
 A string is always written within single quotes: `'text'`. We reserve the ability to use the double quotes symbol for string-related features later on or something else entirely. Strings are also interpolated by default. You can use `$e` for simple expressions and `${expr}` for complex ones.
 
@@ -205,7 +205,7 @@ let announcement = '${p.name}, you have $k apples. Please claim your ${if k < 10
 
 ##### String Operators
 
-One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `lore.String.concat`.
+One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `lore.string.concat`.
 
 
 
@@ -234,11 +234,11 @@ Lore supports **tuples**. As described by tuple types, tuples are fixed-size, he
 ###### Example
 
 ```
-use lore.Tuple.get
+use lore.tuple.[first, third]
 
 let t = (a, b, c)
-get(t, 0) // a
-get(t, 2) // c
+first(t) // a
+third(t) // c
 ```
 
 ##### Unit

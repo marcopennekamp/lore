@@ -1,6 +1,6 @@
 module examples.savable
 
-use lore.Enum.flatten
+use lore.list.flatten
 
 /**
  * Imagine a situation in which we want to save a struct. We have a macro that generates an implementation of a

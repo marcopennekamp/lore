@@ -1,8 +1,7 @@
 module language.inference.ascription
 
 use lore.core.to_string
-use lore.Option
-use lore.Option.Some
+use lore.option.[Option, Some]
 
 trait Animal
 object Fox extends Animal

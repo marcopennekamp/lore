@@ -1,6 +1,6 @@
 module combat.effects
 
-use lore.Enum
+use lore.list.[each, filter]
 
 struct StatusEffects
   mut effects: [StatusEffect]
@@ -19,8 +19,8 @@ module StatusEffects do
      */
     act update() do
       let effects = entity.status_effects.effects
-      effects |> Enum.each(StatusEffect.on_update)
-      entity.status_effects.effects = effects |> Enum.filter(StatusEffect.active?)
+      effects |> each(StatusEffect.on_update)
+      entity.status_effects.effects = effects |> filter(StatusEffect.active?)
     end
 
     /**

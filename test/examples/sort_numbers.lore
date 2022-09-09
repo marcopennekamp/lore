@@ -2,7 +2,7 @@
 // can generate the numbers randomly, that might be another matter.
 module examples.sort_numbers
 
-use lore.List._
+use lore.list.[sort, sorted?]
 
 func main(): [Int] = sort(numbers)
 

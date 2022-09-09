@@ -1,7 +1,7 @@
 module language.schemas.constructor
 
 use lore.core.to_string
-use lore.Enum.map
+use lore.list.map
 
 trait Content
 object Cereal extends Content

@@ -1,9 +1,8 @@
 module combat.Simulation
 
-use lore.IO.println
+use lore.io.println
 use lore.number.[min, max]
-use lore.Option
-use lore.Option.[Some, None]
+use lore.option.[Option, Some, None]
 
 use combat.combatants.Combatant
 use combat.effects._

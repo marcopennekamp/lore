@@ -1,9 +1,8 @@
 module combat
 
-use lore.Option
-use lore.Option.Some
+use lore.option.[Some, get!]
 use lore.test._
-use lore.Tuple
+use lore.tuple.[first, second]
 
 use combat.combatants.Combatant
 use combat.Scenario
@@ -11,7 +10,7 @@ use combat.Simulation
 use combat.Simulation.Result
 
 func simulate_scenario(scenario: (Combatant, Combatant)): Simulation.Result = do
-  Simulation.simulate(Tuple.first(scenario), Tuple.second(scenario))
+  Simulation.simulate(first(scenario), second(scenario))
 end
 
 spec 'Kaladin wins against the Voidbringer' do
@@ -20,12 +19,12 @@ spec 'Kaladin wins against the Voidbringer' do
   //      Victory(winner) => winner.name should_eq 'Kaladin'
   //    end
   let scenario = Scenario.kaladin_vs_voidbringer()
-  let kaladin = Tuple.first(scenario)
+  let kaladin = first(scenario)
   let result = simulate_scenario(scenario)
   let winner = Result.winner(result)
 
   winner should be_some
-  Combatant.name(Option.get!(winner)) should_eq 'Kaladin' // Should be equivalent to `winner.get!.name`...
+  Combatant.name(get!(winner)) should_eq 'Kaladin' // Should be equivalent to `winner.get!.name`...
 end
 
 spec 'Sadeas and Dalinar have a stalemate' do

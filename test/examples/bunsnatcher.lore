@@ -1,8 +1,7 @@
 module examples.bunsnatcher
 
-use lore.Enum.map
-use lore.List.max_by!
-use lore.Tuple
+use lore.list.[map, max_by!]
+use lore.tuple.[first, second]
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
@@ -188,8 +187,8 @@ func main(): Suspect = do
 
   suspects
     |> map(suspect => (suspect, suspect |> compute_guilt))
-    |> max_by!(Tuple.second)
-    |> Tuple.first
+    |> max_by!(second)
+    |> first
 end
 
 @root

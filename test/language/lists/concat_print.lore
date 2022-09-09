@@ -1,6 +1,6 @@
 module language.lists.concat_print
 
-use lore.List.concat
+use lore.list.concat
 
 // Note that list types are *not* necessarily following their actual elements. The list's type may be wider than it
 // would be if newly constructed. Hence, the `print` function is ultimately unreliable and shouldn't be used in a real

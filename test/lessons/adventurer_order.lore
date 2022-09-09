@@ -2,8 +2,7 @@
 module lessons.adventurer_order
 
 use lore.core.to_string
-use lore.Enum.map
-use lore.List.sort
+use lore.list.[map, sort]
 
 struct Adventurer
   id: Int

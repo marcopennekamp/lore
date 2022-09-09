@@ -190,8 +190,6 @@
   - To support this, we can implement imports in *local scopes* as well.
 - **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.
 - **Complex imports:** Allow imports such as `use lore.[Enum._, Tuple]` and `use lore.[Enum.[flat_map, map], Tuple]`.
-- **Absolute declarations:** With the syntax `func .lore.core.to_string` (and the equivalent for other top-level declarations), a user can declare a function with an absolute path, which would disregard its surrounding module declarations. This would allow us to override core functions without the need for specifying a new module. Especially so because currently, wanting to override core/Enum/... functions basically disallows using a top module declaration. For many modules, this either necessitates defining core/Enum/... functions in a separate file, or surrounding all definitions in the file with a module declaration, even the "main" definitions (such as `lore.List` definitions in `pyramid/list.lore`). The latter approach introduces needless indentation, while the former approach fragments a logical unit into multiple files.
-  - The same should be possible for modules, e.g. `module .lore.core do ... end`.
 
 
 #### Specs

@@ -1,206 +1,201 @@
-module lore
-
-use lore.core.[to_string, panic]
-use lore.List
-use lore.Enum
-use lore.Enum.[map, fold]
-use lore.Option
-use lore.Option.[Some, None]
-
 /**
-  * Strings are UTF-8 encoded. Its basic functions like `length` and `at` operate with code points as elements. That
+  * Strings are UTF-8 encoded. Their basic functions like `length` and `at` operate with code points as elements. That
   * is, the length of the string doesn't necessarily correspond to its byte size. Because code point-based operations
-  * often exhibit linear instead of constant time, there are additional functions such as `at_index`, `byte_size` and
-  * `byte_at` which support more efficient string handling.
+  * often exhibit linear instead of constant time, this module provides additional functions such as `at_index`,
+  * `byte_size` and `byte_at` which support more efficient string handling.
   *
   * In the context of strings, `position` and `index` are two different terms. Positions refer to code points, while
   * indices refer to bytes. For example, the `'b'` in the string `'Über'` has position 1, but index 2, because `'Ü'`
   * is encoded as two bytes in UTF-8.
   */
-module String do
-  /**
-    * Returns the number of code points in the UTF-8 string.
-    *
-    * `length` runs in linear time due to its handling of code points.
-    */
-  func length(string: String): Int = intrinsic[Int]('lore.string.length', string)
+module lore.string
 
-  /**
-    * Whether `string` is empty.
-    */
-  func empty?(string: String): Boolean = byte_size(string) == 0
+use lore.core.[to_string, panic]
+use lore.list.[empty?, last!, init, map, fold]
+use lore.option.[Option, Some, None]
 
-  /**
-    * Whether `string` has at least one code point.
-    */
-  func present?(string: String): Boolean = !empty?(string)
+/**
+  * Returns the number of code points in the UTF-8 string.
+  *
+  * `length` runs in linear time due to its handling of code points.
+  */
+func length(string: String): Int = intrinsic[Int]('lore.string.length', string)
 
-  /**
-    * Whether `position` is in the string's length bounds.
-    *
-    * `bounds_contain?` runs in linear time due to its handling of code points.
-    */
-  func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && position < length(string)
+/**
+  * Whether `string` is empty.
+  */
+func empty?(string: String): Boolean = byte_size(string) == 0
 
-  /**
-    * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, `at!` panics.
-    *
-    * `at!` runs in linear time due to its handling of code points.
-    */
-  func at!(string: String, position: Int): String = do
-    if !bounds_contain?(string, position)
-      panic('Position out of bounds for `String.at!`: $position.')
-    end
-    at_unchecked!(string, position)
+/**
+  * Whether `string` has at least one code point.
+  */
+func present?(string: String): Boolean = !empty?(string)
+
+/**
+  * Whether `position` is in the string's length bounds.
+  *
+  * `bounds_contain?` runs in linear time due to its handling of code points.
+  */
+func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && position < length(string)
+
+/**
+  * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, `at!` panics.
+  *
+  * `at!` runs in linear time due to its handling of code points.
+  */
+func at!(string: String, position: Int): String = do
+  if !bounds_contain?(string, position)
+    panic('Position out of bounds for `String.at!`: $position.')
   end
-
-  /**
-    * The same as `at!`, but without bounds checks.
-    */
-  func at_unchecked!(string: String, position: Int): String = intrinsic[String]('lore.string.at', string, position)
-
-  /**
-    * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, the result is
-    * `None`.
-    *
-    * `at` runs in linear time due to its handling of code points.
-    */
-  func at(string: String, position: Int): Option[String] = do
-    if bounds_contain?(string, position) then Some(at_unchecked!(string, position)) else None
-  end
-
-  /**
-    * Returns the code point starting at the given byte `index`. If `index` is out of range, `at_index!` panics.
-    *
-    * `at_index!` is used to get a full code point via a byte index *in constant time*.
-    */
-  func at_index!(string: String, index: Int): String = do
-    if !byte_bounds_contain?(string, index)
-      panic('Index out of bounds for `at_index!`: $index.')
-    end
-    at_index_unchecked!(string, index)
-  end
-
-  /**
-    * The same as `at_index!`, but without bounds checks.
-    */
-  func at_index_unchecked!(string: String, index: Int): String = intrinsic[String]('lore.string.at_index', string, index)
-
-  /**
-    * Returns the code point starting at the given byte `index`. If `index` is out of range, returns None.
-    *
-    * `at_index` is used to get a full code point via a byte index *in constant time*.
-    */
-  func at_index(string: String, index: Int): Option[String] = do
-    if byte_bounds_contain?(string, index) then Some(at_index_unchecked!(string, index)) else None
-  end
-
-  /**
-    * Returns the byte size of the string.
-    *
-    * `byte_size` runs in constant time.
-    */
-  func byte_size(string: String): Int = intrinsic[Int]('lore.string.byte_size', string)
-
-  /**
-    * Whether `index` is in the string's byte size bounds.
-    */
-  func byte_bounds_contain?(string: String, index: Int): Boolean = index >= 0 && index < byte_size(string)
-
-  /**
-    * Returns the byte at the given `index`. If `index` is out of range, `byte_at!` panics.
-    */
-  func byte_at!(string: String, index: Int): Int = do
-    if !byte_bounds_contain?(string, index)
-      panic('Index out of bounds for `byte_at!`: $index.')
-    end
-    byte_at_unchecked!(string, index)
-  end
-
-  /**
-    * The same as `byte_at!`, but without bounds checks.
-    */
-  func byte_at_unchecked!(string: String, index: Int): Int = intrinsic[Int]('lore.string.byte_at', string, index)
-
-  /**
-    * Returns the byte at the given `index`. If `index` is out of range, returns `None`.
-    */
-  func byte_at(string: String, index: Int): Option[Int] = do
-    if byte_bounds_contain?(string, index) then Some(byte_at_unchecked!(string, index)) else None
-  end
-
-  /**
-    * Concatenates `a` and `b` into a single string.
-    */
-  func concat(a: String, b: String): String = '$a$b'
-
-  /**
-    * Concatenates all strings in the given list.
-    *
-    * TODO (pyramid): This could perhaps benefit from the performance of an intrinsic implementation.
-    */
-  func concat(strings: [String]): String = fold(strings, '', concat)
-
-  /**
-    * Maps `f` to all elements of `list`, producing a list of strings which is then concatenated.
-    */
-  @where A, B >: A
-  func concat_map(list: [A], f: B => String): String = list |> map(f) |> concat
-
-  /**
-    * Joins the string representations of all elements of `list` into a string, separating them with `separator`.
-    */
-  func join(list: [Any], separator: String): String = do
-    if Enum.empty?(list) then return ''
-    concat(
-      List.init(list) |> concat_map(a => '$a$separator'),
-      List.last!(list) |> to_string,
-    )
-  end
-
-  /**
-    * Converts each code point in `string` to lower case.
-    */
-  func to_lower(string: String): String = intrinsic[String]('lore.string.to_lower', string)
-
-  /**
-    * Converts each code point in `string` to upper case.
-    */
-  func to_upper(string: String): String = intrinsic[String]('lore.string.to_upper', string)
-
-  /**
-    * Prefixes `string` with `prefix` and suffixes it with `suffix`.
-    */
-  func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
-
-  /**
-    * Whether the given predicate is true for all code units of the string.
-    */
-  func all?(string: String, predicate: String => Boolean): Boolean = do
-    let size = byte_size(string)
-    let mut i = 0
-    while i < size
-      let codepoint = at_index!(string, i)
-      if !predicate(codepoint)
-        return false
-      end
-      i += byte_size(codepoint)
-    end
-    true
-  end
-
-  // TODO (pyramid): We should probably replace the following functions with regex solutions. Also look at how
-  //                 fastparse solves this to keep performance high.
-
-  /**
-    * Whether the given string consists entirely of whitespace characters.
-    */
-  func all_whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
-
-  /**
-    * Whether the given string consists entirely of digits from 0 to 9.
-    *
-    * TODO (pyramid): This is obviously not optimized.
-    */
-  func all_digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
+  at_unchecked!(string, position)
 end
+
+/**
+  * The same as `at!`, but without bounds checks.
+  */
+func at_unchecked!(string: String, position: Int): String = intrinsic[String]('lore.string.at', string, position)
+
+/**
+  * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, the result is
+  * `None`.
+  *
+  * `at` runs in linear time due to its handling of code points.
+  */
+func at(string: String, position: Int): Option[String] = do
+  if bounds_contain?(string, position) then Some(at_unchecked!(string, position)) else None
+end
+
+/**
+  * Returns the code point starting at the given byte `index`. If `index` is out of range, `at_index!` panics.
+  *
+  * `at_index!` is used to get a full code point via a byte index *in constant time*.
+  */
+func at_index!(string: String, index: Int): String = do
+  if !byte_bounds_contain?(string, index)
+    panic('Index out of bounds for `at_index!`: $index.')
+  end
+  at_index_unchecked!(string, index)
+end
+
+/**
+  * The same as `at_index!`, but without bounds checks.
+  */
+func at_index_unchecked!(string: String, index: Int): String = intrinsic[String]('lore.string.at_index', string, index)
+
+/**
+  * Returns the code point starting at the given byte `index`. If `index` is out of range, returns None.
+  *
+  * `at_index` is used to get a full code point via a byte index *in constant time*.
+  */
+func at_index(string: String, index: Int): Option[String] = do
+  if byte_bounds_contain?(string, index) then Some(at_index_unchecked!(string, index)) else None
+end
+
+/**
+  * Returns the byte size of the string.
+  *
+  * `byte_size` runs in constant time.
+  */
+func byte_size(string: String): Int = intrinsic[Int]('lore.string.byte_size', string)
+
+/**
+  * Whether `index` is in the string's byte size bounds.
+  */
+func byte_bounds_contain?(string: String, index: Int): Boolean = index >= 0 && index < byte_size(string)
+
+/**
+  * Returns the byte at the given `index`. If `index` is out of range, `byte_at!` panics.
+  */
+func byte_at!(string: String, index: Int): Int = do
+  if !byte_bounds_contain?(string, index)
+    panic('Index out of bounds for `byte_at!`: $index.')
+  end
+  byte_at_unchecked!(string, index)
+end
+
+/**
+  * The same as `byte_at!`, but without bounds checks.
+  */
+func byte_at_unchecked!(string: String, index: Int): Int = intrinsic[Int]('lore.string.byte_at', string, index)
+
+/**
+  * Returns the byte at the given `index`. If `index` is out of range, returns `None`.
+  */
+func byte_at(string: String, index: Int): Option[Int] = do
+  if byte_bounds_contain?(string, index) then Some(byte_at_unchecked!(string, index)) else None
+end
+
+/**
+  * Concatenates `a` and `b` into a single string.
+  */
+func concat(a: String, b: String): String = '$a$b'
+
+/**
+  * Concatenates all strings in the given list.
+  *
+  * TODO (pyramid): This could perhaps benefit from the performance of an intrinsic implementation.
+  */
+func concat(strings: [String]): String = fold(strings, '', concat)
+
+/**
+  * Maps `f` to all elements of `list`, producing a list of strings which is then concatenated.
+  */
+@where A, B >: A
+func concat_map(list: [A], f: B => String): String = list |> map(f) |> concat
+
+/**
+  * Joins the string representations of all elements of `list` into a string, separating them with `separator`.
+  */
+func join(list: [Any], separator: String): String = do
+  if empty?(list) then return ''
+  concat(
+    init(list) |> concat_map(a => '$a$separator'),
+    last!(list) |> to_string,
+  )
+end
+
+/**
+  * Converts each code point in `string` to lower case.
+  */
+func to_lower(string: String): String = intrinsic[String]('lore.string.to_lower', string)
+
+/**
+  * Converts each code point in `string` to upper case.
+  */
+func to_upper(string: String): String = intrinsic[String]('lore.string.to_upper', string)
+
+/**
+  * Prefixes `string` with `prefix` and suffixes it with `suffix`.
+  */
+func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
+
+/**
+  * Whether the given predicate is true for all code units of the string.
+  */
+func all?(string: String, predicate: String => Boolean): Boolean = do
+  let size = byte_size(string)
+  let mut i = 0
+  while i < size
+    let codepoint = at_index!(string, i)
+    if !predicate(codepoint)
+      return false
+    end
+    i += byte_size(codepoint)
+  end
+  true
+end
+
+// TODO (pyramid): We should probably replace the following functions with regex solutions. Also look at how
+//                 fastparse solves this to keep performance high.
+
+/**
+  * Whether the given string consists entirely of whitespace characters.
+  */
+func all_whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
+
+/**
+  * Whether the given string consists entirely of digits from 0 to 9.
+  *
+  * TODO (pyramid): This is obviously not optimized.
+  */
+func all_digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')

@@ -1,8 +1,9 @@
 // Objective: Transcribe DNA to RNA.
 module lessons.rna
 
-use lore.Enum._
-use lore.[String, Symbol]
+use lore.list.map
+use lore.string.concat_map
+use lore.symbol.Symbol
 
 type DnaNucleotide = #a | #t | #g | #c
 type RnaNucleotide = #a | #u | #g | #c
@@ -18,7 +19,7 @@ func transcribe(#c): #g = #g
 
 func transcribe(dna: Dna): Rna = dna |> map(transcribe)
 
-func stringify(rna: Rna): String = rna |> String.concat_map(Symbol.name)
+func stringify(rna: Rna): String = rna |> concat_map(Symbol.name)
 
 func main(): [String] = do
   let cases = [

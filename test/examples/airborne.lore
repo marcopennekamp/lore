@@ -1,8 +1,7 @@
 module examples.airborne
 
-use lore.Enum.flat_map
-use lore.List.symmetric_pairs
-use lore.Tuple.[first, second]
+use lore.list.[flat_map, symmetric_pairs]
+use lore.tuple.[first, second]
 
 trait Named
 func name(Named): String

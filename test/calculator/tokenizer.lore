@@ -1,12 +1,11 @@
 module calculator
 
-use lore.Enum.[map, empty?]
-use lore.IO.println
+use lore.io.println
+use lore.list.[map, empty?]
 use lore.number.Real
-use lore.Option
-use lore.Option.[Some, None, or_else]
-use lore.String
-use lore.Tuple
+use lore.option.[Option, Some, None, empty?, get!, or_else, map]
+use lore.string._
+use lore.tuple.[first, second]
 
 use calculator.[Operand, Operator]
 
@@ -19,7 +18,7 @@ module Tokenizer do
   func tokenize(term: String): Option[[Token]] = do
     let mut position = 0
     let mut tokens: [Token] = []
-    let term_length = String.length(term)
+    let term_length = length(term)
 
     while position < term_length
       position = skip_whitespace(term, position)
@@ -39,10 +38,10 @@ module Tokenizer do
       // TODO (case): This is a little awkward due to missing destruction of tuples.
       // It could read: `(let token, position) = result` or `let (token, ^position) = result` without the assignment
       // pattern matching.
-      let result_tuple = Option.get!(result_tuple_option)
-      let token = Tuple.first(result_tuple)
+      let result_tuple = get!(result_tuple_option)
+      let token = first(result_tuple)
       tokens = tokens :+ token
-      position = Tuple.second(result_tuple)
+      position = second(result_tuple)
     end
 
     Some(tokens)
@@ -53,8 +52,8 @@ module Tokenizer do
     */
   func skip_whitespace(term: String, position: Position): Position = do
     let mut pos = position
-    let term_length = String.length(term)
-    while pos < term_length && String.at!(term, pos) |> String.all_whitespace?
+    let term_length = length(term)
+    while pos < term_length && at!(term, pos) |> all_whitespace?
       pos += 1
     end
     pos
@@ -66,10 +65,10 @@ module Tokenizer do
   func try_operand(term: String, position: Position): Option[(Operand, Position)] = do
     let mut number_string = ''
     let mut pos = position
-    let term_length = String.length(term)
+    let term_length = length(term)
 
-    while pos < term_length && String.at!(term, pos) |> String.all_digits?
-      number_string = String.concat(number_string, String.at!(term, pos))
+    while pos < term_length && at!(term, pos) |> all_digits?
+      number_string = concat(number_string, at!(term, pos))
       pos += 1
     end
 
@@ -88,7 +87,7 @@ module Tokenizer do
     * Tries to parse an operator symbol.
     */
   func try_operator(term: String, position: Position): Option[(Operator, Position)] = do
-    let char = String.at!(term, position)
+    let char = at!(term, position)
 
     // TODO (case): This could be a case expression.
     let operator = cond

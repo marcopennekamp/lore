@@ -1,6 +1,6 @@
 module language.functions.greet
 
-use lore.Enum.map
+use lore.list.map
 
 func greet(name: String, title: String): String = 'Hello, $title $name.'
 

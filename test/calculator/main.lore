@@ -1,10 +1,10 @@
 module calculator
 
-use lore.Enum.map
-use lore.Option
+use lore.list.map
+use lore.option.get_or_else
 use lore.test._
 
-func parse_and_evaluate(term: String): Real = term |> Tokenizer.tokenize |> Option.get_or_else([]) |> Calculator.evaluate
+func parse_and_evaluate(term: String): Real = term |> Tokenizer.tokenize |> get_or_else([]) |> Calculator.evaluate
 
 func main(): [Real] = [
   '',

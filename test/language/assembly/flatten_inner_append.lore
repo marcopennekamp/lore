@@ -1,6 +1,6 @@
 module language.assembly.flatten_inner_append
 
-use lore.Enum.map
+use lore.list.map
 
 func append3(list: [Int]): [Int] = list :+ 3
 

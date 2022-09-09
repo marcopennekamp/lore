@@ -1,8 +1,7 @@
 module language.schemas.fluxify
 
-use lore.Option
-use lore.Option.[Some, None]
-use lore.Tuple
+use lore.option.[Option, Some, None, get_or_else]
+use lore.tuple.first
 
 struct Box[open +A, open +B]
   a: (Int, A, Real)
@@ -17,12 +16,12 @@ object Many extends Counter
 type CounterBox = Box[Counter, Int]
 
 // These functions are convoluted on purpose to test open type arguments.
-func fluxify(box: CounterBox): Int = Tuple.first(box.a) + perexonate(box.b)
+func fluxify(box: CounterBox): Int = first(box.a) + perexonate(box.b)
 func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-func perexonate(option: Option[Int]): Int = Option.get_or_else(option, 0)
+func perexonate(option: Option[Int]): Int = get_or_else(option, 0)
 
 @root
 module language.schemas do

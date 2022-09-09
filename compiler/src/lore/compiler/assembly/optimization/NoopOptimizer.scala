@@ -4,7 +4,7 @@ import lore.compiler.poem.PoemInstruction
 
 object NoopOptimizer {
 
-  // TODO: More optimization (as seen in lore.List.repeat):
+  // TODO: More optimization (as seen in lore.list.List.repeat):
   //          IntAdd reg4 <- reg2 reg4
   //          Assign reg2 <- reg4
   //       This could be contracted into a single instruction: `IntAdd reg2 <- reg2 reg4`.

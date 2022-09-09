@@ -60,7 +60,7 @@ object TypingFeedback {
       val label = multiReference.definitionKind.label
       val candidateInfo = if (localCandidates.isEmpty && globalCandidates.isEmpty) {
         s"None of the following locally or globally available ${label}s were valid candidates:\n" +
-          s" ${makeCandidateList(multiReference.local, multiReference.global)}"
+          s"${makeCandidateList(multiReference.local, multiReference.global)}"
       } else {
         s"The following ${label}s are valid candidates:\n${makeCandidateList(localCandidates, globalCandidates)}" +
           s" \nGlobally available ${label}s are tried after locally available ${label}s."
@@ -70,8 +70,8 @@ object TypingFeedback {
     }
 
     private def makeCandidateList(local: Vector[BindingDefinition], global: Vector[BindingDefinition]): String = {
-      val localStrings = local.map(definition => s"- ${definition.name} (local)")
-      val globalStrings = global.map(definition => s"- ${definition.name} (global)")
+      val localStrings = local.map(definition => s"  - ${definition.name} (local)")
+      val globalStrings = global.map(definition => s"  - ${definition.name} (global)")
       (localStrings ++ globalStrings).mkString("\n")
     }
   }

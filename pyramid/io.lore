@@ -1,4 +1,4 @@
-module lore.IO
+module lore.io
 
 use lore.core.to_string
 

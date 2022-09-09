@@ -1,19 +1,17 @@
-module lore
+module lore.tuple
 
-module Tuple do
-  @where A, B
-  domain tuple: (A, B)
-    // TODO (pyramid): Tuples need a more generic solution for accessing elements.
-    func first(): A = intrinsic[A]('lore.tuple.get', tuple, 0)
-    func second(): B = intrinsic[B]('lore.tuple.get', tuple, 1)
-  end
+@where A, B
+domain tuple: (A, B)
+  // TODO (pyramid): Tuples need a more generic solution for accessing elements.
+  func first(): A = intrinsic[A]('lore.tuple.get', tuple, 0)
+  func second(): B = intrinsic[B]('lore.tuple.get', tuple, 1)
+end
 
-  @where A, B, C
-  domain tuple: (A, B, C)
-    func first(): A = intrinsic[A]('lore.tuple.get', tuple, 0)
-    func second(): B = intrinsic[B]('lore.tuple.get', tuple, 1)
-    func third(): C = intrinsic[C]('lore.tuple.get', tuple, 2)
-  end
+@where A, B, C
+domain tuple: (A, B, C)
+  func first(): A = intrinsic[A]('lore.tuple.get', tuple, 0)
+  func second(): B = intrinsic[B]('lore.tuple.get', tuple, 1)
+  func third(): C = intrinsic[C]('lore.tuple.get', tuple, 2)
 end
 
 // TODO (pyramid): Map function on tuples:

@@ -1,6 +1,6 @@
 module language.functions.filter_curried
 
-use lore.Enum.[filter, map]
+use lore.list.[filter, map]
 use lore.number.rem
 
 @where A

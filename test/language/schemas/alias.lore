@@ -1,7 +1,7 @@
 module language.schemas.alias
 
-use lore.Enum.map
-use lore.String
+use lore.list.map
+use lore.string.join
 
 struct Function[-A, +B](f: A => B)
 
@@ -18,7 +18,7 @@ module language.schemas do
 
   spec 'alias: create various Function objects from struct aliases and apply them to data' do
     let f1 = StringFunction((x: Int) => 'hey int $x')
-    let f2 = StringFunction((list: [Int]) => list |> map(f1.f) |> String.join(', '))
+    let f2 = StringFunction((list: [Int]) => list |> map(f1.f) |> join(', '))
     let f3 = IntConsumer(x => x * 0.4)
     let f4 = Int2IntFunction(x => x + 2)
 

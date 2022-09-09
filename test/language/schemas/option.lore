@@ -1,8 +1,8 @@
 module language.schemas.option
 
 use lore.core.to_string
-use lore.Enum.map
-use lore.Option.[Some, None]
+use lore.list.map
+use lore.option.[Some, None]
 
 trait AerialPhenomenon
 object Bird extends AerialPhenomenon

@@ -2,10 +2,9 @@
 //            described here: https://en.wikipedia.org/wiki/Electronic_color_code#Resistors.
 module lessons.resistor
 
-use lore.Enum.[flat_map, map, present?]
+use lore.list.[flat_map, map, present?]
 use lore.number.[to_real, pow]
-use lore.Option
-use lore.Option.[Some, None]
+use lore.option.[Option, Some, None, get!, get_or_else, present?, map]
 
 use Color._
 
@@ -83,15 +82,21 @@ module Rating do
     * Calculates the rating given the color codes on the resistor. `figure3` is optional, as it's only used in precision
     * resistors. The `tolerance` is also optional; `None` implies a tolerance of 20%.
     */
-  func of(figure1: Figure, figure2: Figure, figure3: Option[Figure], multiplier_code: Multiplier, tolerance_code: Option[Tolerance]): Rating = do
+  func of(
+    figure1: Figure,
+    figure2: Figure,
+    figure3: Option[Figure],
+    multiplier_code: Multiplier,
+    tolerance_code: Option[Tolerance],
+  ): Rating = do
     // TODO (case): This should be solved with pattern matching.
     let base = if present?(figure3)
-      100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(Option.get!(figure3))
+      100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(get!(figure3))
     else
       10 * Figure.of(figure1) + Figure.of(figure2)
     end
     let raw = base * Multiplier.of(multiplier_code)
-    let tolerance = tolerance_code |> map(Tolerance.of) |> Option.get_or_else(0.2)
+    let tolerance = tolerance_code |> map(Tolerance.of) |> get_or_else(0.2)
     Rating(raw * (1 - tolerance), raw * (1 + tolerance))
   end
 end

@@ -1,8 +1,8 @@
 // Objective: Process a list of numbers, returning a status `#ok` or `#error` for each number.
 module lessons.status
 
-use lore.Enum._
-use lore.Tuple
+use lore.list.map
+use lore.tuple.first
 
 type Status = #ok | #error
 
@@ -16,6 +16,6 @@ func process(value: Int): (Status, String) = cond
   true      => (#error, 'At or above five.')
 end
 
-func stringify(result: (Status, String)): String = stringify(Tuple.first(result))
+func stringify(result: (Status, String)): String = stringify(first(result))
 
-func main(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(Tuple.first) |> map(stringify)
+func main(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(first) |> map(stringify)

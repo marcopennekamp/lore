@@ -1,6 +1,6 @@
 module language.functions.multi_function_value
 
-use lore.Enum.map
+use lore.list.map
 
 trait Animal
 struct Cat(fame: Real) extends Animal

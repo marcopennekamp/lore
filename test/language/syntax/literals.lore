@@ -1,7 +1,7 @@
 module language.syntax.literals
 
 use lore.core.to_string
-use lore.Enum.map
+use lore.list.map
 
 func c(): String = 'man'
 

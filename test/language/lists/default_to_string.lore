@@ -1,7 +1,7 @@
 module language.lists.default_to_string
 
 use lore.core.to_string
-use lore.Option._
+use lore.option.[Some, None]
 
 struct Person(name: String, age: Int)
 

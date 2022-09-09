@@ -1,10 +1,9 @@
 module lore.test.expectation
 
-use lore.Function
-use lore.List.[all?, zip]
+use lore.function.tupled
+use lore.list.[all?, zip]
 use lore.number
-use lore.Option
-use lore.Option.[Some, None]
+use lore.option.[Some, None]
 
 /**
   * An expectation towards a value. For a given value, the expectation will either match the value or not. This is
@@ -74,7 +73,7 @@ module ApproximateEqualityExpectation do
 
   func approx?(x: Any, y: ExpectedValue): Boolean = false
   func approx?(x: Real, y: Real): Boolean = number.approx?(x, y)
-  func approx?(xs: [Real], ys: [Real]): Boolean = zip(xs, ys) |> all?(Function.tupled(approx?))
+  func approx?(xs: [Real], ys: [Real]): Boolean = zip(xs, ys) |> all?(tupled(approx?))
 end
 
 domain expectation: ApproximateEqualityExpectation

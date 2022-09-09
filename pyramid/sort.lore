@@ -1,10 +1,9 @@
 module lore.sort
 
 use lore.core.panic
-use lore.List.[get!, length, concat, split]
-use lore.Tuple.[first, second]
-
-use lore.IO.println
+use lore.io.println
+use lore.list.[get!, length, concat, split]
+use lore.tuple.[first, second]
 
 // TODO (pyramid): The standard sorting algorithm could be improved, e.g. using a Timsort, Blocksort, in-place merge
 //                 sort, or similar. We could also use an in-place insertion sort for (sub-)lists of fewer than 8 or 16

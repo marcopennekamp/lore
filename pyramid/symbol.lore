@@ -1,4 +1,7 @@
-module lore.Symbol
+module lore.symbol
 
-// TODO (pyramid): This must not be Any, but rather any kind of symbol. We don't have a type for that yet, though.
-func name(symbol: Any): String = intrinsic[String]('lore.symbol.name', symbol)
+module Symbol do
+  // TODO (pyramid): This must not be Any, but rather any kind of symbol. We don't have a type for that yet, though.
+  //                 Once this has been fixed, we can move `name` outside the `Symbol` module.
+  func name(symbol: Any): String = intrinsic[String]('lore.symbol.name', symbol)
+end

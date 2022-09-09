@@ -1,6 +1,6 @@
 module language.assembly.nested_lambda
 
-use lore.Enum.map
+use lore.list.map
 
 func get_numbers(): [Int] = do
   let factor1 = 5

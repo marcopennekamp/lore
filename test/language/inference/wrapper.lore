@@ -1,8 +1,7 @@
 module language.inference.wrapper
 
-use lore.Enum.map
-use lore.List
-use lore.String
+use lore.list.[List, map]
+use lore.string.join
 
 struct Wrapper[-A, +B](function: A => B)
 
@@ -14,7 +13,7 @@ func map_numbers(): [String] = do
   map_wrapper(
     numbers,
     Wrapper(n => do
-      List.repeat('Hey!', n) |> String.join(' ')
+      List.repeat('Hey!', n) |> join(' ')
     end),
   )
 end

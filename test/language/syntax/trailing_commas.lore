@@ -4,7 +4,7 @@ module language.syntax.trailing_commas
 
 use lore.core.to_string
 //use lore.Map
-use lore.Tuple
+use lore.tuple.second
 
 trait Thing[A, B,]
 type Thing2[C,] = Thing[C, C,]
@@ -51,7 +51,7 @@ module language.syntax do
 
     ahoo.woo should_eq 'bar'
     ahoo2.ah should_eq 'boo'
-    Tuple.second(get_tuple(1, 'hello')) should_eq 'hello'
+    second(get_tuple(1, 'hello')) should_eq 'hello'
     get_shape().name should_eq 'Aurifana'
   end
 end

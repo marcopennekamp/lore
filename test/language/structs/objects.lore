@@ -1,7 +1,7 @@
 module language.structs.objects
 
 use lore.core.to_string
-use lore.Enum.map
+use lore.list.map
 
 struct IntBox(value: Int)
 

@@ -1,6 +1,6 @@
 module language.inference
 
-use lore.Enum.map
+use lore.list.map
 use lore.test._
 
 spec 'function_list: apply a list of functions to a value' do

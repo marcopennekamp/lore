@@ -4,7 +4,7 @@
 // an ID number. In such cases, instead of "Hello, Walter.", the greeting becomes "Hello, anonymous #5."
 module lessons.hello_name
 
-use lore.Enum.map
+use lore.list.map
 
 func hello(String | Int): String
 func hello(name: String): String = 'Hello, $name.'

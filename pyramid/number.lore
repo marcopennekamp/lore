@@ -4,16 +4,15 @@
   * The intent in providing a common module for numbers is to simplify working with numbers of type `Int | Real`.
   * Almost all of the functions in `lore.number` are defined for both `Int` and `Real`.
   *
-  * Also see `lore.Math` for mathematically focused functions.
+  * Also see `lore.math` for mathematically focused functions.
   */
 module lore.number
 
 // TODO (pyramid): Implement `even?` and `odd?` with bitwise operations.
 
-use lore.Enum.fold
-use lore.Math.sqrt
-use lore.Option
-use lore.Option.[Some, None]
+use lore.list.fold
+use lore.math.sqrt
+use lore.option.[Option, Some, None]
 
 /**
   * Whether `x` is even.

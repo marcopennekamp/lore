@@ -1,7 +1,7 @@
 module language.variables.global
 
 use lore.core.to_string
-use lore.Enum._
+use lore.list.[map, filter]
 
 let default_name: String = 'John Doe'
 

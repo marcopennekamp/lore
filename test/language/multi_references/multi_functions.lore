@@ -1,9 +1,7 @@
 module language.multi_references.multi_functions
 
-use lore.Option.Some
-
-use lore.List.get!
-use lore.Option.get!
+use lore.list.get!
+use lore.option.[Some, get!]
 
 @root
 module language.multi_references do
