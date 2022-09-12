@@ -134,14 +134,14 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
     val importSource = if (importNode.isWildcard) AccessibleSource.WildcardImport else AccessibleSource.DirectImport
     lazy val singleReference = MultiReference(moduleMember.definitionKind, Vector(moduleMember), Vector.empty)
 
-    localModuleMembers.accessibles.get(memberName) match {
+    localModuleMembers.localAccessibles.get(memberName) match {
       case Some(existingMembers) =>
         if (existingMembers.definitionKind.isMultiReferable && existingMembers.definitionKind == moduleMember.definitionKind) {
           // We can merge the multi references. The new accessible source has to be the source with the highest
           // precedence. For example, if we wildcard-import a member and add it alongside a local definition, the
           // resulting accessible source must still be local. Otherwise, an accessible with higher precedence may be
           // accidentally overridden.
-          localModuleMembers.accessibles += memberName -> existingMembers.addLocal(moduleMember)
+          localModuleMembers.localAccessibles += memberName -> existingMembers.addLocal(moduleMember)
           accessibleSources.add(memberName, importSource)
         } else {
           val existingSource = accessibleSources.get(memberName)
@@ -161,20 +161,20 @@ class ImportResolver(localModule: LocalModule)(implicit registry: Registry, repo
 
             case (AccessibleSource.DirectImport, AccessibleSource.WildcardImport) =>
               // Direct imports override wildcard imports.
-              localModuleMembers.accessibles += memberName -> singleReference
+              localModuleMembers.localAccessibles += memberName -> singleReference
               accessibleSources.replace(memberName, AccessibleSource.DirectImport)
 
             case (AccessibleSource.WildcardImport, AccessibleSource.WildcardImport) =>
               // Later wildcard imports override earlier wildcard imports. There is no need to update AccessibleSources
               // because the accessible source is already WildcardImport.
-              localModuleMembers.accessibles += memberName -> singleReference
+              localModuleMembers.localAccessibles += memberName -> singleReference
 
             case _ =>
           }
         }
 
       case None =>
-        localModuleMembers.accessibles += memberName -> singleReference
+        localModuleMembers.localAccessibles += memberName -> singleReference
         accessibleSources.add(memberName, importSource)
     }
   }
@@ -191,7 +191,7 @@ object ImportResolver {
     localModuleMembers: LocalModuleMembers[_],
   ) {
     private var sources: Map[String, AccessibleSource] = {
-      localModuleMembers.accessibles.keys.map(_ -> AccessibleSource.Local).toMap
+      localModuleMembers.localAccessibles.keys.map(_ -> AccessibleSource.Local).toMap
     }
 
     def get(memberName: String): AccessibleSource = {

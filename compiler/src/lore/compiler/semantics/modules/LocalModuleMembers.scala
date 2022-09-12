@@ -4,6 +4,8 @@ import lore.compiler.core.CompilationException
 import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
 import lore.compiler.semantics.Registry
 
+import scala.collection.mutable
+
 /**
   * [[LocalModuleMembers]] manages type or term local module members.
   */
@@ -20,12 +22,19 @@ class LocalModuleMembers[A <: BindingDefinition](
     * module without taking parent modules into account. The map is built by considering local module members and
     * imports, while handling multi-referable members, the precedence of local members, and precedence between imports.
     *
-    * [[accessibles]] is mutable so that it can be constructed efficiently. It should only be mutated during module
+    * [[localAccessibles]] is mutable so that it can be constructed efficiently. It should only be mutated during module
     * resolution.
     */
-  var accessibles: Map[String, MultiReference[A]] = members.map {
+  var localAccessibles: Map[String, MultiReference[A]] = members.map {
     case (name, moduleMember) => name -> MultiReference(moduleMember.definitionKind, Vector(moduleMember), Vector.empty)
   }
+
+  /**
+    * Building multi-references is quite expensive due to the need to walk multiple scopes and modules while taking
+    * shadowing and multi-referentiality into account. This cache reduces the performance burden to once per member
+    * name.
+    */
+  private val accessiblesCache: mutable.HashMap[String, Option[MultiReference[A]]] = mutable.HashMap()
 
   /**
     * Returns a [[MultiReference]] for `memberName` if it occurs in this local module, in one of the local module's
@@ -36,22 +45,21 @@ class LocalModuleMembers[A <: BindingDefinition](
     *
     * Per the specification, globally declared members of contracted module names (e.g. `foo` in `module foo.bar`) are
     * not taken into account. To decide global membership, the [[Registry]] is taken into consideration.
-    *
-    * TODO (multi-import): Building multi-references multiple times for each member name and walking the scopes and
-    *                      modules each time must be quite expensive. We should introduce a result cache
-    *                      (member name -> result).
     */
   def getAccessibleMembers(memberName: String): Option[MultiReference[A]] = {
-    getAccessibleMembersLocally(memberName) match {
-      case Some(localMembers) if localMembers.definitionKind.isMultiReferable =>
-        val members = getAccessibleMembersGlobally(memberName, Some(localMembers.definitionKind)) match {
-          case Some(globalMembers) => globalMembers ++ localMembers
-          case None => localMembers
-        }
-        Some(members)
-      case Some(localMembers) => Some(localMembers)
-      case None => getAccessibleMembersGlobally(memberName, None)
-    }
+    accessiblesCache.getOrElseUpdate(
+      memberName,
+      getAccessibleMembersLocally(memberName) match {
+        case Some(localMembers) if localMembers.definitionKind.isMultiReferable =>
+          val members = getAccessibleMembersGlobally(memberName, Some(localMembers.definitionKind)) match {
+            case Some(globalMembers) => globalMembers ++ localMembers
+            case None => localMembers
+          }
+          Some(members)
+        case Some(localMembers) => Some(localMembers)
+        case None => getAccessibleMembersGlobally(memberName, None)
+      },
+    )
   }
 
   /**
@@ -59,7 +67,7 @@ class LocalModuleMembers[A <: BindingDefinition](
     * Multi-references from multi-referable bindings are merged across levels.
     */
   private def getAccessibleMembersLocally(memberName: String): Option[MultiReference[A]] = {
-    accessibles.get(memberName) match {
+    localAccessibles.get(memberName) match {
       case Some(multiReference) => Some(mergeWithParentMembers(multiReference, _.getAccessibleMembersLocally(memberName)))
       case None => parent.flatMap(_.getAccessibleMembersLocally(memberName))
     }
@@ -88,7 +96,7 @@ class LocalModuleMembers[A <: BindingDefinition](
     // Check that `localDefinitionKind`, if it exists, agrees with the definition kind of the local module's member, if
     // it exists. Keep in mind that `localDefinitionKind` may not have come from THIS local module but rather a parent
     // local module, so we have to check against it in all cases.
-    if (localDefinitionKind.exists(bk => accessibles.get(memberName).exists(_.definitionKind != bk))) {
+    if (localDefinitionKind.exists(bk => localAccessibles.get(memberName).exists(_.definitionKind != bk))) {
       return None
     }
 
