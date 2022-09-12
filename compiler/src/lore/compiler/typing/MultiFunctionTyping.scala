@@ -95,7 +95,7 @@ object MultiFunctionTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    val (inferredArguments, context2) = CallTyping.inferArguments(expression, context)
+    val (inferredArguments, context2) = CallTyping.inferArguments(expression, context).getOrElse(return None)
     inferredArguments.sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
       Typing.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")

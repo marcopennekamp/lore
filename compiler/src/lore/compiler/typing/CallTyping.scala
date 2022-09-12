@@ -27,8 +27,9 @@ object CallTyping {
   )(
     buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    val (inferredArguments, context2) = inferArguments(expression, context)
-    checkOrInfer(function, expression, inferredArguments, expectedType, context2)(buildCallExpression)
+    inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
+      checkOrInfer(function, expression, inferredArguments, expectedType, context2)(buildCallExpression)
+    }
   }
 
   /**
@@ -103,29 +104,30 @@ object CallTyping {
   }
 
   /**
-    * Attempts to infer the call's arguments without a type context. The resulting list contains an inferred expression
-    * for each argument, or `None` if the argument couldn't be inferred.
+    * Attempts to infer the call's arguments that are definitely inferable without a type context. The resulting list
+    * contains an inferred expression for each definitely inferable argument, or `None` if the argument isn't
+    * definitely inferable. The latter require type information from the call target and cannot be inferred immediately.
     *
-    * Only definitely inferable arguments are inferred by this function. Other arguments require type information from
-    * the call target and cannot be inferred immediately.
+    * If an argument is definitely inferrable but its inference fails, [[inferArguments]] reports the failed
+    * inference's errors and returns `None`.
     */
   def inferArguments(
     expression: UntypedCall,
     context: InferenceContext,
-  )(implicit registry: Registry): (Vector[Option[Expression]], InferenceContext) = {
-    // TODO (multi-import): If an argument is definitely inferable and the attempt results in a `None`, report that as
-    //                      an error right away and don't continue with the call typing after that.
+  )(implicit registry: Registry, reporter: Reporter): Option[(Vector[Option[Expression]], InferenceContext)] = {
     val result = expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
       case ((typedArguments, context2), argument) if Inferability.isDefinitelyInferable(argument) =>
-        Synthesizer.attempt(argument, context2)._1 match {
-          case Some((typedArgument, context3)) => (typedArguments :+ Some(typedArgument), context3)
-          case None => (typedArguments :+ None, context2)
+        Synthesizer.attempt(argument, context2) match {
+          case (Some((typedArgument, context3)), _) => (typedArguments :+ Some(typedArgument), context3)
+          case (None, feedback) =>
+            reporter.report(feedback)
+            return None
         }
       case ((typedArguments, context2), _) => (typedArguments :+ None, context2)
     }
     Typing.logger.trace(s"Pre-inferred argument types:" +
       s" (${result._1.map(_.map(_.tpe.toString).getOrElse("None")).mkString(", ")}).")
-    result
+    Some(result)
   }
 
   /**
