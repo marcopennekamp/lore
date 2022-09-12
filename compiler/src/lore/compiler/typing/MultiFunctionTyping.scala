@@ -102,7 +102,7 @@ object MultiFunctionTyping {
       return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
     }
 
-    // TODO (multi-import): Instead of considering functions from a flat list, walk the dispatch hierarchy...
+    // TODO: Instead of considering functions from a flat list, walk the dispatch hierarchy...
     val functionCandidates = filterFunctionCandidates(mf, expression, inferredArguments)
     val (arguments, context3) = findArguments(
       mf,

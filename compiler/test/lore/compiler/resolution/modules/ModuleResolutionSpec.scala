@@ -5,7 +5,7 @@ import lore.compiler.test.BaseSpec
 
 class ModuleResolutionSpec extends BaseSpec {
 
-  // TODO (multi-import): Test various new import errors.
+  // TODO: Test various new import errors.
 
   private val fragmentBase = "resolution/modules"
 

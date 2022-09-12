@@ -76,8 +76,8 @@ case class MultiReference[+A <: BindingDefinition](
   }
 
   private def verify(): Unit = {
-    // TODO (multi-import): These checks might be quite expensive, especially when multi-references are constructed
-    //                      piece-by-piece. Consider disabling them in production builds, but profile first.
+    // TODO: These checks might be quite expensive, especially when multi-references are constructed piece-by-piece.
+    //       Consider disabling them in production builds, but profile first.
     if (bindings.isEmpty) {
       throw CompilationException("Multi-references must contain at least one member.")
     }
