@@ -1,8 +1,7 @@
 module lore.list
 
 use lore.core.panic
-use lore.number
-use lore.number.odd?
+use lore.number.[odd?, min]
 use lore.option._
 use lore.sort.merge_sort
 
@@ -198,9 +197,8 @@ end
   */
 @where A, B
 func zip(as: [A], bs: [B]): [(A, B)] = do
-  // TODO (multi-import): `number.min` should be usable as `min`.
   let mut i = 0
-  let len = number.min(length(as), length(bs))
+  let len = min(length(as), length(bs))
   while i < len
     let a = get_unchecked!(as, i)
     let b = get_unchecked!(bs, i)
