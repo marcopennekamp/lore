@@ -43,7 +43,11 @@ object MultiFunctionTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    checkOrInferCall(expression.target, expression, expectedType, context)
+    traceCheckOrInferCall(expression.target, expression, expectedType) {
+      CallTyping.inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
+        checkOrInferCallImpl(expression.target, expression, expectedType, inferredArguments, context2)
+      }
+    }
   }
 
   /**
@@ -67,54 +71,53 @@ object MultiFunctionTyping {
         }
       }
 
-      // TODO (multi-import): Only pre-infer argument types once instead of processing them with each individual
-      //                      multi-function.
-      MultiReferenceTyping.disambiguate(mfs, expression.position) { case (mf, candidateReporter) =>
-        checkOrInferCall(mf, expression, expectedType, context)(registry, candidateReporter)
+      // Arguments only need to be pre-inferred once, because no type information from the candidate multi-function is
+      // required for inference.
+      CallTyping.inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
+        MultiReferenceTyping.disambiguate(mfs, expression.position) { case (mf, candidateReporter) =>
+          traceCheckOrInferCall(mf, expression, expectedType) {
+            checkOrInferCallImpl(mf, expression, expectedType, inferredArguments, context2)(registry, candidateReporter)
+          }
+        }
       }
     }
   }
 
-  private def checkOrInferCall(
+  private def traceCheckOrInferCall[R](
     mf: MultiFunctionDefinition,
     expression: UntypedCall,
     expectedType: Option[Type],
-    context: InferenceContext,
-  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+  )(f: => R) = {
     Typing.traceCheckOrInfer(s"multi-function call `${mf.name}` in", expression, expectedType)
-    Typing.indentationLogger.indented {
-      // Being a separate *Impl function allows it to return early without disturbing the automatic dedent of the
-      // indentation logger.
-      checkOrInferCallImpl(mf, expression, expectedType, context)
-    }
+    Typing.indentationLogger.indented(f)
   }
 
   private def checkOrInferCallImpl(
     mf: MultiFunctionDefinition,
     expression: UntypedCall,
     expectedType: Option[Type],
+    inferredArguments: Vector[Option[Expression]],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    val (inferredArguments, context2) = CallTyping.inferArguments(expression, context).getOrElse(return None)
     inferredArguments.sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
       Typing.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")
-      return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
+      return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context))
     }
 
     // TODO: Instead of considering functions from a flat list, walk the dispatch hierarchy...
     val functionCandidates = filterFunctionCandidates(mf, expression, inferredArguments)
-    val (arguments, context3) = findArguments(
+    val (arguments, context2) = findArguments(
       mf,
       expression,
       expectedType,
       inferredArguments,
       functionCandidates,
-      context2,
+      context,
     ).getOrElse(return None)
 
     // (4) Build a call expression from the arguments candidate.
-    buildMultiFunctionCall(mf, arguments, expression.position).map((_, context3))
+    buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
   }
 
   /**
