@@ -12,10 +12,9 @@ import lore.compiler.syntax.Node.{NamePathNode, withPosition}
   */
 class StringParser(nameParser: NameParser, expressionParser: ExpressionParser)(implicit fragment: Fragment) {
   // Strings are sensitive to whitespace.
-  import fastparse.NoWhitespace._
-
-  import nameParser.name
   import expressionParser.expression
+  import fastparse.NoWhitespace._
+  import nameParser.name
 
   def string[_: P]: P[ExprNode] = {
     // We have to check content, interpolation, notStringEnd exactly in this order, otherwise notStringEnd would

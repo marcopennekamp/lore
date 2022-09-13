@@ -1,7 +1,6 @@
 package lore.compiler.assembly
 
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.{StructProperty, StructSchema}
 

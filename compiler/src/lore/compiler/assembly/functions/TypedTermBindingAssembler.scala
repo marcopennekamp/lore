@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider, RuntimeNames}
 import lore.compiler.poem.PoemInstruction
 import lore.compiler.semantics.bindings.{LocalVariable, StructObjectBinding, TypedTermBinding}
 import lore.compiler.semantics.variables.GlobalVariableDefinition

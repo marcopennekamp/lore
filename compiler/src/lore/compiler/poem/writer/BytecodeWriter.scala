@@ -4,8 +4,8 @@ import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
 
 import java.io.ByteArrayOutputStream
-import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.charset.Charset
+import java.nio.{ByteBuffer, ByteOrder}
 
 /**
   * The bytecode writer writes various primitive data sizes in big endian.

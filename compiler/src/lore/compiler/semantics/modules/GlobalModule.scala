@@ -1,10 +1,10 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.definitions.{BindingDefinition, Definition, BindingDefinitionKind, TermDefinition, TypeDefinition}
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.definitions._
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.specs.SpecDefinition
-import lore.compiler.semantics.NamePath
 import lore.compiler.types.DeclaredSchema
 import lore.compiler.utils.CollectionExtensions.{IterableExtension, OptionExtension}
 

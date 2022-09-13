@@ -1,7 +1,6 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.NamePath
 import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
 import lore.compiler.syntax.TopLevelExprNode._
 

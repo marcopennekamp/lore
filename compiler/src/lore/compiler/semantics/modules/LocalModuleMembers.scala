@@ -1,8 +1,8 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.definitions.{BindingDefinition, BindingDefinitionKind}
 
 import scala.collection.mutable
 

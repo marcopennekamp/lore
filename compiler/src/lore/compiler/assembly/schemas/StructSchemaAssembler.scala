@@ -3,7 +3,7 @@ package lore.compiler.assembly.schemas
 import lore.compiler.assembly.functions.{ConstructorAssembler, FunctionAssembler}
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.types.{TypeAssembler, TypePathAssembler}
-import lore.compiler.assembly.{Chunk, RuntimeNames, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{Chunk, PropertyOrder, RegisterProvider, RuntimeNames}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry

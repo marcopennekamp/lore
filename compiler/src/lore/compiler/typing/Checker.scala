@@ -1,6 +1,5 @@
 package lore.compiler.typing
 
-import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression
@@ -8,7 +7,6 @@ import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.types._
-import lore.compiler.typing.unification.InferenceVariable
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
 object Checker {

@@ -1,7 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.typing.unification.InferenceVariable
-import lore.compiler.typing.unification.Unification
+import lore.compiler.typing.unification.{InferenceVariable, Unification}
 
 object Fit {
 

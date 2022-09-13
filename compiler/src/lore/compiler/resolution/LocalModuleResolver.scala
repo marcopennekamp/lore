@@ -3,8 +3,8 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.definitions.BindingDefinition
-import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule, ModuleMemberKind}
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.DeclNode.{FunctionNode, GlobalVariableNode, ModuleNode}
 import lore.compiler.syntax.{DeclNode, NamedDeclNode, TypeDeclNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension

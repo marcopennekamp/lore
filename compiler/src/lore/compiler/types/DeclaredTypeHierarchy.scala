@@ -9,7 +9,6 @@ import scalax.collection.config.CoreConfig
 import scalax.collection.immutable.Graph
 
 import scala.collection.concurrent.TrieMap
-import scala.collection.mutable
 
 /**
   * A hierarchy of declared schemas to provide quick access to hierarchical relationships between structs and traits.

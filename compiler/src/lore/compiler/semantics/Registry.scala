@@ -5,7 +5,7 @@ import lore.compiler.semantics.definitions.TypeDefinition
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.semantics.scopes.{LocalModuleTermScope, LocalModuleTypeScope}
-import lore.compiler.types.{DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.types.DeclaredTypeHierarchy
 import lore.compiler.utils.Once
 
 /**

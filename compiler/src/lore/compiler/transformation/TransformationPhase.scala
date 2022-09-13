@@ -1,11 +1,11 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.definitions.Definition
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.specs.SpecDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.semantics.Registry
-import lore.compiler.semantics.definitions.Definition
 import lore.compiler.types.StructSchema
 
 object TransformationPhase {

@@ -3,7 +3,7 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.Chunk
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.core.CompilationException
-import lore.compiler.poem.{Poem, PoemInstruction, PoemIntValue, PoemIntrinsic}
+import lore.compiler.poem.{Poem, PoemInstruction, PoemIntValue}
 import lore.compiler.semantics.expressions.typed.Expression.IntrinsicCall
 
 object IntrinsicAssembler {

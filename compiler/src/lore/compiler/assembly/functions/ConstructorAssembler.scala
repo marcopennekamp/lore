@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{Chunk, RuntimeNames, RegisterProvider}
+import lore.compiler.assembly.{Chunk, RegisterProvider, RuntimeNames}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.types.{StructProperty, StructType}

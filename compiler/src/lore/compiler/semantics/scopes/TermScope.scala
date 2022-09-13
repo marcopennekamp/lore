@@ -3,7 +3,7 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{LocalVariable, StructBinding, TermBinding, UntypedLocalVariable}
+import lore.compiler.semantics.bindings.{StructBinding, TermBinding, UntypedLocalVariable}
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.modules.GlobalModule
 

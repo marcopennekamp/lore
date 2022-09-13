@@ -5,7 +5,7 @@ import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeResolver
 import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedBindingAccess, UntypedConstructorCall, UntypedHole, UntypedIntrinsicCall, UntypedMultiFunctionCall, UntypedValueCall}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{TermScope, TypeScope}
 import lore.compiler.syntax.ExprNode.{IntrinsicCallNode, SimpleCallNode}

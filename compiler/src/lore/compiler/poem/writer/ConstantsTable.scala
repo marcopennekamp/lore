@@ -2,7 +2,7 @@ package lore.compiler.poem.writer
 
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.writer.ConstantsTable.{ConstantsIndex, IndexMap}
-import lore.compiler.poem.{PoemFunctionInstance, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
+import lore.compiler.poem._
 import lore.compiler.semantics.NamePath
 
 import scala.collection.immutable.HashMap

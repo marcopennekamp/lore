@@ -2,7 +2,7 @@ package lore.compiler.resolution
 
 import lore.compiler.core.UniqueKey
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.scopes.{TermScope, ImmutableTypeScope, TypeScope}
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TermScope, TypeScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, TypeVariable}
 

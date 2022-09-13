@@ -1,9 +1,9 @@
 package lore.compiler.constraints
 
-import lore.compiler.feedback.{SchemaFeedback, Reporter}
+import lore.compiler.feedback.{Reporter, SchemaFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{DeclaredSchema, StructSchema, TraitType}
 import lore.compiler.types.TypeVariable.Variance
+import lore.compiler.types.{DeclaredSchema, StructSchema, TraitType}
 
 object DeclaredSchemaConstraints {
 

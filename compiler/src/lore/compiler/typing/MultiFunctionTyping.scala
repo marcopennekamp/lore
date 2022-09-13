@@ -3,8 +3,8 @@ package lore.compiler.typing
 import lore.compiler.core.Position
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.typed.Expression.{MultiFunctionCall, MultiFunctionValue}
 import lore.compiler.semantics.expressions.typed.Expression
+import lore.compiler.semantics.expressions.typed.Expression.{MultiFunctionCall, MultiFunctionValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedCall, UntypedMultiFunctionCall}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}

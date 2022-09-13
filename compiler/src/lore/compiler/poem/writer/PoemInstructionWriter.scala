@@ -1,7 +1,7 @@
 package lore.compiler.poem.writer
 
 import lore.compiler.poem.PoemInstruction.InstanceKind
-import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
+import lore.compiler.poem._
 import lore.compiler.semantics.NamePath
 
 object PoemInstructionWriter {

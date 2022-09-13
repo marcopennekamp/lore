@@ -1,7 +1,7 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.assembly.types.TypeAssembler
+import lore.compiler.assembly.{Chunk, RegisterProvider}
 import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemSingleFunctionValue}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression.LambdaValue

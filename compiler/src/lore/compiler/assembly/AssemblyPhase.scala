@@ -6,8 +6,8 @@ import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.schemas.DeclaredSchemaAssembler
 import lore.compiler.assembly.specs.SpecAssembler
 import lore.compiler.core.CompilerOptions
-import lore.compiler.poem.writer.PoemWriter
 import lore.compiler.poem._
+import lore.compiler.poem.writer.PoemWriter
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition

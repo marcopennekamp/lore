@@ -1,7 +1,7 @@
 package lore.compiler.transformation
 
-import lore.compiler.semantics.expressions.typed.{Expression, ExpressionVerificationVisitor, ExpressionVisitor}
 import lore.compiler.semantics.expressions.typed.Expression._
+import lore.compiler.semantics.expressions.typed.{Expression, ExpressionVerificationVisitor, ExpressionVisitor}
 
 object UsageAnalyzer {
 

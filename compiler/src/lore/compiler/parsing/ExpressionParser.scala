@@ -16,7 +16,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   import Node._
   import nameParser._
-  import stringParser.{string, plainString}
+  import stringParser.{plainString, string}
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {

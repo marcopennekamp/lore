@@ -2,8 +2,8 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, MultiFunctionFeedback, Reporter}
-import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition}
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.definitions.{BindingDefinitionKind, TermDefinition}
 import lore.compiler.syntax.DeclNode.FunctionNode
 import lore.compiler.types.TupleType
 import lore.compiler.utils.Once
