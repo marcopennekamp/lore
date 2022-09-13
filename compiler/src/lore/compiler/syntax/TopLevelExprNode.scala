@@ -132,8 +132,8 @@ object ExprNode {
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * Even though member access might be parsed as name paths, there is still a need for MemberAccessNodes to represent
-    * expressions such as `(if a then b else c).member`.
+    * Even though simple member accesses will usually be parsed as name paths, there is still a need for
+    * [[MemberAccessNode]]s to represent expressions such as `(if a then b else c).member`.
     */
   case class MemberAccessNode(
     instance: ExprNode,

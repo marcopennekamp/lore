@@ -8,7 +8,7 @@ import lore.compiler.semantics.expressions.typed.Expression._
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
 import lore.compiler.semantics.expressions.{BinaryOperator, UnaryOperator, XaryOperator}
-import lore.compiler.types.{BasicType, FunctionType, Type}
+import lore.compiler.types.{BasicType, Type}
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
 object Synthesizer {
@@ -97,22 +97,7 @@ object Synthesizer {
         MultiFunctionTyping.checkOrInferAmbiguousCall(expression, None, context)
 
       case expression: UntypedConstructorCall => ConstructorTyping.checkOrInferCall(expression, None, context)
-
-      case expression: UntypedValueCall =>
-        // TODO (multi-import): Once we support uniform call syntax, we additionally need a case in the Checker that
-        //                      grabs the expected type should the value call actually be a multi-function call.
-        infer(expression.target, context).flatMap { case (typedTarget, context2) =>
-          typedTarget.tpe match {
-            case targetType: FunctionType =>
-              CallTyping.checkOrInfer(targetType.identity, expression, Some(targetType.output), context2)(
-                (typedArguments, _) => ValueCall(typedTarget, typedArguments, targetType.output, expression.position)
-              )
-
-            case targetType =>
-              reporter.error(TypingFeedback.ValueCall.FunctionExpected(expression, targetType))
-              None
-          }
-        }
+      case expression: UntypedValueCall => UniformCallSyntaxTyping.checkOrInferValueCall(expression, None, context)
 
       case UntypedIntrinsicCall(target, arguments, tpe, position) =>
         infer(arguments, context).mapFirst { typedArguments =>
@@ -140,15 +125,7 @@ object Synthesizer {
       case expression: UntypedBindingAccess =>
         BindingAccessTyping.checkOrInfer(expression, None, context).flatMap(simpleResult)
 
-      case expression@UntypedMemberAccess(instance, name, position) =>
-        infer(instance, context).flatMapFirst { typedInstance =>
-          typedInstance.tpe.member(name) match {
-            case Some(member) => Some(MemberAccess(typedInstance, member, position))
-            case None =>
-              reporter.report(TypingFeedback.Member.NotFound(expression, typedInstance.tpe))
-              None
-          }
-        }
+      case expression: UntypedMemberAccess => UniformCallSyntaxTyping.checkOrInfer(expression, None, None, context)
 
       case UntypedReturn(value, position) =>
         Checker.check(value, context.returnType, context).mapFirst(Return(_, position))

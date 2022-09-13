@@ -376,6 +376,25 @@ target(a1, a2, ...)
   - Lore also supports importing more than one multi-function with the same simple name, using compile-time disambiguation whenever a set of multi-functions is used. See *Name Resolution for Multi-Functions* in [modules](modules.md) for more information.
 - If the target is a **function value**, the function will be called depending on its type. Lambda functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course be performed at run time.
 
+##### Uniform Call Syntax
+
+Lore's **uniform call syntax** allows calling a *multi-function* or *function value* with the member access syntax. A call `target.foo(a1, a2, ...)` will be transformed to `foo(target, a1, a2, ...)` if `foo` is not a member of `target`. Likewise, a member access `target.bar` will be transformed to `bar(target)` if `bar` is not a member of `target`.
+
+If transformed to a multi-function call, all arguments including `target` are subject to multiple dispatch.
+
+###### Example
+
+```
+let list = [1, 2, 3]
+if list.length > 1
+  list.get!(1)
+else
+  list.length.inc
+end
+```
+
+In the example above, `list.length` will be transformed to `length(list)`, `list.get!(1)` to `get!(list, 1)`, and `list.length.inc` to `inc(length(list))`.
+
 ##### Pipes
 
 Function application may be chained using **pipes**:

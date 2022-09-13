@@ -68,8 +68,14 @@ object Checker {
           case _ => fallback
         }
 
+      case expression: UntypedValueCall =>
+        UniformCallSyntaxTyping.checkOrInferValueCall(expression, Some(expectedType), context)
+
       case expression: UntypedBindingAccess =>
         BindingAccessTyping.checkOrInfer(expression, Some(expectedType), context).map((_, context))
+
+      case expression: UntypedMemberAccess =>
+        UniformCallSyntaxTyping.checkOrInfer(expression, None, Some(expectedType), context)
 
       case block: UntypedBlock => BlockTyping.checkOrInfer(block, Some(expectedType), context)
       case expression: UntypedCond => CondTyping.checkOrInfer(expression, Some(expectedType), context)
@@ -83,12 +89,7 @@ object Checker {
       Typing.traceExpressionType(typedExpression, "Checked", s" (Expected type: $expectedType.)")
 
       // Step 2: Check that the typed expression agrees with the expected type.
-      if (typedExpression.tpe </= expectedType) {
-        reporter.error(TypingFeedback.SubtypeExpected(typedExpression.tpe, expectedType, expression.position))
-        None
-      } else {
-        result
-      }
+      Typing.expectType(typedExpression, expectedType).flatMap(_ => result)
     }
   }
 

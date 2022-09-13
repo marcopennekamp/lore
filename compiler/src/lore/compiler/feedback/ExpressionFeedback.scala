@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Position
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.typed.Expression
@@ -14,7 +14,7 @@ object ExpressionFeedback {
     override def message = s"The variable or member `$access` may not be mutated."
   }
 
-  case class IllegalModuleValue(module: GlobalModule, override val position: Position) extends Feedback.Error(position) {
+  case class IllegalModuleValue(module: GlobalModule, positioned: Positioned) extends Feedback.Error(positioned) {
     override def message: String = s"The binding `${module.name}` is a module. Modules cannot be used directly as" +
       s" expressions."
   }
@@ -52,7 +52,7 @@ object ExpressionFeedback {
   }
 
   object FixedFunction {
-    case class MultiFunctionExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
+    case class MultiFunctionExpected(name: NamePath, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message = s"The binding `$name` must be a multi-function to be fixed."
     }
   }

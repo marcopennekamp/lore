@@ -1,9 +1,9 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Position
+import lore.compiler.core.Positioned
 
 object ParsingFeedback {
-  case class ParseError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
+  case class ParseError(fastparseError: String, positioned: Positioned) extends Feedback.Error(positioned) {
     override def message: String = s"The file had parse errors: $fastparseError"
   }
 }

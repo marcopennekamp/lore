@@ -17,7 +17,7 @@ object ConstructorTyping {
     expectedType: Option[DeclaredType],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    Typing.traceCheckOrInfer("constructor call", expression, expectedType)
+    Typing.traceCheckOrInfer("constructor call", expectedType, expression)
     Typing.indentationLogger.indented {
       val binding = expression.target
       CallTyping.checkOrInfer(binding.signature, expression, expectedType, context) {

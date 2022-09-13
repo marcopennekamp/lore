@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Position
+import lore.compiler.core.Positioned
 import lore.compiler.semantics.definitions.BindingDefinition
 import lore.compiler.syntax.DeclNode.ImportNode
 
@@ -9,8 +9,8 @@ object ModuleFeedback {
   case class MemberNameTaken(
     memberName: String,
     existing: BindingDefinition,
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = s"The name of the binding `$memberName` is already taken by another binding at" +
       s" ${existing.position}."
   }

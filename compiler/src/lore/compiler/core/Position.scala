@@ -5,7 +5,7 @@ import lore.compiler.syntax.Node.Index
 /**
   * A position identifies a code location across a whole Lore project.
   */
-case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
+case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) extends Positioned {
   def <(other: Position): Boolean = {
     this.fragment.name < other.fragment.name || (this.fragment.name == other.fragment.name && this.startIndex < other.startIndex)
   }
@@ -63,6 +63,8 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
     * A complete string representation of this position.
     */
   override def toString: String = s"${fragment.name} ($prettyIndex)"
+
+  override def position: Position = this
 }
 
 object Position {

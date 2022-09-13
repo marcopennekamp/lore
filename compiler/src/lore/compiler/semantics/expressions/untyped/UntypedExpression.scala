@@ -211,9 +211,15 @@ object UntypedExpression {
     override val label: String = binding.toString
   }
 
+  /**
+    * @param ucsBinding The binding used to resolve uniform call syntax if `instance` doesn't contain a member `name`.
+    *                   It has to be fetched during the transformation phase because scoping is resolved during that
+    *                   phase and the typing phase doesn't have access to local scopes.
+    */
   case class UntypedMemberAccess(
     instance: UntypedExpression,
     name: String,
+    ucsBinding: Option[TermBinding],
     position: Position,
   ) extends UntypedExpression with UntypedAccess {
     override val label: String = name

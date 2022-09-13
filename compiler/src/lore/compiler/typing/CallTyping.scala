@@ -1,5 +1,6 @@
 package lore.compiler.typing
 
+import lore.compiler.core.Positioned
 import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression
@@ -12,6 +13,8 @@ import lore.compiler.typing.unification.{InferenceAssignments, InferenceVariable
 import lore.compiler.utils.CollectionExtensions.{Tuple2OptionExtension, VectorExtension}
 
 object CallTyping {
+
+  type UntypedOrTypedExpression = Either[UntypedExpression, Expression]
 
   /**
     * Checks or infers a call expression and builds a resulting call expression with `buildCallExpression`.
@@ -27,35 +30,36 @@ object CallTyping {
   )(
     buildCallExpression: (Vector[Expression], TypeVariable.Assignments) => Expression,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
-      checkOrInfer(function, expression, inferredArguments, expectedType, context2)(buildCallExpression)
+    inferArguments(expression.arguments, context).flatMap { case (arguments, context2) =>
+      traceInferredArguments(arguments)
+      checkOrInfer(function, arguments, expectedType, expression, context2)(buildCallExpression)
     }
   }
 
   /**
-    * Checks or infers a call expression, like [[checkOrInfer]], but with the distinction that arguments must have been
-    * pre-inferred with [[inferArguments]]. This variant is intended to be used with multi-function call inference,
-    * which often has to check many function definitions, but arguments only need to be inferred once.
+    * Checks or infers a call, like [[checkOrInfer]], but with the distinction that arguments are passed separately.
+    * This variant is intended to be used when arguments need to be supplied manually, e.g. with multi-function call
+    * inference, which often has to check many function definitions, but arguments only need to be inferred once.
     *
     * `toResult` builds an arbitrary result `R` instead of an [[Expression]] because multi-function call checking
     * builds an expression at a later stage.
     */
   def checkOrInfer[R](
     function: FunctionIdentity,
-    expression: UntypedCall,
-    inferredArguments: Vector[Option[Expression]],
+    arguments: Vector[UntypedOrTypedExpression],
     expectedType: Option[Type],
+    positioned: Positioned,
     context: InferenceContext,
   )(
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
   )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
-    if (expression.arity != function.arity) {
-      reporter.error(TypingFeedback.Call.IllegalArity(expression.arity, function.arity, expression))
+    if (arguments.length != function.arity) {
+      reporter.error(TypingFeedback.Call.IllegalArity(arguments.length, function.arity, positioned))
       return None
     }
 
     if (function.isMonomorphic) {
-      return inferMonomorphic(function, expression, context)(toResult)
+      return inferMonomorphic(function, arguments, context)(toResult)
     }
 
     // (1) Replace type variables with inference variables in the function's input and output types.
@@ -65,10 +69,10 @@ object CallTyping {
 
     // (2) Unify inferred arguments with their respective parameter types to take a first stab at assigning type
     //     arguments. This also ensures that each inferred argument actually fits into its parameter type.
-    val assignments = inferredArguments
+    val assignments = arguments
       .zip(parameterTypes)
       .flatMap {
-        case (Some(argument), parameterType) => Some(argument, parameterType)
+        case (Right(argument), parameterType) => Some(argument, parameterType)
         case _ => None
       }
       .foldSome(Map.empty: InferenceAssignments) { case (assignments2, (argument, parameterType)) =>
@@ -89,13 +93,12 @@ object CallTyping {
     //     changes in inference variable assignments to carry across bounds. The unification also ensures that each
     //     argument type fits the parameter type, which until this point had only been established for inferred
     //     arguments.
-    val (typedArguments, (assignments3, context2)) = inferredArguments
-      .zip(expression.arguments)
+    val (typedArguments, (assignments3, context2)) = arguments
       .zip(parameterTypes)
       .foldSomeCollect((assignments2, context)) {
-        case ((assignments3, context2), ((None, argument), parameterType)) =>
+        case ((assignments3, context2), (Left(argument), parameterType)) =>
           checkArgument(argument, parameterType, typeParameters, assignments3, context2)
-        case (result, ((Some(typedArgument), _), _)) => Some(typedArgument, result)
+        case (result, (Right(typedArgument), _)) => Some(typedArgument, result)
       }
       .getOrElse(return None)
 
@@ -104,30 +107,36 @@ object CallTyping {
   }
 
   /**
-    * Attempts to infer the call's arguments that are definitely inferable without a type context. The resulting list
-    * contains an inferred expression for each definitely inferable argument, or `None` if the argument isn't
+    * Attempts to infer the given arguments that are definitely inferable without a type context. The resulting list
+    * contains an inferred expression for each definitely inferable argument, or the untyped argument if it isn't
     * definitely inferable. The latter require type information from the call target and cannot be inferred immediately.
     *
     * If an argument is definitely inferrable but its inference fails, [[inferArguments]] reports the failed
     * inference's errors and returns `None`.
     */
   def inferArguments(
-    expression: UntypedCall,
+    untypedArguments: Vector[UntypedExpression],
     context: InferenceContext,
-  )(implicit registry: Registry, reporter: Reporter): Option[(Vector[Option[Expression]], InferenceContext)] = {
-    val result = expression.arguments.foldLeft((Vector.empty[Option[Expression]], context)) {
-      case ((typedArguments, context2), argument) if Inferability.isDefinitelyInferable(argument) =>
-        Synthesizer.attempt(argument, context2) match {
-          case (Some((typedArgument, context3)), _) => (typedArguments :+ Some(typedArgument), context3)
+  )(implicit registry: Registry, reporter: Reporter): Option[(Vector[UntypedOrTypedExpression], InferenceContext)] = {
+    val result = untypedArguments.foldLeft((Vector.empty[UntypedOrTypedExpression], context)) {
+      case ((arguments, context2), untypedArgument) if Inferability.isDefinitelyInferable(untypedArgument) =>
+        Synthesizer.attempt(untypedArgument, context2) match {
+          case (Some((typedArgument, context3)), _) => (arguments :+ Right(typedArgument), context3)
           case (None, feedback) =>
             reporter.report(feedback)
             return None
         }
-      case ((typedArguments, context2), _) => (typedArguments :+ None, context2)
+      case ((arguments, context2), untypedArgument) => (arguments :+ Left(untypedArgument), context2)
     }
-    Typing.logger.trace(s"Pre-inferred argument types:" +
-      s" (${result._1.map(_.map(_.tpe.toString).getOrElse("None")).mkString(", ")}).")
     Some(result)
+  }
+
+  def traceInferredArguments(arguments: Vector[UntypedOrTypedExpression]): Unit = {
+    val argumentTypeStrings = arguments.map {
+      case Left(_) => "None"
+      case Right(argument) => argument.tpe.toString
+    }
+    Typing.logger.trace(s"Pre-inferred argument types: (${argumentTypeStrings.mkString(", ")}).")
   }
 
   /**
@@ -137,14 +146,16 @@ object CallTyping {
     */
   private def inferMonomorphic[R](
     function: FunctionIdentity,
-    expression: UntypedExpression.UntypedCall,
+    arguments: Vector[UntypedOrTypedExpression],
     context: InferenceContext,
   )(
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
   )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
-    expression.arguments.zip(function.parameterTypes)
+    arguments.zip(function.parameterTypes)
       .foldSomeCollect(context) {
-        case (context, (argument, parameterType)) => Checker.check(argument, parameterType, context)
+        case (context, (Left(argument), parameterType)) => Checker.check(argument, parameterType, context)
+        case (context, (Right(typedArgument), parameterType)) =>
+          Typing.expectType(typedArgument, parameterType).map((_, context))
       }
       .mapFirst(typedArguments => toResult(typedArguments, Map.empty))
   }

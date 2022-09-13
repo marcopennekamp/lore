@@ -1,7 +1,8 @@
 package lore.compiler.typing
 
 import com.typesafe.scalalogging.Logger
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
+import lore.compiler.core.Positioned
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
@@ -47,6 +48,20 @@ object Typing {
     result.map(_._1)
   }
 
+  def expectType(expression: Expression, expectedType: Type)(implicit reporter: Reporter): Option[Expression] = {
+    if (expression.tpe <= expectedType) Some(expression)
+    else {
+      reporter.error(
+        TypingFeedback.SubtypeExpected(
+          expression.tpe,
+          expectedType,
+          expression.position,
+        )
+      )
+      None
+    }
+  }
+
   def traceExpressionType(
     expression: Expression,
     label: String,
@@ -57,12 +72,12 @@ object Typing {
 
   def traceCheckOrInfer(
     label: String,
-    expression: UntypedExpression,
     expectedType: Option[Type],
+    positioned: Positioned,
   ): Unit = logger.whenTraceEnabled {
     val mode = expectedType.map(_ => "Check").getOrElse("Infer")
     val expectedTypeInfo = expectedType.map(t => s" with expected output type `$t`").getOrElse("")
-    logger.trace(s"$mode $label `${expression.position.truncatedCode}`$expectedTypeInfo:")
+    logger.trace(s"$mode $label `${positioned.position.truncatedCode}`$expectedTypeInfo:")
   }
 
 }

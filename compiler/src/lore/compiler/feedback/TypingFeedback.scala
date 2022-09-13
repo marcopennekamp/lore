@@ -15,8 +15,8 @@ object TypingFeedback {
   case class SubtypeExpected(
     actualType: Type,
     expectedType: Type,
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = s"This expression has the illegal type `$actualType`. We expected the following type" +
       s" (or a subtype thereof): $expectedType."
   }
@@ -26,8 +26,8 @@ object TypingFeedback {
     typeParameterName: Option[String],
     lowerBound: Type,
     upperBound: Type,
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = {
       val typeParameterInfo = typeParameterName.map(name => s" of type parameter `$name`").getOrElse("")
       s"The type argument `$typeArgument` must adhere to the lower bound `$lowerBound` and the upper bound" +
@@ -44,8 +44,8 @@ object TypingFeedback {
   case class InvalidVariance(
     typeVariable: TypeVariable,
     origin: Variance,
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = s"The ${typeVariable.variance.humanReadable} type variable `$typeVariable` is in an" +
       s" illegal ${origin.humanReadable} position."
   }
@@ -54,8 +54,8 @@ object TypingFeedback {
     multiReference: MultiReference[BindingDefinition],
     localCandidates: Vector[BindingDefinition],
     globalCandidates: Vector[BindingDefinition],
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = {
       val label = multiReference.definitionKind.label
       val candidateInfo = if (localCandidates.isEmpty && globalCandidates.isEmpty) {
@@ -80,8 +80,8 @@ object TypingFeedback {
     case class IllegalArity(
       schema: TypeSchema,
       arity: Int,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The type `$schema` expects ${schema.schemaArity} type arguments, but $arity type" +
         s" arguments were supplied."
     }
@@ -224,7 +224,7 @@ object TypingFeedback {
   }
 
   object ValueCall {
-    case class FunctionExpected(expression: UntypedValueCall, actualType: Type) extends Feedback.Error(expression) {
+    case class FunctionExpected(actualType: Type, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"Only functions may be called. You are trying to call a value of type `$actualType`."
     }
   }

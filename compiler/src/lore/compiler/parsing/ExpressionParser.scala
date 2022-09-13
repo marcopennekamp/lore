@@ -55,8 +55,8 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     * Note that a member access such as `foo.bar` will be parsed as a variable due to how name paths are handled.
     */
   private def address[_: P]: P[ExprNode.AddressNode] = {
-    // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
-    // a node.
+    // We can cast to MemberAccessNode because we set minAccess to 1, which ensures that the parse results in such a
+    // node.
     def prop = P(propertyAccess(accessible, minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
     P(variable | prop)
   }
@@ -190,18 +190,18 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   private def atom[_: P]: P[ExprNode] = P(propertyAccess(accessible, minAccess = 0))
 
   /**
-    * Surrounds an accessible expression with the possibility for property access. This is used by atom AND assignment
-    * parsers to apply property access.
+    * Surrounds an accessible expression with the possibility for member access. This is used by atom AND assignment
+    * parsers to apply member access.
     *
     * @param minAccess The minimum number of times that the instance needs to be accessed.
     */
   private def propertyAccess[_: P](accessible: P[ExprNode], minAccess: Int): P[ExprNode] = {
-    def propertyAccess = P((Index ~~ "." ~ name ~~ Index).rep(minAccess))
+    def propertyAccess = P(("." ~ name ~~ Index).rep(minAccess))
     P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
-      // Create a PropertyAccessNode for every property access or just return the expression if there is
-      // no property access.
-      propertyAccesses.foldLeft(expr) { case (instance, (startIndex, name, endIndex)) =>
-        ExprNode.MemberAccessNode(instance, name, Position(fragment, startIndex, endIndex))
+      propertyAccesses.foldLeft(expr) { case (instance, (name, endIndex)) =>
+        // The resulting position should span the whole access expression, such as when accessing `length` on
+        // `company.employees`, the position should span `company.employees.length`.
+        ExprNode.MemberAccessNode(instance, name, Position(fragment, expr.position.startIndex, endIndex))
       }
     }
   }

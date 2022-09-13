@@ -1,15 +1,16 @@
 package lore.compiler.typing
 
-import lore.compiler.core.Position
+import lore.compiler.core.Positioned
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.typed.Expression.{MultiFunctionCall, MultiFunctionValue}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedCall, UntypedMultiFunctionCall}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAmbiguousMultiFunctionCall, UntypedMultiFunctionCall}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.types.{BasicType, FunctionType, TupleType, Type}
+import lore.compiler.typing.CallTyping.{UntypedOrTypedExpression, traceInferredArguments}
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
 object MultiFunctionTyping {
@@ -18,9 +19,19 @@ object MultiFunctionTyping {
     val inputType: TupleType = TupleType(arguments.map(_.tpe))
   }
 
+  def checkOrInferCall(
+    expression: UntypedMultiFunctionCall,
+    expectedType: Option[Type],
+    context: InferenceContext,
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    CallTyping.inferArguments(expression.arguments, context).flatMap { case (arguments, context2) =>
+      checkOrInferCall(expression.target, arguments, expectedType, expression, context2)
+    }
+  }
+
   /**
-    * Checks a multi-function call `expression`. `expectedType` is used to infer type arguments via the output type in
-    * some niche cases.
+    * Checks a multi-function call of `mf`. `expectedType` is used to infer type arguments via the output type in some
+    * niche cases.
     *
     * The general approach here is to consider all possible function candidates that inferrable arguments may fit in.
     * Hence, at first inference is attempted for all arguments. If all arguments are immediately typed, we have a
@@ -39,28 +50,42 @@ object MultiFunctionTyping {
     * output-directed inference is useful.
     */
   def checkOrInferCall(
-    expression: UntypedMultiFunctionCall,
+    mf: MultiFunctionDefinition,
+    arguments: Vector[UntypedOrTypedExpression],
     expectedType: Option[Type],
+    positioned: Positioned,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    traceCheckOrInferCall(expression.target, expression, expectedType) {
-      CallTyping.inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
-        checkOrInferCallImpl(expression.target, expression, expectedType, inferredArguments, context2)
-      }
+    traceCheckOrInferCall(mf, expectedType, positioned) {
+      traceInferredArguments(arguments)
+      checkOrInferCallImpl(mf, arguments, expectedType, positioned, context)
     }
   }
 
-  /**
-    * Checks an ambiguous multi-function call `expression` using [[MultiReferenceTyping.disambiguate]] and
-    * [[checkOrInferCall]].
-    */
   def checkOrInferAmbiguousCall(
     expression: UntypedAmbiguousMultiFunctionCall,
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    val mfs = expression.target
-    Typing.logger.trace(s"Disambiguate multi-function call `${expression.position.truncatedCode}`" +
+    // Arguments only need to be pre-inferred once, because no type information from the candidate multi-function is
+    // required for inference.
+    CallTyping.inferArguments(expression.arguments, context).flatMap { case (arguments, context2) =>
+      checkOrInferAmbiguousCall(expression.target, arguments, expectedType, expression, context2)
+    }
+  }
+
+  /**
+    * Checks an ambiguous multi-function call of `mfs` using [[MultiReferenceTyping.disambiguate]] and
+    * [[checkOrInferCall]].
+    */
+  def checkOrInferAmbiguousCall(
+    mfs: MultiReference[MultiFunctionDefinition],
+    arguments: Vector[UntypedOrTypedExpression],
+    expectedType: Option[Type],
+    positioned: Positioned,
+    context: InferenceContext,
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    Typing.logger.trace(s"Disambiguate multi-function call `${positioned.position.truncatedCode}`" +
       s" (${mfs.local.length} local, ${mfs.global.length} global):")
     Typing.indentationLogger.indented {
       Typing.logger.whenTraceEnabled {
@@ -71,13 +96,10 @@ object MultiFunctionTyping {
         }
       }
 
-      // Arguments only need to be pre-inferred once, because no type information from the candidate multi-function is
-      // required for inference.
-      CallTyping.inferArguments(expression, context).flatMap { case (inferredArguments, context2) =>
-        MultiReferenceTyping.disambiguate(mfs, expression.position) { case (mf, candidateReporter) =>
-          traceCheckOrInferCall(mf, expression, expectedType) {
-            checkOrInferCallImpl(mf, expression, expectedType, inferredArguments, context2)(registry, candidateReporter)
-          }
+      traceInferredArguments(arguments)
+      MultiReferenceTyping.disambiguate(mfs, positioned.position) { case (mf, candidateReporter) =>
+        traceCheckOrInferCall(mf, expectedType, positioned) {
+          checkOrInferCallImpl(mf, arguments, expectedType, positioned, context)(registry, candidateReporter)
         }
       }
     }
@@ -85,39 +107,39 @@ object MultiFunctionTyping {
 
   private def traceCheckOrInferCall[R](
     mf: MultiFunctionDefinition,
-    expression: UntypedCall,
     expectedType: Option[Type],
+    positioned: Positioned,
   )(f: => R) = {
-    Typing.traceCheckOrInfer(s"multi-function call `${mf.name}` in", expression, expectedType)
+    Typing.traceCheckOrInfer(s"multi-function call `${mf.name}` in", expectedType, positioned)
     Typing.indentationLogger.indented(f)
   }
 
   private def checkOrInferCallImpl(
     mf: MultiFunctionDefinition,
-    expression: UntypedCall,
+    arguments: Vector[UntypedOrTypedExpression],
     expectedType: Option[Type],
-    inferredArguments: Vector[Option[Expression]],
+    positioned: Positioned,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
-    inferredArguments.sequence.foreach { arguments =>
+    arguments.map(_.toOption).sequence.foreach { arguments =>
       // If all argument types were inferred, we can simply build the call expression.
       Typing.logger.trace("Perform direct dispatch as all arguments have been pre-inferred.")
-      return buildMultiFunctionCall(mf, arguments, expression.position).map((_, context))
+      return buildMultiFunctionCall(mf, arguments, positioned).map((_, context))
     }
 
     // TODO: Instead of considering functions from a flat list, walk the dispatch hierarchy...
-    val functionCandidates = filterFunctionCandidates(mf, expression, inferredArguments)
-    val (arguments, context2) = findArguments(
+    val functionCandidates = filterFunctionCandidates(mf, arguments, positioned)
+    val (typedArguments, context2) = findArguments(
       mf,
-      expression,
+      arguments,
       expectedType,
-      inferredArguments,
       functionCandidates,
+      positioned,
       context,
     ).getOrElse(return None)
 
     // (4) Build a call expression from the arguments candidate.
-    buildMultiFunctionCall(mf, arguments, expression.position).map((_, context2))
+    buildMultiFunctionCall(mf, typedArguments, positioned).map((_, context2))
   }
 
   /**
@@ -131,10 +153,10 @@ object MultiFunctionTyping {
     */
   private def filterFunctionCandidates(
     mf: MultiFunctionDefinition,
-    expression: UntypedCall,
-    inferredArguments: Vector[Option[Expression]],
+    arguments: Vector[UntypedOrTypedExpression],
+    positioned: Positioned,
   ): Vector[FunctionDefinition] = {
-    mf.functions.filter(_.signature.arity == expression.arity)
+    mf.functions.filter(_.signature.arity == arguments.length)
   }
 
   /**
@@ -148,40 +170,40 @@ object MultiFunctionTyping {
     */
   private def findArguments(
     mf: MultiFunctionDefinition,
-    expression: UntypedCall,
+    arguments: Vector[UntypedOrTypedExpression],
     expectedType: Option[Type],
-    inferredArguments: Vector[Option[Expression]],
     functionCandidates: Vector[FunctionDefinition],
+    positioned: Positioned,
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResults] = {
     if (functionCandidates.length == 1) {
       val (argumentsCandidate, feedback) = attemptFunctionCandidate(
         functionCandidates.head,
-        expression,
-        inferredArguments,
+        arguments,
         expectedType,
+        positioned,
         context,
       )
       reporter.report(feedback)
       argumentsCandidate.flatMap(ArgumentsCandidate.unapply)
     } else {
       val argumentsCandidates = functionCandidates.flatMap {
-        function => attemptFunctionCandidate(function, expression, inferredArguments, expectedType, context)._1
+        function => attemptFunctionCandidate(function, arguments, expectedType, positioned, context)._1
       }
-      chooseArgumentsCandidate(mf, expression, inferredArguments, argumentsCandidates).flatMap(ArgumentsCandidate.unapply)
+      chooseArgumentsCandidate(mf, arguments, argumentsCandidates, positioned).flatMap(ArgumentsCandidate.unapply)
     }
   }
 
   private def attemptFunctionCandidate(
     function: FunctionDefinition,
-    expression: UntypedCall,
-    inferredArguments: Vector[Option[Expression]],
+    arguments: Vector[UntypedOrTypedExpression],
     expectedType: Option[Type],
+    positioned: Positioned,
     context: InferenceContext,
   )(implicit registry: Registry): (Option[ArgumentsCandidate], Vector[Feedback]) = {
     implicit val reporter: MemoReporter = MemoReporter()
-    val candidateOption = CallTyping
-      .checkOrInfer(function.signature, expression, inferredArguments, expectedType, context) {
+    val candidateOption =
+      CallTyping.checkOrInfer(function.signature, arguments, expectedType, positioned, context) {
         case (typedArguments, _) => typedArguments
       }
       .map(ArgumentsCandidate.tupled)
@@ -191,9 +213,9 @@ object MultiFunctionTyping {
 
   private def chooseArgumentsCandidate(
     mf: MultiFunctionDefinition,
-    expression: UntypedCall,
-    inferredArguments: Vector[Option[Expression]],
+    arguments: Vector[UntypedOrTypedExpression],
     argumentsCandidates: Vector[ArgumentsCandidate],
+    positioned: Positioned,
   )(implicit reporter: Reporter): Option[ArgumentsCandidate] = {
     if (argumentsCandidates.nonEmpty) {
       val mostSpecific = argumentsCandidates
@@ -203,26 +225,26 @@ object MultiFunctionTyping {
       mostSpecific match {
         case Vector(argumentsCandidate) => Some(argumentsCandidate)
         case _ =>
-          Typing.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n" +
+          Typing.logger.trace(s"Ambiguous argument types of call `${positioned.position.truncatedCode}`:\n" +
             s"${argumentsCandidates.mkString("\n")}")
           reporter.error(
             TypingFeedback.MultiFunctionCall.AmbiguousArgumentTypes(
               mf,
               mostSpecific.map(_.inputType),
-              expression,
+              positioned,
             )
           )
           None
       }
     } else {
-      Typing.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
+      Typing.logger.trace(s"Empty fit of call `${positioned.position.truncatedCode}`.")
       val inputType = TupleType(
-        inferredArguments.map {
-          case Some(typedArgument) => typedArgument.tpe
-          case None => BasicType.Any
+        arguments.map {
+          case Right(typedArgument) => typedArgument.tpe
+          case Left(_) => BasicType.Any
         }
       )
-      reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, expression.position))
+      reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, positioned))
       None
     }
   }
@@ -233,10 +255,10 @@ object MultiFunctionTyping {
   def buildMultiFunctionCall(
     mf: MultiFunctionDefinition,
     arguments: Vector[Expression],
-    position: Position,
+    positioned: Positioned,
   )(implicit reporter: Reporter): Option[Expression] = {
-    mf.dispatch(TupleType(arguments.map(_.tpe)), position)
-      .map(instance => MultiFunctionCall(instance, arguments, position))
+    mf.dispatch(TupleType(arguments.map(_.tpe)), positioned.position)
+      .map(instance => MultiFunctionCall(instance, arguments, positioned.position))
   }
 
   /**

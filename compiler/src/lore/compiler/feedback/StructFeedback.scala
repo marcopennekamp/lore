@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Position
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.bindings.{StructBinding, StructObjectBinding}
 import lore.compiler.syntax.DeclNode.PropertyNode
@@ -16,30 +16,30 @@ object StructFeedback {
     override def message = s"The open property `${node.name}` may not be mutable."
   }
 
-  case class ConstructorExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
+  case class ConstructorExpected(name: NamePath, positioned: Positioned) extends Feedback.Error(positioned) {
     override def message: String = s"The type `$name` doesn't have an associated constructor, as it isn't a struct."
   }
 
   case class CompanionModuleExpected(
     binding: StructBinding,
     memberName: String,
-    override val position: Position,
-  ) extends Feedback.Error(position) {
+    positioned: Positioned,
+  ) extends Feedback.Error(positioned) {
     override def message: String = s"The struct `${binding.name}` does not have a companion module which" +
       s" might define a member `$memberName`."
   }
 
   object Instantiation {
-    case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+    case class DuplicateProperty(name: String, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The property `$name` occurs more than once in the instantiation. Properties must" +
         s" be unique here."
     }
 
-    case class MissingProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+    case class MissingProperty(name: String, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The struct's property `$name` must be specified in the instantiation."
     }
 
-    case class IllegalProperty(name: String, override val position: Position) extends Feedback.Error(position) {
+    case class IllegalProperty(name: String, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The struct to be instantiated does not have a property `$name`."
     }
   }
@@ -64,22 +64,22 @@ object StructFeedback {
   object OpenTypeParameter {
     case class CovarianceRequired(
       typeParameter: TypeVariable,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The open type parameter `$typeParameter` must be covariant."
     }
 
     case class IllegalLowerBound(
       typeParameter: TypeVariable,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The open type parameter `$typeParameter` may not have a lower bound."
     }
 
     case class NotUniquelyDeducible(
       typeParameter: TypeVariable,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The open type parameter `$typeParameter` is not uniquely deducible. It may only" +
         s" be used once in a single property, and not within a sum or intersection type."
     }
@@ -100,7 +100,7 @@ object StructFeedback {
         s" assigned an appropriate value."
     }
 
-    case class NoConstructor(name: NamePath, override val position: Position) extends Feedback.Error(position) {
+    case class NoConstructor(name: NamePath, positioned: Positioned) extends Feedback.Error(positioned) {
       override def message: String = s"The type `$name` is an object, which doesn't have a constructor. Objects cannot be" +
         s" constructed. You can refer to the object value simply by `$name`."
     }
@@ -117,8 +117,8 @@ object StructFeedback {
     case class MemberNotFound(
       binding: StructObjectBinding,
       memberName: String,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The struct object `${binding.name}` does not have a property `$memberName`," +
         s" nor a companion module which might define such a member."
     }

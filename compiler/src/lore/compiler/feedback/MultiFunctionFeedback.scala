@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Position
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types.{Type, TypeVariable}
 
@@ -51,8 +51,8 @@ object MultiFunctionFeedback {
     case class EmptyFit(
       mf: MultiFunctionDefinition,
       inputType: Type,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The multi-function call `${mf.name}` at this site has an empty fit. We cannot" +
         s" find a function of that name that would accept the given arguments with the type `$inputType`."
     }
@@ -61,8 +61,8 @@ object MultiFunctionFeedback {
       mf: MultiFunctionDefinition,
       inputType: Type,
       min: Vector[FunctionDefinition],
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The multi-function call `${mf.name}` at this site is ambiguous." +
         s" That is, we are finding too many functions that would accept the given arguments of type `$inputType`." +
         s" These are:\n${min.map("  - " + _.toString).mkString("\n")}"
@@ -73,8 +73,8 @@ object MultiFunctionFeedback {
     case class EmptyFit(
       mf: MultiFunctionDefinition,
       inputType: Type,
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The multi-function `${mf.name}` cannot be fixed with the argument types" +
         s" `$inputType`. We cannot find a function that would accept arguments of the given types."
     }
@@ -83,8 +83,8 @@ object MultiFunctionFeedback {
       mf: MultiFunctionDefinition,
       inputType: Type,
       min: Vector[FunctionDefinition],
-      override val position: Position,
-    ) extends Feedback.Error(position) {
+      positioned: Positioned,
+    ) extends Feedback.Error(positioned) {
       override def message: String = s"The multi-function `${mf.name}` cannot be fixed with the argument types" +
         s" `$inputType`. We are finding too many functions that would accept arguments of the given types:\n" +
         min.map("  - " + _.toString).mkString("\n")

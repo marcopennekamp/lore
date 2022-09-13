@@ -120,10 +120,15 @@ object AccessTransformation {
     * Transforms a member access chain on `instance` into a sequence of member access expressions. Note that `instance`
     * is returned unchanged if `memberNames` is empty.
     */
-  def transformMemberAccess(instance: UntypedExpression, memberNames: Vector[NameNode]): UntypedExpression = {
+  def transformMemberAccess(
+    instance: UntypedExpression,
+    memberNames: Vector[NameNode],
+  )(implicit termScope: TermScope): UntypedExpression = {
     memberNames.foldLeft(instance) {
       case (expression, NameNode(memberName, position)) =>
-        UntypedMemberAccess(expression, memberName, position)
+        // The position from `expression.position` to `position` covers the whole access chain. For example, accessing
+        // a member `length` of an expression `company.employees` will span all of `company.employees.length`.
+        UntypedMemberAccess(expression, memberName, termScope.get(memberName), expression.position.to(position))
     }
   }
 
