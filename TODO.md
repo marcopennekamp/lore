@@ -10,6 +10,7 @@
     - Add a test `language/syntax/uniform_call_syntax.lore`.
       - Test `map.tupled` and `((x, y) => x + y).tupled`.
       - Test `abc.global_variable` (if `global_variable` is a function) and `abc.local_variable` (if `local_variable` is a function).
+      - Test chained function calls such as `[1, 2, 3].map(x => x + 1).map(x => x * 2)`.
     - Does UCS work with constructors, such as `Position.tupled`? This might be vacuumed up by the object access syntax before UCS is even attempted.
   - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
   - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions, or maybe even just `int` and `real` (for syntactic convenience). This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors.

@@ -50,15 +50,18 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   }
 
   /**
-    * An assignment address is either a plain variable or some property that is accessed on any accessible expression.
+    * An assignment address is either a plain variable or some member that is accessed on any accessible expression.
     *
     * Note that a member access such as `foo.bar` will be parsed as a variable due to how name paths are handled.
     */
   private def address[_: P]: P[ExprNode.AddressNode] = {
-    // We can cast to MemberAccessNode because we set minAccess to 1, which ensures that the parse results in such a
-    // node.
-    def prop = P(propertyAccess(accessible, minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
-    P(variable | prop)
+    // The access chain may result in either a member access or a call node. As function calls cannot be assigned to,
+    // the parse will fail if its result is not a member access.
+    def member = P(accessChain(minAccesses = 1)).flatMap {
+      case node: ExprNode.MemberAccessNode => P(Pass.map(_ => node))
+      case _ => P(Fail)
+    }
+    P(variable | member)
   }
 
   def expression[_: P]: P[ExprNode] = P(ifElse | cond | whileLoop | forLoop | lambdaValue | operatorExpression)
@@ -182,27 +185,47 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   /**
     * Atomic operands of unary and binary operators.
-    *
-    * We parse property access here to reduce the amount of backtracking the parser needs to do. Even though all
-    * dots are consumed greedily, we still create a chain of PropertyAccessNodes, because that'll make it easier to
-    * to compile later.
     */
-  private def atom[_: P]: P[ExprNode] = P(propertyAccess(accessible, minAccess = 0))
+  private def atom[_: P]: P[ExprNode] = P(accessChain(minAccesses = 0))
 
   /**
-    * Surrounds an accessible expression with the possibility for member access. This is used by atom AND assignment
-    * parsers to apply member access.
+    * Parses an access chain with a starting accessible expression. Each link in the chain, including the initial
+    * accessible, may contain any number of argument lists, transforming each access into a call.
     *
-    * @param minAccess The minimum number of times that the instance needs to be accessed.
+    * Note that non-simple calls are covered by this function. This flattens the parsing space to avoid left recursion
+    * with member accesses.
+    *
+    * @param minAccesses The minimum number of member accesses.
     */
-  private def propertyAccess[_: P](accessible: P[ExprNode], minAccess: Int): P[ExprNode] = {
-    def propertyAccess = P(("." ~ name ~~ Index).rep(minAccess))
-    P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
-      propertyAccesses.foldLeft(expr) { case (instance, (name, endIndex)) =>
-        // The resulting position should span the whole access expression, such as when accessing `length` on
-        // `company.employees`, the position should span `company.employees.length`.
-        ExprNode.MemberAccessNode(instance, name, Position(fragment, expr.position.startIndex, endIndex))
-      }
+  private def accessChain[_: P](minAccesses: Int): P[ExprNode] = {
+    def initialAccessible = P(accessible ~~ Space.WS ~~ (arguments ~~ Index ~~ Space.WS).repX(0)).map {
+      case (expression, argumentListsWithIndex) =>
+        foldCalls(expression.position.startIndex, expression, argumentListsWithIndex)
+    }
+
+    def memberAccess = {
+      P("." ~ name ~~ Space.WS ~~ (arguments ~~ Index ~~ Space.WS).repX(0) ~~ Index)
+    }
+
+    P(initialAccessible ~ memberAccess.rep(minAccesses)).map {
+      case (initialExpression, memberAccesses) =>
+        memberAccesses.foldLeft(initialExpression) { case (instance, (name, argumentListsWithIndex, endIndex)) =>
+          // The resulting position should span the whole access expression. For example, when accessing `length` on
+          // `company.employees`, the position should span `company.employees.length`.
+          val startIndex = initialExpression.position.startIndex
+          val target = ExprNode.MemberAccessNode(instance, name, Position(fragment, startIndex, endIndex))
+          foldCalls(startIndex, target, argumentListsWithIndex)
+        }
+    }
+  }
+
+  private def foldCalls(
+    startIndex: Index,
+    target: ExprNode,
+    argumentListsWithIndex: Seq[(Vector[ExprNode], Index)],
+  ): ExprNode = {
+    argumentListsWithIndex.foldLeft(target) { case (target, (arguments, endIndex)) =>
+      withPosition(ExprNode.CallNode)(startIndex, target, arguments, endIndex)
     }
   }
 
@@ -210,14 +233,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | intrinsicCall | simpleCall | call | objectMap | constructorValue | fixedFunction | variable | block | listValue | mapValue | shapeValue | enclosed)
-  }
-
-  /**
-    * All expressions immediately accessible via postfix dot notation that can be used as call targets.
-    */
-  private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | objectMap | constructorValue | fixedFunction | variable | block | listValue | mapValue | shapeValue | enclosed)
+    P(literal | intrinsicCall | simpleCall | objectMap | constructorValue | fixedFunction | variable | block | listValue | mapValue | shapeValue | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -237,25 +253,20 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       .map(withPosition(ExprNode.IntrinsicCallNode))
   }
 
-  private def simpleCall[_: P]: P[ExprNode] = P(Index ~~ namePath ~~ Space.WS ~~ (arguments ~~ Space.WS).repX(1) ~~ Index).map {
-    case (startIndex, name, argumentLists, endIndex) =>
-      val firstCall = withPosition(ExprNode.SimpleCallNode)(startIndex, name, argumentLists.head, endIndex)
-      foldCalls(startIndex, firstCall, argumentLists.tail, endIndex)
-  }
-
   /**
-    * To avoid infinite left-recursion, we don't allow the target expression to be an atom, but rather either a
-    * guaranteed property access, or an accessible itself without calls. To still allow calls such as `abc(a)(b)(c)`,
-    * if `abc(a)` returns a callable function and so on, we are parsing all argument lists in a row.
+    * Parses a sequence of calls consisting of an initial name path and at least one argument list. The first argument
+    * list results in a simple call. More complex call syntax is covered by [[accessChain]].
     */
-  private def call[_: P]: P[ExprNode] = {
-    P(Index ~~ propertyAccess(accessibleCallTarget, minAccess = 0) ~~ Space.WS ~~ arguments.rep(1) ~~ Index).map((foldCalls _).tupled)
-  }
-
-  private def foldCalls(startIndex: Index, target: ExprNode, argumentLists: Seq[Vector[ExprNode]], endIndex: Index): ExprNode = {
-    argumentLists.foldLeft(target) {
-      case (target, arguments) => withPosition(ExprNode.CallNode)(startIndex, target, arguments, endIndex)
-    }
+  private def simpleCall[_: P]: P[ExprNode] = P(Index ~~ namePath ~~ Space.WS ~~ (arguments ~~ Index ~~ Space.WS).repX(1)).map {
+    case (startIndex, name, argumentListsWithIndex) =>
+      val (firstArgumentList, firstEndIndex) = argumentListsWithIndex.head
+      val firstCall = withPosition(ExprNode.SimpleCallNode)(
+        startIndex,
+        name,
+        firstArgumentList,
+        firstEndIndex,
+      )
+      foldCalls(startIndex, firstCall, argumentListsWithIndex.tail)
   }
 
   private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ",".? ~ ")").map(_.toVector)
