@@ -4,13 +4,16 @@ use lore.option.[Some, get!]
 use lore.test._
 use lore.tuple.[first, second]
 
-use combat.combatants.Combatant
+use combat.combatants.[Combatant, name]
 use combat.Scenario
-use combat.Simulation
-use combat.Simulation.Result
+use combat.simulation._
 
-func simulate_scenario(scenario: (Combatant, Combatant)): Simulation.Result = do
-  Simulation.simulate(first(scenario), second(scenario))
+func simulate_scenario(scenario: (Combatant, Combatant)): Result = do
+  Simulation.simulate(scenario.first, scenario.second)
+end
+
+act log(message: String) do
+  //println(message)
 end
 
 spec 'Kaladin wins against the Voidbringer' do
@@ -19,17 +22,16 @@ spec 'Kaladin wins against the Voidbringer' do
   //      Victory(winner) => winner.name should_eq 'Kaladin'
   //    end
   let scenario = Scenario.kaladin_vs_voidbringer()
-  let kaladin = first(scenario)
+  let kaladin = scenario.first
   let result = simulate_scenario(scenario)
-  let winner = Result.winner(result)
 
-  winner should be_some
-  Combatant.name(get!(winner)) should_eq 'Kaladin' // Should be equivalent to `winner.get!.name`...
+  result.winner should be_some
+  result.winner.get!.name should_eq 'Kaladin'
 end
 
 spec 'Sadeas and Dalinar have a stalemate' do
   // TODO (case): Also needs pattern matching, as the function `stalemate?` is superfluous. See above.
   let result = simulate_scenario(Scenario.sadeas_vs_dalinar())
 
-  Result.stalemate?(result) should be_true // Should be equivalent to `result.stalemate?`...
+  result.stalemate? should be_true
 end

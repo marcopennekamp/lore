@@ -8,28 +8,27 @@ end
 
 type +StatusEffects = %{ status_effects: StatusEffects }
 
-module StatusEffects do
-  domain entity: +StatusEffects
-    act buff(effect: StatusEffect) do
-      entity.status_effects.effects = entity.status_effects.effects :+ effect
-    end
+domain status_effects: StatusEffects
+  /**
+   * Updates status effects, propagating the on_update event to them and removing effects that have expired.
+   */
+  act update() do
+    status_effects.effects |> each(on_update)
+    status_effects.effects = status_effects.effects |> filter(active?)
+  end
 
-    /**
-     * Updates status effects, propagating the on_update event to them and removing effects that have expired.
-     */
-    act update() do
-      let effects = entity.status_effects.effects
-      effects |> each(StatusEffect.on_update)
-      entity.status_effects.effects = effects |> filter(StatusEffect.active?)
+  /**
+    * Propagates the on_hit event to individual status effects.
+    */
+  act on_hit() do
+    for effect <- status_effects.effects
+      effect.on_hit()
     end
+  end
+end
 
-    /**
-      * Propagates the on_hit event to individual status effects.
-      */
-    act on_hit() do
-      for effect <- entity.status_effects.effects
-        StatusEffect.on_hit(effect)
-      end
-    end
+domain entity: +StatusEffects
+  act buff(effect: StatusEffect) do
+    entity.status_effects.effects = entity.status_effects.effects :+ effect
   end
 end

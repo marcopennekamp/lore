@@ -1,0 +1,51 @@
+module combat.simulation
+
+use lore.number.[min, max]
+
+use combat.combatants._
+use combat.log
+
+struct CombatantState
+  combatant: Combatant
+  mut health: Int
+  mut dodge: Real = 0.0
+end
+
+/**
+  * Whether the combatant behind `state` is alive.
+  */
+func alive?(state: CombatantState): Boolean = state.health > 0
+
+/**
+  * Has `source` damage `target`, taking into account defense but not dodge. Also triggers `on_hit`.
+  */
+act hit(source: CombatantState, target: CombatantState, damage: Int) do
+  let defense = target.combatant.stat(#defense)
+  let damage_after_defense = max(damage - defense, 0)
+  log('${source.combatant.name} attacks ${target.combatant.name} for $damage_after_defense damage given a defense of $defense.')
+  target.health -= damage_after_defense
+  target.combatant.on_hit()
+end
+
+/**
+  * Heals `target` by `amount` up to the combatant's maximum health.
+  */
+act heal(target: CombatantState, amount: Int) do
+  let old_health = target.health
+  target.health = min(target.health + amount, target.combatant.stats.maximum_health)
+  if target.health > old_health
+    log('${target.combatant.name} is healed by ${target.health - old_health} points.')
+  end
+end
+
+/**
+  * Performs dodge calculations for `state` and returns whether the current attempt succeeded.
+  */
+func attempt_dodge(state: CombatantState): Boolean = do
+  state.dodge += state.combatant.stat(#dodge)
+  if state.dodge >= 1.0
+    log('${state.combatant.name} dodges an attack.')
+    state.dodge -= 1.0
+    true
+  else false
+end

@@ -1,0 +1,25 @@
+module combat.simulation
+
+use lore.option.[Option, Some, None]
+
+use combat.combatants._
+
+trait Result
+struct Victory(winner: Combatant) extends Result
+struct Stalemate(left: Combatant, right: Combatant) extends Result
+
+act log(Result)
+
+act log(result: Victory) do
+  combat.log('${result.winner.name} wins the battle!')
+end
+
+act log(result: Stalemate) do
+  combat.log('We have a stalemate between ${result.left.name} and ${result.right.name}!')
+end
+
+func winner(Result): Option[Combatant] = None
+func winner(result: Victory): Option[Combatant] = Some(result.winner)
+
+func stalemate?(Result): Boolean = false
+func stalemate?(result: Stalemate): Boolean = true

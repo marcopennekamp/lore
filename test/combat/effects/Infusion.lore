@@ -13,10 +13,8 @@ module Infusion do
   func create(duration: Int): Infusion = Infusion(DurationLimit(duration))
 end
 
-module StatusEffect do
-  domain effect: Infusion
-    func affect(#attack | #speed, value: Int): Int = floor(value * 1.5)
-    func affect(#dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-    func affect(#regeneration, value: Int): Int = 5
-  end
+domain effect: Infusion
+  func affect(#attack | #speed, value: Int): Int = floor(value * 1.5)
+  func affect(#dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+  func affect(#regeneration, value: Int): Int = 5
 end

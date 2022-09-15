@@ -13,13 +13,11 @@ struct Shardbearer extends Hero
   open weapon: Weapon
 end
 
-module Combatant do
-  domain shardbearer: Shardbearer
-    func name(): String = shardbearer.name
+domain shardbearer: Shardbearer
+  func name(): String = shardbearer.name
 
-    act enter_combat() do
-      StatusEffects.buff(shardbearer, Armored.create(15, 3))
-    end
+  act enter_combat() do
+    shardbearer.buff(Armored.create(15, 3))
   end
 end
 
@@ -37,13 +35,11 @@ struct Radiant extends Hero
   weapon: Weapon
 end
 
-module Combatant do
-  domain radiant: Radiant
-    func name(): String = radiant.name
+domain radiant: Radiant
+  func name(): String = radiant.name
 
-    act enter_combat() do
-      StatusEffects.buff(radiant, Infusion.create(radiant.infusion))
-      StatusEffects.buff(radiant, Armored.create(3, 5))
-    end
+  act enter_combat() do
+    radiant.buff(Infusion.create(radiant.infusion))
+    radiant.buff(Armored.create(3, 5))
   end
 end

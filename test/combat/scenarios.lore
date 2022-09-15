@@ -1,48 +1,50 @@
-module combat.Scenario
+module combat
 
 use combat.combatants._
 use combat.stats._
 use combat.weapons.Weapon
 
-func kaladin_vs_voidbringer(): (Combatant, Combatant) = do
-  let kaladin = Radiant {
-    name = 'Kaladin',
-    stats = Stats {
-      maximum_health = 25,
-      regeneration = 0,
-      dodge = 0.34,
-      speed = 3
-    },
-    weapon = Weapon.Spear
-  }
+module Scenario do
+  func kaladin_vs_voidbringer(): (Combatant, Combatant) = do
+    let kaladin = Radiant {
+      name = 'Kaladin',
+      stats = Stats {
+        maximum_health = 25,
+        regeneration = 0,
+        dodge = 0.34,
+        speed = 3
+      },
+      weapon = Weapon.Spear,
+    }
 
-  let voidbringer = Voidbringer { }
+    let voidbringer = Voidbringer { }
 
-  (kaladin, voidbringer)
-end
+    (kaladin, voidbringer)
+  end
 
-func sadeas_vs_dalinar(): (Combatant, Combatant) = do
-  let sadeas = Shardbearer {
-    name = 'Sadeas',
-    stats = Stats {
-      maximum_health = 15,
-      regeneration = 0,
-      dodge = 0.2,
-      speed = 2
-    },
-    weapon = Weapon.Shardbow
-  }
+  func sadeas_vs_dalinar(): (Combatant, Combatant) = do
+    let sadeas = Shardbearer {
+      name = 'Sadeas',
+      stats = Stats {
+        maximum_health = 15,
+        regeneration = 0,
+        dodge = 0.2,
+        speed = 2
+      },
+      weapon = Weapon.Shardbow,
+    }
 
-  let dalinar = Shardbearer {
-    name = 'Dalinar',
-    stats = Stats {
-      maximum_health = 30,
-      regeneration = 0,
-      dodge = 0.15,
-      speed = 3
-    },
-    weapon = Weapon.Shardblade
-  }
+    let dalinar = Shardbearer {
+      name = 'Dalinar',
+      stats = Stats {
+        maximum_health = 30,
+        regeneration = 0,
+        dodge = 0.15,
+        speed = 3
+      },
+      weapon = Weapon.Shardblade,
+    }
 
-  (sadeas, dalinar)
+    (sadeas, dalinar)
+  end
 end

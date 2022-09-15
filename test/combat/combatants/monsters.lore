@@ -17,12 +17,10 @@ struct Voidbringer extends Monster
   status_effects: StatusEffects = StatusEffects([])
 end
 
-module Combatant do
-  domain voidbringer: Voidbringer
-    func name(): String = 'Voidbringer'
+domain voidbringer: Voidbringer
+  func name(): String = 'Voidbringer'
 
-    act enter_combat() do
-      StatusEffects.buff(voidbringer, Armored.create(2, 3))
-    end
+  act enter_combat() do
+    voidbringer.buff(Armored.create(2, 3))
   end
 end

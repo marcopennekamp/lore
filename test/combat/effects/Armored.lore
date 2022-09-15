@@ -12,8 +12,6 @@ module Armored do
   func create(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 end
 
-module StatusEffect do
-  domain effect: Armored
-    func affect(#defense, value: Int): Int = value + effect.armor
-  end
+domain effect: Armored
+  func affect(#defense, value: Int): Int = value + effect.armor
 end

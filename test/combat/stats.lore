@@ -57,16 +57,14 @@ type StatLabel = StatLabelInt | StatLabelReal
 type StatLabelInt = #regeneration | #defense | #attack | #range | #speed
 type StatLabelReal = #dodge
 
-module Stats do
-  domain entity: +Stats
-    func base(StatLabel): Int | Real
-    func base(StatLabelInt): Int
+domain entity: +Stats
+  func base_stat(StatLabel): Int | Real
+  func base_stat(StatLabelInt): Int
 
-    func base(#regeneration): Int = entity.stats.regeneration
-    func base(#defense): Int = entity.stats.defense
-    func base(#attack): Int = entity.stats.attack
-    func base(#range): Int = entity.stats.range
-    func base(#speed): Int = entity.stats.speed
-    func base(#dodge): Real = entity.stats.dodge
-  end
+  func base_stat(#regeneration): Int = entity.stats.regeneration
+  func base_stat(#defense): Int = entity.stats.defense
+  func base_stat(#attack): Int = entity.stats.attack
+  func base_stat(#range): Int = entity.stats.range
+  func base_stat(#speed): Int = entity.stats.speed
+  func base_stat(#dodge): Real = entity.stats.dodge
 end

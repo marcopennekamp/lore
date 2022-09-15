@@ -1,0 +1,97 @@
+module combat.simulation.Simulation
+
+use lore.io.println
+use lore.number.[max]
+use lore.option.[Option, Some, None]
+
+use combat.combatants._
+use combat.effects._
+use combat.log
+use combat.simulation._
+
+/**
+ * Simulate the combat between two combatants using a turn-based algorithm. The left combatant has the initiative
+ * and gets to take their turns first.
+ *
+ * Returns the winner of the engagement.
+ */
+func simulate(left: Combatant, right: Combatant): Result = do
+  let mut turn = 1
+  let mut distance = 8
+
+  left.enter_combat()
+  right.enter_combat()
+
+  let left_state = CombatantState { combatant = left, health = left.stats.maximum_health }
+  let right_state = CombatantState { combatant = right, health = right.stats.maximum_health }
+
+  while left_state.alive? && right_state.alive?
+    log('Turn $turn:')
+
+    // Phase 1: Closing the distance.
+    if distance > 0
+      distance = left.close_distance(distance)
+      distance = right.close_distance(distance)
+    end
+
+    // Phase 2: Attack phase.
+    left_state.attempt_attack(right_state, distance)
+    right_state.attempt_attack(left_state, distance)
+
+    // Phase 3: Updates at the end of the turn.
+    left_state.end_turn()
+    right_state.end_turn()
+
+    log('${left.name} health: ${left_state.health}')
+    log('${right.name} health: ${right_state.health}')
+
+    turn += 1
+
+    log('')
+  end
+
+  let result = cond
+    left_state.alive? && !right_state.alive? => Victory(left)
+    !left_state.alive? && right_state.alive? => Victory(right)
+    true                                     => Stalemate(left, right)
+  end
+
+  result.log()
+  result
+end
+
+/**
+ * Whether the combatant is in range to attack, based on the entity's range stat.
+ */
+func in_range?(combatant: Combatant, distance: Int): Boolean = combatant.stat(#range) >= distance
+
+/**
+ * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
+ */
+func close_distance(combatant: Combatant, distance: Int): Int = do
+  if distance > 0 && !combatant.in_range?(distance)
+    let new = max(distance - combatant.stat(#speed), 0)
+    log('${combatant.name} closes distance to $new.')
+    new
+  else distance
+end
+
+act attempt_attack(attacker_state: CombatantState, defender_state: CombatantState, distance: Int) do
+  if attacker_state.combatant.in_range?(distance)
+    let dodged? = defender_state.attempt_dodge()
+    if !dodged?
+      let attack_rating = attacker_state.combatant.stat(#attack)
+      attacker_state.hit(defender_state, attack_rating)
+    end
+  end
+end
+
+/**
+ * Performs post-attack regeneration and status effect updates provided the combatant is still alive.
+ */
+act end_turn(state: CombatantState) do
+  if state.alive?
+    state.heal(state.combatant.stat(#regeneration))
+    state.combatant.status_effects.update()
+  end
+end

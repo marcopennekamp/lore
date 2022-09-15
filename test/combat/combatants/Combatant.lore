@@ -7,28 +7,27 @@ use combat.stats._
 
 trait Combatant extends +Stats, +StatusEffects
 
-module Combatant do
-  domain combatant: Combatant
-    func name(): String
+domain combatant: Combatant
+  func name(): String
 
-    /**
-     * This is called once at the beginning of combat to give each combatant a chance to prepare.
-     */
-    act enter_combat() do end
+  /**
+   * This is called once at the beginning of combat to give each combatant a chance to prepare.
+   */
+  act enter_combat() do end
 
-    act on_hit() do
-      StatusEffects.on_hit(combatant)
-    end
+  act on_hit() do
+    combatant.status_effects.on_hit()
+  end
 
-    func stat(stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, Stats.base(combatant, stat_label))
-    func stat(stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, Stats.base(combatant, stat_label))
+  func stat(stat_label: StatLabelInt): Int = combatant.stat_impl(stat_label, combatant.base_stat(stat_label))
+  func stat(stat_label: StatLabelReal): Real = combatant.stat_impl(stat_label, combatant.base_stat(stat_label))
 
-    func stat_impl(stat_label: StatLabel, base: A): A where A = do
-      fold(
-        combatant.status_effects.effects,
-        base,
-        (result: A, effect) => StatusEffect.affect(effect, stat_label, result)
-      )
-    end
+  func stat_impl(stat_label: StatLabel, base: A): A where A = do
+    fold(
+      combatant.status_effects.effects,
+      base,
+      // TODO (multi-import): Is the `: A` needed here?
+      (value: A, effect) => effect.affect(stat_label, value)
+    )
   end
 end
