@@ -10,12 +10,12 @@ module Calculator do
       handle(token, stack)
     end
 
-    Stack.pop(stack)
+    stack.pop()
   end
 
   func handle(token: Token, stack: Stack): Unit
 
-  func handle(operand: Operand, stack: Stack): Unit = Stack.push(stack, operand.value)
+  func handle(operand: Operand, stack: Stack): Unit = stack.push(operand.value)
 
   func handle(Add, stack: Stack): Unit = apply_binary_operator((a, b) => a + b, stack)
   func handle(Sub, stack: Stack): Unit = apply_binary_operator((a, b) => a - b, stack)
@@ -23,8 +23,8 @@ module Calculator do
   func handle(Div, stack: Stack): Unit = apply_binary_operator((a, b) => a / b, stack)
 
   func apply_binary_operator(f: (Real, Real) => Real, stack: Stack): Unit = do
-    let b = Stack.pop(stack)
-    let a = Stack.pop(stack)
-    Stack.push(stack, f(a, b))
+    let b = stack.pop()
+    let a = stack.pop()
+    stack.push(f(a, b))
   end
 end

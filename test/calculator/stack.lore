@@ -6,22 +6,20 @@ struct Stack
   mut elements: [Real]
 end
 
-module Stack do
-  domain stack: Stack
-    func push(value: Real): Unit = do
-      stack.elements = stack.elements :+ value
+domain stack: Stack
+  func push(value: Real): Unit = do
+    stack.elements = stack.elements :+ value
+  end
+
+  func pop(): Real = do
+    // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
+    // assume an endless well of zeroes.
+    if stack.elements.empty?
+      return 0.0
     end
 
-    func pop(): Real = do
-      // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
-      // assume an endless well of zeroes.
-      if empty?(stack.elements)
-        return 0.0
-      end
-
-      let result = last!(stack.elements)
-      stack.elements = init(stack.elements)
-      result
-    end
+    let result = stack.elements.last!
+    stack.elements = stack.elements.init
+    result
   end
 end
