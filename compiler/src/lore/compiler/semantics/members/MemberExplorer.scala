@@ -62,6 +62,14 @@ object MemberExplorer {
         val allMembers = types.toVector.map(_.members).flatMap(_.values)
         combineMembers(allMembers.groupBy(_.name), IntersectionType.construct(_))
 
+      case _: FunctionType =>
+        // Functions may not have members due to the way function values are handled by the uniform call syntax. In a
+        // call `map.tupled`, `map` cannot be inferred because it's a multi-function value that requires extra type
+        // context. But because functions don't have any members, uniform call syntax can recognize that this is a
+        // function value and skip the inference in favor of an immediate UCS call. See "Uniform Call Syntax" in the
+        // specification under `expressions.md`.
+        HashMap.empty: MemberMap
+
       case _ => HashMap.empty: MemberMap
     }
   }

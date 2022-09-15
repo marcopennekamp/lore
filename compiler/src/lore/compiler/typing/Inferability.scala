@@ -41,12 +41,25 @@ object Inferability {
     case call: UntypedMultiFunctionCall => call.arguments.forall(isDefinitelyInferable)
     case call: UntypedAmbiguousMultiFunctionCall => call.arguments.forall(isDefinitelyInferable)
     case call: UntypedConstructorCall => call.target.isConstant || call.arguments.forall(isDefinitelyInferable)
+
+    case UntypedValueCall(access: UntypedMemberAccess, arguments, _) =>
+      // A value call `instance.function(a1, a2, ...)` on a member access might be a UCS call. Such a call must be
+      // treated like it COULD be a multi-function call with `instance` as the first argument.
+      isDefinitelyInferable(access) && arguments.forall(isDefinitelyInferable)
+
     case call: UntypedValueCall => isDefinitelyInferable(call.target)
 
     case access: UntypedBindingAccess => access.binding match {
       case _: UntypedLocalVariable | _: LocalVariable | _: GlobalVariableDefinition | _: StructObjectBinding => true
       case _ => false
     }
+
+    case access: UntypedMemberAccess =>
+      // A member access `instance.function` might be a function call `function(instance)` via the uniform call syntax.
+      // Hence, the access should be treated like it COULD be a multi-function call with `instance` as its sole
+      // argument, unless there is no available UCS binding. A non-UCS member access is always definitely inferable,
+      // because the `instance` is not dependent on an expected type.
+      access.ucsBinding.isEmpty || isDefinitelyInferable(access.instance)
 
     case block: UntypedBlock if block.expressions.nonEmpty => isDefinitelyInferable(block.expressions.last)
     case cond: UntypedCond => cond.cases.forall(c => isDefinitelyInferable(c.body))

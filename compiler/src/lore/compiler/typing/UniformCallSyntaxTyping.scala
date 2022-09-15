@@ -4,9 +4,10 @@ import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, TermBinding, TypedTermBinding, UntypedLocalVariable}
 import lore.compiler.semantics.expressions.typed.Expression.MemberAccess
-import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedMemberAccess, UntypedValueCall}
+import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedValueCall}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.types.Type
+import lore.compiler.types.{BasicType, Type}
+import lore.compiler.typing.CallTyping.UntypedOrTypedExpression
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension
 
 object UniformCallSyntaxTyping {
@@ -27,6 +28,20 @@ object UniformCallSyntaxTyping {
     expectedType: Option[Type],
     context: InferenceContext,
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    // Special case: Function values usually need a type context to be inferred, which means the instance cannot be
+    // inferred. Because function values don't have any members, the algorithm can just assume this member access to be
+    // a UCS call. Also see "Uniform Call Syntax" in the specification.
+    val isImmediateUcs = !Inferability.isDefinitelyInferable(expression.instance) && (expression.instance match {
+      case _: UntypedLambdaValue => true
+      case UntypedBindingAccess(_: MultiFunctionDefinition, _) => true
+      case UntypedBindingAccess(AmbiguousMultiFunction(_), _) => true
+      case _ => false
+    })
+
+    if (isImmediateUcs) {
+      return handleUcs(expression, valueCall, expectedType, Left(expression.instance), context)
+    }
+
     Synthesizer.infer(expression.instance, context).flatMap { case (typedInstance, context2) =>
       typedInstance.tpe.member(expression.name) match {
         case Some(member) =>
@@ -38,46 +53,54 @@ object UniformCallSyntaxTyping {
             case None => Some(memberAccess, context2)
           }
 
-        // Try uniform call syntax if the member cannot be found.
-        case None =>
-          lazy val callPositioned = valueCall.getOrElse(expression)
-
-          def getArguments = {
-            CallTyping.inferArguments(valueCall.map(_.arguments).getOrElse(Vector.empty), context).mapFirst {
-              arguments => Right(typedInstance) +: arguments
-            }
-          }
-
-          def handleValueCallTarget(binding: TermBinding) = {
-            getArguments.flatMap { case (arguments, context2) =>
-              ValueCallTyping.infer(
-                UntypedBindingAccess(binding, expression.position),
-                arguments,
-                callPositioned,
-                context2,
-              )
-            }
-          }
-
-          // If UCS applies, we need to make sure that `instance` isn't inferred a second time. Hence, the functions
-          // that check/infer the resulting calls accept prepared arguments.
-          expression.ucsBinding match {
-            case Some(mf: MultiFunctionDefinition) => getArguments.flatMap { case (arguments, context2) =>
-              MultiFunctionTyping.checkOrInferCall(mf, arguments, expectedType, callPositioned, context2)
-            }
-
-            case Some(AmbiguousMultiFunction(mfs)) => getArguments.flatMap { case (arguments, context2) =>
-              MultiFunctionTyping.checkOrInferAmbiguousCall(mfs, arguments, expectedType, callPositioned, context2)
-            }
-
-            case Some(binding: TypedTermBinding) => handleValueCallTarget(binding)
-            case Some(binding: UntypedLocalVariable) => handleValueCallTarget(binding)
-
-            case _ =>
-              reporter.report(TypingFeedback.Member.NotFound(expression, typedInstance.tpe))
-              None
-          }
+        case None => handleUcs(expression, valueCall, expectedType, Right(typedInstance), context2)
       }
+    }
+  }
+
+  private def handleUcs(
+    expression: UntypedMemberAccess,
+    valueCall: Option[UntypedValueCall],
+    expectedType: Option[Type],
+    instance: UntypedOrTypedExpression,
+    context: InferenceContext,
+  )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
+    lazy val callPositioned = valueCall.getOrElse(expression)
+
+    def getArguments = {
+      CallTyping.inferArguments(valueCall.map(_.arguments).getOrElse(Vector.empty), context).mapFirst {
+        arguments => instance +: arguments
+      }
+    }
+
+    def handleValueCallTarget(binding: TermBinding) = {
+      getArguments.flatMap { case (arguments, context2) =>
+        ValueCallTyping.infer(
+          UntypedBindingAccess(binding, expression.position),
+          arguments,
+          callPositioned,
+          context2,
+        )
+      }
+    }
+
+    // If UCS applies, we need to make sure that `instance` isn't inferred a second time. Hence, the functions
+    // that check/infer the resulting calls accept prepared arguments.
+    expression.ucsBinding match {
+      case Some(mf: MultiFunctionDefinition) => getArguments.flatMap { case (arguments, context2) =>
+        MultiFunctionTyping.checkOrInferCall(mf, arguments, expectedType, callPositioned, context2)
+      }
+
+      case Some(AmbiguousMultiFunction(mfs)) => getArguments.flatMap { case (arguments, context2) =>
+        MultiFunctionTyping.checkOrInferAmbiguousCall(mfs, arguments, expectedType, callPositioned, context2)
+      }
+
+      case Some(binding: TypedTermBinding) => handleValueCallTarget(binding)
+      case Some(binding: UntypedLocalVariable) => handleValueCallTarget(binding)
+
+      case _ =>
+        reporter.report(TypingFeedback.Member.NotFound(expression, instance.map(_.tpe).getOrElse(BasicType.Any)))
+        None
     }
   }
 
