@@ -73,7 +73,7 @@ module ApproximateEqualityExpectation do
 
   func approx?(x: Any, y: ExpectedValue): Boolean = false
   func approx?(x: Real, y: Real): Boolean = number.approx?(x, y)
-  func approx?(xs: [Real], ys: [Real]): Boolean = zip(xs, ys) |> all?(tupled(approx?))
+  func approx?(xs: [Real], ys: [Real]): Boolean = zip(xs, ys) |> all?(approx?.tupled)
 end
 
 domain expectation: ApproximateEqualityExpectation
@@ -100,38 +100,34 @@ module InequalityRelation do
   object LessThanEqual extends InequalityRelation
   object GreaterThan extends InequalityRelation
   object GreaterThanEqual extends InequalityRelation
-
-  // TODO (pyramid): The function definitions have a lot of visual noise. Maybe we can use "reverse" domains or
-  //                 introduce some other syntactic sugar that would make the intent clearer. Pattern matching would be
-  //                 possible as well.
-  func matches?(relation: InequalityRelation, actual_value: Any, threshold_value: Any): Boolean
-  func matches?(LessThan, actual_value: Any, threshold_value: Any): Boolean = actual_value < threshold_value
-  func matches?(LessThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value <= threshold_value
-  func matches?(GreaterThan, actual_value: Any, threshold_value: Any): Boolean = actual_value > threshold_value
-  func matches?(GreaterThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value >= threshold_value
-
-  // TODO (pyramid): Again, lots of visual noise. Maybe pattern matching or some kind of syntactic sugar for function
-  //                 definition clusters.
-  func label(relation: InequalityRelation): String
-  func label(LessThan): String = 'less than'
-  func label(LessThanEqual): String = 'less than or equal to'
-  func label(GreaterThan): String = 'greater than'
-  func label(GreaterThanEqual): String = 'greater than or equal to'
 end
 
-domain expectation: InequalityExpectation
-  func relation_label(): String = InequalityRelation.label(expectation.relation)
+// TODO (pyramid): The function definitions have a lot of visual noise. Maybe we can use "reverse" domains or
+//                 introduce some other syntactic sugar that would make the intent clearer. Pattern matching would be
+//                 possible as well.
+func matches?(relation: InequalityRelation, actual_value: Any, threshold_value: Any): Boolean
+func matches?(InequalityRelation.LessThan, actual_value: Any, threshold_value: Any): Boolean = actual_value < threshold_value
+func matches?(InequalityRelation.LessThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value <= threshold_value
+func matches?(InequalityRelation.GreaterThan, actual_value: Any, threshold_value: Any): Boolean = actual_value > threshold_value
+func matches?(InequalityRelation.GreaterThanEqual, actual_value: Any, threshold_value: Any): Boolean = actual_value >= threshold_value
 
-  func matches?(actual_value: Any): Boolean = do
-    InequalityRelation.matches?(expectation.relation, actual_value, expectation.threshold_value)
-  end
+// TODO (pyramid): Again, lots of visual noise. Maybe pattern matching or some kind of syntactic sugar for function
+//                 definition clusters.
+func label(relation: InequalityRelation): String
+func label(InequalityRelation.LessThan): String = 'less than'
+func label(InequalityRelation.LessThanEqual): String = 'less than or equal to'
+func label(InequalityRelation.GreaterThan): String = 'greater than'
+func label(InequalityRelation.GreaterThanEqual): String = 'greater than or equal to'
+
+domain expectation: InequalityExpectation
+  func matches?(actual_value: Any): Boolean = expectation.relation.matches?(actual_value, expectation.threshold_value)
 
   func failure_message(actual_value: Any): String = do
-    'Expected `$actual_value` to be ${relation_label(expectation)} `${expectation.threshold_value}`.'
+    'Expected `$actual_value` to be ${expectation.relation.label} `${expectation.threshold_value}`.'
   end
 
   func negated_failure_message(actual_value: Any): String = do
-    'Expected `$actual_value` NOT to be ${relation_label(expectation)} `${expectation.threshold_value}`.'
+    'Expected `$actual_value` NOT to be ${expectation.relation.label} `${expectation.threshold_value}`.'
   end
 end
 
@@ -146,8 +142,8 @@ domain expectation: SomeOptionExpectation
   func matches?(Any): Boolean = false
   func matches?(Some[Any]): Boolean = true
 
-  func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be a `Some`.'
-  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to NOT be a `Some`.'
+  func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be `Some`.'
+  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to be `None`.'
 end
 
 domain expectation: NoneOptionExpectation
@@ -155,5 +151,5 @@ domain expectation: NoneOptionExpectation
   func matches?(None): Boolean = true
 
   func failure_message(actual_value: Any): String = 'Expected `$actual_value` to be `None`.'
-  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to NOT be `None`.'
+  func negated_failure_message(actual_value: Any): String = 'Expected `$actual_value` to be `Some`.'
 end

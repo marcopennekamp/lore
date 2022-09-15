@@ -3,4 +3,4 @@ module lore.function
 use lore.tuple.[first, second]
 
 @where A, B, R
-func tupled(f: (A, B) => R): ((A, B)) => R = t => f(first(t), second(t))
+func tupled(f: (A, B) => R): ((A, B)) => R = t => f(t.first, t.second)

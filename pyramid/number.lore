@@ -54,7 +54,7 @@ func inf?(x: Int): Boolean = false
   */
 func approx?(x: Real, y: Real): Boolean = do
   if x == y then return true
-  if nan?(x) || nan?(y) || inf?(x) || inf?(y) then return false
+  if x.nan? || y.nan? || x.inf? || y.inf? then return false
 
   let tolerance = sqrt(Real.epsilon)
   let scale = max(abs(x), abs(y))
@@ -131,22 +131,22 @@ func round(x: Real): Int = intrinsic[Int]('lore.real.round', x)
 /**
   * Computes the sum of all integers in `list`.
   */
-func sum(list: [Int]): Int = list |> fold(0, (a, b) => a + b)
+func sum(list: [Int]): Int = list.fold(0, (a, b) => a + b)
 
 /**
   * Computes the sum of all reals in `list`.
   */
-func sum(list: [Real]): Real = list |> fold(0.0, (a, b) => a + b)
+func sum(list: [Real]): Real = list.fold(0.0, (a, b) => a + b)
 
 /**
   * Computes the product of all integers in `list`.
   */
-func product(list: [Int]): Int = list |> fold(1, (a, b) => a * b)
+func product(list: [Int]): Int = list.fold(1, (a, b) => a * b)
 
 /**
   * Computes the product of all reals in `list`.
   */
-func product(list: [Real]): Real = list |> fold(1.0, (a, b) => a * b)
+func product(list: [Real]): Real = list.fold(1.0, (a, b) => a * b)
 
 module Int do
   // TODO (pyramid): Implement `Int.parse`.

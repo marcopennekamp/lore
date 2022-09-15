@@ -24,19 +24,19 @@ func length(string: String): Int = intrinsic[Int]('lore.string.length', string)
 /**
   * Whether `string` is empty.
   */
-func empty?(string: String): Boolean = byte_size(string) == 0
+func empty?(string: String): Boolean = string.byte_size == 0
 
 /**
   * Whether `string` has at least one code point.
   */
-func present?(string: String): Boolean = !empty?(string)
+func present?(string: String): Boolean = !string.empty?
 
 /**
   * Whether `position` is in the string's length bounds.
   *
   * `bounds_contain?` runs in linear time due to its handling of code points.
   */
-func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && position < length(string)
+func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && position < string.length
 
 /**
   * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, `at!` panics.
@@ -44,10 +44,10 @@ func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && 
   * `at!` runs in linear time due to its handling of code points.
   */
 func at!(string: String, position: Int): String = do
-  if !bounds_contain?(string, position)
+  if !string.bounds_contain?(position)
     panic('Position out of bounds for `String.at!`: $position.')
   end
-  at_unchecked!(string, position)
+  string.at_unchecked!(position)
 end
 
 /**
@@ -62,7 +62,7 @@ func at_unchecked!(string: String, position: Int): String = intrinsic[String]('l
   * `at` runs in linear time due to its handling of code points.
   */
 func at(string: String, position: Int): Option[String] = do
-  if bounds_contain?(string, position) then Some(at_unchecked!(string, position)) else None
+  if string.bounds_contain?(position) then Some(string.at_unchecked!(position)) else None
 end
 
 /**
@@ -71,10 +71,10 @@ end
   * `at_index!` is used to get a full code point via a byte index *in constant time*.
   */
 func at_index!(string: String, index: Int): String = do
-  if !byte_bounds_contain?(string, index)
+  if !string.byte_bounds_contain?(index)
     panic('Index out of bounds for `at_index!`: $index.')
   end
-  at_index_unchecked!(string, index)
+  string.at_index_unchecked!(index)
 end
 
 /**
@@ -88,7 +88,7 @@ func at_index_unchecked!(string: String, index: Int): String = intrinsic[String]
   * `at_index` is used to get a full code point via a byte index *in constant time*.
   */
 func at_index(string: String, index: Int): Option[String] = do
-  if byte_bounds_contain?(string, index) then Some(at_index_unchecked!(string, index)) else None
+  if string.byte_bounds_contain?(index) then Some(string.at_index_unchecked!(index)) else None
 end
 
 /**
@@ -101,16 +101,16 @@ func byte_size(string: String): Int = intrinsic[Int]('lore.string.byte_size', st
 /**
   * Whether `index` is in the string's byte size bounds.
   */
-func byte_bounds_contain?(string: String, index: Int): Boolean = index >= 0 && index < byte_size(string)
+func byte_bounds_contain?(string: String, index: Int): Boolean = index >= 0 && index < string.byte_size
 
 /**
   * Returns the byte at the given `index`. If `index` is out of range, `byte_at!` panics.
   */
 func byte_at!(string: String, index: Int): Int = do
-  if !byte_bounds_contain?(string, index)
+  if !string.byte_bounds_contain?(index)
     panic('Index out of bounds for `byte_at!`: $index.')
   end
-  byte_at_unchecked!(string, index)
+  string.byte_at_unchecked!(index)
 end
 
 /**
@@ -122,7 +122,7 @@ func byte_at_unchecked!(string: String, index: Int): Int = intrinsic[Int]('lore.
   * Returns the byte at the given `index`. If `index` is out of range, returns `None`.
   */
 func byte_at(string: String, index: Int): Option[Int] = do
-  if byte_bounds_contain?(string, index) then Some(byte_at_unchecked!(string, index)) else None
+  if string.byte_bounds_contain?(index) then Some(string.byte_at_unchecked!(index)) else None
 end
 
 /**
@@ -135,7 +135,7 @@ func concat(a: String, b: String): String = '$a$b'
   *
   * TODO (pyramid): This could perhaps benefit from the performance of an intrinsic implementation.
   */
-func concat(strings: [String]): String = fold(strings, '', concat)
+func concat(strings: [String]): String = strings.fold('', concat)
 
 /**
   * Maps `f` to all elements of `list`, producing a list of strings which is then concatenated.
@@ -147,10 +147,10 @@ func concat_map(list: [A], f: B => String): String = list |> map(f) |> concat
   * Joins the string representations of all elements of `list` into a string, separating them with `separator`.
   */
 func join(list: [Any], separator: String): String = do
-  if empty?(list) then return ''
+  if list.empty? then return ''
   concat(
-    init(list) |> concat_map(a => '$a$separator'),
-    last!(list) |> to_string,
+    list.init.concat_map(a => '$a$separator'),
+    list.last!.to_string,
   )
 end
 
@@ -173,14 +173,14 @@ func affix(string: String, prefix: String, suffix: String): String = '$prefix$st
   * Whether the given predicate is true for all code units of the string.
   */
 func all?(string: String, predicate: String => Boolean): Boolean = do
-  let size = byte_size(string)
+  let size = string.byte_size
   let mut i = 0
   while i < size
-    let codepoint = at_index!(string, i)
+    let codepoint = string.at_index!(i)
     if !predicate(codepoint)
       return false
     end
-    i += byte_size(codepoint)
+    i += codepoint.byte_size
   end
   true
 end
@@ -191,11 +191,11 @@ end
 /**
   * Whether the given string consists entirely of whitespace characters.
   */
-func all_whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
+func all_whitespace?(string: String): Boolean = string.all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
 
 /**
   * Whether the given string consists entirely of digits from 0 to 9.
   *
   * TODO (pyramid): This is obviously not optimized.
   */
-func all_digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
+func all_digits?(string: String): Boolean = string.all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')

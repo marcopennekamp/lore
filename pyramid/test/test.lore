@@ -13,8 +13,8 @@ end
   * Asserts that `actual_value` matches `expectation`.
   */
 func should(actual_value: Any, expectation: Expectation): Unit = do
-  if !matches?(expectation, actual_value)
-    fail(failure_message(expectation, actual_value))
+  if !expectation.matches?(actual_value)
+    fail(expectation.failure_message(actual_value))
   end
 end
 
@@ -22,8 +22,8 @@ end
   * Asserts that `actual_value` does not match `expectation`.
   */
 func should_not(actual_value: Any, expectation: Expectation): Unit = do
-  if matches?(expectation, actual_value)
-    fail(negated_failure_message(expectation, actual_value))
+  if expectation.matches?(actual_value)
+    fail(expectation.negated_failure_message(actual_value))
   end
 end
 

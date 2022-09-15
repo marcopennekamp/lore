@@ -4,9 +4,9 @@ module lore.number
 use lore.test._
 
 spec '`inf?` recognizes `Real.pos_inf` and `Real.neg_inf`' do
-  inf?(Real.pos_inf) should be_true
-  inf?(Real.neg_inf) should be_true
-  inf?(0.0) should be_false
+  Real.pos_inf.inf? should be_true
+  Real.neg_inf.inf? should be_true
+  0.0.inf? should be_false
 end
 
 spec '`approx?` calculates approximate equality of positive and negative numbers' do

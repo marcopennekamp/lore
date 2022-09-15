@@ -37,7 +37,7 @@ func empty?(None): Boolean = true
 /**
   * Whether the given option is `Some`.
   */
-func present?(option: Option[Any]): Boolean = !empty?(option)
+func present?(option: Option[Any]): Boolean = !option.empty?
 
 /**
   * Returns the option's value if it is something, or otherwise the alternative value.

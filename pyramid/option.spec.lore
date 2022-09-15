@@ -8,9 +8,9 @@ spec '`get_or_else` returns a Some\'s value or the alternative value for None' d
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
 
-  get_or_else(a, 'fallback') should_eq 'test'
-  get_or_else(b, 'fallback') should_eq 42
-  get_or_else(c, 'fallback') should_eq 'fallback'
+  a.get_or_else('fallback') should_eq 'test'
+  b.get_or_else('fallback') should_eq 42
+  c.get_or_else('fallback') should_eq 'fallback'
 end
 
 // TODO (pyramid): We should be able to test that `get!` panics when a None is encountered...
@@ -18,8 +18,8 @@ spec '`get!` returns a Some\'s value' do
   let a: Option[String] = Some('test')
   let b: Option[Int] = Some(42)
 
-  get!(a) should_eq 'test'
-  get!(b) should_eq 42
+  a.get! should_eq 'test'
+  b.get! should_eq 42
 end
 
 spec '`empty?` and `present?` report the absence/presence of a value' do
@@ -27,11 +27,11 @@ spec '`empty?` and `present?` report the absence/presence of a value' do
   let b: Option[Int] = Some(42)
   let c: Option[String] = None
 
-  empty?(a) should be_false
-  empty?(b) should be_false
-  empty?(c) should be_true
+  a.empty? should be_false
+  b.empty? should be_false
+  c.empty? should be_true
 
-  present?(a) should be_true
-  present?(b) should be_true
-  present?(c) should be_false
+  a.present? should be_true
+  b.present? should be_true
+  c.present? should be_false
 end

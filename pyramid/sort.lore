@@ -29,24 +29,24 @@ func merge_sort(list: [A]): [A] = merge_sort(list, lore.core.less_than?)
   */
 @where A, B >: A
 func merge_sort(list: [A], lt?: (B, B) => Boolean): [A] = do
-  if length(list) <= 1
+  if list.length <= 1
     return list
   end
 
   // TODO (case): Goddamn it, this needs pattern matching! It could be (with tuple mapping):
   //                let (left, right) = split(list) |> map(merge_sort(_, lt?))
-  let split_lists = split(list)
-  let list1 = first(split_lists) |> merge_sort(lt?)
-  let list2 = second(split_lists) |> merge_sort(lt?)
+  let split_lists = list.split
+  let list1 = split_lists.first |> merge_sort(lt?)
+  let list2 = split_lists.second |> merge_sort(lt?)
 
   let mut result: [A] = []
   let mut i1 = 0
   let mut i2 = 0
-  let len1 = length(list1)
-  let len2 = length(list2)
+  let len1 = list1.length
+  let len2 = list2.length
   while i1 < len1 && i2 < len2
-    let e1 = get!(list1, i1)
-    let e2 = get!(list2, i2)
+    let e1 = list1.get!(i1)
+    let e2 = list2.get!(i2)
 
     // We're using `lt` with flipped operands instead of an `lte`, as it can be generally assumed that `lt` will be
     // faster, due to the default implementation of `lore.core.less_than_equal?`. If `e1` and `e2` are equal, the
@@ -61,11 +61,11 @@ func merge_sort(list: [A], lt?: (B, B) => Boolean): [A] = do
   end
 
   while i1 < len1
-    result = result :+ get!(list1, i1)
+    result = result :+ list1.get!(i1)
     i1 += 1
   end
   while i2 < len2
-    result = result :+ get!(list2, i2)
+    result = result :+ list2.get!(i2)
     i2 += 1
   end
 
