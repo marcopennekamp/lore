@@ -4,19 +4,19 @@ module examples.sort_numbers
 
 use lore.list.[sort, sorted?]
 
-func main(): [Int] = sort(numbers)
+func main(): [Int] = numbers.sort()
 
 @root
 module examples do
   use lore.test._
 
   spec 'sort_numbers: `List.sort` sorts a list of numbers' do
-    sorted?(main()) should be_true
+    main().sorted? should be_true
   end
 
   @bench_only
   spec 'sort_numbers: sort a list of 1000 random integers' do
-    sort(numbers)
+    numbers.sort()
   end
 end
 

@@ -22,13 +22,13 @@ module language.schemas do
     let f3 = IntConsumer(x => x * 0.4)
     let f4 = Int2IntFunction(x => x + 2)
 
-    apply(f1, 5) should_eq 'hey int 5'
-    apply(f1, 2) should_eq 'hey int 2'
-    apply(f2, []) should_eq ''
-    apply(f2, [1, 2, 3]) should_eq 'hey int 1, hey int 2, hey int 3'
-    apply(f3, 5) should_eq 2.0
-    apply(f3, 2) should_eq 0.8
-    apply(f4, 2) should_eq 4
-    apply(f4, -1) should_eq 1
+    f1.apply(5) should_eq 'hey int 5'
+    f1.apply(2) should_eq 'hey int 2'
+    f2.apply([]) should_eq ''
+    f2.apply([1, 2, 3]) should_eq 'hey int 1, hey int 2, hey int 3'
+    f3.apply(5) should_eq 2.0
+    f3.apply(2) should_eq 0.8
+    f4.apply(2) should_eq 4
+    f4.apply(-1) should_eq 1
   end
 end

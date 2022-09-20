@@ -3,7 +3,7 @@ module language.syntax.loops
 use lore.number.to_real
 
 func divide_by_2(a: Int, b: Int): Real = do
-  let mut r = to_real(a)
+  let mut r = a.to_real
   while r > b yield r /= 2
   r
 end

@@ -26,8 +26,7 @@ domain combatant: Combatant
     fold(
       combatant.status_effects.effects,
       base,
-      // TODO (multi-import): Is the `: A` needed here?
-      (value: A, effect) => effect.affect(stat_label, value)
+      (value, effect) => effect.affect(stat_label, value)
     )
   end
 end

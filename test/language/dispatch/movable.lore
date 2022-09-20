@@ -11,9 +11,13 @@ domain movable: Movable
   act set_position(Position)
 
   act move(x: Real, y: Real, z: Real) do
-    let old = position(movable)
-    let position = Position(old.x + x, old.y + y, old.z + z)
-    set_position(movable, position)
+    movable.set_position(
+      Position(
+        movable.position.x + x,
+        movable.position.y + y,
+        movable.position.z + z,
+      ),
+    )
   end
 end
 
@@ -24,6 +28,7 @@ end
 
 domain zombie: Zombie
   func position(): Position = zombie.position
+
   act set_position(position: Position) do
     zombie.position = position
   end
@@ -35,7 +40,7 @@ func update(a: A): A where A = a
 // have a concrete type at compile-time.
 @where A <: Movable
 func update(a: A): A = do
-  move(a, 1.7, 1.5, 0.0)
+  a.move(1.7, 1.5, 0.0)
   a
 end
 
@@ -45,7 +50,7 @@ module language.dispatch do
 
   spec 'movable: `update` moves the zombie' do
     let zombie = Zombie { name = 'Fred', position = Position(0.0, 1.0, 0.5) }
-    let updated_zombie = update(zombie)
+    let updated_zombie = zombie.update()
     updated_zombie.position should_eq Position(1.7, 2.5, 0.5)
   end
 end

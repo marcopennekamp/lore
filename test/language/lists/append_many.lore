@@ -20,11 +20,11 @@ module language.lists do
 
   spec 'append_many: `main` appends 1000 numbers to a list' do
     let numbers = main()
-    length(numbers) should_eq 1000
-    head!(numbers) should_eq 0
-    last!(numbers) should_eq 999
-    sum(numbers) should_eq 499500
-    sorted?(numbers) should be_true
+    numbers.length should_eq 1000
+    numbers.head! should_eq 0
+    numbers.last! should_eq 999
+    numbers.sum() should_eq 499500
+    numbers.sorted? should be_true
   end
 
   @bench_only

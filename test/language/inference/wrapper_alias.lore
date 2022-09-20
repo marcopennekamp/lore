@@ -7,12 +7,11 @@ struct Wrapper[-A, +B](function: A => B)
 struct StringWrapper[X] = Wrapper[X, String]
 
 @where A, B >: A, C
-func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = map(list, wrapper.function)
+func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = list.map(wrapper.function)
 
 func map_numbers(): [String] = do
   let numbers = [1, 3, 5]
-  map_wrapper(
-    numbers,
+  numbers.map_wrapper(
     StringWrapper(n => do
       List.repeat('Hey!', n) |> join(' ')
     end),

@@ -8,13 +8,13 @@ domain shape: Shape
   func width(): Real
   func height(): Real
 
-  func area(): Real = width(shape) * height(shape)
+  func area(): Real = shape.width * shape.height
 end
 
 @root
 module lore.core do
-  func less_than?(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
-  func less_than_equal?(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+  func less_than?(s1: Shape, s2: Shape): Boolean = s1.area < s2.area
+  func less_than_equal?(s1: Shape, s2: Shape): Boolean = s1.area <= s2.area
 end
 
 struct BoundingBox extends Shape
@@ -65,9 +65,9 @@ module examples do
     let circle = Circle(0.0, 5.0, 2.7)
     let rect = Rectangle(-5.0, -5.0, 20.0, 77.0)
 
-    area(box) should_eq 250.0
-    area(circle) should_eq 22.902210444671102
-    area(rect) should_eq 1540.0
+    box.area should_eq 250.0
+    circle.area should_eq 22.902210444671102
+    rect.area should_eq 1540.0
   end
 
   spec 'geometry: shapes are ordered by area' do

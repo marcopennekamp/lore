@@ -51,7 +51,7 @@ module language.syntax do
 
     ahoo.woo should_eq 'bar'
     ahoo2.ah should_eq 'boo'
-    second(get_tuple(1, 'hello')) should_eq 'hello'
+    get_tuple(1, 'hello').second should_eq 'hello'
     get_shape().name should_eq 'Aurifana'
   end
 end

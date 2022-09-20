@@ -49,7 +49,7 @@ func main(): [String] = do
   ]
   airbornes |> symmetric_pairs |> flat_map(
     // TODO (case): This needs pattern matching.
-    pair => if first(pair) == second(pair) then ['${name(first(pair))} == ${name(second(pair))}'] else []
+    pair => if pair.first == pair.second then ['${pair.first.name} == ${pair.second.name}'] else []
   )
 end
 

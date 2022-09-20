@@ -14,8 +14,8 @@ module language.syntax do
 
   spec 'special_characters: the compiler can parse special characters in type and variable identifiers' do
     truly?(Bar?(true)) should be_true
-    truly?(Bar?(false)) should be_false
-    truly?(%{ no?: true }) should be_false
+    Bar?(false).truly? should be_false
+    %{ no?: true }.truly? should be_false
     truly?(%{ no?: false }) should be_true
   end
 end

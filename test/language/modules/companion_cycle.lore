@@ -18,6 +18,6 @@ module language.modules do
 
   spec 'companion_cycle: create a `Child` and pass it to `get_something`' do
     let child = Child()
-    get_something(child) should_eq 'something'
+    child.get_something should_eq 'something'
   end
 end

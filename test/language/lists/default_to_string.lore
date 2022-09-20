@@ -11,12 +11,12 @@ module lore.core do
 end
 
 func main(): String = do
-  to_string([
+  [
     Some(5),
     None,
     Person('joe', 32),
     Some([5.0, #hello, Person('amy', 25)]),
-  ])
+  ].to_string
 end
 
 @root

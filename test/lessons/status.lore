@@ -16,6 +16,6 @@ func process(value: Int): (Status, String) = cond
   true      => (#error, 'At or above five.')
 end
 
-func stringify(result: (Status, String)): String = stringify(first(result))
+func stringify(result: (Status, String)): String = result.first.stringify()
 
 func main(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(first) |> map(stringify)

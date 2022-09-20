@@ -283,6 +283,7 @@
 ##### IntelliJ
 
 - Add IntelliJ support via a plugin library like this: https://github.com/ballerina-platform/lsp4intellij.
+  - Jetbrains Fleet will support LSP. So maybe wait for that.
 
 
 #### Example Programs

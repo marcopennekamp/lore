@@ -5,7 +5,7 @@ use lore.list.[map, filter]
 
 let default_name: String = 'John Doe'
 
-let lazy_variable: [Int] = complex_lazy_variable |> filter(n => n >= 3)
+let lazy_variable: [Int] = complex_lazy_variable.filter(n => n >= 3)
 
 let complex_lazy_variable: [Int] = do
   let a = 5
@@ -25,6 +25,6 @@ module language.variables do
   use lore.test._
 
   spec 'global: access complex global variables lazily' do
-    map(crazy_variable, to_string) should_eq ['John Doe', '[2, 3, 4]', '[3, 4]']
+    crazy_variable.map(to_string) should_eq ['John Doe', '[2, 3, 4]', '[3, 4]']
   end
 end

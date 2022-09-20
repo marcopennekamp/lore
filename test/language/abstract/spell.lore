@@ -35,10 +35,13 @@ func raw_damage(Spike[Earth, Specialty, Any]): Damage = 8
 
 // We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
 // that the totality constraint sees that all possibilities have been covered.
-func damage_of(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculate_damage(raw_damage(spell), defense)
+func damage_of(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = do
+  calculate_damage(spell.raw_damage, defense)
+end
+
 func damage_of(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = do
   // `Penetrating` ignores 50% of defense. Note that the `/ 2` is integer division, so it results in a truncated Int.
-  calculate_damage(raw_damage(spell), defense / 2)
+  calculate_damage(spell.raw_damage, defense / 2)
 end
 
 func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_damage - defense, 0)

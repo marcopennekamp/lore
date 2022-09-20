@@ -29,9 +29,9 @@ module language.shapes do
     let mild = %{ show_teeth?: false, volume: 49.2 }
     let aggressive = %{ show_teeth?: true, volume: 81.7 }
 
-    bark(duck, mild) should_eq 'Your duck Poppy barks at a real quiet volume.'
-    bark(duck, aggressive) should_eq 'Your duck Poppy barks at a MADNESS-INDUCING volume showing sharp teeth.'
-    bark(dog, mild) should_eq 'Your dog Raider barks at a real quiet volume.'
-    bark(dog, aggressive) should_eq 'Your dog Raider barks at a MADNESS-INDUCING volume showing sharp teeth.'
+    duck.bark(mild) should_eq 'Your duck Poppy barks at a real quiet volume.'
+    duck.bark(aggressive) should_eq 'Your duck Poppy barks at a MADNESS-INDUCING volume showing sharp teeth.'
+    dog.bark(mild) should_eq 'Your dog Raider barks at a real quiet volume.'
+    dog.bark(aggressive) should_eq 'Your dog Raider barks at a MADNESS-INDUCING volume showing sharp teeth.'
   end
 end

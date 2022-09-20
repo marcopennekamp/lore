@@ -54,7 +54,7 @@ module Multiplier do
   // The multiplier of a figure X is 10^X, so we can calculate the multiplier here. The `Multiplier &` intersection is
   // necessary because `Figure` is not a subtype of `Multiplier`. If `figure` was just typed as `Figure`, the
   // multi-function call would be ambiguous for a type such as `Green` which extends both `Figure` and `Multiplier`.
-  func of(figure: Multiplier & Figure): Real = pow(10.0, to_real(Figure.of(figure)))
+  func of(figure: Multiplier & Figure): Real = pow(10.0, Figure.of(figure).to_real)
 end
 
 module Tolerance do
@@ -90,13 +90,13 @@ module Rating do
     tolerance_code: Option[Tolerance],
   ): Rating = do
     // TODO (case): This should be solved with pattern matching.
-    let base = if present?(figure3)
-      100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(get!(figure3))
+    let base = if figure3.present?
+      100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(figure3.get!)
     else
       10 * Figure.of(figure1) + Figure.of(figure2)
     end
     let raw = base * Multiplier.of(multiplier_code)
-    let tolerance = tolerance_code |> map(Tolerance.of) |> get_or_else(0.2)
+    let tolerance = tolerance_code.map(Tolerance.of).get_or_else(0.2)
     Rating(raw * (1 - tolerance), raw * (1 + tolerance))
   end
 end

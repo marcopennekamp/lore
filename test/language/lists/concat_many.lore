@@ -22,8 +22,8 @@ module language.lists do
 
   spec 'concat_many: `main` concatenates 100 lists of 50 elements each' do
     let result = main()
-    length(result) should_eq 5000
-    all?(result, n => n == 42) should be_true
+    result.length should_eq 5000
+    result.all?(n => n == 42) should be_true
   end
 
   @bench_only

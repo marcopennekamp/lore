@@ -100,7 +100,7 @@ func color_factor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 // trade.
 // ---------------------------------------------------------------------------------------------------------------------
 
-func weapon_factor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
+func weapon_factor(suspect: Suspect): Real = 1 + suspect.profession.tool.bluntness / 2
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life. Some were blessed

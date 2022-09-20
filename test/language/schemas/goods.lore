@@ -23,8 +23,8 @@ module language.schemas do
 
   // The spec ensures that nested type arguments are taken into account correctly during dispatch.
   spec 'price: `price` calculates the price of different metals in boxes based on their type arguments' do
-    price(Box(Gold)) should_eq 48.5
-    price(Box(Silver)) should_eq 17.2
-    price(Box(Iron)) should_eq 1.6
+    Box(Gold).price should_eq 48.5
+    Box(Silver).price should_eq 17.2
+    Box(Iron).price should_eq 1.6
   end
 end

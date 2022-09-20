@@ -4,9 +4,7 @@ use lore.list.[filter, map]
 use lore.number.rem
 
 @where A
-func filter_curried(f: A => Boolean): [A] => [A] = do
-  list => filter(list, f)
-end
+func filter_curried(f: A => Boolean): [A] => [A] = list => list.filter(f)
 
 @root
 module language.functions do

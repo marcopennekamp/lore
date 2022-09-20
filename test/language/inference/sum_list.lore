@@ -19,6 +19,6 @@ module language.inference do
 
   spec 'sum_list: a list of cats and dogs is typed as `[Cat | Dog]` and not `[Animal]` if the type context requires it' do
     let animals: [Cat | Dog] = [Cat, Dog, Cat]
-    map(animals, to_string) should_eq ['cat', 'dog', 'cat']
+    animals.map(to_string) should_eq ['cat', 'dog', 'cat']
   end
 end

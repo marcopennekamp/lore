@@ -27,7 +27,7 @@ end
 //       run-time error. This is acceptable, but might not be good enough.
 @where A
 domain array: NaiveArray[A]
-  func at(index: Int): A = get!(array.underlying, index)
+  func at(index: Int): A = array.underlying.get!(index)
 
   @where E <: A
   act prepend(element: E) do
@@ -40,11 +40,11 @@ domain array: NaiveArray[A]
   end
 
   act remove_first() do
-    array.underlying = tail(array.underlying)
+    array.underlying = array.underlying.tail
   end
 
   act remove_last() do
-    array.underlying = init(array.underlying)
+    array.underlying = array.underlying.init
   end
 end
 
@@ -55,17 +55,17 @@ module language.schemas do
   spec 'array: elements can be added and removed from NaiveArrays' do
     let array = NaiveArray([1, 2])
 
-    append(array, 3)
-    append(array, 4)
-    append(array, 5)
+    array.append(3)
+    array.append(4)
+    array.append(5)
     array.underlying should_eq [1, 2, 3, 4, 5]
 
-    prepend(array, 0)
+    array.prepend(0)
     array.underlying should_eq [0, 1, 2, 3, 4, 5]
 
-    remove_last(array)
-    remove_first(array)
-    remove_first(array)
+    array.remove_last()
+    array.remove_first()
+    array.remove_first()
     array.underlying should_eq [2, 3, 4]
   end
 end

@@ -23,8 +23,8 @@ struct Parameterized[A](value: Int)
 
 @root
 module lore.core do
-  func equal?(a: IgnoreCase, b: IgnoreCase): Boolean = to_lower(a.string) == to_lower(b.string)
-  func hash(value: IgnoreCase): Int = to_lower(value.string) |> hash
+  func equal?(a: IgnoreCase, b: IgnoreCase): Boolean = a.string.to_lower == b.string.to_lower
+  func hash(value: IgnoreCase): Int = value.string.to_lower.hash
 end
 
 // We have to use `Any` as a type for the variables so that the compiler doesn't generate the direct comparison

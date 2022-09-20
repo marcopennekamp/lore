@@ -17,9 +17,9 @@ func transcribe(#t): #a = #a
 func transcribe(#g): #c = #c
 func transcribe(#c): #g = #g
 
-func transcribe(dna: Dna): Rna = dna |> map(transcribe)
+func transcribe(dna: Dna): Rna = dna.map(transcribe)
 
-func stringify(rna: Rna): String = rna |> concat_map(Symbol.name)
+func stringify(rna: Rna): String = rna.concat_map(Symbol.name)
 
 func main(): [String] = do
   let cases = [

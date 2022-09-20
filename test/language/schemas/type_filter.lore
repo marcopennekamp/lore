@@ -47,8 +47,8 @@ module language.schemas do
 
   spec 'type_filter: `filter_type` filters list elements based on their type' do
     let list = [12, 5, 'hello world', #schwifty, 37, 'cool world', false]
-    filter_type(list, TypeFilter[Int]()) should_eq [12, 5, 37]
-    filter_type(list, TypeFilter[String]()) should_eq ['hello world', 'cool world']
-    filter_type(list, TypeFilter[#schwifty]()) should_eq [#schwifty]
+    list.filter_type(TypeFilter[Int]()) should_eq [12, 5, 37]
+    list.filter_type(TypeFilter[String]()) should_eq ['hello world', 'cool world']
+    list.filter_type(TypeFilter[#schwifty]()) should_eq [#schwifty]
   end
 end

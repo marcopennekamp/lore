@@ -21,7 +21,7 @@ func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-func perexonate(option: Option[Int]): Int = get_or_else(option, 0)
+func perexonate(option: Option[Int]): Int = option.get_or_else(0)
 
 @root
 module language.schemas do

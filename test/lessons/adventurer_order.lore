@@ -34,7 +34,7 @@ func main(): [String] = do
     Adventurer(5, 'Eliza', merchant_equipment),
     Adventurer(0, 'Steve', knight_equipment),
   ]
-  sort(adventurers) |> map(to_string)
+  adventurers |> sort |> map(to_string)
 end
 
 @root

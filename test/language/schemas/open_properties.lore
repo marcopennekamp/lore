@@ -26,8 +26,8 @@ module language.schemas do
   // Once struct types are interned, this verifies that struct types with open properties are correctly interned. Open
   // property types must be taken into account.
   spec 'open_properties: stringify boxes with an open property type using shape types for dispatch' do
-    to_string(Box[Content](Juice)) should_eq 'thing with content'
-    to_string(Box[Content](Berry)) should_eq 'thing with content'
-    to_string(Box[Content](Hammer)) should_eq 'thing with hammer'
+    Box[Content](Juice).to_string should_eq 'thing with content'
+    Box[Content](Berry).to_string should_eq 'thing with content'
+    Box[Content](Hammer).to_string should_eq 'thing with hammer'
   end
 end

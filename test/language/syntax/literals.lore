@@ -50,7 +50,7 @@ module language.syntax do
   use lore.test._
 
   spec 'literals: the compiler can parse literals' do
-    (all_literals() |> map(to_string)) should_eq [
+    all_literals().map(to_string) should_eq [
       '0',
       '-15',
 

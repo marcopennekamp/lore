@@ -22,6 +22,6 @@ module language.inference do
     // the type ascription, `option`'s type would be `Option[Fox]`.
     let mut option = Option.some(Fox :: Animal)
     option = Some(Mouse)
-    to_string(option) should_eq 'Some(mouse)'
+    option.to_string should_eq 'Some(mouse)'
   end
 end

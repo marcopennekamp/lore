@@ -11,7 +11,7 @@ module language.multi_references do
     let list = [1, 2, 3]
     let option = Some(1)
 
-    get!(list, 2) should_eq 3
-    get!(option) should_eq 1
+    list.get!(2) should_eq 3
+    option.get! should_eq 1
   end
 end

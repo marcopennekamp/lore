@@ -30,7 +30,7 @@ module language.schemas do
       Some { value = [Dragon, Dragon, Dragon] },
     ]
 
-    map(options, to_string) should_eq [
+    options.map(to_string) should_eq [
       'None',
       'Some(Hello, world!)',
       'Some([1, 2, 3])',

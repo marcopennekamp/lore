@@ -6,12 +6,11 @@ use lore.string.join
 struct Wrapper[-A, +B](function: A => B)
 
 @where A, B >: A, C
-func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = map(list, wrapper.function)
+func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = list.map(wrapper.function)
 
 func map_numbers(): [String] = do
   let numbers = [1, 2, 3]
-  map_wrapper(
-    numbers,
+  numbers.map_wrapper(
     Wrapper(n => do
       List.repeat('Hey!', n) |> join(' ')
     end),
