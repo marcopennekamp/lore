@@ -1,6 +1,6 @@
 package lore.compiler.resolution.initialization
 
-import lore.compiler.feedback.{AliasFeedback, SchemaFeedback, StructFeedback}
+import lore.compiler.feedback.{AliasFeedback, SchemaFeedback, TypingFeedback}
 import lore.compiler.test.BaseSpec
 
 class DefinitionInitializationSpec extends BaseSpec {
@@ -16,7 +16,7 @@ class DefinitionInitializationSpec extends BaseSpec {
       (classOf[SchemaFeedback.InheritanceCycle], 8),
       (classOf[AliasFeedback.StructExpected], 15),
       (classOf[AliasFeedback.ObjectExpected], 19),
-      (classOf[StructFeedback.Object.MemberNotFound], 30),
+      (classOf[TypingFeedback.Member.NotFound], 30),
     )
   }
 

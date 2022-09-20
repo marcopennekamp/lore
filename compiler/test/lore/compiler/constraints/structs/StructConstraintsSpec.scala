@@ -1,6 +1,5 @@
 package lore.compiler.constraints.structs
 
-import lore.compiler.constraints.VarianceConstraints
 import lore.compiler.feedback.{StructFeedback, TypingFeedback}
 import lore.compiler.test.BaseSpec
 
@@ -9,10 +8,10 @@ class StructConstraintsSpec extends BaseSpec {
 
   s"$fragmentBase/companion_modules" should "be compiled with various companion module errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/companion_modules.lore")(
-      (classOf[StructFeedback.CompanionModuleExpected], 4),
+      (classOf[TypingFeedback.Member.NotFound], 4),
       (classOf[StructFeedback.Object.MemberNameTaken], 15),
       (classOf[StructFeedback.Object.MemberNameTaken], 17),
-      (classOf[StructFeedback.Object.MemberNotFound], 27),
+      (classOf[TypingFeedback.Member.NotFound], 27),
     )
   }
 

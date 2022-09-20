@@ -1,7 +1,7 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
+import lore.compiler.feedback.{ExpressionFeedback, Reporter}
 import lore.compiler.semantics.bindings.{StructBinding, StructConstructorBinding, StructObjectBinding, TermBinding}
 import lore.compiler.semantics.expressions.untyped.UntypedExpression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedAccess, UntypedBindingAccess, UntypedMemberAccess}
@@ -75,44 +75,41 @@ object AccessTransformation {
     }
 
     val nameNode = remaining.head
+    lazy val simpleResult = Some((binding, fullPosition, remaining))
 
-    def handleModule(module: GlobalModule) = {
-      termScope
-        .resolveGlobal(module.name + nameNode.value, nameNode.position)
-        .flatMap(resolveAccessInstanceBinding(_, remaining.tail, nameNode.position, fullPosition.to(nameNode.position)))
+    def rec(binding: TermBinding) = {
+      resolveAccessInstanceBinding(binding, remaining.tail, nameNode.position, fullPosition.to(nameNode.position))
     }
 
-    def handleCompanionModule(binding: StructBinding, error: => Feedback.Error) = {
-      binding.companionModule match {
-        case Some(module) => handleModule(module)
-        case None =>
-          reporter.error(error)
-          None
+    def getMember(module: GlobalModule) = {
+      termScope.resolveGlobal(module.name + nameNode.value, nameNode.position)
+    }
+
+    def handleCompanionModule(binding: StructBinding) = {
+      // If the companion module doesn't exist or if the member cannot be found in the companion module, the member
+      // access must be a UCS call which will be resolved during typing.
+      binding.companionModule.flatMap(getMember) match {
+        case Some(member) => rec(member)
+        case None => simpleResult
       }
     }
 
     binding match {
-      case module: GlobalModule => handleModule(module)
-
-      case binding: StructConstructorBinding => handleCompanionModule(
-        binding,
-        StructFeedback.CompanionModuleExpected(binding, nameNode.value, nameNode.position),
-      )
+      case module: GlobalModule => getMember(module).flatMap(rec)
+      case binding: StructConstructorBinding => handleCompanionModule(binding)
 
       case binding: StructObjectBinding =>
-        // If the struct object contains a property with the given name, we can be sure that the companion module
-        // doesn't contain a member with such a name and thus the struct object binding is the actual instance. In
-        // all other cases, the struct object must have a companion module with the requisite member.
+        // If the struct object contains a property with the given name, we can be sure (by constraint) that the
+        // companion module doesn't contain a member with such a name and thus the struct object binding is the actual
+        // instance. In all other cases, the struct object either must have a companion module with the requisite
+        // member, or the member name is treated as a UCS call during typing.
         if (binding.tpe.member(nameNode.value).isDefined) {
           Some((binding, fullPosition, remaining))
         } else {
-          handleCompanionModule(
-            binding,
-            StructFeedback.Object.MemberNotFound(binding, nameNode.value, nameNode.position),
-          )
+          handleCompanionModule(binding)
         }
 
-      case binding => Some((binding, fullPosition, remaining))
+      case _ => simpleResult
     }
   }
 

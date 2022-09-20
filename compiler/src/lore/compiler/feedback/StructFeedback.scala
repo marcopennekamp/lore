@@ -2,7 +2,7 @@ package lore.compiler.feedback
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.bindings.{StructBinding, StructObjectBinding}
+import lore.compiler.semantics.bindings.StructObjectBinding
 import lore.compiler.syntax.DeclNode.PropertyNode
 import lore.compiler.types.{ShapeType, StructProperty, StructSchema, TypeVariable}
 
@@ -18,15 +18,6 @@ object StructFeedback {
 
   case class ConstructorExpected(name: NamePath, positioned: Positioned) extends Feedback.Error(positioned) {
     override def message: String = s"The type `$name` doesn't have an associated constructor, as it isn't a struct."
-  }
-
-  case class CompanionModuleExpected(
-    binding: StructBinding,
-    memberName: String,
-    positioned: Positioned,
-  ) extends Feedback.Error(positioned) {
-    override def message: String = s"The struct `${binding.name}` does not have a companion module which" +
-      s" might define a member `$memberName`."
   }
 
   object Instantiation {
@@ -112,15 +103,6 @@ object StructFeedback {
     ) extends Feedback.Error(memberPosition) {
       override def message: String = s"The struct object `${schema.name.simpleName}` already has a property `$name`." +
         s" Companion module members and struct properties may not share names."
-    }
-
-    case class MemberNotFound(
-      binding: StructObjectBinding,
-      memberName: String,
-      positioned: Positioned,
-    ) extends Feedback.Error(positioned) {
-      override def message: String = s"The struct object `${binding.name}` does not have a property `$memberName`," +
-        s" nor a companion module which might define such a member."
     }
   }
 
