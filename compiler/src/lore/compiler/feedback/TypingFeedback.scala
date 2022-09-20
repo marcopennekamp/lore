@@ -9,6 +9,7 @@ import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
+import lore.compiler.typing.CallTyping.UntypedOrTypedExpression
 
 object TypingFeedback {
 
@@ -230,8 +231,12 @@ object TypingFeedback {
   }
 
   object Member {
-    case class NotFound(expression: UntypedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
-      override def message: String = s"The type `$instanceType` does not have a member `${expression.name}`."
+    case class NotFound(
+      expression: UntypedMemberAccess,
+      instance: UntypedOrTypedExpression,
+    ) extends Feedback.Error(expression) {
+      override def message: String = s"`${instance.merge.position.truncatedCode}` does not have a member" +
+        s" `${expression.name}`."
     }
   }
 

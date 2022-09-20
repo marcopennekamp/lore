@@ -20,6 +20,7 @@ trait Type extends TypeSchema with HasMembers {
   def isPrimitive: Boolean = Type.isPrimitive(this)
   def isNumeric: Boolean = Type.isNumeric(this)
   def isSymbol: Boolean = Type.isSymbol(this)
+  def isFunction: Boolean = Type.isFunction(this)
   def isAbstract: Boolean = Type.isAbstract(this)
   def isConcrete: Boolean = Type.isConcrete(this)
   def isPolymorphic: Boolean = Type.isPolymorphic(this)
@@ -75,6 +76,18 @@ object Type {
   def isSymbol(t: Type): Boolean = t match {
     case SumType(parts) => parts.forall(isSymbol)
     case _: SymbolType => true
+    case _ => false
+  }
+
+  /**
+    * Whether `t` is a function type.
+    *
+    * TODO: This doesn't take type variables or all possible intersection types into account. The better way to
+    *       implement this would be checking `t <= (Nothing => Any)`, but function types expect a tuple type as their
+    *       input type. Improving this situation will need larger refactoring.
+    */
+  def isFunction(t: Type): Boolean = t match {
+    case _: FunctionType => true
     case _ => false
   }
 

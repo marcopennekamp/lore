@@ -2,11 +2,11 @@ package lore.compiler.typing
 
 import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, TermBinding, TypedTermBinding, UntypedLocalVariable}
+import lore.compiler.semantics.bindings.{AmbiguousMultiFunction, TypedTermBinding, UntypedLocalVariable}
 import lore.compiler.semantics.expressions.typed.Expression.MemberAccess
 import lore.compiler.semantics.expressions.untyped.UntypedExpression.{UntypedBindingAccess, UntypedLambdaValue, UntypedMemberAccess, UntypedValueCall}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.types.{BasicType, Type}
+import lore.compiler.types.Type
 import lore.compiler.typing.CallTyping.UntypedOrTypedExpression
 import lore.compiler.utils.CollectionExtensions.Tuple2OptionExtension
 
@@ -67,20 +67,32 @@ object UniformCallSyntaxTyping {
   )(implicit registry: Registry, reporter: Reporter): Option[InferenceResult] = {
     lazy val callPositioned = valueCall.getOrElse(expression)
 
+    def memberNotFound = {
+      reporter.report(TypingFeedback.Member.NotFound(expression, instance))
+      None
+    }
+
     def getArguments = {
       CallTyping.inferArguments(valueCall.map(_.arguments).getOrElse(Vector.empty), context).mapFirst {
         arguments => instance +: arguments
       }
     }
 
-    def handleValueCallTarget(binding: TermBinding) = {
-      getArguments.flatMap { case (arguments, context2) =>
-        ValueCallTyping.infer(
-          UntypedBindingAccess(binding, expression.position),
-          arguments,
-          callPositioned,
-          context2,
-        )
+    def handleValueCallTarget(binding: TypedTermBinding) = {
+      if (binding.tpe.isFunction) {
+        getArguments.flatMap { case (arguments, context2) =>
+          ValueCallTyping.infer(
+            UntypedBindingAccess(binding, expression.position),
+            arguments,
+            callPositioned,
+            context2,
+          )
+        }
+      } else {
+        // If the binding is not a function, instead of reporting a "function expected" error and confusing the user,
+        // the compiler should report a "member not found" error. This is consistent with UCS only being applicable to
+        // function UCS bindings.
+        memberNotFound
       }
     }
 
@@ -96,11 +108,13 @@ object UniformCallSyntaxTyping {
       }
 
       case Some(binding: TypedTermBinding) => handleValueCallTarget(binding)
-      case Some(binding: UntypedLocalVariable) => handleValueCallTarget(binding)
 
-      case _ =>
-        reporter.report(TypingFeedback.Member.NotFound(expression, instance.map(_.tpe).getOrElse(BasicType.Any)))
-        None
+      case Some(binding: UntypedLocalVariable) => context.localVariables.get(binding.uniqueKey) match {
+        case Some(localVariable) => handleValueCallTarget(localVariable)
+        case None => memberNotFound
+      }
+
+      case _ => memberNotFound
     }
   }
 
