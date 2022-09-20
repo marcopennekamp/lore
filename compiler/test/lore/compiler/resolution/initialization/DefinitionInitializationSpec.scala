@@ -16,7 +16,7 @@ class DefinitionInitializationSpec extends BaseSpec {
       (classOf[SchemaFeedback.InheritanceCycle], 8),
       (classOf[AliasFeedback.StructExpected], 15),
       (classOf[AliasFeedback.ObjectExpected], 19),
-      (classOf[TypingFeedback.Member.NotFound], 30),
+      (classOf[TypingFeedback.Call.IllegalArity], 26),
     )
   }
 

@@ -26,6 +26,5 @@ func main(): [Any] = [
   CyclicAlias2(D),
 
   StructAlias1('test'),
-  // Error: `StructAlias2` does not have a property `foobar` or a companion module with `foobar`.
   StructAlias2.foobar,
 ]
