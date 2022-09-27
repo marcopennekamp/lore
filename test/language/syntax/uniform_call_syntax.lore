@@ -1,0 +1,75 @@
+module language.syntax.uniform_call_syntax
+
+use lore.function.tupled
+use lore.list._
+use lore.number.to_real
+
+let global_int: Int = 5
+let global_list: [Int] = [1, 2, 3]
+
+let apply_global: Int => Int = x => x * x + 3
+
+struct Box(x: Int, y: Int)
+
+func get_x(box: Box): Int = box.x
+
+object Thing do
+  name: String = 'any thing'
+end
+
+func get_name(thing: Thing): String = thing.name
+
+module Thing do
+  let box: Box = Box(12, 12)
+end
+
+@root
+module language.syntax do
+  use lore.test._
+
+  spec 'uniform_call_syntax: call multi-functions on a simple list value' do
+    let list = [1, 2, 3]
+    list.length should_eq 3
+    list.head! should_eq 1
+    list.get!(2) should_eq 3
+    list.tail.map(x => x.to_real) should_eq [2.0, 3.0]
+    list.map(x => x + 1).map(x => x * x) should_eq [4, 9, 16]
+  end
+
+  spec 'uniform_call_syntax: call `tupled` on a multi-function value' do
+    let my_map: (([Int], Int => Int)) => [Int] = map.tupled
+    my_map(([0, 1, 2], x => x + 1)) should_eq [1, 2, 3]
+  end
+
+  spec 'uniform_call_syntax: call a function from a global variable' do
+    0.apply_global should_eq 3
+    2.apply_global should_eq 7
+    global_int.apply_global should_eq 28
+    global_list.tail.last!.apply_global should_eq 12
+  end
+
+  spec 'uniform_call_syntax: call a function from a local variable' do
+    let apply_local = (x: Int) => x * x + 3
+    0.apply_local should_eq 3
+    2.apply_local should_eq 7
+    global_int.apply_local should_eq 28
+    global_list.tail.last!.apply_local should_eq 12
+  end
+
+  spec 'uniform_call_syntax: call multi-functions on struct constructors and objects' do
+    // TODO (syntax): It should be possible to write `Box.tupled((5, 5))` or `(Box.tupled)((5, 5))`. Currently, the
+    //                compiler interprets both as `tupled(Box, (5, 5))`. We have to be conservative here, of course,
+    //                but if `tupled` only has functions of arity 1 or less, we can reasonably assume that `tupled` is
+    //                a "computed property" and that the `((5, 5))` is a separate value call on the `Box.tupled`
+    //                property. `(Box.tupled)((5, 5))` should ALWAYS be unambiguous with `((5, 5))` being a separate
+    //                value call. It's currently not the case either because the parentheses around `Box.tupled` are
+    //                thrown away by the parser and then the value call around it looks the exact same as
+    //                `Box.tupled((5, 5))` during UCS resolution.
+    //Box.tupled((5, 5)).get_x should_eq 5
+    //(Box.tupled)((5, 5)).get_x should_eq 5
+    let make_box = Box.tupled
+    make_box((5, 5)).get_x should_eq 5
+    Thing.get_name should_eq 'any thing'
+    Thing.box.get_x should_eq 12
+  end
+end

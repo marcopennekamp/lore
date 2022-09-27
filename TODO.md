@@ -4,24 +4,11 @@
 
 ##### Minimum Viable Language
 
-- Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
-  - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
-    - Refactor all existing Lore code to utilize uniform call syntax where appropriate.
-    - Add a test `language/syntax/uniform_call_syntax.lore`.
-      - Test `map.tupled` and `((x, y) => x + y).tupled`.
-      - Test `abc.global_variable` (if `global_variable` is a function) and `abc.local_variable` (if `local_variable` is a function).
-      - Test chained function calls such as `[1, 2, 3].map(x => x + 1).map(x => x * 2)`.
-    - Does UCS work with constructors, such as `Position.tupled`? This might be vacuumed up by the object access syntax before UCS is even attempted.
-  - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
-  - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions, or maybe even just `int` and `real` (for syntactic convenience). This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors.
-  - Make sure that all Scala tests succeed.
-    - When Scala tests are currently executed, Pyramid is compiled freshly for each `.lore` test source. This scales badly. Maybe we can exclude Pyramid from Scala tests that don't import any of its functionality.
-  - Test disambiguation for multi-function calls, multi-function values, and fixed functions. Both the happy path and potential errors should be considered. Attention should also be paid to the interplay between local and global availability.
-  - Clear all `TODO (multi-import)` entries.
 - Syntax changes:
   - In the process: Move to Scala 3 and migrate to a different parser library.
   - Move to a full indentation-based syntax. I think this provides the best consistency in the long run. There are already weird syntax rules around if-else (special rule around multi-line/single-line), modules (forced `do`), actions (forced `do`) and functions, cond (`do..end` for bodies with more than one expression), and so on. Significant indentation can fix all of these issues, while keeping the syntax consistent and with less noise overall.
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
+  - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions. This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors. Int literals should also not be usable as Real literals, i.e. `5` should never be typeable as a Real.
   - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
     - One difficulty here is that the user would expect `b` to only be evaluated once. If we parse this naively, `b` will be evaluated twice, causing potential side effects. So it's very likely that a chained comparison would have to use intermediate values for each operand.
   - Rename `act` to `proc`. This would be in line with `func`.
@@ -40,6 +27,7 @@
     - Other uses for single quotes:
       - Identifier characters (like Haskell).
   - Allow string concatenation with `+`, at least until operator overloading is supported.
+  - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
   - Change comments from `//` and `/* */` to `#` and `#[ ]#`? This is way more visually consistent for documentation comments, because the `/** * */` style eats up two lines of code for every documentation comment, while `///` or `//*` adds THREE characters of visual noise to each line. `##` documentation comments clearly separate their intent from regular `#` comments, while being easy to type and only having moderate visual noise.
     - The `#` comment syntax would be unfortunate for symbols and collection types/literals. Using the hashtag for symbols is visually very consistent with a lower-case identifier (e.g. `#name` or `#bear`), as it lines up very well with the top and bottom of most lower-case letters. Here is a table of syntax changes that would be required to introduce `#` comments:
       ```
@@ -232,9 +220,11 @@
 
 #### Testing
 
+- Test multi-function disambiguation for multi-function calls, multi-function values, and fixed functions. Both the happy path and potential errors should be considered. Attention should also be paid to the interplay between local and global availability.
 - Spec execution (VM):
   - Sort specs alphabetically by description to achieve a consistent test execution order.
   - Break words in reported spec descriptions according to the terminal size and indent them after the `okay`/`fail` to improve readability of test/benchmark results.
+- When Scala tests are executed, Pyramid is compiled freshly for each `.lore` test source. This scales badly. Maybe we can exclude Pyramid from Scala tests that don't import any of its functionality.
 - We should invest in a system that can test type system functions in both the compiler and the VM with the same values.
   - This system could read types from a `.lore` file and then a type relationship specification from a text file. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs to both implementations.
   - Such a system is only advisable once we have the compiler written in Lore. Otherwise we're duplicating work which doesn't directly go towards building the compiler in Lore.
