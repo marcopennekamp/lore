@@ -4,7 +4,7 @@ import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.definitions.BindingDefinition
 import lore.compiler.semantics.expressions.typed.Expression
 import lore.compiler.semantics.expressions.untyped.UntypedExpression._
-import lore.compiler.semantics.functions.{FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{FunctionIdentity, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.MultiReference
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.TypeVariable.Variance
@@ -18,8 +18,8 @@ object TypingFeedback {
     expectedType: Type,
     positioned: Positioned,
   ) extends Feedback.Error(positioned) {
-    override def message: String = s"This expression has the illegal type `$actualType`. We expected the following type" +
-      s" (or a subtype thereof): $expectedType."
+    override def message: String = s"`${positioned.position.truncatedCode}` has the illegal type `$actualType`. We" +
+      s" expected the following type (or a subtype thereof): $expectedType."
   }
 
   case class IllegalBounds(
@@ -204,12 +204,12 @@ object TypingFeedback {
 
   object Call {
     case class IllegalArity(
+      function: FunctionIdentity,
       argumentCount: Int,
-      parameterCount: Int,
       positioned: Positioned,
     ) extends Feedback.Error(positioned) {
-      override def message: String = s"A function with $parameterCount parameters cannot be called with $argumentCount" +
-        s" arguments."
+      override def message: String = s"A function `$function` with ${function.arity} parameters cannot be called with" +
+        s" $argumentCount arguments."
     }
   }
 

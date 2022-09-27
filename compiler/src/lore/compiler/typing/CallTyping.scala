@@ -54,7 +54,7 @@ object CallTyping {
     toResult: (Vector[Expression], TypeVariable.Assignments) => R,
   )(implicit registry: Registry, reporter: Reporter): Option[(R, InferenceContext)] = {
     if (arguments.length != function.arity) {
-      reporter.error(TypingFeedback.Call.IllegalArity(arguments.length, function.arity, positioned))
+      reporter.error(TypingFeedback.Call.IllegalArity(function, arguments.length, positioned))
       return None
     }
 
