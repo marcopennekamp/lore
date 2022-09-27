@@ -81,21 +81,21 @@ object AccessTransformation {
       resolveAccessInstanceBinding(binding, remaining.tail, nameNode.position, fullPosition.to(nameNode.position))
     }
 
-    def getMember(module: GlobalModule) = {
-      termScope.resolveGlobal(module.name + nameNode.value, nameNode.position)
-    }
-
     def handleCompanionModule(binding: StructBinding) = {
       // If the companion module doesn't exist or if the member cannot be found in the companion module, the member
       // access must be a UCS call which will be resolved during typing.
-      binding.companionModule.flatMap(getMember) match {
+      binding.companionModule.flatMap(module => termScope.global(module.name + nameNode.value)) match {
         case Some(member) => rec(member)
         case None => simpleResult
       }
     }
 
     binding match {
-      case module: GlobalModule => getMember(module).flatMap(rec)
+      case module: GlobalModule =>
+        termScope
+          .resolveGlobal(module.name + nameNode.value, nameNode.position)
+          .flatMap(rec)
+
       case binding: StructConstructorBinding => handleCompanionModule(binding)
 
       case binding: StructObjectBinding =>
