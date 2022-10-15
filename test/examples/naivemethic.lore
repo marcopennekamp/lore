@@ -1,44 +1,33 @@
 module examples.naivemethic
 
-func add(a: Int, b: Int): Int = do
-  let mut result = a
-  let mut remaining = b
+func add(a: Int, b: Int): Int =
+  var result = a
+  var remaining = b
 
-  while remaining > 0
+  while remaining > 0 do
     result += 1
     remaining -= 1
-  end
 
-  while remaining < 0
+  while remaining < 0 do
     result -= 1
     remaining += 1
-  end
 
   result
-end
 
-func mul(a: Int, b: Int): Int = do
-  let mut remaining = a
-  let negative? = remaining < 0
+func mul(a: Int, b: Int): Int =
+  let negative? = a < 0
+  var remaining = if negative? then -a else a
 
-  if negative?
-    remaining = -remaining
-  end
-
-  let mut result = 0
-  while remaining > 0
+  var result = 0
+  while remaining > 0 do
     result = add(result, b)
     remaining = add(remaining, -1)
-  end
 
   if negative? then -result else result
-end
 
 @root
-module examples do
+module examples
   use lore.test._
 
   spec 'naivemethic: `mul(12, 5)` evaluates to 60' do
     mul(12, 5) should_eq 60
-  end
-end

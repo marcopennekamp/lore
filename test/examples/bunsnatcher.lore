@@ -3,11 +3,11 @@ module examples.bunsnatcher
 use lore.list.[map, max_by!]
 use lore.tuple.[first, second]
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
-// are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
-// could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
+-- are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
+-- could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
+------------------------------------------------------------------------------------------------------------------------
 
 trait Color
 object Red extends Color
@@ -67,111 +67,104 @@ struct Suspect
   open clothes_color: Color
   open profession: Profession
 
-  /**
-    * The suspect's general approach to social and professional situations.
-    */
+  -- The suspect's general approach to social and professional situations.
   open approach: Approach
 
-  /**
-    * The suspect's relation to the victim.
-    */
+  -- The suspect's relation to the victim.
   open relation: Relation
-end
 
 @root
-module lore.core do
+module lore.core
   func to_string(suspect: Suspect): String = suspect.name
-end
 
-// ---------------------------------------------------------------------------------------------------------------------
-// The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
-// the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or both?
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
+-- the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or both?
+------------------------------------------------------------------------------------------------------------------------
 
 func color_factor(suspect: %{ hair_color: Color, clothes_color: Color }): Real = 0.8
 func color_factor(suspect: %{ hair_color: Red, clothes_color: Color }): Real = 1.2
 func color_factor(suspect: %{ hair_color: Color, clothes_color: Red }): Real = 1.2
 func color_factor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 
-// ---------------------------------------------------------------------------------------------------------------------
-// The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been found
-// and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the murder
-// weapon was already in the mansion before the suspect arrived, meaning the suspect didn't use their own tools of the
-// trade.
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been found
+-- and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the murder
+-- weapon was already in the mansion before the suspect arrived, meaning the suspect didn't use their own tools of the
+-- trade.
+------------------------------------------------------------------------------------------------------------------------
 
 func weapon_factor(suspect: Suspect): Real = 1 + suspect.profession.tool.bluntness / 2
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life. Some were blessed
-// by his business, while others suffered from his influence.
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life. Some were blessed
+-- by his business, while others suffered from his influence.
+------------------------------------------------------------------------------------------------------------------------
 
 func motive_factor(suspect: %{ }): Real = 1.0
 
-// Friends don't kill friends, right?
+-- Friends don't kill friends, right?
 func motive_factor(suspect: %{ relation: Friendly }): Real = 0.8
 
-// Anyone who was hostile to Bunsnatcher could be the killer! "Let's also not forget that lovers are unpredictable,"
-// says Detective Trout.
+-- Anyone who was hostile to Bunsnatcher could be the killer! "Let's also not forget that lovers are unpredictable,"
+-- says Detective Trout.
 func motive_factor(suspect: %{ relation: Hostile }): Real = 1.2
 
-// Some ex-employees of Bertram Bunsnatcher would have more than plenty of motive to kill him.
+-- Some ex-employees of Bertram Bunsnatcher would have more than plenty of motive to kill him.
 func motive_factor(suspect: %{ profession: Tailor | Lawyer | Gardener, relation: Shunned }): Real = 1.5
 
-// It is widely acknowledged that lawyers are utterly inhuman and thus cannot have or be friends. The lawyer must've
-// pretended to Bertram Bunsnatcher for some ulterior motive.
+-- "It is widely acknowledged that lawyers are utterly inhuman and thus cannot have or be friends. The lawyer must've
+-- pretended to Bertram Bunsnatcher for some ulterior motive," Detective Trout says.
 func motive_factor(suspect: %{ profession: Lawyer, relation: Friendly }): Real = 1.2
-func motive_factor(suspect: %{ profession: Lawyer, relation: Lovers }): Real = 1.2 // Sadly needed for disambiguation.
+func motive_factor(suspect: %{ profession: Lawyer, relation: Lovers }): Real = 1.2 -- Sadly needed for disambiguation.
 
-// Business rivals always have a good motive to kill such a wealthy business magnet.
+-- Business rivals always have a good motive to kill such a wealthy business magnet.
 func motive_factor(suspect: %{ profession: Entrepreneur, relation: Competing }): Real = 1.3
 
-// Shunned rivals even more so, as Bunsnatcher doesn't even acknowledge them anymore.
+-- Shunned rivals even more so, as Bunsnatcher doesn't even acknowledge them anymore.
 func motive_factor(suspect: %{ profession: Entrepreneur, relation: Shunned }): Real = 1.4
 
-// Perhaps a more than calculating business partner who murdered Bunsnatcher in cold blood?
+-- Perhaps a more than calculating business partner who murdered Bunsnatcher in cold blood?
 func motive_factor(suspect: %{ profession: Entrepreneur, approach: Calculating, relation: Friendly | Neutral }): Real = 1.5
 
-// It is highly unlikely that an assassin would've done such a sloppy job, unless the victim and the assassin were
-// friends and the assassin messed up out of emotional attachment to the "job"!
+-- It is highly unlikely that an assassin would've done such a sloppy job, unless the victim and the assassin were
+-- friends and the assassin messed up out of emotional attachment to the "job"!
 func motive_factor(suspect: %{ profession: Assassin }): Real = 0.2
 func motive_factor(suspect: %{ profession: Assassin, relation: Friendly }): Real = 1.5
-func motive_factor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
+func motive_factor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 -- Sadly needed for disambiguation.
 
-// ---------------------------------------------------------------------------------------------------------------------
-// "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
-// horrible crimes."
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
+-- horrible crimes."
+------------------------------------------------------------------------------------------------------------------------
 
 func character_factor(suspect: %{ }): Real = 1.0
 
-// Honest jobs for honest people.
+-- "Honest jobs for honest people," the gardener reminds Detective Trout as we enter the manor grounds.
 func character_factor(suspect: %{ profession: Tailor | Gardener | Assassin, approach: Honest }): Real = 0.5
 
-// Lawyers are terrible people, obviously. Except the honest ones. They are only slightly terrible.
+-- "Lawyers are terrible people, obviously. Except the honest ones. They are only slightly terrible." Detective Trout
+-- is a divorcee, seemingly holding some grudges against particular professional groups.
 func character_factor(suspect: %{ profession: Lawyer }): Real = 1.4
 func character_factor(suspect: %{ profession: Lawyer, approach: Honest }): Real = 1.1
 
-// Do you like to exploit people? Then this is the profession for you! The honest ones are even worse: they don't even
-// hide or justify their exploitation behind a curtain of lies.
+-- "Do you like to exploit people? Then this is the profession for you! The honest ones are even worse: they don't even
+-- hide or justify their exploitation behind a curtain of lies." Whether slander qualifies as lying doesn't seem clear
+-- to the detective.
 func character_factor(suspect: %{ profession: Entrepreneur }): Real = 1.2
 func character_factor(suspect: %{ profession: Entrepreneur, approach: Honest }): Real = 1.3
 
-// ---------------------------------------------------------------------------------------------------------------------
-// "I know all about poisons, Watson. I've become an expert on all of them. But over the last few years, I've come to
-// understand that there is nothing on this earth so toxic as guilt." - Sherlock Holmes
-// ---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+-- "I know all about poisons, Watson. I've become an expert on all of them. But over the last few years, I've come to
+-- understand that there is nothing on this earth so toxic as guilt." - Sherlock Holmes
+------------------------------------------------------------------------------------------------------------------------
 
-/**
-  * For the given suspect, returns the likelihood of their guilt. There can only be a single murderer.
-  */
-func compute_guilt(suspect: Suspect): Real = color_factor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
+-- Returns the likelihood of the [suspect]'s guilt. There can only be a single murderer.
+func compute_guilt(suspect: Suspect): Real =
+  color_factor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
 
-/**
-  * Returns the suspect which is deemed the most likely murderer.
-  */
-func main(): Suspect = do
+-- Returns the suspect which is deemed the most likely murderer.
+func main(): Suspect =
   let suspects = [
     Suspect('Rilam Ralam', Black, Yellow, Entrepreneur, Calculating, Competing),
     Suspect('Warren Warner', Black, Brown, Gardener, Honest, Cordial),
@@ -189,15 +182,12 @@ func main(): Suspect = do
     |> map(suspect => (suspect, suspect |> compute_guilt))
     |> max_by!(second)
     |> first
-end
 
 @root
-module examples do
+module examples
   use lore.test._
 
   @bench
   spec 'bunsnatcher: Vichity Vichy is the most likely murderer' do
     let suspect = main()
     suspect.name should_eq 'Vichity Vichy'
-  end
-end

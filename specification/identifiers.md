@@ -26,5 +26,5 @@ Lore has various **rules** surrounding type and variable names:
 An identifier may never be equal to the following **keywords**:
 
 ```
-_ and case cond do else extends false fixed for func if intrinsic let module not object or proc return spec struct then trait true type use var where while yield
+_ and case cond do domain else extends false fixed for func if intrinsic let module not object or proc return spec struct then trait true type use var where while yield
 ```

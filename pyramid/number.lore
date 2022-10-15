@@ -1,189 +1,135 @@
-/** `lore.number` provides common functions for integers and reals, as well as modules `Int` and `Real` for
-  * constructing integers and reals from other representations.
-  *
-  * The intent in providing a common module for numbers is to simplify working with numbers of type `Int | Real`.
-  * Almost all of the functions in `lore.number` are defined for both `Int` and `Real`.
-  *
-  * Also see `lore.math` for mathematically focused functions.
-  */
+-- [lore.number] provides common functions for integers and reals, as well as modules [Int] and [Real] for constructing
+-- integers and reals from other representations.
+--
+-- The intent in providing a common module for numbers is to simplify working with numbers of type `Int | Real`. Almost
+-- all of the functions in [lore.number] are defined for both [Int] and [Real].
+--
+-- Also see [lore.math] for mathematically focused functions.
 module lore.number
-
-// TODO (pyramid): Implement `even?` and `odd?` with bitwise operations.
 
 use lore.list.fold
 use lore.math.sqrt
 use lore.option.[Option, Some, None]
 
-/**
-  * Whether `x` is even.
-  */
+-- TODO (pyramid): Implement `even?` and `odd?` with bitwise operations.
+
+-- Whether [x] is even.
 func even?(x: Int): Boolean = rem(x, 2) == 0
 
-/**
-  * Whether `x` is odd.
-  */
+-- Whether [x] is odd.
 func odd?(x: Int): Boolean = rem(x, 2) == 1
 
-/**
-  * Whether `x` is not a number.
-  */
+-- Whether [x] is not a number.
 func nan?(x: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', x)
 func nan?(x: Int): Boolean = false
 
-/**
-  * Whether `x` is either positive or negative infinity.
-  */
-func inf?(x: Real): Boolean = x == Real.pos_inf || x == Real.neg_inf
+-- Whether [x] is either positive or negative infinity.
+func inf?(x: Real): Boolean = x == Real.pos_inf or x == Real.neg_inf
 func inf?(x: Int): Boolean = false
 
-/**
-  * Whether `x` and `y` are approximately equal. The calculation uses a relative tolerance measure with `Real.epsilon`
-  * as a base. NaN values cannot be approximately equal. Infinite values can only be exactly equal.
-  *
-  * The relative tolerance measure is defined as `sqrt(Real.epsilon)`, which requires equality of about half the
-  * significand bits (`Real.epsilon` would require equality of all but the least significand bit). This is a good
-  * choice for approximation if domain knowledge about the computation is lacking.
-  *
-  * `abs(x - y)` is compared to an absolute tolerance, which is computed from the relative tolerance scaled with
-  * `max(abs(x), abs(y))`. Scaling the relative tolerance ensures that rounding errors are taken into account
-  * independent of the exponents of `x` and `y`, as rounding errors occur in the significand bits.
-  *
-  * See:
-  *   - https://github.com/apple/swift-evolution/blob/main/proposals/0259-approximately-equal.md
-  *   - https://github.com/JuliaLang/julia/blob/b5871eb1b5def4b6ef6be15a8ef53cfb8e4fe309/base/floatfuncs.jl#L304
-  */
-func approx?(x: Real, y: Real): Boolean = do
+-- Whether [x] and [y] are approximately equal. The calculation uses a relative tolerance measure with `Real.epsilon`
+-- as a base. NaN values cannot be approximately equal. Infinite values can only be exactly equal.
+--
+-- The relative tolerance measure is defined as `sqrt(Real.epsilon)`, which requires equality of about half the
+-- significand bits (`Real.epsilon` would require equality of all but the least significand bit). This is a good
+-- choice for approximation if domain knowledge about the computation is lacking.
+--
+-- `abs(x - y)` is compared to an absolute tolerance, which is computed from the relative tolerance scaled with
+-- `max(abs(x), abs(y))`. Scaling the relative tolerance ensures that rounding errors are taken into account
+-- independent of the exponents of [x] and [y], as rounding errors occur in the significand bits.
+--
+-- See:
+--   - https://github.com/apple/swift-evolution/blob/main/proposals/0259-approximately-equal.md
+--   - https://github.com/JuliaLang/julia/blob/b5871eb1b5def4b6ef6be15a8ef53cfb8e4fe309/base/floatfuncs.jl#L304
+func approx?(x: Real, y: Real): Boolean =
   if x == y then return true
-  if x.nan? || y.nan? || x.inf? || y.inf? then return false
+  if x.nan? or y.nan? or x.inf? or y.inf? then return false
 
   let tolerance = sqrt(Real.epsilon)
   let scale = max(abs(x), abs(y))
   abs(x - y) <= tolerance * scale
-end
 
-/**
-  * Converts `value` to Real.
-  */
+-- Converts [value] to Real.
 func to_real(value: Int): Real = intrinsic[Real]('lore.int.to_real', value)
 func to_real(value: Real): Real = value
 
-/**
-  * Converts `value` to an Int by truncating the fractional part.
-  */
+-- Converts [value] to an Int by truncating the fractional part.
 func to_int(value: Real): Int = intrinsic[Int]('lore.real.to_int', value)
 func to_int(value: Int): Int = value
 
-/**
-  * Computes the integer remainder of `x` and `y`.
-  */
+-- Computes the integer remainder of [x] and [y].
 func rem(x: Int, y: Int): Int = intrinsic[Int]('lore.int.rem', x, y)
 
-/**
-  * Increments `x` by 1.
-  */
+-- Increments [x] by 1.
 func inc(x: Int): Int = x + 1
 
-/**
-  * Decrements `x` by 1.
-  */
+-- Decrements [x] by 1.
 func dec(x: Int): Int = x - 1
 
-/**
-  * Returns the minimum of `x` or `y`.
-  */
+-- Returns the minimum of [x] or [y].
 func min(x: Int, y: Int): Int = if x < y then x else y
 func min(x: Real, y: Real): Real = if x < y then x else y
 
-/**
-  * Returns the maximum of `x` or `y`.
-  */
+-- Returns the maximum of [x] or [y].
 func max(x: Int, y: Int): Int = if x > y then x else y
 func max(x: Real, y: Real): Real = if x > y then x else y
 
-/**
-  * Computes the absolute value of `x`.
-  */
+-- Computes the absolute value of [x].
 func abs(x: Int): Int = if x < 0 then -x else x
 func abs(x: Real): Real = if x < 0 then -x else x
 
-/**
-  * Computes `base` to the power of `exponent`.
-  *
-  * TODO (pyramid): Implement the variant for Int.
-  */
+-- Computes [base] to the power of [exponent].
+--
+-- TODO (pyramid): Implement the variant for Int.
 func pow(base: Real, exponent: Real): Real = intrinsic[Real]('lore.real.pow', base, exponent)
 
-/**
-  * Returns the largest integer that is less than or equal to `x`.
-  */
+-- Returns the largest integer that is less than or equal to [x].
 func floor(x: Real): Int = intrinsic[Int]('lore.real.floor', x)
 
-/**
-  * Rounds `x` to the nearest integer, with half-way values rounding up.
-  */
+-- Rounds [x] to the nearest integer, with half-way values rounding up.
 func ceil(x: Real): Int = intrinsic[Int]('lore.real.ceil', x)
 
-/**
-  * Returns the smallest integer that is greater than or equal to `x`.
-  */
+-- Returns the smallest integer that is greater than or equal to [x].
 func round(x: Real): Int = intrinsic[Int]('lore.real.round', x)
 
-/**
-  * Computes the sum of all integers in `list`.
-  */
+-- Computes the sum of all integers in [list].
 func sum(list: [Int]): Int = list.fold(0, (a, b) => a + b)
 
-/**
-  * Computes the sum of all reals in `list`.
-  */
+-- Computes the sum of all reals in [list].
 func sum(list: [Real]): Real = list.fold(0.0, (a, b) => a + b)
 
-/**
-  * Computes the product of all integers in `list`.
-  */
+-- Computes the product of all integers in [list].
 func product(list: [Int]): Int = list.fold(1, (a, b) => a * b)
 
-/**
-  * Computes the product of all reals in `list`.
-  */
+-- Computes the product of all reals in [list].
 func product(list: [Real]): Real = list.fold(1.0, (a, b) => a * b)
 
-module Int do
-  // TODO (pyramid): Implement `Int.parse`.
-end
+module Int
+  -- TODO (pyramid): Implement `Int.parse`.
 
-module Real do
-  /**
-    * The IEEE floating point value of positive infinity.
-    */
+module Real
+  -- The IEEE floating point value of positive infinity.
   let pos_inf: Real = intrinsic[Real]('lore.real.pos_inf')
 
-  /**
-    * The IEEE floating point value of negative infinity.
-    */
+  -- The IEEE floating point value of negative infinity.
   let neg_inf: Real = intrinsic[Real]('lore.real.neg_inf')
 
-  /**
-    * The machine epsilon value for double-precision floating point values (Reals). Used in `lore.number.approx?` to
-    * calculate approximate equality of reals.
-    */
+  -- The machine epsilon value for double-precision floating point values (Reals). Used in `lore.number.approx?` to
+  -- calculate approximate equality of reals.
   let epsilon: Real = 0.00000000000000022204460492503131
 
-  /**
-    * Parses `string` as a Real value. If `string` cannot be parsed as such, `None` is returned. The case-insensitive
-    * constants `'nan'`, `'inf'`, and `'-inf'` are supported as well.
-    */
-  func parse(string: String): Option[Real] = do
-    // TODO (pyramid): There should be a function `Option.from_try` for a result `A | #error`, but the problem is that
-    //                 type parameters and sum/intersection types don't play nice together, yet. A middle ground would be
-    //                 to use pattern matching, which is also not implemented yet. So for now we're resorting to a manual
-    //                 extraction approach... Very ugly. We need pattern matching ASAP.
+  -- Parses [string] as a Real value. If [string] cannot be parsed as such, [None] is returned. The case-insensitive
+  -- constants `'nan'`, `'inf'`, and `'-inf'` are supported as well.
+  func parse(string: String): Option[Real] =
+    -- TODO (pyramid): There should be a function `Option.from_try` for a result `A | #error`, but the problem is that
+    --                 type parameters and sum/intersection types don't play nice together, yet. A middle ground would be
+    --                 to use pattern matching, which is also not implemented yet. So for now we're resorting to a manual
+    --                 extraction approach... Very ugly. We need pattern matching ASAP.
     let result = intrinsic[Real | #error]('lore.real.parse', string)
     result_to_option(result)
-  end
 
-  // TODO (pyramid): (1) this function would be superfluous if we had case expressions and (2) this function should be
-  //                 private.
+  -- TODO (pyramid): (1) this function would be superfluous if we had case expressions and (2) this function should be
+  --                 private.
   func result_to_option(result: Real | #error): Option[Real]
   func result_to_option(result: Real): Some[Real] = Some(result)
   func result_to_option(#error): None = None

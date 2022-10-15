@@ -13,32 +13,27 @@ struct Bird extends Named, Airborne
   species: String
   weight: Real
   wingspan: Real
-end
 
 domain bird: Bird
   func name(): String = bird.species
   func wingspan(): Real = bird.wingspan
-end
 
 struct Plane extends Named, Airborne
   model: String
   capacity: Int
   wingspan: Real
-end
 
 domain plane: Plane
   func name(): String = plane.model
   func wingspan(): Real = plane.wingspan
-end
 
 @root
 module lore.core do
   func equal?(a1: Airborne, a2: Airborne): Boolean = wingspan(a1) == wingspan(a2)
-  func equal?(b1: Bird, b2: Bird): Boolean = b1.species == b2.species && b1.weight == b2.weight && b1.wingspan == b2.wingspan
-  func equal?(p1: Plane, p2: Plane): Boolean = p1.model == p2.model && p1.capacity == p2.capacity && p1.wingspan == p2.wingspan
-end
+  func equal?(b1: Bird, b2: Bird): Boolean = b1.species == b2.species and b1.weight == b2.weight and b1.wingspan == b2.wingspan
+  func equal?(p1: Plane, p2: Plane): Boolean = p1.model == p2.model and p1.capacity == p2.capacity and p1.wingspan == p2.wingspan
 
-func main(): [String] = do
+func main(): [String] =
   let airbornes = [
     Bird('Raven', 1.5, 1.2),
     Bird('Dragon', 6000.0, 12.0),
@@ -48,13 +43,12 @@ func main(): [String] = do
     Plane('Model Plane', 0, 1.2),
   ]
   airbornes |> combinations |> flat_map(
-    // TODO (case): This needs pattern matching.
+    -- TODO (case): This needs pattern matching.
     pair => if pair.first == pair.second then ['${pair.first.name} == ${pair.second.name}'] else []
   )
-end
 
 @root
-module examples do
+module examples
   use lore.test._
 
   spec 'airborne: `main` only reports equal airbornes' do
@@ -62,5 +56,3 @@ module examples do
       'Raven == Raven', 'Raven == Model Plane', 'Dragon == Dragon', 'Dragon == Cessna', 'Crow == Crow',
       'Crow == Model Plane', 'B-2 Spirit == B-2 Spirit', 'Cessna == Cessna', 'Model Plane == Model Plane',
     ]
-  end
-end

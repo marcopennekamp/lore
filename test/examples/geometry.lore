@@ -1,55 +1,47 @@
 module examples.geometry
 
-// Not to be confused with shape types and shape values. :)
+-- Not to be confused with shape types and shape values. :)
 trait Shape
 
 domain shape: Shape
-  // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
+  -- "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
   func width(): Real
   func height(): Real
 
   func area(): Real = shape.width * shape.height
-end
 
 @root
-module lore.core do
+module lore.core
   func less_than?(s1: Shape, s2: Shape): Boolean = s1.area < s2.area
   func less_than_equal?(s1: Shape, s2: Shape): Boolean = s1.area <= s2.area
-end
 
 struct BoundingBox extends Shape
   x: Real, x_end: Real
   y: Real, y_end: Real
-end
 
 domain box: BoundingBox
   func width(): Real = box.x_end - box.x
   func height(): Real = box.y_end - box.y
-end
 
 let pi: Real = 3.14159265359
 
 struct Circle extends Shape
   x: Real, y: Real
   radius: Real
-end
 
 domain circle: Circle
   func width(): Real = circle.radius
   func height(): Real = circle.radius
 
   func area(): Real = circle.radius * circle.radius * pi
-end
 
 struct Rectangle extends Shape
   x: Real, y: Real
   width: Real, height: Real
-end
 
 domain rect: Rectangle
   func width(): Real = rect.width
   func height(): Real = rect.height
-end
 
 func name(Shape): String
 func name(Rectangle): String = 'rect'
@@ -57,7 +49,7 @@ func name(BoundingBox): String = 'box'
 func name(Circle): String = 'circle'
 
 @root
-module examples do
+module examples
   use lore.test._
 
   spec 'geometry: `area` calculates the area of various shapes' do
@@ -68,7 +60,6 @@ module examples do
     box.area should_eq 250.0
     circle.area should_eq 22.902210444671102
     rect.area should_eq 1540.0
-  end
 
   spec 'geometry: shapes are ordered by area' do
     let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
@@ -89,5 +80,3 @@ module examples do
     box should be_lte(circle)
     circle should_not be_lt(box)
     circle should_not be_lte(box)
-  end
-end
