@@ -1,7 +1,7 @@
-// "Hello, name" is in many respects the "Hello, world" program of Lore. It's possible to write a simple "Hello, world"
-// program, of course, but that doesn't use multiple dispatch. What kind of introduction would that be?
-// In "Hello, name", the idea is to greet someone by name. However, sometimes the one we want to greet is only known by
-// an ID number. In such cases, instead of "Hello, Walter.", the greeting becomes "Hello, anonymous #5."
+-- "Hello, name" is in many respects the "Hello, world" program of Lore. It's possible to write a simple "Hello, world"
+-- program, of course, but that doesn't use multiple dispatch. What kind of introduction would that be?
+-- In "Hello, name", the idea is to greet someone by name. However, sometimes the one we want to greet is only known by
+-- an ID number. In such cases, instead of "Hello, Walter.", the greeting becomes "Hello, anonymous #5."
 module lessons.hello_name
 
 use lore.list.map

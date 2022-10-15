@@ -1,4 +1,4 @@
-// Objective: Process a list of numbers, returning a status `#ok` or `#error` for each number.
+-- Objective: Process a list of numbers, returning a status `#ok` or `#error` for each number.
 module lessons.status
 
 use lore.list.map
@@ -14,7 +14,6 @@ func process(value: Int): (Status, String) = cond
   value < 2 => (#ok, 'Below two.')
   value < 5 => (#ok, 'Below five.')
   true      => (#error, 'At or above five.')
-end
 
 func stringify(result: (Status, String)): String = result.first.stringify()
 

@@ -1,4 +1,4 @@
-// Objective: Transcribe DNA to RNA.
+-- Objective: Transcribe DNA to RNA.
 module lessons.rna
 
 use lore.list.map
@@ -21,7 +21,7 @@ func transcribe(dna: Dna): Rna = dna.map(transcribe)
 
 func stringify(rna: Rna): String = rna.concat_map(Symbol.name)
 
-func main(): [String] = do
+func main(): [String] =
   let cases = [
     [#a],
     [#t],
@@ -30,4 +30,3 @@ func main(): [String] = do
     [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a],
   ]
   cases |> map(transcribe) |> map(stringify)
-end

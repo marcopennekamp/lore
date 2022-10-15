@@ -8,16 +8,13 @@ use lessons.resistor.Rating
 
 spec 'adventurer_order: `main` orders adventurers' do
   adventurer_order.main() should_eq ['Abby(2)', 'Eliza(5)', 'Lancelot(3)', 'Ser Oncewas(4)', 'Steve(0)', 'Steve(1)']
-end
 
 spec 'fibonacci: `fib(10)` is 55' do
   fibonacci.fib(10) should_eq 55
-end
 
 @bench_only
 spec 'fibonacci' do
   fibonacci.fib(10)
-end
 
 spec 'hello_name: `main` builds greetings' do
   hello_name.main() should_eq [
@@ -27,12 +24,10 @@ spec 'hello_name: `main` builds greetings' do
     'Hello, console.',
     'Hello, anonymous #42.'
   ]
-end
 
 @bench_only
 spec 'hello_name' do
   hello_name.main()
-end
 
 @bench_only
 spec 'hello_name: direct `hello` calls' do
@@ -41,7 +36,6 @@ spec 'hello_name: direct `hello` calls' do
   hello('marco')
   hello('console')
   hello(42)
-end
 
 spec 'resistor: `main` calculates resistance ratings' do
   let raw_ratings = resistor.main() |> flat_map(rating => [rating.low, rating.high])
@@ -53,12 +47,9 @@ spec 'resistor: `main` calculates resistance ratings' do
     67.966, 68.034,
     532.8, 799.2,
   ])
-end
 
 spec 'rna: `main` transcribes RNA strings' do
   rna.main() should_eq ['u', 'a', 'c', 'g', 'ugcaccagaauu']
-end
 
 spec 'status: `main` builds status strings' do
   status.main() should_eq ['Success!', 'Failure!', 'Success!', 'Failure!', 'Success!']
-end

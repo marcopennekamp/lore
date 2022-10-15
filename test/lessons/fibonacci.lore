@@ -1,9 +1,7 @@
 module lessons.fibonacci
 
-func fib(n: Int): Int = do
-  if n > 1
-    fib(n - 1) + fib(n - 2)
-  else n
-end
+func fib(n: Int): Int = cond
+  n > 1 => fib(n - 1) + fib(n - 2)
+  true  => n
 
 func main(): Int = fib(10)
