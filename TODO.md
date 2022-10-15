@@ -9,50 +9,35 @@
   - Move to a full indentation-based syntax. I think this provides the best consistency in the long run. There are already weird syntax rules around if-else (special rule around multi-line/single-line), modules (forced `do`), actions (forced `do`) and functions, cond (`do..end` for bodies with more than one expression), and so on. Significant indentation can fix all of these issues, while keeping the syntax consistent and with less noise overall.
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions. This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors. Int literals should also not be usable as Real literals, i.e. `5` should never be typeable as a Real.
-  - Possibly allow chaining comparison operators, e.g. `a <= b <= c` parsed as `a <= b && b <= c`.
-    - One difficulty here is that the user would expect `b` to only be evaluated once. If we parse this naively, `b` will be evaluated twice, causing potential side effects. So it's very likely that a chained comparison would have to use intermediate values for each operand.
+  - Single-line version of loops: `while <condition> do <body>` instead of `yield`. I want to reserve `yield` for later usage.
   - Rename `act` to `proc`. This would be in line with `func`.
     - `act` could also be confused with `actor` (actor models, etc.), leading someone new to the language to think that the function somehow supports or enables concurrency via the actor model.
-  - Rename `let mut` to `var`?
+  - Rename `let mut` to `var`.
+  - Rename `let` to `val`? 
+    - `private let` for global values reads weirdly in comparison to `private val`. Yet I prefer `let` in function bodies.
+  - Replace `extends` with `:` (like in Kotlin)?
+  - Allow `else` as the `true` cond case.
   - Rename `Boolean` to `Bool`. Int is also abbreviated.
+  - Collection syntax:
+    - Maps: `#['Alex' -> 22, 'Mary' -> 17]`
+    - Sets: `#['Alex', 'Mary']`
+  - Consider simplifying shape syntax to `{ ... }` instead of `%{ ... }`.
   - Provide a means to directly access tuple elements, such as `._1`.
     - Also consider adding default element names again, i.e. `tuple.a` for a tuple `(A, B)` referring to the first element. Might still be a slippery slope (especially for tooling/renaming).
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax (such as `it`).
-  - Trailing lambdas (`map(things) do thing => thing.name end`).
-    - Take care that the syntax doesn't require a `do..end` after `thing =>`, e.g. `map(things) do thing => do ... end end` would be unfortunate.
+  - Trailing lambdas (`map(things) do thing => thing.name`).
+    - Take care that the syntax doesn't require a `do` after `thing =>`, e.g. `map(things) do thing => do ...` would be unfortunate.
   - Introduce a general symbol type that supertypes all symbol types and can be used for functions such as `lore.symbol.name`, other Pyramid and reflection functions, and inside the compiler to replace `Type.isSymbol`.
   - Consider adding indentation-aided parsing at this point, before introducing `case` expressions, as those would majorly benefit from indentation-aided parsing.
-  - Consider adding `func`, `type`, `spec` etc. to the list of keywords. While the grammar might not be ambiguous now, it might become ambiguous later, and I'd like to avoid a design deadlock where adding e.g. `type` as a keyword isn't possible without breaking user code.
   - Allow double quotes `"` for strings alongside single quotes. Double quotes are so natural for strings that we will never be able to use them for any other kind of syntax, without majorly confusing every programmer in existence (myself included).
     - Other uses for single quotes:
       - Identifier characters (like Haskell).
+    - I like the aesthetics of single quotes, though...
   - Allow string concatenation with `+`, at least until operator overloading is supported.
-  - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
-  - Change comments from `//` and `/* */` to `#` and `#[ ]#`? This is way more visually consistent for documentation comments, because the `/** * */` style eats up two lines of code for every documentation comment, while `///` or `//*` adds THREE characters of visual noise to each line. `##` documentation comments clearly separate their intent from regular `#` comments, while being easy to type and only having moderate visual noise.
-    - The `#` comment syntax would be unfortunate for symbols and collection types/literals. Using the hashtag for symbols is visually very consistent with a lower-case identifier (e.g. `#name` or `#bear`), as it lines up very well with the top and bottom of most lower-case letters. Here is a table of syntax changes that would be required to introduce `#` comments:
+  - Support private module members with the `private` keyword.
+  - New comment syntax: `--` and `[-- --]`.
+    - Possible divider styles:
       ```
-                  // comments                                     # comments
-      Symbols:    #name                                           $name, %name, &name, ~name, \name
-      Sets:       #[x, y] :: #[X]                                 {x, y} :: {X}
-      Maps:       #['foo' -> x, 'bar' -> y] :: #[String, X]       %['foo' -> x, 'bar' -> y] :: %[String, X]
-      ```
-      The `{...}` set syntax is arguably better, but using `#` for comments would at least take away the option of using the `#[...]` syntax. The map syntax seems fine either way. However, as explained above, the symbol syntax would suffer from this change, as in my subjective view none of the other suggestions made in the table above are of comparable syntactic quality.
-    - An alternative comment syntax might be `--`, which seems visually leaner than `//`. However, documentation comments would likely also be `--` when placed above a definition without any separating blank lines between the comment and the definition. This doesn't carry the same, clear separation of intent that is present with `#` and `##`. `--` also has a less obvious block comment syntax than the other variants, because `[- -]` cannot be used in Lore as `[-10]` is a valid list literal.
-    - We could also use `;` for comments, but I want to reserve the semicolon as an inline statement separator. Lisps can use `;` for comments because they don't have the same statement separation issue.
-    - Another consideration are dividers in files:
-      ```
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Divider heading                                                                                              //
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      // ------------------------------------------------------------------------------------------------------------ //
-      // Divider heading                                                                                              //
-      // ------------------------------------------------------------------------------------------------------------ //
-
-      ##################################################################################################################
-      # Divider heading                                                                                                #
-      ##################################################################################################################
-
       ------------------------------------------------------------------------------------------------------------------
       -- Divider heading                                                                                              --
       ------------------------------------------------------------------------------------------------------------------
@@ -62,8 +47,8 @@
       -- ---------------------------------------------------------------------------------------------------------------
       -- Divider heading (Haskell style)
       ```
-      Dividers are important in Lore code because functions aren't defined inside "classes", but OOP-like structures might often be designed. This depends on the specific architecture of a piece of code, but generally dividers will be used in at least some areas to improve visual clarity in source files. All variants above provide good visual clarity. It's worth mentioning that `--` produces very nice dividers without headings, as a full-width line of `----` provides good separation at low visual cost.
-    - Also keep in mind that `//` and `#` style comments would use up the least novelty budget. Languages with `do..end` such as Ruby, Crystal, and Elixir generally use `#` style comments, so that comment style might be least surprising for most developers coming into Lore. `--` would likely use up the most novelty budget, but a majority of developers should acclimate quickly.
+  - Make sure that all keywords are forbidden, including those that were previously deemed "soft" keywords.
+  - Direct list imports such as `use foo.[bar, foo, baz]` are currently resolved as `use foo.bar; use foo.foo; use foo.baz`. This is obviously incorrect, because `baz` should refer to `foo.baz` not `foo.foo.baz`. We should either resolve list imports without unfolding their structure, or require the list import to not refer to its head segment in any of the imported bindings.
   - Clear all `TODO (syntax)` entries.
 - Disjunction and conjunction operations aren't short-circuiting. This was probably an oversight when we moved from Javascript to the VM. Reimplement this feature.
   - In general, a short-circuiting operator `a || b` can be compiled as `if a then true else b` and `a && b` as `if a then b else false`. A naive implementation of short-circuiting operators would be to simply replace `and` and `or` with their respective `if` expansions.
@@ -145,6 +130,7 @@
 - Refactor Pyramid and add more types and functions.
   - What happens if we put `Type` values into `to_string`, `equal?`, and `less_than?`? All of these should work, with equality and order deferring to type equality and subtyping.
   - Clear all `TODO (pyramid)` entries.
+- Overhaul shapes/shape types, "virtual" properties, and any related features. I think shapes are still too limited. The crux is this: To match on a shape, a type needs to have the property backed as an actual, physical struct property. Many possibilities will open up if virtual properties can be matched by shapes as well, because then arbitrary types (e.g. traits high up in a hierarchy) can be "extended" to work with a particular shape. Also see the corresponding thoughts "Lore: Project Struct/Trait" in ColorNote. (I know. I'll move this eventually to a proposal.)
 
 ##### MVL improvements
 
@@ -157,7 +143,7 @@
 - Implement a new backend for lists.
   - Clear all `TODO (lists)` entries.
 - Add immutable (hash) sets with a syntax `#[A]` or `{A}`.
-- Provide an easy way to update immutable structs and shapes. For example, Scala's case class `copy` function.
+- Provide an easy way to update immutable structs and shapes. For example, see Scala's case class `copy` function.
 - Allow inherited shape type properties to reference declared types placed lower in the schema initialization order. The reasoning for this is simple: Struct properties are immune to the initialization order, because they are initialized in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
   - The VM already handles this correctly.
 - Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.
