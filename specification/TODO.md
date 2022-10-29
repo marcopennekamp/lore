@@ -3,6 +3,7 @@
 #### General
 
 - Perhaps rename *specification* to *(language) reference* to avoid any confusion around the level of technical language in the documents. The documents are a manual for users and the language developers.
+- Add a specification document for significant indentation, as mentioned in `fragments.md`.
 
 
 #### Types
@@ -38,7 +39,7 @@
 - **Map syntax alternative:**
   ```
   %{ name: 'Mellow', position } as Person
-  Person(%{ name: 'Mellow', position })  // This clashes with the idea that Person is a unique function value.
+  Person(%{ name: 'Mellow', position })  -- This clashes with the idea that Person is a unique function value.
   %Person{ name: 'Mellow', position }
   ```
 
@@ -49,9 +50,8 @@
   trait Position
   property x: Real of Position
   
-  act test(pos: Position)
+  proc test(pos: Position) do
     println(pos.x)
-  end
   ```
   
   This is internally still a multi-function definition. Here is the general syntax:
@@ -68,12 +68,11 @@
   And then implement it like this:
 
   ```
-  // Direct mapping
+  -- Direct mapping
   struct Point extends Position
     x: Real implements Position.x
-  end
   
-  // Indirect mapping
+  -- Indirect mapping
   property x: Real of box: Box = box.x_start + width(box) / 2
   ```
 
@@ -94,28 +93,25 @@
     ```
     trait Position
       x: Real
-    end
     
-    act test(pos: Position)
+    proc test(pos: Position) do
       println(pos.x)
-    end
     
-    // Direct mapping
+    -- Direct mapping
     struct Point extends Position
       x: Real implements Position.x
-    end
     
-    // Indirect mapping
+    -- Indirect mapping
     property x: Real of box: Box = box.x_start + width(box) / 2
-    // or:
+    -- or:
     func x(box: Box): Real = box.x_start + width(box) / 2
-    // or:
+    -- or:
     property x(box: Box): Real = box.x_start + width(box) / 2
     ```
 
     This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.
 
-    Another downside is that we can't easily tie properties to ANY types with this syntax, which would be especially problematic for computed properties of structs. However, we could consider supporting both syntaxes. In fact, the trait property syntax would be the natural way for traits (at the trait's declaration site, of course, not for "monkey patching"), while the `property` syntax would be the natural way for other types.
+    Another downside is that we can't easily tie properties to ANY types with this syntax, which would be especially problematic for computed properties of structs. However, we could consider supporting both syntax variants. In fact, the trait property syntax would be the natural way for traits (at the trait's declaration site, of course, not for "monkey patching"), while the `property` syntax would be the natural way for other types.
 - One step further: Automatic, optional **memoization of properties**.
 - The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify `name: String` and `sprite: Sprite` properties, this has to be re-declared inside every struct that extends `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
   - A way to implement mixins would be **mixing in shape types**.
@@ -123,13 +119,11 @@
     ```
     struct Position
       mut x: Real, mut y: Real
-    end
     
     type +Position = %{ position: Position }
     
     struct Player
       mix +Position
-    end
     ```
     
     However, this does not support mixing in mutable properties, and thus couldn't be the only solution.
@@ -140,7 +134,6 @@
     x: Real as X
     y: Real as Y
     z: Real as Z
-  end
   ```
 
   Each envelope type becomes part of the (companion) module of the struct, so the code above implicitly declares the following:
@@ -150,7 +143,6 @@
     envelope X(Real)
     envelope Y(Real)
     envelope Z(Real)
-  end
   ```
 
   However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
@@ -160,12 +152,11 @@
     id: Int as Id
     name: String as Name
     score: Real as Score
-  end
   
   let jeremy = Account(1, "Jeremy", 15.37)
-  > jeremy.id : Account.Id
-  > jeremy.name : Account.Name
-  > jeremy.score : Account.Score
+  --> jeremy.id : Account.Id
+  --> jeremy.name : Account.Name
+  --> jeremy.score : Account.Score
   ```
 
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.

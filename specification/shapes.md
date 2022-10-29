@@ -25,9 +25,8 @@ type Options = %{ show_teeth?: Boolean, volume: Real }
 
 func bark(options: Options): String = 'Your dog barks at a volume of ${options.volume} decibels!'
 
-act test()
+proc test() do
   bark(%{ show_teeth?: true, volume: 80 })
-end
 ```
 
 
@@ -41,8 +40,9 @@ Shape types are *structural types*. A struct or shape type `A` is a **subtype** 
 ```
 type Positioned2D = %{ x: Real, y: Real }
 type Positioned3D = %{ x: Real, y: Real, z: Real }
-// Positioned3D is a subtype of Positioned2D, but not vice versa.
 ```
+
+`Positioned3D` is a subtype of `Positioned2D`, but not vice versa.
 
 
 
@@ -63,12 +63,11 @@ func free(cage: %{ content: Tiger }): Nothing = panic('Are you insane?')
 struct Blackbox(content: Animal)
 struct Whitebox
   open content: Animal
-end
 
-free(%{ content: fish })   // --> returns the fish
-free(%{ content: tiger })  // --> panics
-free(Blackbox(tiger))      // --> returns the tiger, oh-oh!
-free(Whitebox(tiger))      // --> panics
+free(%{ content: fish })   --> returns the fish
+free(%{ content: tiger })  --> panics
+free(Blackbox(tiger))      --> returns the tiger, oh-oh!
+free(Whitebox(tiger))      --> panics
 ```
 
 `Blackbox` doesn't know what the run-time type of `content` is, because the property is static. Hence, calling `free` with a black box filled with a tiger results in the first function being called. In contrast, `Whitebox` lets `free` make the smart decision of not releasing the tiger, because the open property provides enough information at run-time.
@@ -83,33 +82,30 @@ We can support such **entity-component systems** natively (and especially with t
 
 ```
 struct Position
-  mut x: Real, mut y: Real, mut z: Real 
-end
+  mut x: Real, mut y: Real, mut z: Real
+
 type +Position = %{ position: Position }
 
-act move(entity: +Position, distance: Real, direction: Vector3) do
-  // calculate new x, y and z coordinates...
+proc move(entity: +Position, distance: Real, direction: Vector3) do
+  -- calculate new x, y, and z coordinates...
   entity.position.x = x
   entity.position.y = y
   entity.position.z = z
-end
 
 struct Shape
   width: Real, height: Real, depth: Real 
-  model: Model 
-end
+  model: Model
+
 type +Shape = %{ shape: Shape }
 
-act render(entity: +Position & +Shape) do
-  // use entity.position and entity.shape to render the entity...
-end
+proc render(entity: +Position & +Shape) do
+  -- use entity.position and entity.shape to render the entity...
 
-// The `extends` is not strictly necessary, but provides additional compile-time safety should either
-// +Position/+Shape or the corresponding properties change unexpectedly.
+-- The `extends` is not strictly necessary, but provides additional compile-time safety should either `+Position`,
+-- `+Shape`, or the corresponding properties change unexpectedly.
 struct Hero extends +Position, +Shape
-  position: Position  // Note that position does not need to be open since structs like Position can't have subtypes.
+  position: Position  -- Note that position does not need to be open since structs like Position can't have subtypes.
   shape: Shape
-end
 ```
 
 The benefit of this approach: any struct or shape that contains a property `position: Position` and `shape: Shape` can be used as an entity for the  `move` and `render` functions. We can conceive any number of additional entities that can just as much use these already existing functions. This enables **generic programming over partial structures**, i.e. entities and components.
@@ -117,9 +113,8 @@ The benefit of this approach: any struct or shape that contains a property `posi
 **Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
 
 ```
-act render(entity: +Position & +Shape & +Color) do
-  // use position, shape AND color to render the entity...
-end
+proc render(entity: +Position & +Shape & +Color) do
+  -- use position, shape AND color to render the entity...
 ```
 
 
@@ -144,14 +139,12 @@ The ability to dispatch on property types effectively turns a struct type into a
    
    struct Coffin(nail: Nail)
    
-   act main() do
+   proc main() do
      let fancy = FancyNail()
      let bloody = BloodyNail()
      let coffin_fancy = Coffin(fancy)
-     let coffin_bloody = Coffin(bloody)
-     
-     equal_types(coffin_fancy, coffin_bloody) // --> false
-   end
+     let coffin_bloody = Coffin(bloody) 
+     equal_types(coffin_fancy, coffin_bloody) --> false
    ```
 
 From the first point, it is clear that we cannot just have all properties marked as "dispatchable". There is the opportunity for different **optimizations**, but none of them are straight-forward. If the compiler could analyze this problem perfectly, it would only mark the properties as dispatchable that are actually involved in structural dispatch. But deciding whether a run-time property type is used for run-time dispatch is impossible.
@@ -166,24 +159,20 @@ struct Position3D(x: Real, y: Real, z: Real) extends Position
 struct Hero
   health: Health
   open position: Position
-end
 
 type +Position = %{ position: Position }
 type +Position3D = %{ position: Position3D }
 
-act move(entity: +Position) do
+proc move(entity: +Position) do
   ...
-end
 
-act move(entity: +Position3D) do
+proc move(entity: +Position3D) do
   ...
-end
 
-act test() do
+proc test() do
   let hero = Hero(Health(), Position3D(0, 0, 0))
   
-  // Dispatches to the second move function, since position is an open property.
-  // If position wasn't open, the call would dispatch to the first move function.
+  -- Dispatches to the second move function, since position is an open property.
+  -- If position wasn't open, the call would dispatch to the first move function.
   move(hero)
-end
 ```

@@ -10,7 +10,7 @@ A **multi-function** is a set of functions bearing the same name, embedded in a 
 
 A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name includes the module name. Function names are normal identifiers, as described [here](identifiers.md). The input type is defined as the tuple type of all parameter types in the order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be invoked at run-time. A function that is not abstract is also called *concrete*. 
 
-An **action** is a function whose return type is `Unit`. Unless abstract, an action must have a block as its body, rather than any kind of expression. Conceptually, an action achieves results via side effects rather than a returned value.
+A **procedure** is a function whose return type is `Unit`. Unless abstract, a procedure must have a block as its body, rather than any kind of expression. Conceptually, a procedure achieves results via side effects rather than a returned value.
 
 A **multi-function** is a set of functions with the same full name. Each multi-function has its own specificity/dispatch hierarchy, which is used to choose the correct function to invoke during multiple dispatch.
 
@@ -20,12 +20,11 @@ A **multi-function** is a set of functions with the same full name. Each multi-f
 func foo(number: Int): Real = number * 1.5
 func foo(string: String): String = '$string ???'
 
-act bar(value: Real) do
+proc bar(value: Real) do
   println(value)
-end
 ```
 
-This Lore code contains the functions `foo(Int): Real`, `foo(String): String`, and `bar(Real): Unit`. It contains two multi-functions `foo` and `bar`, the latter of which only has one function to invoke, making multiple dispatch for `bar` trivial. The `foo` multi-function is defined for `String` and `Int` single arguments. The return types of the three functions are `Real`, `String`, and `Unit`. Their expression bodies are `number * 1.5`, `'$string ???'`, and `do println(value) end`.
+This Lore code contains the functions `foo(Int): Real`, `foo(String): String`, and `bar(Real): Unit`. It contains two multi-functions `foo` and `bar`, the latter of which only has one function to invoke, making multiple dispatch for `bar` trivial. The `foo` multi-function is defined for `String` and `Int` single arguments. The return types of the three functions are `Real`, `String`, and `Unit`. Their expression bodies are `number * 1.5`, `'$string ???'`, and `println(value)`.
 
 ##### Constraint on Return Types
 
@@ -169,7 +168,7 @@ This function does not assume the list and element to agree. Rather, it expects 
 Since type variables are assigned by multiple dispatch, assigning type variables manually during a function call is impossible. A call such as this, with imaginary syntax, is simply impossible:
 
 ```
-append[Real]([1, 2, 3], 4.5)  // Impossible code!
+append[Real]([1, 2, 3], 4.5)  -- Impossible code!
 ```
 
 Of course, this is quite idiomatic in languages like Scala. We should be able to force the type variable if it isn't being inferred correctly, right? But with multiple dispatch, we are moving type variable assignment to the runtime, because it is essentially part of the dispatch decision.
@@ -205,15 +204,15 @@ object AI extends A
 trait B
 object BI extends B
 
-func f(a: A, b: B)   // f1
-func f(a: AI, b: B)  // f2
-func f(a: A, b: BI)  // f3
+func f(a: A, b: B)   -- f1
+func f(a: AI, b: B)  -- f2
+func f(a: A, b: BI)  -- f3
 ```
 
 This code does not compile. While `f1` is fully covered, neither `f2` nor `f3` are covered themselves and thus don't satisfy the totality constraint. Let's add another function `f4`:
 
 ```
-func f(a: AI, b: BI) // f4
+func f(a: AI, b: BI) -- f4
 ```
 
 Now, the totality constraint is satisfied for all functions. But then the code compiles, which it shouldn't, right? *Wrong.* The *input abstractness constraint* makes `f4` invalid. The idea that functions need to be implemented for concrete values might not be encoded in the totality constraint, but it is still checked within the system.
@@ -274,24 +273,21 @@ f.fixed[T1, T2, ...]
 The most obvious example is invoking a **"super"** function of some other, more specialized function. Here is the basic pattern:
 
 ```
-// Assume types A, A1 <: A, A2 <: A, and some type R.
+-- Assume types A, A1 <: A, A2 <: A, and some type R.
 
-func f(a: A): R = do
-  // ... some general implementation
-end
+func f(a: A): R =
+  -- ... some general implementation
 
-func f(a: A1): R = do
-  // ... some actions specific to A1
-  // Then call the "super" function to handle the general case.
+func f(a: A1): R =
+  -- ... some actions specific to A1
+  -- Then call the "super" function to handle the general case.
   f.fixed[A](a)
-end
 
-func f(a: A2): R = do
-  // First call the "super" function to handle the general case.
+func f(a: A2): R =
+  -- First call the "super" function to handle the general case.
   let result = f.fixed[A](a)
-  // ... some actions specific to A2
+  -- ... some actions specific to A2
   result
-end
 ```
 
 Having to specify the exact type isn't great for this use case. We might add an actual super keyword with syntactic sugar at some point. This requires the function to have only one dispatch hierarchy parent, however. 
@@ -316,22 +312,21 @@ In Lore, you can define a type hierarchy with behavior such as presented in this
 trait Target
 
 trait Vehicle
-act move(Vehicle, Target)
+proc move(Vehicle, Target)
 
 trait Car extends Vehicle
-act move(Car, Target)
+proc move(Car, Target)
 
 trait Train extends Vehicle
-act move(Train, Target)
+proc move(Train, Target)
 ```
 
-This is a fairly standard example of single dispatch. Note that all actions so far are declared abstract. We can create a struct that extends the `Car` trait:
+This is a fairly standard example of single dispatch. Note that all functions so far are declared abstract. We can create a struct that extends the `Car` trait:
 
 ```
 struct SmartCar extends Car
-act move(car: SmartCar, target: Target) do
-  // ...
-end
+proc move(car: SmartCar, target: Target) do
+  -- ...
 ```
 
 Now, data (types) and behavior are completely orthogonal. You can define them separately from each other and only marry them when it's needed. Even if you only or mostly use Lore's multiple dispatch on one argument, you will find that this style of writing functions is far more flexible than the object-oriented class/method approach.
@@ -339,17 +334,14 @@ Now, data (types) and behavior are completely orthogonal. You can define them se
 So let's assume that we have two kinds of targets: `GpsCoordinates` and `Directions`. Our smart car can deal with both (either taking GPS coordinates or directions through verbal input). Instead of pattern-matching the `target` argument (as one might approach it in a language like Scala, since we cannot go beyond single dispatch), we can simply specialize the `move` function:
 
 ```
-act move(car: SmartCar, target: Target) do
-  // ... fallback behavior
-end
+proc move(car: SmartCar, target: Target) do
+  -- ... fallback behavior
 
-act move(car: SmartCar, target: GpsCoordinates) do
-  // ... use GPS and self-driving capability to move to the coordinates.
-end
+proc move(car: SmartCar, target: GpsCoordinates) do
+  -- ... use GPS and self-driving capability to move to the coordinates.
 
-act move(car: SmartCar, target: Directions) do
-  // ... understand and execute the driver's verbal directions.
-end
+proc move(car: SmartCar, target: Directions) do
+  -- ... understand and execute the driver's verbal directions.
 ```
 
 When `Vehicle` was declared, it might have never been anticipated that we'd need to dispatch on the `Target` argument, too. In Lore, we can do so at any time. Perhaps the `Directions` type was even introduced later (as a new feature for the self-driving software) and software engineers were lucky enough to be using a language with multiple dispatch: Lore allows you to build on top of existing concerns in a natural manner, and you end up being not *as* constrained by the expression problem.

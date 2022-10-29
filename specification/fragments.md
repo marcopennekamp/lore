@@ -4,13 +4,15 @@
 
 A fragment may contain the following **declarations:**
 
-- [Functions and actions](multi-functions.md)
+- [Functions](multi-functions.md)
 - [Trait and structs](traits-structs.md)
 - [Type aliases](types.md#type-aliases)
 - [Modules](modules.md)
 - [Specs](specs.md)
 - Global Variables
 - Domains
+
+Lore uses **significant indentation** to delimit scopes and blocks. The compiler is currently the authority on whether a given piece of Lore code is indented properly. We will add a document describing the exact rules and common pitfalls at a later date.
 
 ###### Example
 
@@ -19,9 +21,8 @@ use lore.test._
 
 func identity(x: A): A where A = x
 
-act move(entity: Player, distance: Int) do
+proc move(entity: Player, distance: Int) do
   move(entity.position, distance)
-end
 
 let melee_range: Real = 1.5
 
@@ -29,7 +30,6 @@ trait Monster extends Character
 
 struct Zombie extends Monster
   mut health: Int
-end
 
 type StringFunction[A] = A => String
 
@@ -37,24 +37,19 @@ module Math do
   let pi: Real = 3.14159
 
   func absolute(x: Int): Int = if x < 0 then -x else x
-end
 
 domain zombie: Zombie
-  act damage(attack: Int) do
+  proc damage(attack: Int) do
     zombie.health -= attack
-  end
-end
 
-spec identity do
+spec 'identity' do
   identity(5) should_eq 5
   identity('foo') should_eq 'foo'
-end
 
-spec zombie_attack do
+spec 'zombie attack' do
   let zombie = Zombie(20)
-  damage(zombie, 7)
+  zombie.damage(7)
   zombie.health should_eq 13
-end
 ```
 
 
@@ -72,16 +67,14 @@ Declaring a global variable and function with the **same name** is illegal and r
 ```
 let default_name: String = 'John Doe'
 
-let complex_variable: [Int] = do
+let complex_variable: [Int] =
   let a = 5
   let b = 2
   let mut i = b
-  while i < a
+  while i < a do
     let result = i
     i += 1
     result
-  end
-end
 ```
 
 
@@ -97,19 +90,18 @@ Domains help to avoid repetition when defining multiple functions over the same 
 ```
 @where A
 domain list: [A]
-  func last(): A = get(list, length(list) - 1)
-  func init(): [A] = slice(list, 0, length(list) - 1)
-end
+  func last(): A = list.get(list.length - 1)
+  func init(): [A] = list.slice(0, list.length - 1)
 ```
 
 The above code will be effectively **translated** to the following code during parsing:
 
 ```
 @where A
-func last(list: [A]): A = get(list, length(list) - 1)
+func last(list: [A]): A = list.get(list.length - 1)
 
 @where A
-func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
+func init(list: [A]): [A] = list.slice(0, list.length - 1)
 ```
 
 ###### Example 2
@@ -120,12 +112,9 @@ Like functions, domains may use the inline and annotation styles of **where** cl
 domain x: A where A
   identity(): A = x
   pair(): (A, A) = (x, x)
-end
 
 @where A, E
 domain list: [A], element: E
   append(): [A | E] = list :+ element
   prepend(): [A | E] = concat([element], list)
-end
 ```
-

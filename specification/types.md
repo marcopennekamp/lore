@@ -29,10 +29,10 @@ Note that the compiler immediately performs the following **simplifications** on
 Type constructors have the following **precedence** (lowest priority first):
 
 ```
-|                                  // sum types
-&                                  // intersection types
-=>                                 // function types
-id #id () (,) [] #[->] %{} (...)   // name, symbol, unit, tuple, list, map, shape, enclosed
+|                                  -- sum types
+&                                  -- intersection types
+=>                                 -- function types
+id #id () (,) [] #[->] %{} (...)   -- name, symbol, unit, tuple, list, map, shape, enclosed
 ```
 
 
@@ -137,7 +137,7 @@ The empty tuple `()` is an important type, as it signifies the absence of a valu
 
 ```
 ('hello', 15): (String, Int)
-(a, b, c): (A, B, C)          // with a: A, b: B, c: C
+(a, b, c): (A, B, C)          -- with a: A, b: B, c: C
 ```
 
 
@@ -193,7 +193,7 @@ A shape or struct type `A` is the **subtype** of a shape type `B` if `A` contain
 ###### Syntax Example
 
 ```
-%{ }                            // the empty shape type supertypes all shape and struct values
+%{ }                            -- the empty shape type supertypes all shape and struct values
 %{ x: Real, y: Real, z: Real }  
 %{ position: Position }
 %{ grotesque: Fish & Mammal }

@@ -11,7 +11,7 @@ Here are the **rules** for each kind of value:
 - **Function** values receive their *compile-time type*.
 - **List** values receive their *compile-time type*.
   - Many list operations take away a part of the list. If we guaranteed that list values always had their narrowest possible type, we would have to recompute the element type from all actual element values every time that a list is split, the `tail` or `init` is taken, or simply an arbitrary element is removed. It's a *performance decision* to type run-time lists with their compile-time types.
-  - For example, the operation `['hello', 1, 2] |> List.tail` still types the list as `[String | Int]`. It might be obviously strange in this simple case, but the search for a general solution will quickly get out of hand.
+  - For example, the operation `['hello', 1, 2] |> tail` still types the list as `[String | Int]`. It might be obviously strange in this simple case, but the search for a general solution will quickly get out of hand.
   - The append operation for lists also creates a new list with the append result's compile-time type.
   - The run-time type semantics for lists are conservative. If we find a data structure that gracefully handles element type changes based on value additions and removals, without it overly affecting performance, guaranteeing the narrowest possible element type would not break much if any existing code. The only code to be broken would rely on spurious type semantics.
 - **Maps** are currently under review and will be overhauled at a later date.

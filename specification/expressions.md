@@ -11,13 +11,14 @@ Lore is an expression-based language. This document presents the kinds of **valu
 ###### Syntax Example
 
 ```
-// They are legal at the top level of blocks.
-do let x = 0 end
+-- They are legal at the top level of blocks.
+do 
+  let x = 0
 
-// They are legal as the body of conditionals and loops.
+-- They are legal as the body of conditionals and loops.
 if y == 0 then x = 0 else x = 5
-while i < 10 yield i += 1
-for entity <- entities yield count += 1
+while i < 10 do i += 1
+for entity <- entities do count += 1
 ```
 
 Top-level expressions are currently **variable declarations**, **assignments**, and **returns**.
@@ -37,11 +38,11 @@ See [identifiers](identifiers.md) for more information about valid and invalid v
 ###### Syntax Example
 
 ```
-let x: T = v1      // immutable variable declaration
-let x = v1         // inferred immutable variable declaration
-let mut x: T = v1  // mutable variable declaration
-let mut x = v1     // inferred mutable variable declaration
-x                  // variable expression
+let x: T = v1  -- immutable variable declaration
+let x = v1     -- inferred immutable variable declaration
+var x: T = v1  -- mutable variable declaration
+var x = v1     -- inferred mutable variable declaration
+x              -- variable expression
 ```
 
 
@@ -53,9 +54,9 @@ An **assignment** assigns a new value to a mutable variable or property. The typ
 ###### Syntax Example
 
 ```
-x = 5                        // variable assignment, only valid if `x` is mutable
-character.name = 'Weislaus'  // property assignment, `name` must be mutable
-character.position.x = x     // deep property assignment, only `x` must be mutable
+x = 5                        -- variable assignment, only valid if `x` is mutable
+character.name = 'Weislaus'  -- property assignment, `name` must be mutable
+character.position.x = x     -- deep property assignment, only `x` must be mutable
 ```
 
 ##### Shorthands
@@ -63,10 +64,10 @@ character.position.x = x     // deep property assignment, only `x` must be mutab
 Lore offers the following **assignment shorthands:**
 
 ```
-a += b  // a = a + b
-a -= b  // a = a - b
-a *= b  // a = a * b
-a /= b  // a = a / b
+a += b  -- a = a + b
+a -= b  -- a = a - b
+a *= b  -- a = a * b
+a /= b  -- a = a / b
 ```
 
 
@@ -78,14 +79,10 @@ The **return** top-level expression returns a value from a function. The syntax 
 ###### Example 1
 
 ```
-func contains?(strings: [String], string: String): Boolean = do
-  for string2 <- strings
-    if string == string2
-      return true
-    end
-  end
+func contains?(strings: [String], string: String): Boolean =
+  for string2 <- strings do
+    if string == string2 then return true
   false
-end
 ```
 
 ###### Example 2
@@ -93,11 +90,10 @@ end
 **Early returns** are a useful way to achieve cleaner code:
 
 ```
-act move(entity: Entity, distance: Int) do
+proc move(entity: Entity, distance: Int) do
   if rooted?(entity) then return
   if collision_ahead?(entity) then return  
-  // Move the entity...
-end
+  -- Move the entity...
 ```
 
 ##### Nesting Returns
@@ -105,9 +101,11 @@ end
 Returns **cannot be placed in nested expressions** in certain cases. For example, the following code is *illegal*:
 
 ```
-func foo(): String = do
-  if (do return false end) then 'hello' else 'world'
-end
+func foo(): String =
+  if (
+    do 
+      return false
+  ) then 'hello' else 'world'
 ```
 
 Returns may be placed in the following kinds of expressions, provided the expression itself occurs in a permissible context:
@@ -123,18 +121,42 @@ Lambda function bodies may also not contain return expressions at this time, as 
 
 ### Blocks
 
-A **block** is a sequence of expressions. Blocks are expressions, as they evaluate to the value of their last expression. For example:
+A **block** is a sequence of expressions that opens a new lexical scope. Blocks are expressions, as they evaluate to the value of their last expression. A block can have zero expressions, in which case it will implicitly evaluate to `Unit`.
+
+Blocks can be opened with the `do` keyword or implicitly after the following tokens:
 
 ```
-let result = do
+= => 
+while do if then else 
+```
+
+###### Example
+
+```
+let result =
   let a = 5
   let b = 10.0
   let c = get_reason()
   if c == 'business' then a * b else a / b
-end
 ```
 
-Blocks also open a new **lexical scope**. In the example above, neither `a`, `b`, or `c` are visible outside the block.
+In the example above, neither `a`, `b`, or `c` are visible outside the block, because blocks have their own lexical scopes.
+
+###### Example 2
+
+`do` can be used to manually open a block to take advantage of lexical scoping:
+
+```
+let x = 5
+do
+  let y = 10
+  let z = 2
+  println(x * y / z)
+  
+let y = 5
+let z = x + y
+println(z / y)
+```
 
 
 
@@ -147,23 +169,21 @@ For now, we want to keep the grammar of literals to a minimum. Hence, we do not 
 - **Int:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
 - **Real:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
-Conversions between integers and reals can be done with the functions `lore.Int.to_real` and `lore.Real.to_int`.
+Conversions between integers and reals can be done with the functions `lore.number.to_real` and `lore.number.to_int`.
 
 ##### Arithmetic Operators
 
 The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function `lore.number.rem`.
 
 ```
-a + b  // Addition
-a - b  // Subtraction
-a * b  // Multiplication
-a / b  // Division
--a     // Negation
+a + b  -- Addition
+a - b  -- Subtraction
+a * b  -- Multiplication
+a / b  -- Division
+-a     -- Negation
 ```
 
-If `a` or `b` is a `Real` and the other is an `Int`, the `Int` will be implicitly converted to `Real`.
-
-Division of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
+Lore does not support implicit conversions between `Int` and `Real`. Division of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
 
 
 
@@ -176,9 +196,9 @@ Lore supports **booleans**. Their type is `Boolean`. There are two boolean **val
 The following **logical operators** can be used on booleans. All arguments have to be `Boolean` values.
 
 ```
-a && b  // Conjunction
-a || b  // Disjunction
-!a      // Logical Not
+a and b  -- Conjunction
+a or  b  -- Disjunction
+not a    -- Logical Not
 ```
 
 
@@ -218,11 +238,10 @@ We suggest using a `#snake_case` naming convention for symbols.
 ###### Example
 
 ```
-func process(query: Query): Result | #syntax_error = do
+func process(query: Query): Result | #syntax_error =
   let parsed = parse(query)
   if error?(parsed) then #syntax_error
   else get_result(parsed)
-end
 ```
 
 
@@ -237,13 +256,13 @@ Lore supports **tuples**. As described by tuple types, tuples are fixed-size, he
 use lore.tuple.[first, third]
 
 let t = (a, b, c)
-first(t) // a
-third(t) // c
+first(t)  -- a
+third(t)  -- c
 ```
 
 ##### Unit
 
-Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `Unit` or `()`. The unit value is special in Lore, as it is the de-facto throwaway value, and also the implicit return type of actions.
+Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `Unit` or `()`. The unit value is special in Lore, as it is the de-facto throwaway value, and also the implicit return type of procedures.
 
 
 
@@ -286,7 +305,7 @@ We can define a map from strings to integers:
 
 ```
 let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
-// points: #[String -> Int]
+-- points: #[String -> Int]
 ```
 
 
@@ -299,7 +318,7 @@ let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
 
 ```
 let bark_options = %{ show_teeth: true, volume: 80 }
-// bark_options: %{ show_teeth: Boolean, volume: Int }
+-- bark_options: %{ show_teeth: Boolean, volume: Int }
 ```
 
 
@@ -312,9 +331,9 @@ Lore supports **struct instantiation** using the call syntax or the map syntax:
 struct A(b: B)
 
 let b = B()
-let a = A(b)        // Call syntax
-let a = A { b: b }  // Map syntax
-let a = A { b }     // Map syntax using shorthand
+let a = A(b)        -- Call syntax
+let a = A { b: b }  -- Map syntax
+let a = A { b }     -- Map syntax using shorthand
 ```
 
 The call-syntax constructor is an ordinary **function value** and can be used as such:
@@ -323,7 +342,7 @@ The call-syntax constructor is an ordinary **function value** and can be used as
 func construct(f: B => A, b: B): A = f(b)
 
 let b = B()
-let a = construct(A, b)  // Pass the constructor `A` to `construct`.
+let a = construct(A, b)  -- Pass the constructor `A` to `construct`.
 ```
 
 A **struct type alias** also defines a corresponding constructor function value:
@@ -348,15 +367,15 @@ You can access a **member** of a value with the `.` notation. The type of the ex
 Lore supports the following **comparison operators:**
 
 ```
-a == b   // Equality
-a != b   // Non-equality
-a < b    // Less than
-a <= b   // Less than or equal
-a > b    // Greater than
-a >= b   // Greater than or equal
+a == b   -- Equality
+a != b   -- Non-equality
+a < b    -- Less than
+a <= b   -- Less than or equal
+a > b    -- Greater than
+a >= b   -- Greater than or equal
 ```
 
-Non-equality, `a != b`, is strictly defined as `!(a == b)`. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b`. These identities are resolved during the parsing phase.
+Non-equality, `a != b`, is strictly defined as `!(a == b)`. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b`. These identities are desugared during the parsing phase.
 
 Default and custom equality and ordering is further elaborated on in the document [equality and order](equality-order.md).
 
@@ -390,19 +409,19 @@ Pipes are a purely syntactic construct. They are transformed to equivalent neste
 
 ```
 ['Hello', 'Bonjour', 'Hola', 'Privyet', 'Ciao', 'Hallo', 'Hej']
-  |> filter(str => String.length(str) < 5)
+  |> filter(str => str.length < 5)
   |> map(str => '$str, world!')
-  |> String.join(' ')
+  |> join(' ')
 ```
 
 This example will be transformed to:
 
 ```
-String.join(
+join(
   map(
     filter(
       ['Hello', 'Bonjour', 'Hola', 'Privyet', 'Ciao', 'Hallo', 'Hej'],
-      str => String.length(str) < 5,
+      str => str.length < 5,
     ),
     str => '$str, world!',
   ),
@@ -414,19 +433,16 @@ String.join(
 
 Lore's **uniform call syntax** allows calling a *multi-function* or *function value* with the member access syntax. A call `target.foo(a1, a2, ...)` will be transformed to `foo(target, a1, a2, ...)` if `foo` is not a member of `target`. Likewise, a member access `target.bar` will be transformed to `bar(target)` if `bar` is not a member of `target`.
 
-If transformed to a multi-function call, all arguments including `target` are subject to multiple dispatch.
+If transformed to a multi-function call, all arguments *including `target`* are subject to multiple dispatch.
 
-Uniform call syntax is not syntactically interchangeable with the normal call syntax. If in `instance.foo` the instance cannot be inferred, the compiler cannot make sure that `foo` is not a member of `instance`, and so the member access cannot be transformed to a multi-function call. An exception exists for multi-function values (e.g. `map.tupled`) and lambda values (e.g. `((x, y) => x + y).tupled`), as uniform call syntax with function values is quite idiomatic and functions don't have any members.
+Uniform call syntax is not syntactically interchangeable with normal call syntax. If in `instance.foo` the instance cannot be inferred without additional type context, the compiler cannot make sure that `foo` is not a member of `instance`, and so the member access cannot be transformed to a multi-function call, even if `foo(instance)` is inferrable. An exception exists for multi-function values (e.g. `map.tupled`) and lambda values (e.g. `((x, y) => x + y).tupled`), as uniform call syntax with function values is quite idiomatic and functions don't have any members.
 
 ###### Example
 
 ```
 let list = [1, 2, 3]
-if list.length > 1
-  list.get!(1)
-else
-  list.length.inc
-end
+if list.length > 1 then list.get!(1)
+else list.length.inc
 ```
 
 In the example above, `list.length` will be transformed to `length(list)`, `list.get!(1)` to `get!(list, 1)`, and `list.length.inc` to `inc(length(list))`.
@@ -440,6 +456,8 @@ a1 op a2
 ```
 
 `op` must be a simply named, binary multi-function, while `a1` and `a2` must be expressions. Similarly to pipes, the infix notation is a syntactic construct. Infix functions might be confusing to read in more complex expressions and should be used with measure.
+
+In a future version of the language, functions used in infix notation will need to be annotated.
 
 
 
@@ -461,8 +479,7 @@ If a type context cannot be inferred, a variable declaration or a type ascriptio
 
 ```
 let f: Int => String = to_string
-
-to_string :: Int => String
+let g = to_string :: Int => String
 ```
 
 
@@ -481,7 +498,7 @@ The expression evaluates to a **function value** which may be subsequently invok
 
 ### Intrinsic Function Calls
 
-Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **intrinsics**, which are functions built into the Lore VM.
+Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **intrinsics**, which are functions built into the Lore runtime.
 
 The syntax of an intrinsic function call is as follows:
 
@@ -506,49 +523,39 @@ If the condition is true, the **`if` expression** evaluates to `tle1`, otherwise
 ```
 if condition then tle1 else tle2
 
-if condition
+if condition then
   tles1
-end
 
-if condition
+if condition then
   tles1
 else
   tles2
-end
-```
-
-Note that either top-level expression (TLE) (or even `condition`) may be a block. The else part is, of course, optional. The so-called dangling else is always parsed as belonging to the `if` closest to it.
-
-The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end` or an `else`. An `else` with an implicit block must also be closed with an `end`. 
-
-To avoid ambiguities, the `else` part of an `if` with a `then` must follow on the same line as the closing of `tle1`, which will usually be on the same line as the `then`. This restriction will be relaxed once we implement indentation-guided parsing. An example of a situation which needs to be disambiguated is:
-
-```
-if condition1
-  if condition2 then tle1
+  
+if 
+  condition 
+then
+  tles1
 else
-  tle2
-end
+  tles2
 ```
 
-Does the `else` belong to the outer or inner `if`? With the restriction, it belongs to the outer. Without, there would be an ambiguity which would be parsed, due to the dangling else rule, as belonging to the inner `if`, contradicting the user's indentation.
+Note that either top-level expression (TLE) (and even `condition`) may be a block. The else part is, of course, optional. The so-called dangling else is always parsed as belonging to the `if` closest to it.
 
 ##### Cond
 
-The `cond` expression is more suitable than an `if` expression when many cases are involved. A `cond` case consists of a condition and a body, which is a single top-level expression. A `cond` expression evaluates to the body of the first case whose condition is true. 
+The `cond` expression is a multi-case `if` expression. It is more suitable than an `if` expression when many cases are involved. A `cond` case consists of a condition and a body, which is a single top-level expression (and may be a block). A `cond` expression evaluates to the body of the first case whose condition is true. 
 
-The `true => ...` case simulates an `else` branch and is called the *total* case. A total case is optional, but it must always be the last case. If omitted, the "else" branch of the `cond` evaluates to `()` (unit).
+The `else => ...` case is called the *total case* and serves the same function as an `else` branch in an `if` expression. A total case is optional, but it must always be the last case. If omitted, the total case is implicitly defined as `else => ()` (unit). Instead of `else => ...`, `true => ...` may also be used to define the total case. 
 
 ```
 cond
   condition1 => tle1
   condition2 => tle2
   ...
-  true => tlen
-end
+  else => tlen
 ```
 
-A newline must always follow `cond` and it must always be closed with an `end`. Each case must be placed on its own line. If a condition should be a conditional expression, a loop, or a lambda function, the condition must be enclosed in parentheses: `(if a then b else c) => 'fabulous!'`.
+The cases of `cond` must always be indented properly. Each case must be placed on its own line. If a condition should be a conditional expression, a loop, or a lambda function, the condition must be enclosed in parentheses: `(if a then b else c) => 'fabulous!'`. (TODO (syntax): Can we loosen this last restriction?)
 
 
 
@@ -561,11 +568,10 @@ A newline must always follow `cond` and it must always be closed with an `end`. 
 A **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
-while condition yield tle
+while condition do tle
 
-while condition
+while condition do
   tles
-end
 ```
 
 We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `repeat`). You should instead work with a function and a while or recursion.
@@ -575,11 +581,10 @@ We have decided to provide **no support for do-while loops**, because we feel th
 A **for comprehension** iterates over a list or map:
 
 ```
-for e1 <- col1, e2 <- col2, ... yield tle
+for e1 <- col1, e2 <- col2, ... do tle
 
-for e1 <- col1, e2 <- col2
+for e1 <- col1, e2 <- col2 do
   tles
-end
 ```
 
 In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the `for` comprehension into **nested iteration**. Each extractor opens its own scope, so `for xs <- xs, xs <- xs` is technically possible. The first collection `xs` refers to the outer scope, while the second collection `xs` refers to the variable of the first extractor.
@@ -588,15 +593,15 @@ For now, the only collections allowed are lists and maps, but we want to extend 
 
 ##### Loops as Expressions
 
-Loops are expressions, too. Similar to `if` expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
+Loops are expressions, too. Similar to `if` expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**. The compiler optimizes away the creation of the resulting list if it isn't used.
 
-Take the following example:
+###### Example
 
 ```
-let names = for animal <- animals yield animal.name
+let names = for animal <- animals do animal.name
 ```
 
-The for comprehension **aggregates the names** of all animals in a list of type `[String]`. The compiler optimizes away the creation of the resulting list if it isn't used.
+The for comprehension aggregates the names of all animals in a list of type `[String]`. 
 
 
 
@@ -609,7 +614,7 @@ The type ascription operator *cannot* cast a value's type to an incompatible typ
 ###### Example
 
 ```
-let mut option = Option.some(Fox() :: Animal)  // option: Option[Animal]
+let mut option = Option.some(Fox() :: Animal)  -- option: Option[Animal]
 ```
 
 
@@ -619,8 +624,8 @@ let mut option = Option.some(Fox() :: Animal)  // option: Option[Animal]
 The **operator precedence** is defined as follows, from lowest to highest precedence:
 
 ```
-||
-&&
+or
+and
 == !=
 < <= > >=
 |>
@@ -629,12 +634,12 @@ id (infix function)
 + -
 * /
 ::
-! - (unary)
+not - (unary)
 atom
 ```
 
-Note that we don't view assignments as operators. **Complex expressions** such as conditionals or blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
+Note that Lore doesn't view assignment as an operator. **Complex expressions** such as conditionals or blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
 
 ```
-5 + (do 10 end) + (if a == b then 5 else 15)
+5 + (if a == b then 5 else 15)
 ```

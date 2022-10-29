@@ -2,13 +2,13 @@
 
 ### First Language Version
 
-The **first version** of Lore, which is still in development, includes or will include the following features:
+The **first version** of Lore, which is still in development, includes or will include (*in italics*) the following features:
 
-- **Types:** Basic types (Int, Real, Boolean, String), symbol types, sum types, intersection types, tuple types, function types, list types, map types, shape types, trait and struct types, type variables, abstractness, type inference, type aliases.
-- **Functions:** Multi-functions, function declarations with type parameters, multiple dispatch, abstract functions, fixed functions, static "no dispatch" functions.
+- **Types:** Basic types (Int, Real, Boolean, String), symbol types, sum types, intersection types, tuple types, function types, list types, map types, shape types, trait and struct types, type variables, type inference, type aliases.
+- **Functions:** Multi-functions, function declarations with type parameters, multiple dispatch, abstract functions, fixed functions, *static "no dispatch" functions*.
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
-- **Expressions:** Literals and value constructors (numbers, booleans, strings, symbols, tuples, lambdas, multi-function values, lists, maps, shapes, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
-- **Modules:** Module declarations, imports and name resolution, companion modules.
+- **Expressions:** Literals and value constructors (numbers, booleans, strings, symbols, tuples, lambdas, multi-function values, lists, maps, shapes, structs), basic operators, append for lists and maps, pipe operator, *pattern matching* (`case` expression with guards, and in parameters), blocks, (multi-)function calls (with uniform call syntax and infix notation), *trailing lambdas*, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
+- **Modules:** Module declarations, imports and name resolution, companion modules, *visibility*.
 - **Specs:** Spec declarations, assertions and expectations, `test` and `bench` VM commands.
 - **Miscellaneous:** Global constants, `domain` blocks.
 
@@ -20,7 +20,7 @@ The language will also be accompanied by a standard library called **Pyramid**, 
 - **Options:** Support for options, important functional operations on options.
 - **Strings:** Important string functions.
 
-This version of Lore will be used to **write the compiler in Lore**.
+This version of Lore may be used to **rewrite the compiler in Lore**.
 
 
 ### Going Further

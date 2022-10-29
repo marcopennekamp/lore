@@ -36,24 +36,20 @@ Properties can be **accessed** using the member access notation `struct.property
 ```
 struct Empty()
 struct Empty
-end
 
 struct Point(x: Real = 0, y: Real = 0, z: Real = 0)
 struct Point
   x: Real = 0, y: Real = 0, z: Real = 0
-end
 
 struct Position(mut point: Point)
 struct Position
   mut point: Point
-end
 
 struct Person
   name: String
   age: Int = 20
   calling: String = 'Arts and Science'
   position: Position
-end
 ```
 
 ##### Construction
@@ -68,14 +64,14 @@ Apart from these two constructor styles, all **derivative constructors** have to
 ###### Example
 
 ```
-// Call syntax.
-let point = Point(0.5, 1.5, 2.5)  // Constructor type: (Real, Real, Real) => Point
-let position = Position(point)    // Constructor type: Point => Position
+-- Call syntax.
+let point = Point(0.5, 1.5, 2.5)  -- Constructor type: (Real, Real, Real) => Point
+let position = Position(point)    -- Constructor type: Point => Position
 
-// Map syntax.
+-- Map syntax.
 let person = Person { name = 'Mellow', position = position }
 
-// If the variable name matches the property name, it's possible to omit the property name entirely.
+-- If the variable name matches the property name, it's possible to omit the property name entirely.
 let name = 'Shallow'
 let person2 = Person { name, position }
 ```
@@ -89,7 +85,6 @@ Normally, the **run-time type of a struct property** is not part of the run-time
 ```
 struct Soldier
   open weapon: Weapon
-end
 ```
 
 ##### Objects
@@ -105,18 +100,15 @@ It is possible to use objects inside the property values of other objects. Objec
 ```
 object None extends Option[Nothing]
 
-// Accessing an object via its name.
+-- Accessing an object via its name.
 let option: Option[Int] = None
 
-// Objects (e.g. None) can be used in the properties of other objects (e.g. Game). This particular example essentially 
-// creates mutable global state, which should be avoided if possible. Handle mutability with care!
-object Game do
+-- Objects (e.g. None) can be used in the properties of other objects (e.g. Game). This particular example essentially 
+-- creates mutable global state, which should be avoided if possible. Handle mutability with care!
+object Game
   name: String = 'Match Four'
   mut player: Option[Player] = None
-end
 ```
-
-Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects like `None` in the example, can be declared without parentheses and the `end` keyword. The intuitive syntax for this common case introduces an ambiguity for block-style objects in the `end` keyword. It is resolved with the `do`.
 
 
 
@@ -138,8 +130,8 @@ func hash(Hashable): Int
 
 struct Person extends Hashable
   name: String 
-end
-func hash(person: Person): Int = /* Compute the hash... */
+  
+func hash(person: Person): Int = ...
 ```
 
 
@@ -161,15 +153,15 @@ trait Option[A]
 struct Some[A](value: A) extends Option[A]
 object None extends Option[Nothing]
 
-let v1 = Some(Fox())          // --> Some[Fox]
-let v2 = Some[Animal](Fox())  // --> Some[Animal]
+let v1 = Some(Fox())          --> Some[Fox]
+let v2 = Some[Animal](Fox())  --> Some[Animal]
 ```
 
 The compiler will try its best to infer all type variables from the given properties, but this is not always possible. The same applies to **constructor function values**. Consider the following example:
 
 ```
-map([1, 2, 3], Some[Int])  // --> [Some[Int]]
-map([1, 2, 3], Some)       // --> [Some[Int]]
+map([1, 2, 3], Some[Int])  --> [Some[Int]]
+map([1, 2, 3], Some)       --> [Some[Int]]
 ```
 
 Both of these variants should work, as the compiler has enough context to infer that `A = Int` for the second `Some`.
@@ -233,7 +225,7 @@ struct None extends Option[Nothing]
 Open type variables may still be **manually specified**, but their run-time type will not adhere to the specified type. For example:
 
 ```
-let option = Some[Animal](Fox())  // option: Some[Animal]
+let option = Some[Animal](Fox())  -- option: Some[Animal]
 ```
 
 `option` will have the type `Some[Animal]` at compile time, even though inference would usually have given it the type `Some[Fox]`. However, at run-time, since the type parameter is open, `option` will contain a value of type `Some[Fox]`.
@@ -264,7 +256,6 @@ struct Box extends Position
   x_start: Real, x_end: Real
   y_start: Real, y_end: Real
   z_start: Real, z_end: Real
-end
 ```
 
 Of course, we also have to implement the abstract functions declared by `Position` for each of the structs extending the trait:
@@ -274,7 +265,7 @@ func x(point: Point): Real = point.x
 func y(point: Point): Real = point.y
 func z(point: Point): Real = point.z
 
-// The position of a box is its center!
+-- The position of a box is its center!
 func x(box: Box): Real = box.x_start + width(box) / 2
 func y(box: Box): Real = box.y_start + height(box) / 2
 func z(box: Box): Real = box.z_start + depth(box) / 2
@@ -283,18 +274,16 @@ func z(box: Box): Real = box.z_start + depth(box) / 2
 Finally, we could declare a function that just works with the data provided by `Position`: 
 
 ```
-func distance(pos1: Position, pos2: Position): Real = do
+func distance(pos1: Position, pos2: Position): Real =
   let dx = x(pos2) - x(pos1)
   let dy = y(pos2) - y(pos1)
   let dz = z(pos2) - z(pos1)
   sqrt(dx * dx + dy * dy + dz * dz)
-end
 
-act test() do
+proc test() do
   let box = Box(0, 10, 0, 10, 0, 10)
   let point = Point(3, 7, 9)
-  println(distance(box, point)) // --> 3.4641...
-end
+  println(distance(box, point)) --> 3.4641...
 ```
 
 Adding inheritance to this example would allow us to model positions of different dimensions:
@@ -333,7 +322,7 @@ func unique_name(Statistic): String
 Instead of implementing the hash function for every statistic individually, we can implement it just for the trait, relying on the unique name supplied by concrete statistics:
 
 ```
-func hash(statistic: Statistic): Int = hash(unique_name(statistic))
+func hash(statistic: Statistic): Int = hash(statistic.unique_name)
 ```
 
 Note that `Statistic` wouldn't need to extend the `Hashable` trait just to provide an implementation for the `hash` function. The value of having `Statistic` implement `Hashable` is chiefly twofold:
@@ -353,13 +342,11 @@ trait Dead
 The core usefulness of a label type comes from the idea that we can **specialize functions** when the label is present:
 
 ```
-act hit(monster: Monster) do
+proc hit(monster: Monster) do
   ...
-end
 
-act hit(monster: Monster & Dead) do
-  // Do something else if the monster is dead.
-end
+proc hit(monster: Monster & Dead) do
+  -- Do something else if the monster is dead.
 ```
 
 Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But if we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.

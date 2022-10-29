@@ -9,15 +9,19 @@
   - Move to a full indentation-based syntax. I think this provides the best consistency in the long run. There are already weird syntax rules around if-else (special rule around multi-line/single-line), modules (forced `do`), actions (forced `do`) and functions, cond (`do..end` for bodies with more than one expression), and so on. Significant indentation can fix all of these issues, while keeping the syntax consistent and with less noise overall.
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Remove automatic casts between Real and Int and exclusively rely on `to_int` and `to_real` functions. This removes one of Lore's biggest uncertainties for the user and thus hopefully a source of errors. Int literals should also not be usable as Real literals, i.e. `5` should never be typeable as a Real.
+    - Also remove automatic promotion of `Int` to `Real` in default comparisons and separate them in the type kind order.
   - Single-line version of loops: `while <condition> do <body>` instead of `yield`. I want to reserve `yield` for later usage.
   - Rename `act` to `proc`. This would be in line with `func`.
     - `act` could also be confused with `actor` (actor models, etc.), leading someone new to the language to think that the function somehow supports or enables concurrency via the actor model.
   - Rename `let mut` to `var`.
   - Rename `let` to `val`? 
     - `private let` for global values reads weirdly in comparison to `private val`. Yet I prefer `let` in function bodies.
-  - Replace `extends` with `:` (like in Kotlin)?
+  - Replace `extends` with `:` (like in Kotlin) or `<:`. `extends` is too noisy, in hindsight.
+    - Also take into accounts cases where `:`/`<:` should be placed on the next line. This could be a problem given significant indentation.
   - Allow `else` as the `true` cond case.
   - Rename `Boolean` to `Bool`. Int is also abbreviated.
+  - Consider renaming `<-` in `for` loops to `in`.
+  - Remove map construction syntax for structs and marry this with the call syntax. The call syntax should be able to work with default values in structs. Also find a way to create a struct from a shape value.
   - Collection syntax:
     - Maps: `#['Alex' -> 22, 'Mary' -> 17]`
     - Sets: `#['Alex', 'Mary']`
@@ -154,6 +158,9 @@
 - Allow non-equality (`!=`) to be implemented separately, as non-equality can sometimes be proven more quickly than equality.
 - Introduce a `Number` type that supertypes both `Int` and `Real` (possibly just `type Number = Int | Real`) and that can be used for arithmetic operations. The exact semantics of such a type have to be figured out, but the easiest would be implicit conversions from `Int | Real` to `Real`, which could be supported by amending the `IntToReal` instruction such that it's idempotent if `Real` values are passed to it.
   - The motivation for a `Number` type would be defining math functions, for example, but this requires specialization instead of implicit conversion. For example, a function `func max[N <: Number](a: N, b: N): N = if a > b then a else b` would need to be specialized for `Int` and `Real`, or alternatively work with an implementation of `>` that delegates to the correct instruction based on `N`. And then there is performance, as type parameters are notoriously slow to handle in Lore's multiple dispatch. So this would require a separate compile-time specialization mechanism, which perhaps isn't worth the effort given that we only have two number types.
+- Overhaul multi-reference name resolution and imports:
+  - Dividing multi-references into local and global layers seems quite hacky, as it "squashes" the usual scoping and name resolution rules. Perhaps we can look at Kotlin's "tower" name resolution approach (and especially its static overload resolution) for inspiration.
+  - Imports only being available at the module level is overly restrictive. Imports should be available in blocks. Again, look at Kotlin's tower strategy for inspiration.
 
 ##### Syntax
 

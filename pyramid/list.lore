@@ -83,8 +83,6 @@ func map(list: [A], f: B => C): [C] = intrinsic[[C]]('lore.list.map', list, f)
 @where A, B >: A, C
 func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flat_map', list, f)
 
--- TODO (syntax): Maybe `proc` syntax with `=`: proc each(list: [A], f: B => Unit) = intrinsic[Unit]('lore.list.each', list, f)
-
 -- Calls [f] with each element of [list].
 @where A, B >: A
 proc each(list: [A], f: B => Unit) do

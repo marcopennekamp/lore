@@ -14,13 +14,11 @@ This document specifies the default implementations and provides guidelines for 
 - **Strings:** Two strings are equal if they have exactly the same bytes.
 - **Symbols:** Two symbols are equal if they have the same name.
 - **Tuples:** Two tuples are equal if they have the same size and their elements are equal under `lore.core.equal?`.
-- **Functions:** Two functions are equal if they have the same reference.
+- **Functions:** Two functions are equal if they have the same underlying reference.
 - **Lists:** Two lists are equal if they have the same length and all their elements are equal under `lore.core.equal?`.
 - **Shapes:** Two shapes are equal if they have the same property names and their properties are equal under `lore.core.equal?`.
 - **Structs:** Two structs are equal if they have the same schema and their property values are equal under `lore.core.equal?`.
   - This default implementation considers two structs with different open property types as equal if their property values are equal under `lore.core.equal?`, as struct types have no bearing on the definition of equality.
-
-In comparisons between `Real` and `Int`, both the compiler and the default implementation of equality promote the `Int` to a `Real`.
 
 
 
@@ -28,7 +26,7 @@ In comparisons between `Real` and `Int`, both the compiler and the default imple
 
 A particular issue with ordering arbitrary values is that some values are simply incomparable, which results in partial orders. Comparison sorting algorithms require total orders, so it's desirable to ensure that most orders are total. Lore tries to give a sensible default order to any kind of value to attempt exactly this. One such measure is assigning an order to booleans, namely `false < true`.
 
-If two values have different type kinds, the values are ordered based on the kind, in this order: `Int/Real < Boolean < String < Symbol < Tuple < Function < List < Map < Shape < Struct`. Note that in comparisons between `Real` and `Int`, both the compiler and the default implementation of order promote the `Int` to a `Real`. This kind order is instrumental in achieving a total order between arbitrary values.
+If two values have different type kinds, the values are ordered based on the kind, in this order: `Int < Real < Boolean < String < Symbol < Tuple < Function < List < Map < Shape < Struct`. This kind order is instrumental in achieving a total order between arbitrary values.
 
 - **Ints:** Two integers are ordered in accordance to standard signed 64-bit integer comparison.
 - **Reals:** Two numbers are ordered in accordance to the IEEE 754 standard for 64-bit floats.
@@ -47,7 +45,7 @@ Note that these defaults, especially around structs and shapes, can result in pr
 
 ### Custom Equality and Order
 
-The equality and order functions in `lore.core` can be overwritten to implement custom comparisons of arbitrary pairs of types. The only type combinations that do not admit custom comparisons are `Int/Int, Int/Real, Real/Int, Real/Real, Boolean/Boolean, String/String, Symbol/Symbol`. For example, it is technically possible to override the default implementation for generic list equality, but obviously not encouraged at all.
+The equality and order functions in `lore.core` can be overwritten to implement custom comparisons of arbitrary pairs of types. The only type combinations that do not admit custom comparisons are comparisons between two operands of the same primitive type (`Int/Int, Real/Real, Boolean/Boolean, String/String, Symbol/Symbol`). For example, it is technically possible to override the default implementation for generic list equality, but obviously NOT encouraged at all.
 
 Consider the following example struct:
 
@@ -56,19 +54,16 @@ struct Adventurer
   id: Int
   name: String
   equipment: [Item]
-end
 ```
 
 Two adventurers with the same ID are considered to be equal, so we don't need to check the other fields. However, for sorting adventurers, we want to order them by name and then ID, ignoring the equipment. This can be achieved with the following custom implementations:
 
 ```
-module lore.core do
+module lore.core
   func equal?(adv1: Adventurer, adv2: Adventurer): Boolean = adv1.id == adv2.id
 
-  func less_than?(adv1: Adventurer, adv2: Adventurer): Boolean = do
-    adv1.name < adv2.name || adv1.name == adv2.name && adv1.id < adv2.id
-  end
-end
+  func less_than?(adv1: Adventurer, adv2: Adventurer): Boolean =
+    adv1.name < adv2.name or adv1.name == adv2.name and adv1.id < adv2.id
 ```
 
 
@@ -78,10 +73,10 @@ end
 This is the default implementation for `less_than_equal?`: 
 
 ```
-func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b)
+func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) or equal?(a, b)
 ```
 
-The reason for this definition is that it preserves the identity `(a <= b) == (a < b || a == b)`. Under this view, `<=` is just syntactic sugar for the combination of `<` and `==`. 
+The reason for this definition is that it preserves the identity `(a <= b) == (a < b or a == b)`. Under this view, `<=` is just syntactic sugar for the combination of `<` and `==`. 
 
 There are legitimate reasons to provide an alternative definition for `<=`:
 

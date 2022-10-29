@@ -16,18 +16,15 @@ Specs are part of regular fragments and may be declared anywhere at the top leve
 
 ```
 spec 'a test' do
-  // body
-end
+  -- body
 
 @bench
 spec 'a test and benchmark' do
-  // body
-end
+  -- body
 
 @bench_only
 spec 'a benchmark' do
-  // body
-end
+  -- body
 ```
 
 ###### Example
@@ -40,16 +37,13 @@ use lore.test._
 spec 'simple min/max' do
   min(-1, 1) should_eq -1
   max(-1, 1) should_eq 1
-end
 
 spec 'min should return the smaller integer' do
   min(4, 8) should_eq 4
-end
 
 @bench_only
 spec `benchmark min/max' do
   max(min(10, 4), min(max(5, 2), 7))
-end
 ```
 
 
