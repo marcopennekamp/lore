@@ -232,7 +232,10 @@
 ##### Terminology
 
 - Rename "sum types" to "union types" for better name duality with "intersection types".
-- Rename Node to SyntaxNode. DeclNode --> DeclarationSyntaxNode, TypeExprNode --> TypeSyntaxNode, etc.
+- Rename IR trees for more consistent naming:
+  - `*Node` to `Ast*`. DeclNode --> AstDeclaration, TypeExprNode --> AstType, etc.
+  - `Untyped*` as is? Or abbreviation?
+  - `*Expression` to `Typed*`, maybe. `Expression` definitely renamed to `TypedExpression`.
 
 ##### Clean-Up
 

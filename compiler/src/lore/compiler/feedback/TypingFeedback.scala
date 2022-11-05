@@ -189,7 +189,7 @@ object TypingFeedback {
   }
 
   object Shape {
-    case class DuplicateProperty(node: TypeExprNode.ShapePropertyNode) extends Feedback.Error(node) {
+    case class DuplicateProperty(node: TypeExprNode.ShapeTypePropertyNode) extends Feedback.Error(node) {
       override def message: String = s"The property `${node.name}` is declared twice in the shape type. Shape type" +
         s" properties must be unique."
     }

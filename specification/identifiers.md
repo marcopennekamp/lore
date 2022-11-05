@@ -16,7 +16,7 @@ Lore has various **rules** surrounding type and variable names:
 - **Type identifiers** may additionally contain a `+` sign at any position. They are used to name type aliases and traits.  *Struct names* use the standard `<identifier>` because a struct's name is also the name of its constructor, which may not contain a `+` sign. *Type variable names* use the standard `<identifier>` because `+` is already used to declare covariant type parameters.
   
   ```
-  <type-identifier> ::= (<letter> | "_" | "+") (<letter> | <digit> | "_" | "+" | "?" | "!")*
+  <type-identifier> ::= (<letter> | "_" | "+") (<letter> | <digit> | "_" | "?" | "!")*
   ```
 
 

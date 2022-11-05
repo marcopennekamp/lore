@@ -93,6 +93,15 @@ object CollectionExtensions {
       if (vector.length < 2) true
       else vector.sliding(2).forall { case Vector(a, b) => a < b }
     }
+
+    /**
+      * Returns the vector if it has at least `n` elements and `None` otherwise.
+      */
+    def takeMinSize(n: Int): Option[Vector[A]] =
+      if (n <= vector.size) Some(vector)
+      else None
+
+    def takeNonEmpty: Option[Vector[A]] = takeMinSize(1)
   }
 
   implicit class SetExtension[A](set: Set[A]) {

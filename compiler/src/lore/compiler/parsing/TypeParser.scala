@@ -17,8 +17,8 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
     val operatorMeta = Map(
-      "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
-      "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
+      "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode),
+      "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode),
       "=>" -> XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction),
     )
     PrecedenceParser.parser(
@@ -31,10 +31,10 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
     P(symbolType | unitType | tupleType | listType | mapType | shapeType | instantiation | namedType | enclosedType)
   }
 
-  private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~~ "#" ~ identifier ~~ Index).map(withPosition(TypeExprNode.SymbolNode))
+  private def symbolType[_: P]: P[TypeExprNode.SymbolTypeNode] = P(Index ~~ "#" ~ identifier ~~ Index).map(withPosition(TypeExprNode.SymbolTypeNode))
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~~ "(" ~ ")" ~~ Index).map {
-    case (startIndex, endIndex) => TypeExprNode.UnitNode(Position(fragment, startIndex, endIndex))
+    case (startIndex, endIndex) => TypeExprNode.UnitTypeNode(Position(fragment, startIndex, endIndex))
   }
 
   /**
@@ -43,26 +43,26 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
     * arguments. The syntax `(Int, Int) => Int` would create a function type with two arguments, so we need a special
     * syntax. The solution is to parse `((Int, Int))` as a *nested* tuple.
     */
-  private def tupleType[_: P]: P[TypeExprNode.TupleNode] = {
+  private def tupleType[_: P]: P[TypeExprNode.TupleTypeNode] = {
     def nested = P("(" ~ tupleType ~ ")").map(Vector(_))
     def tuple = {
       P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ",".? ~ ")")
         .map { case (e1, rest) => e1 +: rest.toVector }
     }
-    P(Index ~~ (nested | tuple) ~~ Index).map(withPosition(TypeExprNode.TupleNode))
+    P(Index ~~ (nested | tuple) ~~ Index).map(withPosition(TypeExprNode.TupleTypeNode))
   }
 
-  private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~~ "[" ~ typeExpression ~ "]" ~~ Index).map(withPosition(TypeExprNode.ListNode))
+  private def listType[_: P]: P[TypeExprNode.ListTypeNode] = P(Index ~~ "[" ~ typeExpression ~ "]" ~~ Index).map(withPosition(TypeExprNode.ListTypeNode))
 
-  private def mapType[_: P]: P[TypeExprNode.MapNode] = P(Index ~~ "#[" ~ typeExpression ~ "->" ~ typeExpression ~ "]" ~~ Index).map(withPosition(TypeExprNode.MapNode))
+  private def mapType[_: P]: P[TypeExprNode.MapTypeNode] = P(Index ~~ "#[" ~ typeExpression ~ "->" ~ typeExpression ~ "]" ~~ Index).map(withPosition(TypeExprNode.MapTypeNode))
 
-  private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
-    def property = P(Index ~~ name ~ typing ~~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
-    P(Index ~~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ ",".? ~ "}" ~~ Index).map(withPosition(TypeExprNode.ShapeNode))
+  private def shapeType[_: P]: P[TypeExprNode.ShapeTypeNode] = {
+    def property = P(Index ~~ name ~ typing ~~ Index).map(withPosition(TypeExprNode.ShapeTypePropertyNode))
+    P(Index ~~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ ",".? ~ "}" ~~ Index).map(withPosition(TypeExprNode.ShapeTypeNode))
   }
 
-  private def instantiation[_: P]: P[TypeExprNode.InstantiationNode] = {
-    P(Index ~~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ ",".? ~ "]" ~~ Index).map(withPosition(TypeExprNode.InstantiationNode))
+  private def instantiation[_: P]: P[TypeExprNode.InstantiatedTypeNode] = {
+    P(Index ~~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ ",".? ~ "]" ~~ Index).map(withPosition(TypeExprNode.InstantiatedTypeNode))
   }
 
   private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~~ typeNamePath ~~ Index).map(withPosition(TypeExprNode.TypeNameNode))

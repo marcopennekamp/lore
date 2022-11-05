@@ -104,7 +104,7 @@ object DeclNode {
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {
-      DeclNode.FunctionNode(nameNode, parameters, outputType.getOrElse(TypeExprNode.UnitNode(position)), typeVariables, body, position)
+      DeclNode.FunctionNode(nameNode, parameters, outputType.getOrElse(TypeExprNode.UnitTypeNode(position)), typeVariables, body, position)
     }
   }
 

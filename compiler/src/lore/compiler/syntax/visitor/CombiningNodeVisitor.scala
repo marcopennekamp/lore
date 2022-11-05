@@ -80,7 +80,7 @@ object CombiningNodeVisitor {
         visitor.visit(node, result)
 
       case node: TypeExprNode => visitTypeExprNode(node)
-      case TypeExprNode.ShapePropertyNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
+      case TypeExprNode.ShapeTypePropertyNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
 
       case exprNode: TopLevelExprNode => visitExprNode(exprNode)
       case ExprNode.LambdaParameterNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
@@ -92,13 +92,13 @@ object CombiningNodeVisitor {
     }
 
     private def visitTypeExprNode(node: TypeExprNode): A = node match {
-      case TypeExprNode.SumNode(types, _) => visitor.visit(node, concat(visit(types)))
-      case TypeExprNode.IntersectionNode(types, _) => visitor.visit(node, concat(visit(types)))
-      case TypeExprNode.TupleNode(types, _) => visitor.visit(node, concat(visit(types)))
-      case TypeExprNode.FunctionNode(input, output, _) => visitor.visit(node, concat(visit(input), visit(output)))
-      case TypeExprNode.ListNode(element, _) => visitor.visit(node, concat(visit(element)))
-      case TypeExprNode.MapNode(key, value, _) => visitor.visit(node, concat(visit(key), visit(value)))
-      case TypeExprNode.ShapeNode(properties, _) => visitor.visit(node, concat(visit(properties)))
+      case TypeExprNode.SumTypeNode(types, _) => visitor.visit(node, concat(visit(types)))
+      case TypeExprNode.IntersectionTypeNode(types, _) => visitor.visit(node, concat(visit(types)))
+      case TypeExprNode.TupleTypeNode(types, _) => visitor.visit(node, concat(visit(types)))
+      case TypeExprNode.FunctionTypeNode(input, output, _) => visitor.visit(node, concat(visit(input), visit(output)))
+      case TypeExprNode.ListTypeNode(element, _) => visitor.visit(node, concat(visit(element)))
+      case TypeExprNode.MapTypeNode(key, value, _) => visitor.visit(node, concat(visit(key), visit(value)))
+      case TypeExprNode.ShapeTypeNode(properties, _) => visitor.visit(node, concat(visit(properties)))
       case _ => visitor.visit(node, concat())
     }
 
