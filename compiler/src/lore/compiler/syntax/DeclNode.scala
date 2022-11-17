@@ -81,6 +81,8 @@ object DeclNode {
   /**
     * Function declarations. These include action declarations, which are resolved as syntactic sugar by the parser.
     *
+    * TODO (syntax): Rename to `FunctionDeclarationNode`.
+    *
     * @param body Notably, a function body is NOT a TopLevelExprNode. Rather, it may be a block which can then
     *             represent TopLevelExprNode.
     */

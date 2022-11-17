@@ -46,8 +46,8 @@ object LoreParser {
   *     improves performance by avoiding lots of saved offsets.
   */
 private class LoreParser(override val input: String)(override implicit val fragment: Fragment)
-  extends Parser with DeclarationParser with TypeParser with PrecedenceParser with NameParser with IndentationParser
-    with WhitespaceParser
+  extends Parser with DeclarationParser with AnnotationParser with TypeParameterParser with TypeParser
+    with PrecedenceParser with NameParser with IndentationParser with WhitespaceParser
 {
   def parse(): Option[ModuleNode] = {
     parseFragment()
@@ -78,16 +78,5 @@ private class LoreParser(override val input: String)(override implicit val fragm
         false
       } else true
     }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Values.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def int(): Option[Long] = {
-    ???
-  }
-
-  def real(): Option[Double] = {
-    ???
   }
 }

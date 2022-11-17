@@ -16,9 +16,9 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
     import PrecedenceParser._
 
     def operator() = {
-      if (character('|')) Some(XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode))
-      else if (character('&')) Some(XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode))
-      else if (word("=>")) Some(XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction))
+      if (character('|')) XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode).some
+      else if (character('&')) XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode).some
+      else if (word("=>")) XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction).some
       else None
     }
 
