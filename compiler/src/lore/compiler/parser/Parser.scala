@@ -144,7 +144,8 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`, requiring a `separator` between each production.
+    * Collects results from `get` until it returns `None`, requiring a `separator` between each production. Because
+    * separators are inherently exploratory, `collectSep` backtracks `separator` automatically.
     *
     * TODO (syntax): Share implementation with `collect`.
     */
@@ -155,11 +156,11 @@ trait Parser {
       get match {
         case Some(result) =>
           results :+= result
-          if (!separator) ended = true
+          if (!separator.backtrack) ended = true
         case None => ended = true
       }
     }
-    if (allowTrailing) separator
+    if (allowTrailing) separator.backtrack
     results
   }
 
@@ -168,7 +169,7 @@ trait Parser {
 
   /**
     * Collects results from `get` and `separator` until `get` returns `None`, requiring a `separator` between each
-    * production.
+    * production. Because separators are inherently exploratory, `collectSep` backtracks `separator` automatically.
     *
     * TODO (syntax): Share implementation with `collect`?
     */
@@ -183,7 +184,7 @@ trait Parser {
       get match {
         case Some(result) =>
           elements :+= result
-          separator match {
+          separator.backtrack match {
             case Some(result) => separators :+= result
             case None => ended = true
           }
@@ -191,7 +192,7 @@ trait Parser {
       }
     }
     if (allowTrailing) {
-      separator match {
+      separator.backtrack match {
         case Some(result) => separators :+= result
         case None =>
       }

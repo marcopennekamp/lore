@@ -25,7 +25,7 @@ trait DeclarationParser { _: Parser with TypeParser with BasicParsers =>
   // TODO (syntax): Parse imports.
   def moduleBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
     println(s"Module body indentation: $indentation")
-    val members = collectSep(nli(indentation).backtrack) {
+    val members = collectSep(nli(indentation)) {
       // TODO (syntax): This optimization needs to be taken very carefully. For example, an `@root` module will start
       //                with `@`, not `m`. If any top-level declaration other than a module can start with the letter
       //                `m`, this must be changed. (For example by falling back on the default case if any of the

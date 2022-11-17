@@ -82,10 +82,11 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
     offset - startOffset
   }
 
-  def collectSepWlmi[A](separator: Char, indentation: Int, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] =
-    // Backtracking is needed for cases where newlines shouldn't be consumed by `wlmi` if a subsequent `separator`
-    // cannot be found.
-    collectSep((wlmi(indentation) *> character(separator) <* wlmi(indentation)).backtrack, allowTrailing)(get)
+  def collectSepWlmi[A](separator: => Boolean, indentation: Int, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] =
+    collectSep(wlmi(indentation) *> separator <* wlmi(indentation), allowTrailing)(get)
+
+  def collectSepWlgi[A](separator: => Boolean, indentation: Int, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] =
+    collectSep(wlgi(indentation) *> separator <* wlgi(indentation), allowTrailing)(get)
 
   def surroundWlmi[A](left: => Boolean, right: => Boolean, indentation: Int)(get: => Option[A]): Option[A] =
     // No backtracking needed because `left` and `right` neatly close off the whitespaces on either side.

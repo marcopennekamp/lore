@@ -68,7 +68,7 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
     }
 
     def standard() = {
-      val elements = collectSepWlmi(',', indentation, allowTrailing = true) {
+      val elements = collectSepWlmi(character(','), indentation, allowTrailing = true) {
         typeExpression(indentation)
       }
       elements.takeMinSize(2) <& character(')')
@@ -97,7 +97,7 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
 
     withPosition {
       surroundWlmi(word("%{"), character('}'), indentation) {
-        Some(collectSepWlmi(',', indentation, allowTrailing = true) {
+        Some(collectSepWlmi(character(','), indentation, allowTrailing = true) {
           property
         })
       }
@@ -114,7 +114,7 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
     */
   def typeArguments(indentation: Int): Option[Vector[TypeExprNode]] =
     surroundWlmi(character('['), character(']'), indentation) {
-      collectSepWlmi(',', indentation, allowTrailing = true) {
+      collectSepWlmi(character(','), indentation, allowTrailing = true) {
         typeExpression(indentation)
       }.takeNonEmpty
     }
