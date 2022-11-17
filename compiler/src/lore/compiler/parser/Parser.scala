@@ -167,6 +167,39 @@ trait Parser {
     collectSep(character(separator), allowTrailing)(get)
 
   /**
+    * Collects results from `get` and `separator` until `get` returns `None`, requiring a `separator` between each
+    * production.
+    *
+    * TODO (syntax): Share implementation with `collect`?
+    */
+  def collectSepSemantic[A, B](
+    separator: => Option[B],
+    allowTrailing: Boolean = false,
+  )(get: => Option[A]): (Vector[A], Vector[B]) = {
+    var elements = Vector.empty[A]
+    var separators = Vector.empty[B]
+    var ended = false
+    while (!ended) {
+      get match {
+        case Some(result) =>
+          elements :+= result
+          separator match {
+            case Some(result) => separators :+= result
+            case None => ended = true
+          }
+        case None => ended = true
+      }
+    }
+    if (allowTrailing) {
+      separator match {
+        case Some(result) => separators :+= result
+        case None =>
+      }
+    }
+    (elements, separators)
+  }
+
+  /**
     * Surrounds `action` with `left` and `right`, requiring that both `left` and `right` are present.
     */
   def surround[A](left: => Boolean, right: => Boolean)(action: => Option[A]): Option[A] = {

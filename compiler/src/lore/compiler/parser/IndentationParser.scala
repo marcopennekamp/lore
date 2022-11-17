@@ -35,10 +35,11 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
   }
 
   /**
-    * Like `wl` with the following difference: if a new line is encountered, the indentation of the first non-blank
+    * Like `wl` with the following difference: if a new line should be consumed, the indentation of the first non-blank
     * line must be greater than or equal to the given indentation. `wlmi` may just consume whitespace on the same line
-    * until it encounters the next token; the indentation is only checked if a newline is encountered. Returns `true`
-    * if at least one character was consumed and the indentation is valid.
+    * until it encounters the next token; the indentation is only checked if a newline is encountered and `wlmi` only
+    * consumes the next line if the minimum indentation is ensured. Returns `true` if at least one character was
+    * consumed and the indentation is valid.
     *
     * `wlmi` should be used with statements that need to have some minimum indentation, for example with types such as:
     *
@@ -54,31 +55,26 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
     * if the type expression itself could be parsed without paying attention to indentation. In the example above, if
     * `]` wasn't forced to at least be aligned with `val abc`, the block starter `=` would be misaligned.
     */
-  def wlmi(indentation: Int): Boolean =
-    // No need to backtrack from `nextNonBlankLine` because it'll have consumed only whitespace anyway.
-    if (nextNonBlankLine()) indentation <= countIndentation()
-    else ws() // TODO (syntax): Do we even need `ws()` here or does the side effect from `nextNonBlankLine()` suffice?
+  def wlmi(indentation: Int): Boolean = (nextNonBlankLine() && indentation <= countIndentation()).backtrack || ws()
 
   /**
-    * Like `wl` with the following difference: if a new line is encountered, the indentation of the first non-blank
+    * Like `wl` with the following difference: if a new line should be consumed, the indentation of the first non-blank
     * line must be greater than the given indentation. `wlgi` may just consume whitespace on the same line until it
-    * encounters the next token; the indentation is only checked if a newline is encountered. Returns `true` if at
-    * least one character was consumed and the indentation is valid.
+    * encounters the next token; the indentation is only checked if a newline is encountered and `wlgi` onlz consumes
+    * the next line if the minimum indentation is ensured. Returns `true` if at least one character was consumed and
+    * the indentation is valid.
     *
     * `wlgi` should be used with multi-line expressions that don't open a new indentation block, such as:
     *
     * <pre>
     * val a = 1 + 2 +
-    * 3 + 4
+    *   3 + 4
     * </pre>
     *
     * The `3 + 4` belongs to the larger expression `1 + 2 + 3 + 4`. `3 + 4` is not contained in a block, but its
     * indentation must still be checked so that it isn't part of the previous block.
     */
-  def wlgi(indentation: Int): Boolean =
-    // No need to backtrack from `nextNonBlankLine` because it'll have consumed only whitespace anyway.
-    if (nextNonBlankLine()) indentation < countIndentation()
-    else ws() // TODO (syntax): Do we even need `ws()` here or does the side effect from `nextNonBlankLine()` suffice?
+  def wlgi(indentation: Int): Boolean = (nextNonBlankLine() && indentation < countIndentation()).backtrack || ws()
 
   private def countIndentation(): Int = {
     val startOffset = offset
@@ -87,8 +83,8 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
   }
 
   def collectSepWlmi[A](separator: Char, indentation: Int, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] =
-    // TODO (syntax): Is backtracking needed here? I think in some edge cases it is, where newlines shouldn't be
-    //                consumed by `wlmi` if `separator` cannot be found...
+    // Backtracking is needed for cases where newlines shouldn't be consumed by `wlmi` if a subsequent `separator`
+    // cannot be found.
     collectSep((wlmi(indentation) *> character(separator) <* wlmi(indentation)).backtrack, allowTrailing)(get)
 
   def surroundWlmi[A](left: => Boolean, right: => Boolean, indentation: Int)(get: => Option[A]): Option[A] =

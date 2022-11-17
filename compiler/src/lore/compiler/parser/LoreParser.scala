@@ -21,7 +21,7 @@ object LoreParser {
         |     let me: [Int] = TODO
         |
         |  module Meme
-        |    let abc: String = TODO
+        |    let abc: String & Int | Int => Int = TODO
         |module Dead
         |
         |
@@ -46,7 +46,8 @@ object LoreParser {
   *     improves performance by avoiding lots of saved offsets.
   */
 private class LoreParser(override val input: String)(override implicit val fragment: Fragment)
-  extends Parser with DeclarationParser with TypeParser with NameParser with IndentationParser with WhitespaceParser
+  extends Parser with DeclarationParser with TypeParser with PrecedenceParser with NameParser with IndentationParser
+    with WhitespaceParser
 {
   def parse(): Option[ModuleNode] = {
     parseFragment()

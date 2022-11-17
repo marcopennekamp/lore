@@ -5,7 +5,7 @@ import lore.compiler.syntax.TypeExprNode.{InstantiatedTypeNode, ListTypeNode, Sh
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
-trait TypeParser { _: Parser with BasicParsers =>
+trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
   def typing(indentation: Int): Option[TypeExprNode] = {
     if (!character(':')) return None
     ws()
@@ -13,8 +13,20 @@ trait TypeParser { _: Parser with BasicParsers =>
   }
 
   def typeExpression(indentation: Int): Option[TypeExprNode] = {
-    // TODO (syntax): PrecedenceParser bla bla
-    typeAtom(indentation)
+    import PrecedenceParser._
+
+    def operator() = {
+      if (character('|')) Some(XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode))
+      else if (character('&')) Some(XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode))
+      else if (word("=>")) Some(XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction))
+      else None
+    }
+
+    parseOperationWithPrecedence(
+      indentation,
+      operator,
+      () => typeAtom(indentation),
+    )
   }
 
   def typeAtom(indentation: Int): Option[TypeExprNode] = peek match {
