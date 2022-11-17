@@ -2,6 +2,5 @@ module lore.io
 
 use lore.core.to_string
 
-act println(value: Any) do
-  intrinsic[Unit]('lore.io.println', to_string(value))
-end
+proc println(value: Any) do
+  intrinsic[Unit]('lore.io.println', value.to_string)
