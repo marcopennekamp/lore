@@ -39,7 +39,13 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
         //case 't' => type alias or trait (differentiate by peek(2) == 'y' or 'r')
         //case 's' => struct or struct alias or spec (differentiate by peek(2) == 't' or 'p')
         //case 'o' => object or object alias
-        case _ => moduleDeclaration(indentation).backtrack | globalVariableDeclaration(indentation)
+        case _ =>
+          // All of these declarations may have annotations preceding their distinguishing keyword (`module`, `func`,
+          // `proc`, and so on).
+          moduleDeclaration(indentation).backtrack |
+            globalVariableDeclaration(indentation).backtrack |
+            functionDeclaration(indentation).backtrack |
+            procedureDeclaration(indentation).backtrack
       }
     }
     (Vector.empty, members).some
@@ -127,14 +133,37 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     FunctionNode(functionName, parameters, returnType, typeParameters, None, createPositionFrom(startIndex)).some
   }
 
-  def domain() = ???
+  /**
+    * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
+    */
+  def domain(indentation: Int): Option[Vector[FunctionNode]] = {
+    // No need to backtrack as `@where` is checked as the first word.
+    val maybeWhereAnnotation = whereAnnotation(indentation)
 
-  private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] = {
-    if (!character('(')) return None
-    wlmi(indentation)
-    val parameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
-    if (!character(')')) return None
-    parameters.some
+    // The end of the annotations should place the offset right at the keyword.
+    if (!word("domain") || !ws()) return None
+    val domainParameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
+    ws()
+    val domainTypeParameters = maybeWhereAnnotation match {
+      case Some(typeParameters) => typeParameters
+      case None => (ws() &> inlineWhere()).backtrack.getOrElse(Vector.empty)
+    }
+
+    val bodyIndentation = indent(indentation).getOrElse(return None)
+    val functions = collectSep(nli(bodyIndentation)) {
+      functionDeclaration(bodyIndentation).backtrack | procedureDeclaration(bodyIndentation)
+    }
+
+    functions.map { function =>
+      FunctionNode(
+        function.nameNode,
+        domainParameters ++ function.parameters,
+        function.outputType,
+        domainTypeParameters ++ function.typeVariables,
+        function.body,
+        function.position,
+      )
+    }.some
   }
 
   private def functionParameter(indentation: Int): Option[ParameterNode] = {
@@ -150,6 +179,14 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     }
 
     named().backtrack orElse unnamed()
+  }
+
+  private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] = {
+    if (!character('(')) return None
+    wlmi(indentation)
+    val parameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
+    if (!character(')')) return None
+    parameters.some
   }
 
   private def inlineWhere(): Option[Vector[DeclNode.TypeVariableNode]] = {
