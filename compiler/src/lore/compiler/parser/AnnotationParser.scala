@@ -10,6 +10,20 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   * Every annotation must be terminated by a newline, with the next non-blank line adhering to an exact indentation.
   * Hence, annotation whitespace must usually exclude newlines, except when individual sections are separated by
   * commas (such sections adhering to `wlgi`).
+  *
+  * An annotation parser guarantees that, after parsing the annotation, the offset will be placed on the next non-blank
+  * line after the indentation. So for example, assume we're parsing the following expression:
+  *
+  * {{{
+  * module A
+  *   @root
+  *   module B
+  * }}}
+  *
+  * After parsing `@root`, the offset will be placed at the beginning of `module B`.
+  *
+  * To ensure that an annotation terminates correctly (with the correct follow-up indentation), an optional annotation
+  * parser should usually be wrapped in `backtrack`.
   */
 trait AnnotationParser {
   _: Parser with TypeParameterParser with TypeParser with IndentationParser with WhitespaceParser =>

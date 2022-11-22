@@ -10,21 +10,22 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO (syntax): Parse `@root`.
   def moduleDeclaration(indentation: Int): Option[ModuleNode] = {
     val startIndex = offset
+
+    val atRoot = simpleAnnotation(word("root") &> Some("root"), indentation).backtrack.isDefined
     if (!word("module") || !ws()) return None
 
     val moduleName = namePath().getOrElse(return None)
     val (imports, members) = indent(indentation)
-      .flatMap(bodyIndentation => moduleBody(bodyIndentation))
+      .flatMap(bodyIndentation => moduleDeclarationBody(bodyIndentation))
       .getOrElse((Vector.empty, Vector.empty))
 
-    ModuleNode(moduleName, atRoot = false, imports, members, createPositionFrom(startIndex)).some
+    ModuleNode(moduleName, atRoot, imports, members, createPositionFrom(startIndex)).some
   }
 
   // TODO (syntax): Parse imports.
-  def moduleBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
+  def moduleDeclarationBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
     println(s"Module body indentation: $indentation")
     val members = collectSep(nli(indentation)) {
       // TODO (syntax): This optimization needs to be taken very carefully. For example, an `@root` module will start
@@ -107,10 +108,8 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   ): Option[FunctionNode] = {
     val startIndex = offset
 
-    // No need to backtrack as `@where` is checked as the first word.
-    val maybeWhereAnnotation = whereAnnotation(indentation)
+    val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
 
-    // The end of the annotations should place the offset right at the keyword.
     if (!word(keyword) || !ws()) return None
     val functionName = name().getOrElse(return None)
     ws()
@@ -137,10 +136,8 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
     */
   def domain(indentation: Int): Option[Vector[FunctionNode]] = {
-    // No need to backtrack as `@where` is checked as the first word.
-    val maybeWhereAnnotation = whereAnnotation(indentation)
+    val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
 
-    // The end of the annotations should place the offset right at the keyword.
     if (!word("domain") || !ws()) return None
     val domainParameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
     ws()

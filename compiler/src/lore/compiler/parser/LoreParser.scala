@@ -26,6 +26,8 @@ object LoreParser {
         |
         |
         |    let abcd: Alphabet = TODO
+        |
+        |    @root
         |    module Holy
         |
         |""".stripMargin
@@ -61,7 +63,7 @@ private class LoreParser(override val input: String)(override implicit val fragm
     val startIndex = offset
     blankLines()
     println(s"Consumed whitespace and blank lines until offset $offset.")
-    val result = moduleBody(0).map { case (imports, members) =>
+    val result = moduleDeclarationBody(0).map { case (imports, members) =>
       ModuleNode(NamePathNode.empty, atRoot = false, imports, members, createPositionFrom(startIndex))
     }
     println(s"End position: ${fragment.input.prettyIndex(offset)}")
