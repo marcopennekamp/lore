@@ -168,7 +168,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
 
     if (!word("domain") || !ws()) return None
-    val domainParameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
+    val domainParameters = collectSepWlmi(character(','), indentation)(functionParameter(indentation))
     ws()
     val domainTypeParameters = maybeWhereAnnotation match {
       case Some(typeParameters) => typeParameters
@@ -225,4 +225,5 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Specs.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 }
