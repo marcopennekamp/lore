@@ -37,7 +37,7 @@ object LoreParser {
 
 // TODO (syntax): Implement syntax error reporting with `reporter` and good error messages...
 //                However, we will need to collect errors in a result structure first (replacing `Option`) to support
-//                error backtracking, which will require a minor or major parser rewrite because errors will have to be
+//                backtracking, which will require a minor or major parser rewrite because errors will have to be
 //                concatenated.
 
 /**
@@ -52,11 +52,6 @@ private class LoreParser(override val input: String)(override implicit val fragm
     with PrecedenceParser with NameParser with IndentationParser with WhitespaceParser
 {
   def parse(): Option[ModuleNode] = {
-    parseFragment()
-    // TODO (syntax): Only return `Some` if `offset` is at EOF.
-  }
-
-  def parseFragment(): Option[ModuleNode] = {
     // TODO (syntax): The top module declaration needs some special handling, as a `module X` declaration is only a top
     //                module if it has no body. So we have to get a `module()`, check if it has a body, and if it has,
     //                it's actually not a top module but the first module member!
