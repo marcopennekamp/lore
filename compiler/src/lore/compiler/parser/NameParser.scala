@@ -21,7 +21,7 @@ trait NameParser { _: Parser =>
   def typeNamePath(): Option[NamePathNode] = genericNamePath(typeName())
 
   private def genericNamePath(name: => Option[NameNode]): Option[NamePathNode] = {
-    val names = collectSepChar('.') { name }
+    val names = collectSep(character('.')) { name }
     if (names.isEmpty) return None
     Some(NamePathNode(names))
   }

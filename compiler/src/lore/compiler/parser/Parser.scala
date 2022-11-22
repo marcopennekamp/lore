@@ -108,6 +108,7 @@ trait Parser {
 
   /**
     * Repeats `action` until it returns `false`. Returns `true` if at least one action was successfully executed.
+    * `repeat` does NOT backtrack `action` by default.
     */
   def repeat(action: => Boolean): Boolean = {
     var consumed = false
@@ -117,6 +118,7 @@ trait Parser {
     consumed
   }
 
+  // TODO (syntax): Remove (unused).
   // TODO (syntax): Share implementation with `repeat`.
   def repeatSep(separator: Char)(action: => Boolean): Boolean = {
     var consumed = false
@@ -129,13 +131,17 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`.
+    * Collects results from `get` until it returns `None`. `collect` backtracks `get` automatically because it's
+    * inherently exploratory.
+    *
+    * TODO (syntax): Remove (unused).
     */
+  @OffsetConservative
   def collect[A](get: => Option[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
     while (!ended) {
-      get match {
+      get.backtrack match {
         case Some(result) => results :+= result
         case None => ended = true
       }
@@ -144,16 +150,33 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`, requiring a `separator` between each production. Because
-    * separators are inherently exploratory, `collectSep` backtracks `separator` automatically.
+    * Collects results from `get` until it returns `None`, requiring a `separator` between each production.
+    * `collectSep` backtracks `get` and `separator` automatically because both are inherently exploratory.
+    *
+    * Backtracking `get` is for instance important when module declarations are collected. If `get` doesn't backtrack,
+    * an incomplete declaration `func ...` might lead to `func` being consumed, `get` returning `None`, and this
+    * incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as something
+    * else, for example:
+    *
+    * {{{
+    * module Functions
+    *   use module Test
+    *     func hello(): String = 'hello'
+    * }}}
+    *
+    * If the parser doesn't backtrack, `use` might be skipped and `module Test` might still be parsed as a member of
+    * module `Functions`. This is because module members are parsed sequentially after imports.
     *
     * TODO (syntax): Share implementation with `collect`.
+    * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
+    *                `get` is already offset-conservative.
     */
+  @OffsetConservative
   def collectSep[A](separator: => Boolean, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
     while (!ended) {
-      get match {
+      get.backtrack match {
         case Some(result) =>
           results :+= result
           if (!separator.backtrack) ended = true
@@ -164,15 +187,15 @@ trait Parser {
     results
   }
 
-  def collectSepChar[A](separator: Char, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] =
-    collectSep(character(separator), allowTrailing)(get)
-
   /**
     * Collects results from `get` and `separator` until `get` returns `None`, requiring a `separator` between each
-    * production. Because separators are inherently exploratory, `collectSep` backtracks `separator` automatically.
+    * production. `collectSep` backtracks `get` and `separator` automatically because both are inherently exploratory.
     *
-    * TODO (syntax): Share implementation with `collect`?
+    * TODO (syntax): Share implementation with `collectSep`?
+    * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
+    *                `get` is already offset-conservative.
     */
+  @OffsetConservative
   def collectSepSemantic[A, B](
     separator: => Option[B],
     allowTrailing: Boolean = false,
@@ -181,7 +204,7 @@ trait Parser {
     var separators = Vector.empty[B]
     var ended = false
     while (!ended) {
-      get match {
+      get.backtrack match {
         case Some(result) =>
           elements :+= result
           separator.backtrack match {

@@ -97,9 +97,9 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
 
     withPosition {
       surroundWlmi(word("%{"), character('}'), indentation) {
-        Some(collectSepWlmi(character(','), indentation, allowTrailing = true) {
+        collectSepWlmi(character(','), indentation, allowTrailing = true) {
           property
-        })
+        }.some
       }
     }.map(ShapeTypeNode.tupled)
   }
