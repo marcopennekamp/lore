@@ -2,6 +2,7 @@ package lore.compiler.parser
 
 import lore.compiler.core.Position
 import lore.compiler.syntax.DeclNode._
+import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax.{DeclNode, ExprNode, TypeExprNode}
 import scalaz.Scalaz.ToOptionIdOps
@@ -24,9 +25,10 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     ModuleNode(moduleName, atRoot, imports, members, createPositionFrom(startIndex)).some
   }
 
-  // TODO (syntax): Parse imports.
   def moduleDeclarationBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
     println(s"Module body indentation: $indentation")
+
+    val imports = collectSep(nli(indentation)) { moduleImport(indentation) }
     val members = collectSep(nli(indentation)) {
       // TODO (syntax): This optimization needs to be taken very carefully. For example, an `@root` module will start
       //                with `@`, not `m`. If any top-level declaration other than a module can start with the letter
@@ -46,10 +48,37 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
           moduleDeclaration(indentation).backtrack |
             globalVariableDeclaration(indentation).backtrack |
             functionDeclaration(indentation).backtrack |
-            procedureDeclaration(indentation).backtrack
+            procedureDeclaration(indentation)
       }
     }
-    (Vector.empty, members).some
+    (imports.flatten, members).some
+  }
+
+  private def moduleImport(indentation: Int): Option[Vector[ImportNode]] = {
+    val startIndex = offset
+
+    if (!word("use") || !ws()) return None
+
+    val prefixPath = namePath().getOrElse(return None)
+    if (character('.')) {
+      if (character('_')) {
+        // Wildcard imports.
+        Vector(DeclNode.ImportNode(prefixPath, isWildcard = true, createPositionFrom(startIndex))).some
+      } else if (peek == '[') {
+        // List imports.
+        val namePaths = surroundWlmi(character('['), character(']'), indentation) {
+          collectSepWlmi(character(','), indentation, allowTrailing = true) { namePath() }.some
+        }.getOrElse(return None)
+
+        val position = createPositionFrom(startIndex)
+        namePaths.map { suffixPath =>
+          // TODO (syntax): As noted in the TODO, this desugaring of list imports is wrong. Keep in mind that we will
+          //                have to change the node here.
+          val completeNamePath = NamePathNode(prefixPath.segments ++ suffixPath.segments)
+          DeclNode.ImportNode(completeNamePath, isWildcard = false, position)
+        }.some
+      } else None
+    } else Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, createPositionFrom(startIndex))).some
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
