@@ -44,7 +44,7 @@ trait AnnotationParser {
     //      func ...
     //  This kind of syntax is possible now because of significant indentation!
     val typeVariables = collectSepWlgi(character(','), indentation, allowTrailing = true)(simpleTypeParameter())
-    typeVariables.takeMinSize(1) <& terminateAnnotation(indentation)
+    typeVariables.takeNonEmpty <& terminateAnnotation(indentation)
   }
 
   private def terminateAnnotation(indentation: Int): Boolean = ws() *> nli(indentation)

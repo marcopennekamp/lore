@@ -96,11 +96,7 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
     }
 
     withPosition {
-      surroundWlmi(word("%{"), character('}'), indentation) {
-        collectSepWlmi(character(','), indentation, allowTrailing = true) {
-          property
-        }.some
-      }
+      enclosedWlmi(word("%{"), character('}'), character(','), indentation) { property }
     }.map(ShapeTypeNode.tupled)
   }
 
@@ -113,9 +109,5 @@ trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
     * Parses a non-empty list of type arguments.
     */
   def typeArguments(indentation: Int): Option[Vector[TypeExprNode]] =
-    surroundWlmi(character('['), character(']'), indentation) {
-      collectSepWlmi(character(','), indentation, allowTrailing = true) {
-        typeExpression(indentation)
-      }.takeNonEmpty
-    }
+    enclosedInBracketsWlmi(indentation, minSize = 1) { typeExpression(indentation) }
 }

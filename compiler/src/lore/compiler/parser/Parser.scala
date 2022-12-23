@@ -224,7 +224,8 @@ trait Parser {
   }
 
   /**
-    * Surrounds `action` with `left` and `right`, requiring that both `left` and `right` are present.
+    * Surrounds `action` with `left` and `right`, requiring that both `left` and `right` are present. `action` is not
+    * backtracked automatically.
     */
   def surround[A](left: => Boolean, right: => Boolean)(action: => Option[A]): Option[A] = {
     if (left) action.filter(_ => right) else None

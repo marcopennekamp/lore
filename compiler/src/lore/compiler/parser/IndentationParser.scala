@@ -1,5 +1,7 @@
 package lore.compiler.parser
 
+import lore.compiler.utils.CollectionExtensions.VectorExtension
+
 trait IndentationParser { _: Parser with WhitespaceParser =>
   /**
     * Attempts to open a new indentation block on the next non-blank line. Returns the next line's indentation if it's
@@ -91,4 +93,20 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
   def surroundWlmi[A](left: => Boolean, right: => Boolean, indentation: Int)(get: => Option[A]): Option[A] =
     // No backtracking needed because `left` and `right` neatly close off the whitespaces on either side.
     surround(left <* wlmi(indentation), wlmi(indentation) *> right)(get)
+
+  def enclosedWlmi[A](
+    left: => Boolean,
+    right: => Boolean,
+    separator: => Boolean,
+    indentation: Int,
+    minSize: Int = 0,
+  )(get: => Option[A]): Option[Vector[A]] = surroundWlmi(left, right, indentation) {
+    collectSepWlmi(separator, indentation, allowTrailing = true)(get).takeMinSize(minSize)
+  }
+
+  def enclosedInParenthesesWlmi[A](indentation: Int, minSize: Int = 0)(get: => Option[A]): Option[Vector[A]] =
+    enclosedWlmi(character('('), character(')'), character(','), indentation, minSize)(get)
+
+  def enclosedInBracketsWlmi[A](indentation: Int, minSize: Int = 0)(get: => Option[A]): Option[Vector[A]] =
+    enclosedWlmi(character('['), character(']'), character(','), indentation, minSize)(get)
 }

@@ -4,7 +4,6 @@ import lore.compiler.syntax.DeclNode.TypeVariableNode
 
 trait TypeParameterParser { _: Parser =>
 
-
   def simpleTypeParameter(): Option[TypeVariableNode] = ???
 
 

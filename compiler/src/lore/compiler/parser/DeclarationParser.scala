@@ -45,10 +45,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
         Vector(DeclNode.ImportNode(prefixPath, isWildcard = true, createPositionFrom(startIndex))).some
       } else if (peek == '[') {
         // List imports.
-        val namePaths = surroundWlmi(character('['), character(']'), indentation) {
-          collectSepWlmi(character(','), indentation, allowTrailing = true) { namePath() }.some
-        }.getOrElse(return None)
-
+        val namePaths = enclosedInBracketsWlmi(indentation, minSize = 1)(namePath()).getOrElse(return None)
         val position = createPositionFrom(startIndex)
         namePaths.map { suffixPath =>
           // TODO (syntax): As noted in the TODO, this desugaring of list imports is wrong. Keep in mind that we will
@@ -231,13 +228,8 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     named().backtrack orElse unnamed()
   }
 
-  private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] = {
-    if (!character('(')) return None
-    wlmi(indentation)
-    val parameters = collectSepWlmi(character(','), indentation, allowTrailing = true)(functionParameter(indentation))
-    if (!character(')')) return None
-    parameters.some
-  }
+  private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] =
+    enclosedInParenthesesWlmi(indentation) { functionParameter(indentation) }
 
   private def inlineWhere(): Option[Vector[DeclNode.TypeVariableNode]] = {
     if (!word("where") || !ws()) return None
