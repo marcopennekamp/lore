@@ -24,6 +24,12 @@ object LoreParser {
         |    let abc: String & Int | Int => Int = TODO
         |module Dead
         |
+        |    type ABC = (String, Int, Real)
+        |    struct S1 = Y
+        |    object O1 = Z
+        |    type StringOrInt =
+        |      String |
+        |        Int
         |
         |    let abcd: Alphabet = TODO
         |

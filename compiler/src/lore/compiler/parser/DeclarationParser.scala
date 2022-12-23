@@ -5,6 +5,7 @@ import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax.{DeclNode, ExprNode, TypeExprNode}
+import lore.compiler.types.AliasSchema.AliasVariant
 import scalaz.Scalaz.ToOptionIdOps
 
 trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterParser with TypeParser with BasicParsers =>
@@ -99,18 +100,39 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // User-defined types.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def aliasDeclaration(indentation: Int): Option[AliasNode] = ???
+  private def aliasDeclaration(indentation: Int): Option[AliasNode] = {
+    val startIndex = offset
+    val aliasVariant =
+      if (word("type")) AliasVariant.Type
+      else if (word("struct")) AliasVariant.Struct
+      else if (word("object")) AliasVariant.Object
+      else return None
 
-  def traitDeclaration(indentation: Int): Option[TraitNode] = ???
+    if (!ws()) return None
+    val aliasName = typeName().getOrElse(return None)
+    ws()
+    val typeParameters =
+      enclosedInBracketsWlmi(indentation, minSize = 1)(simpleTypeParameter()).backtrack.getOrElse(Vector.empty)
+    ws()
+    if (!character('=')) return None
 
-  def structDeclaration(indentation: Int): Option[StructNode] = ???
+    // The type expression may be defined in an indentation block, or otherwise on the same line.
+    val bodyIndentation = indentOrWs(indentation)
+    val aliasType = typeExpression(bodyIndentation).getOrElse(return None)
 
-  def objectDeclaration(indentation: Int): Option[StructNode] = ???
+    AliasNode(aliasName, aliasVariant, typeParameters, aliasType, createPositionFrom(startIndex)).some
+  }
+
+  private def traitDeclaration(indentation: Int): Option[TraitNode] = None
+
+  private def structDeclaration(indentation: Int): Option[StructNode] = None
+
+  private def objectDeclaration(indentation: Int): Option[StructNode] = None
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Global variables.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def globalVariableDeclaration(indentation: Int): Option[GlobalVariableNode] = {
+  private def globalVariableDeclaration(indentation: Int): Option[GlobalVariableNode] = {
     val startIndex = offset
     if (!word("let") || !ws()) return None
 
@@ -132,7 +154,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Functions and domains.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def functionDeclaration(indentation: Int): Option[FunctionNode] =
+  private def functionDeclaration(indentation: Int): Option[FunctionNode] =
     functionLikeDeclaration(
       keyword ="func",
       None,
@@ -140,7 +162,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       indentation,
     )
 
-  def procedureDeclaration(indentation: Int): Option[FunctionNode] = {
+  private def procedureDeclaration(indentation: Int): Option[FunctionNode] = {
     val startIndex = offset
     functionLikeDeclaration(
       keyword = "proc",
@@ -241,5 +263,5 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Specs.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def specDeclaration(indentation: Int): Option[SpecNode] = ???
+  private def specDeclaration(indentation: Int): Option[SpecNode] = None
 }
