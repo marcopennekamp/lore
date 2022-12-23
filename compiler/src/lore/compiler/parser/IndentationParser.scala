@@ -19,6 +19,16 @@ trait IndentationParser { _: Parser with WhitespaceParser =>
   }
 
   /**
+    * Attempts to open a new indentation block with [[indent]] and returns its indentation. If no indentation block can
+    * be opened, [[indentOrWs]] consumes whitespace via [[ws]] and returns the parent indentation.
+    */
+  def indentOrWs(parentIndentation: Int): Int =
+    indent(parentIndentation).backtrack.getOrElse {
+      ws()
+      parentIndentation
+    }
+
+  /**
     * Consumes whitespace until the first non-blank line and checks that the current indentation is equal to the given
     * indentation. The parser succeeds only if a newline is encountered.
     */
