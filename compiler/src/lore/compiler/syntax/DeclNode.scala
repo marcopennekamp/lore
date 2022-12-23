@@ -30,6 +30,7 @@ sealed trait NamedDeclNode extends DeclNode {
   def simpleName: String
 }
 
+// TODO (syntax): The names of `NamedDeclNode` and `SimpleNamedDeclNode` are backwards, aren't they?
 sealed trait SimpleNamedDeclNode extends NamedDeclNode {
   def nameNode: NameNode
   override def simpleName: String = nameNode.value
@@ -156,6 +157,7 @@ object DeclNode {
     }
   }
 
+  // TODO (syntax): Rename to `AliasDeclarationNode` and so on.
   case class AliasNode(
     nameNode: NameNode,
     aliasVariant: AliasVariant,

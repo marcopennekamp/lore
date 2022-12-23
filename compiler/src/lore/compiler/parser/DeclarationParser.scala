@@ -29,28 +29,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     println(s"Module body indentation: $indentation")
 
     val imports = collectSep(nli(indentation)) { moduleImport(indentation) }
-    val members = collectSep(nli(indentation)) {
-      // TODO (syntax): This optimization needs to be taken very carefully. For example, an `@root` module will start
-      //                with `@`, not `m`. If any top-level declaration other than a module can start with the letter
-      //                `m`, this must be changed. (For example by falling back on the default case if any of the
-      //                optimistic cases fail.) Note that `proc` will suffer from this if we add a `private` keyword.
-      peek match {
-        case 'm' => moduleDeclaration(indentation)
-        case 'l' => globalVariableDeclaration(indentation)
-        case 'f' => functionDeclaration(indentation)
-        case 'p' => procedureDeclaration(indentation)
-        //case 't' => type alias or trait (differentiate by peek(2) == 'y' or 'r')
-        //case 's' => struct or struct alias or spec (differentiate by peek(2) == 't' or 'p')
-        //case 'o' => object or object alias
-        case _ =>
-          // All of these declarations may have annotations preceding their distinguishing keyword (`module`, `func`,
-          // `proc`, and so on).
-          moduleDeclaration(indentation).backtrack |
-            globalVariableDeclaration(indentation).backtrack |
-            functionDeclaration(indentation).backtrack |
-            procedureDeclaration(indentation)
-      }
-    }
+    val members = collectSep(nli(indentation)) { moduleMember(indentation) }
     (imports.flatten, members).some
   }
 
@@ -81,10 +60,55 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     } else Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, createPositionFrom(startIndex))).some
   }
 
+  private def moduleMember(indentation: Int): Option[DeclNode] = {
+    // TODO (syntax): The peek optimization needs to be taken carefully. For example, an `@root` module will start
+    //                with `@`, not `m`. If any top-level declaration other than a module can start with the letter
+    //                `m`, this must be changed. (For example by falling back on the default case if any of the
+    //                optimistic cases fail.) Note that `proc` will suffer from this if we add a `private` keyword.
+    //                Another issue is that annotations will be parsed many times before the correct declaration to
+    //                parse is found. Perhaps we can pre-parse annotations (and any additional modifiers), and then
+    //                later reject annotations/modifiers in the specific declaration parser.
+    def default: Option[DeclNode] =
+      moduleDeclaration(indentation).backtrack |
+        aliasDeclaration(indentation).backtrack |
+        traitDeclaration(indentation).backtrack |
+        structDeclaration(indentation).backtrack |
+        objectDeclaration(indentation).backtrack |
+        globalVariableDeclaration(indentation).backtrack |
+        functionDeclaration(indentation).backtrack |
+        procedureDeclaration(indentation).backtrack |
+        specDeclaration(indentation)
+
+    peek match {
+      case 'm' => moduleDeclaration(indentation)
+      case 't' => peek(2) match {
+        case 'y' => aliasDeclaration(indentation)
+        case 'r' => traitDeclaration(indentation)
+        case _ => default
+      }
+      case 's' => peek(2) match {
+        case 't' => structDeclaration(indentation).backtrack | aliasDeclaration(indentation) // struct or struct alias
+        case 'p' => specDeclaration(indentation)
+        case _ => default
+      }
+      case 'o' => objectDeclaration(indentation).backtrack | aliasDeclaration(indentation) // object or object alias
+      case 'l' => globalVariableDeclaration(indentation)
+      case 'f' => functionDeclaration(indentation)
+      case 'p' => procedureDeclaration(indentation)
+      case _ => default
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // User-defined types.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  def aliasDeclaration(indentation: Int): Option[AliasNode] = ???
 
+  def traitDeclaration(indentation: Int): Option[TraitNode] = ???
+
+  def structDeclaration(indentation: Int): Option[StructNode] = ???
+
+  def objectDeclaration(indentation: Int): Option[StructNode] = ???
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Global variables.
@@ -225,5 +249,5 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Specs.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  private def specDeclaration(indentation: Int): Option[SpecNode] = ???
 }
