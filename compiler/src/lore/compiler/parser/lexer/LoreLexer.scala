@@ -60,6 +60,7 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
   private def currentIndentation: Int = indentationLevels.top
 
   def tokenize(): Option[IndexedSeq[Token]] = {
+    //noinspection LoopVariableNotUpdated
     while (offset < input.length) {
       val startIndex = offset
       consume() match {
