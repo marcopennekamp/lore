@@ -4,6 +4,10 @@ import lore.compiler.syntax.Node.Index
 
 /**
   * A position identifies a code location across a whole Lore project.
+  *
+  * TODO (syntax): Cut down the fields a single Position needs. For example, lines could be cached in the fragment
+  *                instead so that `startLine` etc. can be a `def` instead. Same for `prettyIndex` and so on. (We need
+  *                to rewrite this anyway to get rid of [[fastparse.ParserInput]].
   */
 case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) extends Positioned {
   def <(other: Position): Boolean = {
