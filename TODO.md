@@ -16,7 +16,7 @@
   - Rename `let mut` to `var`.
   - Rename `let` to `val`? 
     - `private let` for global values reads weirdly in comparison to `private val`. Yet I prefer `let` in function bodies.
-  - Replace `extends` with `:` (like in Kotlin) or `<:`. `extends` is too noisy, in hindsight.
+  - Replace `extends` with `:` (like in Kotlin) or `<:`. `extends` is too noisy, in hindsight. (And also annoying to parse with preceding and succeeding whitespace.)
     - Also take into accounts cases where `:`/`<:` should be placed on the next line. This could be a problem given significant indentation.
   - Allow `else` as the `true` cond case.
   - Rename `Boolean` to `Bool`. Int is also abbreviated.

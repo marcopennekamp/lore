@@ -14,6 +14,7 @@
   - Given a type `A & B` with `A` being concrete. Let's say we have values `v: A & B`, which must thus also be type-able as `v: A`. If `A` is concrete, a value of `A & B` should either not be constructable, or there MUST be a `v` that is a concrete value. The problem is, I think, constructing a type `A & B` where `A` is concrete without `B` being trivially subsumed by `A`, making the type actually `A`.
   - We also need augmentations at least for shapes. Because if a shape type stands alone, it's definitely concrete, but in combination with a trait in an intersection type, it's abstract.
   - We might want to reanalyze abstract and concrete types from a "value count" perspective. That is, how many values would inhabit the type? Because from that perspective, the intersection of two types would basically multiply the value counts of each individual type. So from that angle, the current definition of one type needing to be abstract is correct. 
+- Easier ADTs: https://docs.scala-lang.org/scala3/book/types-adts-gadts.html (also see the section about GADTs and note the powerful type inference with `extract`)
 
 
 #### Multi-functions
