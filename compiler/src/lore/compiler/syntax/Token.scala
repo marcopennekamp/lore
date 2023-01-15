@@ -22,7 +22,36 @@ object Token {
   */
 sealed trait PositionedToken extends Token {
   def position: TokenPosition
+
+  lazy val endPosition: TokenPosition = PositionedToken.getEndPosition(this)
 }
+
+object PositionedToken {
+  private def getEndPosition(token: PositionedToken): TokenPosition = token match {
+    case TkIdentifier(value, position) => position + value.length
+    case keyword: TkKeyword => keyword.position + keyword.word.length
+    case TkAnnotation(name, position) => position + 1 /* @ */ + name.length
+    case TkSymbol(name, position) => position + 1 /* # */ + name.length
+    case TkParenLeft(position) => position + 1
+    case TkParenRight(position) => position + 1
+    case TkBracketLeft(position) => position + 1
+    case TkBracketRight(position) => position + 1
+    case TkBraceLeft(position) => position + 1
+    case TkBraceRight(position) => position + 1
+    case TkShapeStart(position) => position + 2
+    case TkDot(position) => position + 1
+    case TkUnderscore(position) => position + 1
+    case TkPlus(position) => position + 1
+
+    case _ =>
+      throw new IllegalArgumentException(s"The end position for `$token` should have a specialized implementation.")
+  }
+}
+
+/**
+  * [[TkEnd]] is used by the parser to signify the end of the token stream.
+  */
+case object TkEnd extends Token
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Newlines and indentation.
@@ -47,40 +76,40 @@ case object TkDedent extends Token
   */
 case class TkIdentifier(value: String, position: TokenPosition) extends PositionedToken
 
-sealed trait TkKeyword extends PositionedToken
+sealed abstract class TkKeyword(val word: String) extends PositionedToken
 
-case class TkAnd(position: TokenPosition) extends TkKeyword
-case class TkCase(position: TokenPosition) extends TkKeyword
-case class TkCond(position: TokenPosition) extends TkKeyword
-case class TkDo(position: TokenPosition) extends TkKeyword
-case class TkDomain(position: TokenPosition) extends TkKeyword
-case class TkElse(position: TokenPosition) extends TkKeyword
-case class TkExtends(position: TokenPosition) extends TkKeyword
-case class TkFalse(position: TokenPosition) extends TkKeyword
-case class TkFixed(position: TokenPosition) extends TkKeyword
-case class TkFor(position: TokenPosition) extends TkKeyword
-case class TkFunc(position: TokenPosition) extends TkKeyword
-case class TkIf(position: TokenPosition) extends TkKeyword
-case class TkIntrinsic(position: TokenPosition) extends TkKeyword
-case class TkLet(position: TokenPosition) extends TkKeyword
-case class TkModule(position: TokenPosition) extends TkKeyword
-case class TkMut(position: TokenPosition) extends TkKeyword
-case class TkNot(position: TokenPosition) extends TkKeyword
-case class TkObject(position: TokenPosition) extends TkKeyword
-case class TkOr(position: TokenPosition) extends TkKeyword
-case class TkProc(position: TokenPosition) extends TkKeyword
-case class TkReturn(position: TokenPosition) extends TkKeyword
-case class TkSpec(position: TokenPosition) extends TkKeyword
-case class TkStruct(position: TokenPosition) extends TkKeyword
-case class TkThen(position: TokenPosition) extends TkKeyword
-case class TkTrait(position: TokenPosition) extends TkKeyword
-case class TkTrue(position: TokenPosition) extends TkKeyword
-case class TkType(position: TokenPosition) extends TkKeyword
-case class TkUse(position: TokenPosition) extends TkKeyword
-case class TkVar(position: TokenPosition) extends TkKeyword
-case class TkWhere(position: TokenPosition) extends TkKeyword
-case class TkWhile(position: TokenPosition) extends TkKeyword
-case class TkYield(position: TokenPosition) extends TkKeyword
+case class TkAnd(position: TokenPosition) extends TkKeyword("and")
+case class TkCase(position: TokenPosition) extends TkKeyword("case")
+case class TkCond(position: TokenPosition) extends TkKeyword("cond")
+case class TkDo(position: TokenPosition) extends TkKeyword("do")
+case class TkDomain(position: TokenPosition) extends TkKeyword("domain")
+case class TkElse(position: TokenPosition) extends TkKeyword("else")
+case class TkExtends(position: TokenPosition) extends TkKeyword("extends")
+case class TkFalse(position: TokenPosition) extends TkKeyword("false")
+case class TkFixed(position: TokenPosition) extends TkKeyword("fixed")
+case class TkFor(position: TokenPosition) extends TkKeyword("for")
+case class TkFunc(position: TokenPosition) extends TkKeyword("func")
+case class TkIf(position: TokenPosition) extends TkKeyword("if")
+case class TkIntrinsic(position: TokenPosition) extends TkKeyword("intrinsic")
+case class TkLet(position: TokenPosition) extends TkKeyword("let")
+case class TkModule(position: TokenPosition) extends TkKeyword("module")
+case class TkMut(position: TokenPosition) extends TkKeyword("mut")
+case class TkNot(position: TokenPosition) extends TkKeyword("not")
+case class TkObject(position: TokenPosition) extends TkKeyword("object")
+case class TkOr(position: TokenPosition) extends TkKeyword("or")
+case class TkProc(position: TokenPosition) extends TkKeyword("proc")
+case class TkReturn(position: TokenPosition) extends TkKeyword("return")
+case class TkSpec(position: TokenPosition) extends TkKeyword("spec")
+case class TkStruct(position: TokenPosition) extends TkKeyword("struct")
+case class TkThen(position: TokenPosition) extends TkKeyword("then")
+case class TkTrait(position: TokenPosition) extends TkKeyword("trait")
+case class TkTrue(position: TokenPosition) extends TkKeyword("true")
+case class TkType(position: TokenPosition) extends TkKeyword("type")
+case class TkUse(position: TokenPosition) extends TkKeyword("use")
+case class TkVar(position: TokenPosition) extends TkKeyword("var")
+case class TkWhere(position: TokenPosition) extends TkKeyword("where")
+case class TkWhile(position: TokenPosition) extends TkKeyword("while")
+case class TkYield(position: TokenPosition) extends TkKeyword("yield")
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Annotations.
@@ -96,10 +125,20 @@ case class TkAnnotation(name: String, position: TokenPosition) extends Positione
 // Values.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-case class TkInt(value: Long, position: TokenPosition) extends PositionedToken
-case class TkReal(value: Double, position: TokenPosition) extends PositionedToken
+case class TkInt(value: Long, position: TokenPosition, override val endPosition: TokenPosition) extends PositionedToken
 
-case class TkString(value: String, position: TokenPosition) extends PositionedToken
+case class TkReal(
+  value: Double,
+  position: TokenPosition,
+  override val endPosition: TokenPosition,
+) extends PositionedToken
+
+case class TkString(
+  value: String,
+  position: TokenPosition,
+  override val endPosition: TokenPosition,
+) extends PositionedToken
+
 case object TkInterpolationStart extends Token
 case object TkInterpolationEnd extends Token
 

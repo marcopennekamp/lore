@@ -3,6 +3,7 @@ package lore.compiler.parser.lexer
 import fastparse.ParserInput
 import lore.compiler.core.Fragment
 import lore.compiler.feedback.{MemoReporter, Reporter}
+import lore.compiler.syntax.Token.TokenPosition
 import lore.compiler.syntax._
 import scalaz.Scalaz.ToOptionIdOps
 
@@ -100,6 +101,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Code mode.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
     * For optimization, [[handleCodeMode]] consumes characters until the mode is switched. Returns `false` if the lexer
     * encountered an error.
@@ -200,6 +202,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // String mode.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
     * To properly build a string, [[handleStringMode]] consumes characters until the mode is switched. Returns `false`
     * if the lexer encountered an error.
@@ -207,14 +210,16 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     * Note: The opening quote has already been consumed.
     */
   private def handleStringMode(): Boolean = {
-    val stringStartIndex = offset - 1 // Start with the opening quote.
+    // The string's position either starts with the opening quote, or if that doesn't exist, with this first character
+    // of the string.
+    val stringStartIndex = if (peek(-1) == '\'') offset - 1 else offset
     val stringBuilder = new mutable.StringBuilder()
 
-    def finishString(): Unit = {
+    def finishString(endPosition: TokenPosition): Unit = {
       // TODO (syntax): Strings need an end index because we have to differentiate between a quote-ended string and an
       //                interpolation-ended string.
       if (stringBuilder.nonEmpty) {
-        tokens += TkString(stringBuilder.toString(), stringStartIndex)
+        tokens += TkString(stringBuilder.toString(), stringStartIndex, endPosition)
       }
     }
 
@@ -222,12 +227,12 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     while (offset < input.length) {
       consume() match {
         case '\'' =>
-          finishString()
+          finishString(offset)
           popMode(StringLexerMode)
           return true
 
         case '$' =>
-          finishString()
+          finishString(offset - 1)
           return handleInterpolation() // In case of an error, it will already have been reported.
 
         case '\n' => return false // TODO (syntax): Report error.
@@ -295,6 +300,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Identifiers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   private val keywords: HashMap[String, Int => Token] = HashMap(
     "_" -> TkUnderscore,
     "and" -> TkAnd,
@@ -364,6 +370,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Annotations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
     * Requirement: The `@` already has been consumed.
     */
@@ -395,11 +402,11 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
 
     charsWhile(c => isDigit(c), builder.append(_))
     if (peek != '.') {
-      tokens += TkInt(builder.toString().toLong, startIndex)
+      tokens += TkInt(builder.toString().toLong, startIndex, offset)
     } else {
       builder.append(".")
       charsWhile(c => isDigit(c), builder.append(_))
-      tokens += TkReal(builder.toString().toDouble, startIndex)
+      tokens += TkReal(builder.toString().toDouble, startIndex, offset)
     }
   }
 
@@ -415,6 +422,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Whitespace and comment handling.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
     * Adds a [[TkNewline]] token, and [[TkIndent]] or [[TkDedent]] based on the indentation of the next line. Returns
     * `false` if indentation is malformed or the newline is encountered in string interpolation (see [[modes]]).
@@ -483,6 +491,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Character queries.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   private def isSpaceOrTab(c: Char): Boolean = c == ' ' || c == '\t'
 
   private def isLetter(c: Char): Boolean = 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
@@ -493,6 +502,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Mode helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   private def pushMode(mode: LexerMode): Unit = modes.push(mode)
 
   /**
@@ -513,11 +523,12 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Input helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   private def peek: Char = peek(1)
 
   private def peek(n: Int): Char = {
     val i = offset + n - 1
-    if (i < input.length) input.charAt(i) else EOF
+    if (i >= 0 && i < input.length) input.charAt(i) else EOF
   }
 
   private def peekNewline: Boolean = peek == '\n' || peek == '\r' && peek(2) == '\n'
