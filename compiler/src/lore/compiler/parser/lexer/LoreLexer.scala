@@ -120,6 +120,9 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
     tokens.result().some
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Identifiers.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private val keywords: HashMap[String, Int => Token] = HashMap(
     "_" -> TkUnderscore,
     "and" -> TkAnd,
@@ -186,6 +189,28 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
     builder.toString()
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Annotations.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * Requirement: The `@` already has been consumed.
+    */
+  private def tokenizeAnnotation(startIndex: Int): Boolean = {
+    val name = lexIdentifier().getOrElse(return false) // TODO (syntax): Report error.
+    name match {
+      case name if name == "where" || !isKeyword(name) =>
+        tokens += TkAnnotation(name, startIndex)
+        true
+
+      case _ =>
+        // TODO (syntax): Report error (cannot use a keyword as annotation).
+        false
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Values.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
     * Requirement: `firstChar` must be a digit.
     *
@@ -207,22 +232,6 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
   }
 
   /**
-    * Requirement: The `@` already has been consumed.
-    */
-  private def tokenizeAnnotation(startIndex: Int): Boolean = {
-    val name = lexIdentifier().getOrElse(return false) // TODO (syntax): Report error.
-    name match {
-      case name if name == "where" || !isKeyword(name) =>
-        tokens += TkAnnotation(name, startIndex)
-        true
-
-      case _ =>
-        // TODO (syntax): Report error (cannot use a keyword as annotation).
-        false
-    }
-  }
-
-  /**
     * Requirement: The `#` already has been consumed.
     */
   private def tokenizeSymbol(startIndex: Int): Boolean = {
@@ -231,19 +240,10 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
     true
   }
 
-  // TODO (syntax): Should be inline (Scala 3).
-  private def tokenizeComposite(expected: Character, basic: => Token, composite: => Token): Unit = {
-    if (peek == expected) {
-      consume()
-      tokens += composite
-    } else {
-      tokens += basic
-    }
-  }
-
-  // TODO (syntax): Should be inline (Scala 3).
-  private def tokenizeCompositeEquals(basic: => Token, composite: => Token): Unit =
-    tokenizeComposite('=', basic, composite)
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Strings.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO (syntax): Implement string tokenization.
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Whitespace and comment handling.
@@ -352,4 +352,18 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
       apply(consume())
     }
   }
+
+  // TODO (syntax): Should be inline (Scala 3).
+  private def tokenizeComposite(expected: Character, basic: => Token, composite: => Token): Unit = {
+    if (peek == expected) {
+      consume()
+      tokens += composite
+    } else {
+      tokens += basic
+    }
+  }
+
+  // TODO (syntax): Should be inline (Scala 3).
+  private def tokenizeCompositeEquals(basic: => Token, composite: => Token): Unit =
+    tokenizeComposite('=', basic, composite)
 }
