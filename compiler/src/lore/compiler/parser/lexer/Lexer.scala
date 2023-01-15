@@ -9,9 +9,9 @@ import scalaz.Scalaz.ToOptionIdOps
 import scala.collection.immutable.HashMap
 import scala.collection.mutable
 
-object LoreLexer {
+object Lexer {
   def tokenize(input: String)(implicit fragment: Fragment, reporter: Reporter): Option[IndexedSeq[Token]] =
-    new LoreLexer(input).tokenize()
+    new Lexer(input).tokenize()
 
   def main(args: Array[String]): Unit = {
     val source =
@@ -33,7 +33,8 @@ object LoreLexer {
         |      String |
         |        Int
         |
-        |    let abcd: Alphabet = TODO
+        |    let abcd: Alphabet = 'A B C $d e f ${g + h} i j ${ k + %{ l: 5, m: 8 }.l } n o p'
+        |    let nested: String = 'hello ${ %{ world: 'world ${ concat('!', '!') }' }.world }!'
         |
         |    @root
         |    module Holy
@@ -44,12 +45,24 @@ object LoreLexer {
   }
 }
 
-private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
+class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   private val EOF = '\u0000'
+
+  private var offset: Int = 0
 
   private val tokens = IndexedSeq.newBuilder[Token]
 
-  private var offset: Int = 0
+  /**
+    * The current stack of modes the lexer is in.
+    *
+    * Because Lore currently doesn't support multi-line strings, if the lexer encounters a newline, its mode stack must
+    * not include a `StringLexerMode`. Otherwise, a newline is contained in an interpolation, which is illegal.
+    *
+    * The last `CodeLexerMode` may never be popped off the stack. Otherwise, a brace imbalance has occurred. Also, at
+    * the end of the file, if the mode stack isn't exactly `[CodeLexerMode]`, the lexer encountered too few closing
+    * braces.
+    */
+  private val modes: mutable.Stack[LexerMode] = mutable.Stack(CodeLexerMode)
 
   /**
     * All levels of indentation encountered by the lexer. The zero indentation is guaranteed to always be the bottom
@@ -62,26 +75,79 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
   def tokenize(): Option[IndexedSeq[Token]] = {
     //noinspection LoopVariableNotUpdated
     while (offset < input.length) {
+      val isValidRun = modes.top match {
+        case CodeLexerMode => handleCodeMode()
+        case StringLexerMode => handleStringMode()
+      }
+      if (!isValidRun) return None
+    }
+
+    // At the end of the file, there must be exactly one lexer mode remaining: `CodeLexerMode`.
+    if (modes.length != 1 || modes.top != CodeLexerMode) {
+      // TODO (syntax): Report error.
+      println(s"Unbalanced modes: $modes")
+      return None
+    }
+
+    tokens.result().some
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Code mode.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * For optimization, [[handleCodeMode]] consumes characters until the mode is switched. Returns `false` if the lexer
+    * encountered an error.
+    */
+  private def handleCodeMode(): Boolean = {
+    //noinspection LoopVariableNotUpdated
+    while (offset < input.length) {
       val startIndex = offset
       consume() match {
         case c if isIdentifierStart(c) => tokenizeIdentifier(c, startIndex)
-        case '@' => if (!tokenizeAnnotation(startIndex)) return None // An error will already have been reported.
+        case '@' => if (!tokenizeAnnotation(startIndex)) return false // An error will already have been reported.
 
         // Values.
         case c if isDigit(c) => tokenizeNumber(c, startIndex)
-        case '#' => if (!tokenizeSymbol(startIndex)) return None // An error will already have been reported.
+        case '#' => if (!tokenizeSymbol(startIndex)) return false // An error will already have been reported.
+
+        // Strings.
+        case '\'' =>
+          pushMode(StringLexerMode)
+          return true
 
         // Operators and special characters.
         case '(' => tokens += TkParenLeft(startIndex)
         case ')' => tokens += TkParenRight(startIndex)
         case '[' => tokens += TkBracketLeft(startIndex)
         case ']' => tokens += TkBracketRight(startIndex)
-        case '{' => tokens += TkBraceLeft(startIndex)
-        case '}' => tokens += TkBraceRight(startIndex)
+
+        case '{' =>
+          pushMode(CodeLexerMode)
+          tokens += TkBraceLeft(startIndex)
+
+        case '}' =>
+          val isBalanced = popMode(CodeLexerMode)
+          if (!isBalanced) {
+            // TODO (syntax): Report error.
+            println(s"Cannot pop `CodeLexerMode` from: $modes")
+            return false
+          }
+
+          // The closing brace is either the end of an interpolation or a simple right brace. This depends on whether
+          // the new mode (after `CodeLexerMode` has been popped) is a `StringLexerMode`.
+          tokens += (if (modes.top == StringLexerMode) TkInterpolationEnd else TkBraceRight(startIndex))
+          return true
 
         case '%' => consume() match {
-          case '{' => tokens += TkShapeStart(startIndex)
-          case _ => return None // TODO (syntax): Report error.
+          case '{' =>
+            pushMode(CodeLexerMode)
+            tokens += TkShapeStart(startIndex)
+
+          case c =>
+            // TODO (syntax): Report error.
+            println(s"Invalid token after `%`: `$c`")
+            return false
         }
 
         case ',' => tokens += TkComma
@@ -110,14 +176,115 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
         case '|' => tokens += TkTypeOr
 
         // Whitespace and comment handling. (Note that line comment skips are initiated in operator handling.)
-        case '\n' => if (!handleNewline()) return None
+        case '\n' =>
+          val isValid = handleNewline()
+          if (!isValid) return false // An error will already have been reported.
+
         case '\r' => // just skip
         case ' ' | '\t' => skipSpacesAndTabs()
 
-        case _ => return None // TODO (syntax): Report error.
+        case c =>
+          // TODO (syntax): Report error.
+          println(s"Unknown token in `code` mode: `$c` (next: `$peek`) (modes: $modes.top)")
+          return false
       }
     }
-    tokens.result().some
+    true
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // String mode.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * To properly build a string, [[handleStringMode]] consumes characters until the mode is switched. Returns `false`
+    * if the lexer encountered an error.
+    *
+    * Note: The opening quote has already been consumed.
+    */
+  private def handleStringMode(): Boolean = {
+    val stringStartIndex = offset - 1 // Start with the opening quote.
+    val stringBuilder = new mutable.StringBuilder()
+
+    def finishString(): Unit = {
+      // TODO (syntax): Strings need an end index because we have to differentiate between a quote-ended string and an
+      //                interpolation-ended string.
+      if (stringBuilder.nonEmpty) {
+        tokens += TkString(stringBuilder.toString(), stringStartIndex)
+      }
+    }
+
+    //noinspection LoopVariableNotUpdated
+    while (offset < input.length) {
+      consume() match {
+        case '\'' =>
+          finishString()
+          popMode(StringLexerMode)
+          return true
+
+        case '$' =>
+          finishString()
+          return handleInterpolation() // In case of an error, it will already have been reported.
+
+        case '\n' => return false // TODO (syntax): Report error.
+
+        case '\\' =>
+          val isValid = appendEscapeSequence(stringBuilder)
+          if (!isValid) return false // An error will already have been reported.
+
+        case c => stringBuilder.append(c)
+      }
+    }
+    true
+  }
+
+  /**
+    * Requirement: `$` has already been consumed.
+    */
+  private def handleInterpolation(): Boolean = {
+    val startIndex = offset
+    tokens += TkInterpolationStart
+
+    consume() match {
+      case '{' =>
+        pushMode(CodeLexerMode)
+        true
+
+      case c if isIdentifierStart(c) =>
+        tokenizeIdentifier(c, startIndex)
+        tokens += TkInterpolationEnd
+        true
+
+      case _ => false // TODO (syntax): Report error.
+    }
+  }
+
+  /**
+    * Requirement: `\` has already been consumed.
+    */
+  private def appendEscapeSequence(stringBuilder: StringBuilder): Boolean = {
+    val character = consume() match {
+      case 'n' => '\n'
+      case 'r' => '\r'
+      case 't' => '\t'
+      case '\'' => '\''
+      case '$' => '$'
+      case '\\' => '\\'
+
+      case 'u' => consume(4) match {
+        case Some(unicodeCode) =>
+          try {
+            Integer.parseInt(unicodeCode, 16).toChar
+          } catch {
+            case _: Throwable => return false // TODO (syntax): Report error.
+          }
+
+        case None => return false // TODO (syntax): Report error.
+      }
+
+      case _ => return false // TODO (syntax): Report error.
+    }
+    stringBuilder.append(character)
+    true
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,20 +408,19 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Strings.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO (syntax): Implement string tokenization.
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Whitespace and comment handling.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
     * Adds a [[TkNewline]] token, and [[TkIndent]] or [[TkDedent]] based on the indentation of the next line. Returns
-    * `false` if indentation is malformed.
+    * `false` if indentation is malformed or the newline is encountered in string interpolation (see [[modes]]).
     *
     * Requirement: `\n` has already been consumed.
     */
   private def handleNewline(): Boolean = {
+    // Because Lore doesn't support multi-line strings, a newline may not be contained in an interpolation. The lexer
+    // is currently parsing an interpolation if it has a `StringLexerMode`.
+    if (modes.length > 1 && modes.contains(StringLexerMode)) return false // TODO (syntax): Report error.
+
     tokens += TkNewline
 
     // To find out the new indent, we have to measure the start and end index of the first non-blank line's indentation.
@@ -314,6 +480,26 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
   private def isIdentifierStart(c: Char): Boolean = isLetter(c) || c == '_'
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Mode helpers.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  private def pushMode(mode: LexerMode): Unit = modes.push(mode)
+
+  /**
+    * Attempts to pop a mode off [[modes]]. If the last mode would be popped, return `false` to signal that the lexer
+    * encountered an unbalanced closing token. Specific errors should be reported by the caller.
+    */
+  private def popMode(expectedMode: LexerMode): Boolean = {
+    if (modes.length > 1) {
+      assert(
+        modes.top == expectedMode,
+        s"Expected to pop lexer mode `$expectedMode`, encountered `${modes.top}` instead."
+      )
+      modes.pop()
+      true
+    } else false
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Input helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def peek: Char = peek(1)
@@ -329,6 +515,17 @@ private class LoreLexer(input: String)(implicit fragment: Fragment, reporter: Re
     val c = peek
     if (c != EOF) offset += 1
     c
+  }
+
+  /**
+    * Consumes `length` characters of the input if as many are available and returns the string. [[offset]] is only
+    * mutated if the whole string is available.
+    */
+  private def consume(length: Int): Option[String] = {
+    val endIndex = offset + length
+    if (endIndex > input.length) return None
+    offset += length
+    input.substring(offset, endIndex).some
   }
 
   /**

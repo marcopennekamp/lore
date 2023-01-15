@@ -99,7 +99,9 @@ case class TkAnnotation(name: String, position: TokenPosition) extends Positione
 case class TkInt(value: Long, position: TokenPosition) extends PositionedToken
 case class TkReal(value: Double, position: TokenPosition) extends PositionedToken
 
-// TODO (syntax): Define string tokens.
+case class TkString(value: String, position: TokenPosition) extends PositionedToken
+case object TkInterpolationStart extends Token
+case object TkInterpolationEnd extends Token
 
 /**
   * A symbol `#name`, which can be a value or a type.
