@@ -3,7 +3,7 @@ package lore.compiler.parser.lexer
 import fastparse.ParserInput
 import lore.compiler.core.Fragment
 import lore.compiler.feedback.{MemoReporter, Reporter}
-import lore.compiler.syntax.Token.TokenPosition
+import lore.compiler.syntax.Token.TokenIndex
 import lore.compiler.syntax._
 import scalaz.Scalaz.ToOptionIdOps
 
@@ -215,11 +215,9 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     val stringStartIndex = if (peek(-1) == '\'') offset - 1 else offset
     val stringBuilder = new mutable.StringBuilder()
 
-    def finishString(endPosition: TokenPosition): Unit = {
-      // TODO (syntax): Strings need an end index because we have to differentiate between a quote-ended string and an
-      //                interpolation-ended string.
+    def finishString(endIndex: TokenIndex): Unit = {
       if (stringBuilder.nonEmpty) {
-        tokens += TkString(stringBuilder.toString(), stringStartIndex, endPosition)
+        tokens += TkString(stringBuilder.toString(), stringStartIndex, endIndex)
       }
     }
 
