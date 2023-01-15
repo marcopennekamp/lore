@@ -1,15 +1,20 @@
 package lore.compiler.parser
 
 import lore.compiler.core.{Fragment, Position}
+import lore.compiler.syntax.{PositionedToken, TkEnd, Token}
+import scalaz.Scalaz.ToOptionIdOps
 
 import scala.annotation.StaticAnnotation
+import scala.reflect.ClassTag
 
 trait Parser {
-  protected val EOF = '\u0000'
-
-  val input: String
   implicit def fragment: Fragment
 
+  val tokens: IndexedSeq[Token]
+
+  /**
+    * The current offset in [[tokens]].
+    */
   protected var offset: Int = 0
 
   /**
@@ -22,86 +27,33 @@ trait Parser {
   class OffsetConservative extends StaticAnnotation
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Character queries.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def isLetter(c: Char): Boolean = 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
-  def isDigit(c: Char): Boolean = '0' <= c && c <= '9'
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Input helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def peek: Char = peek(1)
+  @OffsetConservative
+  def peek: Token = peek(1)
 
-  def peek(n: Int): Char = {
+  @OffsetConservative
+  def peek(n: Int): Token = {
     val i = offset + n - 1
-    if (i < input.length) input.charAt(i) else EOF
+    if (i < tokens.length) tokens(i) else TkEnd
   }
 
   @OffsetConservative
-  def consume(): Char = {
-    val c = peek
-    if (c != EOF) offset += 1
-    c
+  def consume(): Token = {
+    val token = peek
+    if (token != TkEnd) offset += 1
+    token
   }
 
-  /**
-    * Consumes characters while `predicate` holds and returns `true` if at least one character was consumed.
-    */
+  def consumeOnly[T <: Token]()(implicit tag: ClassTag[T]): Option[T] = consume() match {
+    case token: T => token.some
+    case _ => None
+  }
+
   @OffsetConservative
-  def charsWhile(predicate: Char => Boolean): Boolean = {
-    var consumed = false
-    while (predicate(peek)) {
+  def consumeOnly(token: Token): Boolean = {
+    if (peek == token) {
       consume()
-      consumed = true
-    }
-    consumed
-  }
-
-  /**
-    * Consumes characters while `predicate` holds and returns `true` if at least one character was consumed.
-    */
-  @OffsetConservative
-  def charsWhile(predicate: Char => Boolean, apply: Char => Unit): Boolean = {
-    var consumed = false
-    while (predicate(peek)) {
-      apply(consume())
-      consumed = true
-    }
-    consumed
-  }
-
-  /**
-    * Consumes `c` if it matches the next character.
-    */
-  @OffsetConservative
-  def character(c: Char): Boolean = {
-    if (peek == c) {
-      consume()
-      true
-    } else false
-  }
-
-  /**
-    * Consumes `c` as long as it matches the next character. Returns `true` if at least one character was consumed.
-    */
-  @OffsetConservative
-  def chars(c: Char): Boolean = {
-    var consumed = false
-    while (peek == c) {
-      consume()
-      consumed = true
-    }
-    consumed
-  }
-
-  /**
-    * Checks that the next characters match `string`, and advances `offset` by `string.length` and returns `true` if
-    * `string` was matched.
-    */
-  @OffsetConservative
-  def word(string: String): Boolean = {
-    if (input.startsWith(string, offset)) {
-      offset += string.length
       true
     } else false
   }
@@ -120,7 +72,7 @@ trait Parser {
 
   // TODO (syntax): Remove (unused).
   // TODO (syntax): Share implementation with `repeat`.
-  def repeatSep(separator: Char)(action: => Boolean): Boolean = {
+  def repeatSep(separator: Token)(action: => Boolean): Boolean = {
     var consumed = false
     while (action) {
       consumed = true
@@ -154,9 +106,9 @@ trait Parser {
     * `collectSep` backtracks `get` and `separator` automatically because both are inherently exploratory.
     *
     * Backtracking `get` is for instance important when module declarations are collected. If `get` doesn't backtrack,
-    * an incomplete declaration `func ...` might lead to `func` being consumed, `get` returning `None`, and this
-    * incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as something
-    * else, for example:
+    * an incomplete declaration `func ...` might lead to the `func` token being consumed, `get` returning `None`, and
+    * this incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as
+    * something else, for example:
     *
     * {{{
     * module Functions
@@ -232,15 +184,17 @@ trait Parser {
   }
 
   // TODO (syntax): Should be inline (Scala 3).
-  def withPosition[R](action: => Option[R]): Option[(R, Position)] = {
-    val startOffset = offset
-    val result = action
-    val endOffset = offset
-    result.map((_, Position(fragment, startOffset, endOffset)))
-  }
+//  def withPosition[T <: PositionedToken](token: T): (T, Position) = {
+//    result.map((_, Position(fragment, startOffset, endOffset)))
+//  }
 
   // TODO (syntax): Should be inline (Scala 3).
-  def createPositionFrom(startIndex: Int): Position = Position(fragment, startIndex, endIndex = offset)
+//  def createPositionFrom(startIndex: Int): Position = Position(fragment, startIndex, endIndex = offset)
+
+  implicit class PositionedTokenExtension[T <: PositionedToken](token: T) {
+    def position: Position = Position(fragment, token.startIndex, token.endIndex)
+    def withPosition: (T, Position) = (token, position)
+  }
 
   implicit class AnyExtension(any: Any) {
     /**
