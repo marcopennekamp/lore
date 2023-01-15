@@ -38,7 +38,6 @@ object Lexer {
         |
         |    @root
         |    module Holy
-        |
         |""".stripMargin
     tokenize(source)(Fragment("test_fragment", ParserInput.fromString(source)), MemoReporter())
       .foreach(_.foreach(println))
@@ -87,6 +86,12 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
       // TODO (syntax): Report error.
       println(s"Unbalanced modes: $modes")
       return None
+    }
+
+    // If the file doesn't end with a newline (ignoring trailing spaces and tabs), invoke the lexer as if it would.
+    // This generates a newline token for the last line and dedents for unclosed indentation levels.
+    if (input.findLast(c => !isSpaceOrTab(c)).exists(_ != '\n')) {
+      handleNewline()
     }
 
     tokens.result().some
@@ -427,7 +432,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     var startIndex = offset
     skipSpacesAndTabs()
 
-    // Skip blank lines.
+    // Skip blank lines until `skipSpacesAndTabs` has arrived at a non-newline character.
     while (skipNewline()) {
       startIndex = offset
       skipSpacesAndTabs()
@@ -444,6 +449,10 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
         indentationLevels.pop()
       }
 
+      // TODO (syntax): "Lax" indentation, previously handled by `wlmi`, might cause issues here. Reconsider if this
+      //                restriction is really necessary in all cases. For example, if a line ends with certain tokens
+      //                like `+`, we might not want to handle indentation at all (except for ensuring a minimum
+      //                indentation) and instead skip newlines. I think Scala has a similar approach.
       if (newIndentation != currentIndentation) {
         // TODO (syntax): Report error.
         return false
@@ -464,7 +473,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     case _ => false
   }
 
-  private def skipSpacesAndTabs(): Unit = charsWhile(c => c == ' ' || c == '\t')
+  private def skipSpacesAndTabs(): Unit = charsWhile(isSpaceOrTab)
 
   /**
     * Requirement: `--` has already been consumed.
@@ -474,6 +483,8 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Character queries.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  private def isSpaceOrTab(c: Char): Boolean = c == ' ' || c == '\t'
+
   private def isLetter(c: Char): Boolean = 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
   private def isDigit(c: Char): Boolean = '0' <= c && c <= '9'
 
