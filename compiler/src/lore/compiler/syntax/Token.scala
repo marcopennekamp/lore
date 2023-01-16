@@ -45,7 +45,6 @@ object PositionedToken {
     case TkBraceLeft(position) => position + 1
     case TkBraceRight(position) => position + 1
     case TkShapeStart(position) => position + 2
-    case TkDot(position) => position + 1
     case TkUnderscore(position) => position + 1
     case TkPlus(position) => position + 1
 
@@ -170,13 +169,9 @@ case class TkBraceRight(startIndex: TokenIndex) extends PositionedToken
 case class TkShapeStart(startIndex: TokenIndex) extends PositionedToken
 
 case object TkComma extends Token
-
-/**
-  * [[TkDot]] remembers its position so that name paths can be properly parsed.
-  */
-case class TkDot(startIndex: TokenIndex) extends PositionedToken
-
+case object TkDot extends Token
 case object TkColon extends Token
+
 case class TkUnderscore(startIndex: TokenIndex) extends PositionedToken
 
 case object TkEquals extends Token

@@ -158,7 +158,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
         }
 
         case ',' => tokens += TkComma
-        case '.' => tokens += TkDot(startIndex)
+        case '.' => tokens += TkDot
         case ':' => tokens += TkColon
         case '_' => tokens += TkUnderscore(startIndex)
 

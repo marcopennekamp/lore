@@ -2,7 +2,7 @@ package lore.compiler.parser
 
 import lore.compiler.core.Position
 import lore.compiler.syntax.Node.{NameNode, NamePathNode}
-import lore.compiler.syntax.{PositionedToken, TkComma, TkIdentifier, TkPlus}
+import lore.compiler.syntax.{TkDot, TkIdentifier, TkPlus}
 import scalaz.Scalaz.ToOptionIdOps
 
 import scala.collection.mutable
@@ -61,9 +61,7 @@ trait NameParser { _: Parser =>
   def typeNamePath(): Option[NamePathNode] = genericNamePath(typeName())
 
   private def genericNamePath(name: => Option[NameNode]): Option[NamePathNode] = {
-    val names = collectSep(consumeOnly(TkComma)) {
-      name
-    }
+    val names = collectSep(consumeOnly(TkDot)) { name }
     if (names.isEmpty) return None
     Some(NamePathNode(names))
   }
