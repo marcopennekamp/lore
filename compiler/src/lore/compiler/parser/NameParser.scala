@@ -14,7 +14,11 @@ trait NameParser { _: Parser =>
     * A type name might be composed of several connected [[TkIdentifier]] and [[TkPlus]] tokens.
     */
   def typeName(): Option[NameNode] = {
-    val connectedTokens = findConnectedTokensForTypeName()
+    val connectedTokens = consumeConnectedTokens {
+      case _: TkIdentifier => true
+      case _: TkPlus => true
+      case _ => false
+    }
     if (connectedTokens.isEmpty) return None
 
     val stringBuilder = new mutable.StringBuilder()
@@ -27,33 +31,6 @@ trait NameParser { _: Parser =>
     val startIndex = connectedTokens.head.startIndex
     val endIndex = connectedTokens.last.endIndex
     NameNode(stringBuilder.toString(), Position(fragment, startIndex, endIndex)).some
-  }
-
-  // TODO (syntax): Replace element type with `TkIdentifier or TkPlus` in Scala 3.
-  private def findConnectedTokensForTypeName(): Vector[PositionedToken] = {
-    var connectedTokens = Vector.empty[PositionedToken]
-
-    def addConnectedToken(): Boolean = {
-      val candidate = peek match {
-        case identifier: TkIdentifier => identifier
-        case plus: TkPlus => plus
-        case _ => return false
-      }
-
-      // Check that this token is connected to the last one.
-      if (connectedTokens.nonEmpty && candidate.startIndex != connectedTokens.last.endIndex + 1) return false
-
-      consume()
-      connectedTokens :+= candidate
-      true
-    }
-
-    var isConnected = true
-    while (isConnected) {
-      isConnected = addConnectedToken()
-    }
-
-    connectedTokens
   }
 
   def namePath(): Option[NamePathNode] = genericNamePath(name())

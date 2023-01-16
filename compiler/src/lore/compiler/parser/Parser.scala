@@ -2,6 +2,7 @@ package lore.compiler.parser
 
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.syntax.{PositionedToken, TkEnd, Token}
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
 import scala.annotation.StaticAnnotation
@@ -57,6 +58,27 @@ trait Parser {
       true
     } else false
   }
+
+  /**
+    * Consumes tokens allowed by `isAllowed` as long as the current token and the next token are directly adjacent by
+    * index. [[consumeConnectedTokens]] is sensitive to whitespace in the sense that it compares raw indices. Its use
+    * should be limited to cases where the lexer should have created a single token, but wasn't able to due to missing
+    * context information.
+    */
+  @OffsetConservative
+  def consumeConnectedTokens(isAllowed: PositionedToken => Boolean): Vector[PositionedToken] =
+    VectorExtension.unfoldOnPreviousElement { previousToken =>
+      peek match {
+        case candidate: PositionedToken if isAllowed(candidate) =>
+          previousToken match {
+            case Some(previousToken) if candidate.startIndex != previousToken.endIndex + 1 => None
+            case _ =>
+              consume()
+              candidate.some
+          }
+        case _ => None
+      }
+    }
 
   /**
     * Repeats `action` until it returns `false`. Returns `true` if at least one action was successfully executed.

@@ -104,6 +104,30 @@ object CollectionExtensions {
     def takeNonEmpty: Option[Vector[A]] = takeMinSize(1)
   }
 
+  object VectorExtension {
+    /**
+      * Unfolds `f` by passing it the element that was generated in the previous step.
+      */
+    def unfoldOnPreviousElement[A](f: Option[A] => Option[A]): Vector[A] = {
+      val builder = Vector.newBuilder[A]
+
+      var isValid = true
+      var previousResult: Option[A] = None
+      while (isValid) {
+        val currentResult = f(previousResult)
+        currentResult match {
+          case Some(element) =>
+            builder += element
+            previousResult = currentResult
+
+          case None => isValid = false
+        }
+      }
+
+      builder.result()
+    }
+  }
+
   implicit class SetExtension[A](set: Set[A]) {
     def filterType[T <: A](implicit tag: ClassTag[T]): Set[T] = set.flatMap {
       case value: T => Some(value)
