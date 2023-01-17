@@ -124,8 +124,11 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`, requiring a `separator` between each production.
-    * `collectSep` backtracks `get` and `separator` automatically because both are inherently exploratory.
+    * Collects results from `get` until it returns `None`, requiring a `separator` between each production. If a
+    * `trailingSeparator` is specified, [[collectSep]] attempts to consume `trailingSeparator` after the last element.
+    *
+    * [[collectSep]] backtracks `get`, `separator`, and `trailingSeparator` automatically because they are inherently
+    * exploratory.
     *
     * Backtracking `get` is for instance important when module declarations are collected. If `get` doesn't backtrack,
     * an incomplete declaration `func ...` might lead to the `func` token being consumed, `get` returning `None`, and
@@ -141,23 +144,29 @@ trait Parser {
     * If the parser doesn't backtrack, `use` might be skipped and `module Test` might still be parsed as a member of
     * module `Functions`. This is because module members are parsed sequentially after imports.
     *
-    * TODO (syntax): Share implementation with `collect`.
     * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
     *                `get` is already offset-conservative.
     */
   @OffsetConservative
-  def collectSep[A](separator: => Boolean, allowTrailing: Boolean = false)(get: => Option[A]): Vector[A] = {
+  def collectSep[A](separator: => Boolean, trailingSeparator: => Boolean = false)(get: => Option[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
-    while (!ended) {
-      get.backtrack match {
-        case Some(result) =>
-          results :+= result
-          if (!separator.backtrack) ended = true
-        case None => ended = true
-      }
+
+    def next(): Boolean = get.backtrack match {
+      case Some(result) =>
+        results :+= result
+        true
+      case None => false
     }
-    if (allowTrailing) separator.backtrack
+
+    // Consume the separator and then the element in one backtrack grouping. Otherwise, a trailing separator may be
+    // consumed by the wrong separator rule. This is also the reason why the first element is consumed outside the
+    // `while` loop.
+    ended = !next()
+    while (!ended) {
+      ended = !(separator && next()).backtrack
+    }
+    trailingSeparator.backtrack
     results
   }
 
@@ -174,6 +183,7 @@ trait Parser {
     separator: => Option[B],
     allowTrailing: Boolean = false,
   )(get: => Option[A]): (Vector[A], Vector[B]) = {
+    // TODO (syntax): This needs to be updated similarly to `collectSep`.
     var elements = Vector.empty[A]
     var separators = Vector.empty[B]
     var ended = false
