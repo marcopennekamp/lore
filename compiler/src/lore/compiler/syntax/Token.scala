@@ -9,7 +9,12 @@ import lore.compiler.syntax.Token.TokenIndex
   * [[TkIndent]] and [[TkDedent]] tokens. However, meaningful newlines are represented by [[TkNewline]] to allow the
   * parser to terminate expressions.
   */
-sealed trait Token
+sealed trait Token {
+  def isControlToken: Boolean = this match {
+    case TkNewline | TkIndent | TkDedent => true
+    case _ => false
+  }
+}
 
 object Token {
   type TokenIndex = Int
