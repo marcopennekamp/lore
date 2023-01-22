@@ -1,25 +1,35 @@
 package lore.compiler.parser
 
-import lore.compiler.syntax.DeclNode.TypeVariableNode
-import lore.compiler.syntax.{TkAnnotation, TkComma, TkNewline}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.syntax.Node.NameNode
+import lore.compiler.syntax._
 
 /**
-  * We will probably formalize annotations down the line, but for now this parser exists exclusively to parse the
-  * annotation `@where`, as well as simple annotations such as `@bench` and `@bench_only`.
+  * [[AnnotationParser]] parses annotations into [[AnnotationNode]]s.
   *
-  * Every annotation must be terminated by a newline, without any following indent or dedent. Hence, annotation
-  * tokens must usually be placed on the same line, except when individual sections are separated by commas.
-  *
-  * To ensure that an annotation terminates correctly (with the correct follow-up indentation), an optional annotation
-  * parser should usually be wrapped in `backtrack`.
+  * Every annotation must be terminated by a newline, without any following indent or dedent. Hence, an annotation body
+  * must usually be placed on the same line, except when the body is in an indentation section (for select annotations).
   */
-trait AnnotationParser {
-  _: Parser with TypeParameterParser with TypeParser with IndentationParser with ControlParser =>
-  /**
-    * Parses a simple `@name` annotation without any arguments.
-    */
-  def simpleAnnotation(name: String): Boolean = annotationHead(name) && terminateSingleLineAnnotation()
+trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with IndentationParser with ControlParser =>
+  @StateConservative
+  def annotations(): Result[Vector[AnnotationNode]] = collect(annotation())
+
+  private def annotation(): Result[AnnotationNode] = {
+    val annotationHead = consumeOnly[TkAnnotation]().getOrElse(return Recoverable)
+
+    val result = annotationHead.name match {
+      case "where" => whereAnnotation(annotationHead)
+      case name => annotationBodyOnSingleLine { SimpleAnnotationNode(NameNode(name, annotationHead.position)).success }
+    }
+
+    // The newline terminator is checked by the specific annotation parsers, but we additionally have to make sure that
+    // the next token (another annotation or the annotated element) has the same indentation.
+    if (!peek.isControlToken) {
+      // TODO (syntax): Report error. (Same indentation expected on the next line.)
+      return Failure
+    }
+
+    result
+  }
 
   /**
     * Parses a `@where` annotation. The type parameters may be provided on the same line as the `@where` or in an
@@ -32,32 +42,54 @@ trait AnnotationParser {
     * func ...
     * }}}
     */
-  def whereAnnotation(): Option[Vector[TypeVariableNode]] = {
-    if (!annotationHead("where")) return None
-
+  def whereAnnotation(annotationHead: TkAnnotation): Result[WhereAnnotationNode] = {
     annotationBodyWithOptionalIndentation { isIndented =>
-      collectSep(separatorNl(TkComma, allowNewline = isIndented), consumeOnly(TkComma)) { simpleTypeParameter() }
-        .takeNonEmpty
-    }
-  }
+      val typeParameters = collectSep(separatorNl(TkComma, allowNewline = isIndented), consumeOnly(TkComma)) {
+        simpleTypeParameter()
+      }
 
-  private def annotationHead(name: String): Boolean = {
-    val annotationToken = consumeOnly[TkAnnotation]().getOrElse(return false)
-    annotationToken.name == name
+      if (typeParameters.isEmpty) {
+        // TODO (syntax): Report error.
+        return Failure
+      }
+
+      WhereAnnotationNode(typeParameters, annotationHead.position.to(typeParameters.last.position)).success
+    }
   }
 
   /**
-    * Parses an annotation body in a [[withOptionalIndentation]] block and ensures that it's properly terminated,
-    * including the [[TkNewline]] after `body` and that the next line has the same indentation.
+    * Parses a single-line annotation body and ensures that the annotation is terminated by a newline.
+    */
+  private def annotationBodyOnSingleLine[A](body: => Result[A]): Result[A] = {
+    val result = body
+    if (!result.isSuccess) return result
+
+    if (!consumeOnly(TkNewline)) {
+      // TODO (syntax): Report error. (Newline expected at end of annotation.)
+      return Failure
+    }
+
+    result
+  }
+
+  /**
+    * Parses an annotation body with optional indentation and ensures that it's terminated by a newline.
     *
     * The boolean passed to `body` signifies whether an indentation section has been opened.
     */
-  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Option[A]): Option[A] = {
-    val result = withOptionalIndentation { isIndented =>
-      body(isIndented) <& consumeOnly(TkNewline)
-    }
-    result.flatten <& !peek.isControlToken
-  }
+  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Result[A]): Result[A] = {
+    val isIndented = openOptionalIndentation()
+    val result = body(isIndented)
 
-  private def terminateSingleLineAnnotation(): Boolean = consumeOnly(TkNewline) && !peek.isControlToken
+    if (!consumeOnly(TkNewline)) {
+      // TODO (syntax): Report error. (Newline expected at end of annotation.)
+      return Failure
+    }
+
+    if (isIndented && !closeIndentation()) {
+      return Failure // An error was already reported.
+    }
+
+    result
+  }
 }
