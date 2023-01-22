@@ -17,6 +17,7 @@ sealed trait Token {
 }
 
 object Token {
+  // TODO (syntax): Merge with `Node.index`/`Position.index`.
   type TokenIndex = Int
 }
 

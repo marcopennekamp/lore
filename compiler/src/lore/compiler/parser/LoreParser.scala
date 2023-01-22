@@ -50,7 +50,7 @@ object LoreParser {
   * Implementation conventions:
   *   - Failed parsers may be stuck at an advanced [[Parser.offset]] and must be backtracked explicitly with
   *     [[Parser.BooleanActionExtension.backtrack]] or [[Parser.OptionActionExtension.backtrack]]. Parsers that are
-  *     marked as [[Parser.OffsetConservative]] don't need to be backtracked even if they fail. This convention
+  *     marked as [[Parser.StateConservative]] don't need to be backtracked even if they fail. This convention
   *     improves performance by avoiding lots of saved offsets.
   */
 private class LoreParser(override val input: String)(override implicit val fragment: Fragment)

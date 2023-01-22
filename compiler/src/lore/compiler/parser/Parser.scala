@@ -1,6 +1,8 @@
 package lore.compiler.parser
 
 import lore.compiler.core.{Fragment, Position}
+import lore.compiler.feedback.MemoReporter
+import lore.compiler.syntax.Node.Index
 import lore.compiler.syntax.{PositionedToken, TkEnd, Token}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
@@ -15,31 +17,40 @@ trait Parser {
 
   /**
     * The current offset in [[tokens]].
+    *
+    * [[offset]] needs to be backtracked as it's part of the parser state.
     */
-  protected var offset: Int = 0
+  protected var offset: Index = 0
 
   /**
-    * An offset-conservative parser does not need backtracking, as the parser will only affect the offset if the run is
-    * successful.
+    * The feedback collected by the parser so far.
+    *
+    * [[reporter]]'s state needs to be backtracked as it's part of the parser state.
+    */
+  protected var reporter: MemoReporter = MemoReporter()
+
+  /**
+    * A state-conservative parser does not need backtracking, as the parser will only affect the run's state if the run
+    * is successful.
     *
     * TODO (syntax): Use this annotation to warn that a `backtrack` call is superfluous. Can we do this in Scala or
     *                IntelliJ natively?
     */
-  class OffsetConservative extends StaticAnnotation
+  class StateConservative extends StaticAnnotation
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Input helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  @OffsetConservative
+  @StateConservative
   def peek: Token = peek(1)
 
-  @OffsetConservative
+  @StateConservative
   def peek(n: Int): Token = {
     val i = offset + n - 1
     if (i < tokens.length) tokens(i) else TkEnd
   }
 
-  @OffsetConservative
+  @StateConservative
   def consume(): Token = {
     val token = peek
     if (token != TkEnd) offset += 1
@@ -51,7 +62,7 @@ trait Parser {
     case _ => None
   }
 
-  @OffsetConservative
+  @StateConservative
   def consumeOnly(token: Token): Boolean = {
     if (peek == token) {
       consume()
@@ -65,7 +76,7 @@ trait Parser {
     * should be limited to cases where the lexer should have created a single token, but wasn't able to due to missing
     * context information.
     */
-  @OffsetConservative
+  @StateConservative
   def consumeConnectedTokens(isAllowed: PositionedToken => Boolean): Vector[PositionedToken] =
     VectorExtension.unfoldOnPreviousElement { previousToken =>
       peek match {
@@ -110,7 +121,7 @@ trait Parser {
     *
     * TODO (syntax): Remove (unused).
     */
-  @OffsetConservative
+  @StateConservative
   def collect[A](get: => Option[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
@@ -145,9 +156,9 @@ trait Parser {
     * module `Functions`. This is because module members are parsed sequentially after imports.
     *
     * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
-    *                `get` is already offset-conservative.
+    *                `get` is already state-conservative.
     */
-  @OffsetConservative
+  @StateConservative
   def collectSep[A](separator: => Boolean, trailingSeparator: => Boolean = false)(get: => Option[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
@@ -176,9 +187,9 @@ trait Parser {
     *
     * TODO (syntax): Share implementation with `collectSep`?
     * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
-    *                `get` is already offset-conservative.
+    *                `get` is already state-conservative.
     */
-  @OffsetConservative
+  @StateConservative
   def collectSepSemantic[A, B](
     separator: => Option[B],
     allowTrailing: Boolean = false,
@@ -223,6 +234,18 @@ trait Parser {
   // TODO (syntax): Should be inline (Scala 3).
 //  def createPositionFrom(startIndex: Int): Position = Position(fragment, startIndex, endIndex = offset)
 
+  // TODO (syntax): Should be inline (Scala 3).
+  private def backtrackImpl[A](action: => A, isSuccess: A => Boolean): A = {
+    val savedOffset = offset
+    val savedReporterState = reporter.currentState()
+    val result = action
+    if (!isSuccess(result)) {
+      offset = savedOffset
+      reporter.restoreState(savedReporterState)
+    }
+    result
+  }
+
   implicit class PositionedTokenExtension[T <: PositionedToken](token: T) {
     def position: Position = Position(fragment, token.startIndex, token.endIndex)
     def withPosition: (T, Position) = (token, position)
@@ -256,12 +279,7 @@ trait Parser {
   }
 
   implicit class BooleanActionExtension(action: => Boolean) {
-    def backtrack: Boolean = {
-      val savedOffset = offset
-      val result = action
-      if (!result) offset = savedOffset
-      result
-    }
+    def backtrack: Boolean = backtrackImpl(action, identity)
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
@@ -282,11 +300,6 @@ trait Parser {
   }
 
   implicit class OptionActionExtension[A](action: => Option[A]) {
-    def backtrack: Option[A] = {
-      val savedOffset = offset
-      val result = action
-      if (result.isEmpty) offset = savedOffset
-      result
-    }
+    def backtrack: Option[A] = backtrackImpl(action, _.isDefined)
   }
 }

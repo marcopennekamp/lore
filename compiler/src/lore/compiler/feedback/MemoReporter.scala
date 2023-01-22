@@ -3,32 +3,35 @@ package lore.compiler.feedback
 /**
   * A reporter that collects all feedback in a vector.
   */
-class MemoReporter(initialFeedback: Vector[Feedback]) extends Reporter {
+class MemoReporter() extends Reporter {
 
-  private val state = new MemoReporter.State(initialFeedback)
+  private var collectedFeedback: Vector[Feedback] = Vector.empty
 
   override def report(feedback: Feedback): Unit = this.synchronized {
-    if (feedback.isError) {
-      state.hasErrors = true
-    }
-    state.feedback = state.feedback :+ feedback
+    collectedFeedback = collectedFeedback :+ feedback
   }
 
-  override def hasErrors: Boolean = this.synchronized(state.hasErrors)
+  def feedback: Vector[Feedback] = collectedFeedback
 
-  def feedback: Vector[Feedback] = this.synchronized(state.feedback)
+  override def hasErrors: Boolean = this.synchronized(collectedFeedback.exists(_.isError))
+
+  /**
+    * Returns a copy of the currently collected feedback to save for [[restoreState]].
+    */
+  def currentState(): Vector[Feedback] = collectedFeedback
+
+  /**
+    * Restores the currently collected feedback to the given `feedback`, supporting backtracking.
+    */
+  def restoreState(feedback: Vector[Feedback]): Unit = this.synchronized {
+    this.collectedFeedback = feedback
+  }
 
 }
 
 object MemoReporter {
 
-  private class State(initialFeedback: Vector[Feedback]) {
-    var feedback: Vector[Feedback] = initialFeedback
-    var hasErrors: Boolean = initialFeedback.exists(_.isError)
-  }
-
-  def apply(initialFeedback: Vector[Feedback]): MemoReporter = new MemoReporter(initialFeedback)
-  def apply(): MemoReporter = apply(Vector.empty)
+  def apply(): MemoReporter = new MemoReporter()
 
   /**
     * Invokes `f` with a fresh MemoReporter, then adds the feedback to the given parent reporter.
@@ -44,7 +47,7 @@ object MemoReporter {
     * Invokes the first function with a fresh MemoReporter, then any subsequent function with the same reporter, but
     * only as long as no errors have been reported. All feedback is forwarded to the given parent reporter.
     */
-  def chain[A, B](parent: Reporter)(functions: Reporter => Unit*): Unit = {
+  def chain(parent: Reporter)(functions: Reporter => Unit*): Unit = {
     nested(parent) { reporter =>
       functions.foreach(f => if (!reporter.hasErrors) f(reporter))
     }

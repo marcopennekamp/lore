@@ -6,7 +6,15 @@ import lore.compiler.semantics.NamePath
 trait Node extends Positioned
 
 object Node {
+  // TODO (syntax): Move to same package as `Position`. Probably a standalone file with Scala 3.
   type Index = Int
+
+  implicit class IndexExtension(index: Index) {
+    /**
+      * Creates a new [[Position]] at [[index]] (start and end).
+      */
+    def toPosition(implicit fragment: Fragment): Position = Position(fragment, index, index)
+  }
 
   /**
     * A node that represents some other node's name. Name nodes have their own position. This makes them useful in

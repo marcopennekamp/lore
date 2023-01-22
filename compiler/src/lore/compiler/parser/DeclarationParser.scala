@@ -1,8 +1,9 @@
 package lore.compiler.parser
 
 import lore.compiler.core.Position
+import lore.compiler.feedback.ParserFeedback
 import lore.compiler.syntax.DeclNode._
-import lore.compiler.syntax.Node.NamePathNode
+import lore.compiler.syntax.Node.{IndexExtension, NamePathNode}
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax.{DeclNode, ExprNode, TypeExprNode}
 import lore.compiler.types.AliasSchema.AliasVariant
@@ -16,7 +17,10 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     val startIndex = offset
 
     val atRoot = simpleAnnotation(word("root") &> Some("root"), indentation).backtrack.isDefined
-    if (!word("module") || !ws()) return None
+    if (!word("module") || !ws()) {
+      reporter.report(ParserFeedback.Declarations.ModuleExpected(offset.toPosition))
+      return None
+    }
 
     val moduleName = namePath().getOrElse(return None)
     val (imports, members) = indent(indentation)

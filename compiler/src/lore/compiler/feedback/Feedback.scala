@@ -5,6 +5,9 @@ import lore.compiler.core.{Position, Positioned}
 
 /**
   * Feedback is either an error or a warning.
+  *
+  * TODO (syntax): Rename to `Problem` so that there's a distinction between "problem" and "problems", as opposed to
+  *                "feedback" and "feedback".
   */
 sealed trait Feedback extends Positioned {
   /**
@@ -14,12 +17,14 @@ sealed trait Feedback extends Positioned {
 
   /**
     * A stack trace of the instance where the feedback was initialized.
+    *
+    * TODO (syntax): Only collect stack traces if "error stack traces" are enabled.
     */
   val stackTrace: Vector[StackTraceElement] = new Throwable().getStackTrace.toVector
 
   /**
     * Whether this feedback is an error. The presence of error feedback will stop the compilation after program
-    * analysis.
+    * analysis, and possibly earlier if early exit is enabled.
     */
   def isError: Boolean = false
 
