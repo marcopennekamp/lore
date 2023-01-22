@@ -31,7 +31,7 @@ trait Parser {
 
   /**
     * A state-conservative parser does not need backtracking, as the parser will only affect the run's state if the run
-    * is successful.
+    * is successful or an unrecoverable failure.
     *
     * TODO (syntax): Use this annotation to warn that a `backtrack` call is superfluous. Can we do this in Scala or
     *                IntelliJ natively?
@@ -116,22 +116,21 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`. `collect` backtracks `get` automatically because it's
+    * Collects results from `get` as long as `get` is a success. `collect` backtracks `get` automatically because it's
     * inherently exploratory.
-    *
-    * TODO (syntax): Remove (unused).
     */
   @StateConservative
-  def collect[A](get: => Option[A]): Vector[A] = {
+  def collect[A](get: => Result[A]): Result[Vector[A]] = {
     var results = Vector.empty[A]
     var ended = false
     while (!ended) {
       get.backtrack match {
-        case Some(result) => results :+= result
-        case None => ended = true
+        case Success(result) => results :+= result
+        case Recoverable => ended = true
+        case Failure => return Failure
       }
     }
-    results
+    results.success
   }
 
   /**
@@ -235,11 +234,11 @@ trait Parser {
 //  def createPositionFrom(startIndex: Int): Position = Position(fragment, startIndex, endIndex = offset)
 
   // TODO (syntax): Should be inline (Scala 3).
-  private def backtrackImpl[A](action: => A, isSuccess: A => Boolean): A = {
+  private def backtrackImpl[A](action: => A, shouldBacktrack: A => Boolean): A = {
     val savedOffset = offset
     val savedReporterState = reporter.currentState()
     val result = action
-    if (!isSuccess(result)) {
+    if (shouldBacktrack(result)) {
       offset = savedOffset
       reporter.restoreState(savedReporterState)
     }
@@ -267,6 +266,11 @@ trait Parser {
       * TODO (syntax): Should be inline (Scala 3).
       */
     def <*(other: Any): A = value
+
+    /**
+      * Wraps [[value]] as a successful result.
+      */
+    def success: Result[A] = Success(value)
   }
 
   implicit class BooleanExtension(value: Boolean) {
@@ -279,7 +283,7 @@ trait Parser {
   }
 
   implicit class BooleanActionExtension(action: => Boolean) {
-    def backtrack: Boolean = backtrackImpl(action, identity)
+    def backtrack: Boolean = backtrackImpl(action, isSuccess => !isSuccess)
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
@@ -300,6 +304,10 @@ trait Parser {
   }
 
   implicit class OptionActionExtension[A](action: => Option[A]) {
-    def backtrack: Option[A] = backtrackImpl(action, _.isDefined)
+    def backtrack: Option[A] = backtrackImpl(action, _.isEmpty)
+  }
+
+  implicit class ResultActionExtension[A](action: => Result[A]) {
+    def backtrack: Result[A] = backtrackImpl(action, _.isRecoverable)
   }
 }
