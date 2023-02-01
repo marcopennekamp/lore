@@ -33,13 +33,13 @@ trait ControlParser { _: Parser =>
     * Opens an optional indentation section and returns whether an indentation was opened.
     */
   @StateConservative
-  def openOptionalIndentation(): Boolean = consumeOnly(TkIndent)
+  def openOptionalIndentation(): Boolean = consumeIf[TkIndent]
 
   /**
     * Closes an indentation section and returns whether it was successful. Reports an error if it wasn't.
     */
   def closeIndentation(): Boolean = {
-    val isClosed = consumeOnly(TkDedent)
+    val isClosed = consumeIf[TkDedent]
     if (!isClosed) {
       // TODO (syntax): Report error.
     }
@@ -47,12 +47,12 @@ trait ControlParser { _: Parser =>
   }
 
   /**
-    * Parses the given separator token and a following, optional [[TkNewline]] if `allowNewline` is enabled. Returns
-    * `true` if the separator was encountered.
+    * Parses the given separator and a following, optional [[TkNewline]] if `allowNewline` is enabled. Returns `true`
+    * if the separator was encountered.
     */
-  def separatorNl(separatorToken: Token, allowNewline: Boolean = true): Boolean = {
-    val found = consumeOnly(separatorToken)
-    if (allowNewline) consumeOnly(TkNewline)
+  def separatorNl(separator: => Boolean, allowNewline: Boolean = true): Boolean = {
+    val found = separator
+    if (allowNewline) consumeIf[TkNewline]
     found
   }
 }

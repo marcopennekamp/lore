@@ -92,7 +92,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     // If the file doesn't end with a newline (ignoring trailing spaces and tabs), invoke the lexer as if it would.
     // This generates a newline token for the last line and dedents for unclosed indentation levels.
     if (input.findLast(c => !isSpaceOrTab(c)).exists(_ != '\n')) {
-      handleNewline()
+      handleNewline(offset)
     }
 
     tokens.result().some
@@ -143,7 +143,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
 
           // The closing brace is either the end of an interpolation or a simple right brace. This depends on whether
           // the new mode (after `CodeLexerMode` has been popped) is a `StringLexerMode`.
-          tokens += (if (modes.top == StringLexerMode) TkInterpolationEnd else TkBraceRight(startIndex))
+          tokens += (if (modes.top == StringLexerMode) TkInterpolationEnd(startIndex) else TkBraceRight(startIndex))
           return true
 
         case '%' => consume() match {
@@ -157,34 +157,34 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
             return false
         }
 
-        case ',' => tokens += TkComma
-        case '.' => tokens += TkDot
-        case ':' => tokens += TkColon
+        case ',' => tokens += TkComma(startIndex)
+        case '.' => tokens += TkDot(startIndex)
+        case ':' => tokens += TkColon(startIndex)
         case '_' => tokens += TkUnderscore(startIndex)
 
         case '=' => peek match {
-          case '=' => consume(); tokens += TkEqualsEquals
-          case '>' => consume(); tokens += TkArrow
-          case _ => tokens += TkEquals
+          case '=' => consume(); tokens += TkEqualsEquals(startIndex)
+          case '>' => consume(); tokens += TkArrow(startIndex)
+          case _ => tokens += TkEquals(startIndex)
         }
 
-        case '+' => tokenizeCompositeEquals(TkPlus(startIndex), TkPlusEquals)
+        case '+' => tokenizeCompositeEquals(TkPlus(startIndex), TkPlusEquals(startIndex))
         case '-' => peek match {
           case '-' => consume(); skipLineComment()
-          case _ => tokenizeCompositeEquals(TkMinus, TkMinusEquals)
+          case _ => tokenizeCompositeEquals(TkMinus(startIndex), TkMinusEquals(startIndex))
         }
-        case '*' => tokenizeCompositeEquals(TkMul, TkMulEquals)
-        case '/' => tokenizeCompositeEquals(TkDiv, TkDivEquals)
+        case '*' => tokenizeCompositeEquals(TkMul(startIndex), TkMulEquals(startIndex))
+        case '/' => tokenizeCompositeEquals(TkDiv(startIndex), TkDivEquals(startIndex))
 
-        case '<' => tokenizeCompositeEquals(TkLessThan, TkLessThanEquals)
-        case '>' => tokenizeCompositeEquals(TkGreaterThan, TkGreaterThanEquals)
+        case '<' => tokenizeCompositeEquals(TkLessThan(startIndex), TkLessThanEquals(startIndex))
+        case '>' => tokenizeCompositeEquals(TkGreaterThan(startIndex), TkGreaterThanEquals(startIndex))
 
-        case '&' => tokens += TkTypeAnd
-        case '|' => tokens += TkTypeOr
+        case '&' => tokens += TkTypeAnd(startIndex)
+        case '|' => tokens += TkTypeOr(startIndex)
 
         // Whitespace and comment handling. (Note that line comment skips are initiated in operator handling.)
         case '\n' =>
-          val isValid = handleNewline()
+          val isValid = handleNewline(startIndex)
           if (!isValid) return false // An error will already have been reported.
 
         case '\r' => // just skip
@@ -250,7 +250,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     */
   private def handleInterpolation(): Boolean = {
     val startIndex = offset
-    tokens += TkInterpolationStart
+    tokens += TkInterpolationStart(startIndex, if (peek == '{') startIndex + 2 else startIndex + 1)
 
     consume() match {
       case '{' =>
@@ -259,7 +259,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
 
       case c if isIdentifierStart(c) =>
         tokenizeIdentifier(c, startIndex)
-        tokens += TkInterpolationEnd
+        tokens += TkInterpolationEnd(offset)
         true
 
       case _ => false // TODO (syntax): Report error.
@@ -427,12 +427,12 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     *
     * Requirement: `\n` has already been consumed.
     */
-  private def handleNewline(): Boolean = {
+  private def handleNewline(newlineIndex: TokenIndex): Boolean = {
     // Because Lore doesn't support multi-line strings, a newline may not be contained in an interpolation. The lexer
     // is currently parsing an interpolation if it has a `StringLexerMode`.
     if (modes.length > 1 && modes.contains(StringLexerMode)) return false // TODO (syntax): Report error.
 
-    tokens += TkNewline
+    tokens += TkNewline(newlineIndex)
 
     // To find out the new indent, we have to measure the start and end index of the first non-blank line's indentation.
     var startIndex = offset
@@ -447,11 +447,11 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     val endIndex = offset
     val newIndentation = endIndex - startIndex
     if (newIndentation > currentIndentation) {
-      tokens += TkIndent
+      tokens += TkIndent(startIndex)
       indentationLevels.push(newIndentation)
     } else {
       while (newIndentation < currentIndentation) {
-        tokens += TkDedent
+        tokens += TkDedent(startIndex)
         indentationLevels.pop()
       }
 

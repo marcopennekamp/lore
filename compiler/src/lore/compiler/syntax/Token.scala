@@ -8,25 +8,12 @@ import lore.compiler.syntax.Token.TokenIndex
   * Token lists are generally whitespace-agnostic, as the lexer already calculates indentation levels and produces
   * [[TkIndent]] and [[TkDedent]] tokens. However, meaningful newlines are represented by [[TkNewline]] to allow the
   * parser to terminate expressions.
+  *
+  * A token's position is identified by its source index. The end index can usually be reconstructed from the type and
+  * properties of the token. Because token streams are bound to a specific file, a token has no associated fragment.
+  * This allows the token's position to be lightweight, as compared to a full-fledged `Position`.
   */
 sealed trait Token {
-  def isControlToken: Boolean = this match {
-    case TkNewline | TkIndent | TkDedent => true
-    case _ => false
-  }
-}
-
-object Token {
-  // TODO (syntax): Merge with `Node.index`/`Position.index`.
-  type TokenIndex = Int
-}
-
-/**
-  * A token with a position identified by its source index. The end index can usually be reconstructed from the type
-  * and properties of the token. Because token streams are bound to a specific file, a positioned token has no
-  * associated fragment. This allows the token's position to be lightweight, as compared to a full-fledged `Position`.
-  */
-sealed trait PositionedToken extends Token {
   /**
     * The index of the first character of the lexeme.
     */
@@ -35,42 +22,48 @@ sealed trait PositionedToken extends Token {
   /**
     * The index <i>after</i> the last character of the lexeme.
     */
-  lazy val endIndex: TokenIndex = PositionedToken.getEndIndex(this)
+  lazy val endIndex: TokenIndex = Token.getEndIndex(this)
+
+  def isControlToken: Boolean = this match {
+    case _: TkNewline | _: TkIndent | _: TkDedent => true
+    case _ => false
+  }
 }
 
-object PositionedToken {
-  private def getEndIndex(token: PositionedToken): TokenIndex = token match {
-    case TkIdentifier(value, position) => position + value.length
-    case keyword: TkKeyword => keyword.startIndex + keyword.word.length
-    case TkAnnotation(name, position) => position + 1 /* @ */ + name.length
-    case TkSymbol(name, position) => position + 1 /* # */ + name.length
-    case TkParenLeft(position) => position + 1
-    case TkParenRight(position) => position + 1
-    case TkBracketLeft(position) => position + 1
-    case TkBracketRight(position) => position + 1
-    case TkBraceLeft(position) => position + 1
-    case TkBraceRight(position) => position + 1
-    case TkShapeStart(position) => position + 2
-    case TkUnderscore(position) => position + 1
-    case TkPlus(position) => position + 1
+object Token {
+  // TODO (syntax): Merge with `Node.index`/`Position.index`.
+  type TokenIndex = Int
 
-    case _ =>
-      throw new IllegalArgumentException(s"The end index of `$token` should have a specialized implementation.")
+  private def getEndIndex(token: Token): TokenIndex = token match {
+    case TkIdentifier(value, startIndex) => startIndex + value.length
+    case keyword: TkKeyword => keyword.startIndex + keyword.word.length
+    case TkAnnotation(name, startIndex) => startIndex + 1 /* @ */ + name.length
+    case TkSymbol(name, startIndex) => startIndex + 1 /* # */ + name.length
+    case TkShapeStart(startIndex) => startIndex + 2
+    case TkEqualsEquals(startIndex) => startIndex + 2
+    case TkPlusEquals(startIndex) => startIndex + 2
+    case TkMinusEquals(startIndex) => startIndex + 2
+    case TkMulEquals(startIndex) => startIndex + 2
+    case TkDivEquals(startIndex) => startIndex + 2
+    case TkLessThanEquals(startIndex) => startIndex + 2
+    case TkGreaterThanEquals(startIndex) => startIndex + 2
+    case TkArrow(startIndex) => startIndex + 2
+    case _ => token.startIndex + 1
   }
 }
 
 /**
   * [[TkEnd]] is used by the parser to signify the end of the token stream.
   */
-case object TkEnd extends Token
+case class TkEnd(startIndex: TokenIndex) extends Token
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Newlines and indentation.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-case object TkNewline extends Token
-case object TkIndent extends Token
-case object TkDedent extends Token
+case class TkNewline(startIndex: TokenIndex) extends Token
+case class TkIndent(startIndex: TokenIndex) extends Token
+case class TkDedent(startIndex: TokenIndex) extends Token
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Identifiers and keywords.
@@ -85,9 +78,9 @@ case object TkDedent extends Token
   *
   * Name paths cannot be tokenized fully for the same reason, as a type name path may contain a `+` character.
   */
-case class TkIdentifier(value: String, startIndex: TokenIndex) extends PositionedToken
+case class TkIdentifier(value: String, startIndex: TokenIndex) extends Token
 
-sealed abstract class TkKeyword(val word: String) extends PositionedToken
+sealed abstract class TkKeyword(val word: String) extends Token
 
 case class TkAnd(startIndex: TokenIndex) extends TkKeyword("and")
 case class TkCase(startIndex: TokenIndex) extends TkKeyword("case")
@@ -130,81 +123,81 @@ case class TkYield(startIndex: TokenIndex) extends TkKeyword("yield")
   * An annotation `@name`. Note that despite [[TkWhere]] being a keyword, the lexer allows the name `where` to tokenize
   * an `@where`.
   */
-case class TkAnnotation(name: String, startIndex: TokenIndex) extends PositionedToken
+case class TkAnnotation(name: String, startIndex: TokenIndex) extends Token
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Values.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-case class TkInt(value: Long, startIndex: TokenIndex, override val endIndex: TokenIndex) extends PositionedToken
+case class TkInt(value: Long, startIndex: TokenIndex, override val endIndex: TokenIndex) extends Token
 
 case class TkReal(
   value: Double,
   startIndex: TokenIndex,
   override val endIndex: TokenIndex,
-) extends PositionedToken
+) extends Token
 
 case class TkString(
   value: String,
   startIndex: TokenIndex,
   override val endIndex: TokenIndex,
-) extends PositionedToken
+) extends Token
 
-case object TkInterpolationStart extends Token
-case object TkInterpolationEnd extends Token
+case class TkInterpolationStart(startIndex: TokenIndex, override val endIndex: TokenIndex) extends Token
+case class TkInterpolationEnd(startIndex: TokenIndex) extends Token
 
 /**
   * A symbol `#name`, which can be a value or a type.
   */
-case class TkSymbol(name: String, startIndex: TokenIndex) extends PositionedToken
+case class TkSymbol(name: String, startIndex: TokenIndex) extends Token
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Operators and special characters.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-case class TkParenLeft(startIndex: TokenIndex) extends PositionedToken
-case class TkParenRight(startIndex: TokenIndex) extends PositionedToken
-case class TkBracketLeft(startIndex: TokenIndex) extends PositionedToken
-case class TkBracketRight(startIndex: TokenIndex) extends PositionedToken
-case class TkBraceLeft(startIndex: TokenIndex) extends PositionedToken
-case class TkBraceRight(startIndex: TokenIndex) extends PositionedToken
+case class TkParenLeft(startIndex: TokenIndex) extends Token
+case class TkParenRight(startIndex: TokenIndex) extends Token
+case class TkBracketLeft(startIndex: TokenIndex) extends Token
+case class TkBracketRight(startIndex: TokenIndex) extends Token
+case class TkBraceLeft(startIndex: TokenIndex) extends Token
+case class TkBraceRight(startIndex: TokenIndex) extends Token
 
 /**
   * `%{` signifies the start of a shape value or type.
   */
-case class TkShapeStart(startIndex: TokenIndex) extends PositionedToken
+case class TkShapeStart(startIndex: TokenIndex) extends Token
 
-case object TkComma extends Token
-case object TkDot extends Token
-case object TkColon extends Token
+case class TkComma(startIndex: TokenIndex) extends Token
+case class TkDot(startIndex: TokenIndex) extends Token
+case class TkColon(startIndex: TokenIndex) extends Token
 
-case class TkUnderscore(startIndex: TokenIndex) extends PositionedToken
+case class TkUnderscore(startIndex: TokenIndex) extends Token
 
-case object TkEquals extends Token
-case object TkEqualsEquals extends Token
+case class TkEquals(startIndex: TokenIndex) extends Token
+case class TkEqualsEquals(startIndex: TokenIndex) extends Token
 
 sealed trait TkArithmeticOperator extends Token
 
 /**
   * [[TkPlus]] remembers its position so that type identifiers can be properly parsed.
   */
-case class TkPlus(startIndex: TokenIndex) extends PositionedToken with TkArithmeticOperator
+case class TkPlus(startIndex: TokenIndex) extends Token with TkArithmeticOperator
 
-case object TkMinus extends TkArithmeticOperator
-case object TkMul extends TkArithmeticOperator
-case object TkDiv extends TkArithmeticOperator
+case class TkMinus(startIndex: TokenIndex) extends TkArithmeticOperator
+case class TkMul(startIndex: TokenIndex) extends TkArithmeticOperator
+case class TkDiv(startIndex: TokenIndex) extends TkArithmeticOperator
 
-case object TkPlusEquals extends Token
-case object TkMinusEquals extends Token
-case object TkMulEquals extends Token
-case object TkDivEquals extends Token
+case class TkPlusEquals(startIndex: TokenIndex) extends Token
+case class TkMinusEquals(startIndex: TokenIndex) extends Token
+case class TkMulEquals(startIndex: TokenIndex) extends Token
+case class TkDivEquals(startIndex: TokenIndex) extends Token
 
-case object TkLessThan extends Token
-case object TkLessThanEquals extends Token
-case object TkGreaterThan extends Token
-case object TkGreaterThanEquals extends Token
+case class TkLessThan(startIndex: TokenIndex) extends Token
+case class TkLessThanEquals(startIndex: TokenIndex) extends Token
+case class TkGreaterThan(startIndex: TokenIndex) extends Token
+case class TkGreaterThanEquals(startIndex: TokenIndex) extends Token
 
-case object TkTypeAnd extends Token
-case object TkTypeOr extends Token
+case class TkTypeAnd(startIndex: TokenIndex) extends Token
+case class TkTypeOr(startIndex: TokenIndex) extends Token
 
-case object TkArrow extends Token
+case class TkArrow(startIndex: TokenIndex) extends Token

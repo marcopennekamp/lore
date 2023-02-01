@@ -3,7 +3,7 @@ package lore.compiler.parser
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.MemoReporter
 import lore.compiler.syntax.Node.Index
-import lore.compiler.syntax.{PositionedToken, TkEnd, Token}
+import lore.compiler.syntax.{TkEnd, Token}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
@@ -47,17 +47,27 @@ trait Parser {
   @StateConservative
   def peek(n: Int): Token = {
     val i = offset + n - 1
-    if (i < tokens.length) tokens(i) else TkEnd
+    if (i < tokens.length) tokens(i) else TkEnd(fragment.input.length)
   }
 
   @StateConservative
   def consume(): Token = {
     val token = peek
-    if (token != TkEnd) offset += 1
+    token match {
+      case _: TkEnd =>
+      case _ => offset += 1
+    }
     token
   }
 
-  def consumeOnly[T <: Token]()(implicit tag: ClassTag[T]): Option[T] = consume() match {
+  @StateConservative
+  def consumeIf[T <: Token](implicit tag: ClassTag[T]): Boolean = consume() match {
+    case _: T => true
+    case _ => false
+  }
+
+  @StateConservative
+  def consumeOnly[T <: Token](implicit tag: ClassTag[T]): Option[T] = consume() match {
     case token: T => token.some
     case _ => None
   }
@@ -77,10 +87,10 @@ trait Parser {
     * context information.
     */
   @StateConservative
-  def consumeConnectedTokens(isAllowed: PositionedToken => Boolean): Vector[PositionedToken] =
+  def consumeConnectedTokens(isAllowed: Token => Boolean): Vector[Token] =
     VectorExtension.unfoldOnPreviousElement { previousToken =>
       peek match {
-        case candidate: PositionedToken if isAllowed(candidate) =>
+        case candidate: Token if isAllowed(candidate) =>
           previousToken match {
             case Some(previousToken) if candidate.startIndex != previousToken.endIndex + 1 => None
             case _ =>
@@ -245,7 +255,7 @@ trait Parser {
     result
   }
 
-  implicit class PositionedTokenExtension[T <: PositionedToken](token: T) {
+  implicit class TokenExtension[T <: Token](token: T) {
     def position: Position = Position(fragment, token.startIndex, token.endIndex)
     def withPosition: (T, Position) = (token, position)
   }

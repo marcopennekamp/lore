@@ -14,7 +14,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
   def annotations(): Result[Vector[AnnotationNode]] = collect(annotation())
 
   private def annotation(): Result[AnnotationNode] = {
-    val annotationHead = consumeOnly[TkAnnotation]().getOrElse(return Recoverable)
+    val annotationHead = consumeOnly[TkAnnotation].getOrElse(return Recoverable)
 
     val result = annotationHead.name match {
       case "where" => whereAnnotation(annotationHead)
@@ -44,7 +44,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     */
   def whereAnnotation(annotationHead: TkAnnotation): Result[WhereAnnotationNode] = {
     annotationBodyWithOptionalIndentation { isIndented =>
-      val typeParameters = collectSep(separatorNl(TkComma, allowNewline = isIndented), consumeOnly(TkComma)) {
+      val typeParameters = collectSep(separatorNl(consumeIf[TkComma], allowNewline = isIndented), consumeIf[TkComma]) {
         simpleTypeParameter()
       }
 
@@ -64,7 +64,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     val result = body
     if (!result.isSuccess) return result
 
-    if (!consumeOnly(TkNewline)) {
+    if (!consumeIf[TkNewline]) {
       // TODO (syntax): Report error. (Newline expected at end of annotation.)
       return Failure
     }
@@ -81,7 +81,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     val isIndented = openOptionalIndentation()
     val result = body(isIndented)
 
-    if (!consumeOnly(TkNewline)) {
+    if (!consumeIf[TkNewline]) {
       // TODO (syntax): Report error. (Newline expected at end of annotation.)
       return Failure
     }

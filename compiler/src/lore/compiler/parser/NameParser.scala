@@ -8,7 +8,7 @@ import scalaz.Scalaz.ToOptionIdOps
 import scala.collection.mutable
 
 trait NameParser { _: Parser =>
-  def name(): Option[NameNode] = consumeOnly[TkIdentifier]().map(token => NameNode(token.value, token.position))
+  def name(): Option[NameNode] = consumeOnly[TkIdentifier].map(token => NameNode(token.value, token.position))
 
   /**
     * A type name might be composed of several connected [[TkIdentifier]] and [[TkPlus]] tokens.
@@ -38,7 +38,7 @@ trait NameParser { _: Parser =>
   def typeNamePath(): Option[NamePathNode] = genericNamePath(typeName())
 
   private def genericNamePath(name: => Option[NameNode]): Option[NamePathNode] = {
-    val names = collectSep(consumeOnly(TkDot)) { name }
+    val names = collectSep(consumeIf[TkDot]) { name }
     if (names.isEmpty) return None
     Some(NamePathNode(names))
   }
