@@ -11,7 +11,7 @@ import lore.compiler.syntax._
   */
 trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with IndentationParser with ControlParser =>
   @StateConservative
-  def annotations(): Result[Vector[AnnotationNode]] = collect(annotation())
+  def annotations(): UnrecoverableResult[Vector[AnnotationNode]] = collect(annotation())
 
   private def annotation(): Result[AnnotationNode] = {
     val annotationHead = consumeOnly[TkAnnotation].getOrElse(return Recoverable)
@@ -42,7 +42,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     * func ...
     * }}}
     */
-  def whereAnnotation(annotationHead: TkAnnotation): Result[WhereAnnotationNode] = {
+  def whereAnnotation(annotationHead: TkAnnotation): UnrecoverableResult[WhereAnnotationNode] = {
     annotationBodyWithOptionalIndentation { isIndented =>
       val typeParameters = collectSep(separatorNl(consumeIf[TkComma], allowNewline = isIndented), consumeIf[TkComma]) {
         simpleTypeParameter()
@@ -60,7 +60,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
   /**
     * Parses a single-line annotation body and ensures that the annotation is terminated by a newline.
     */
-  private def annotationBodyOnSingleLine[A](body: => Result[A]): Result[A] = {
+  private def annotationBodyOnSingleLine[A, R >: UnrecoverableResult[A] <: Result[A]](body: => R): R = {
     val result = body
     if (!result.isSuccess) return result
 
@@ -77,7 +77,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     *
     * The boolean passed to `body` signifies whether an indentation section has been opened.
     */
-  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Result[A]): Result[A] = {
+  private def annotationBodyWithOptionalIndentation[A, R >: UnrecoverableResult[A] <: Result[A]](body: Boolean => R): R = {
     val isIndented = openOptionalIndentation()
     val result = body(isIndented)
 

@@ -130,7 +130,7 @@ trait Parser {
     * inherently exploratory.
     */
   @StateConservative
-  def collect[A](get: => Result[A]): Result[Vector[A]] = {
+  def collect[A](get: => Result[A]): UnrecoverableResult[Vector[A]] = {
     var results = Vector.empty[A]
     var ended = false
     while (!ended) {
@@ -280,7 +280,7 @@ trait Parser {
     /**
       * Wraps [[value]] as a successful result.
       */
-    def success: Result[A] = Success(value)
+    def success: Success[A] = Success(value)
   }
 
   implicit class BooleanExtension(value: Boolean) {
@@ -319,5 +319,16 @@ trait Parser {
 
   implicit class ResultActionExtension[A](action: => Result[A]) {
     def backtrack: Result[A] = backtrackImpl(action, _.isRecoverable)
+
+    /**
+      * Takes the result of `action` if it's a success or failure, or otherwise backtracks `action` and defers to
+      * `other`.
+      *
+      * TODO (syntax): Should be inline (Scala 3).
+      */
+    def |[B >: A](other: => Result[B]): Result[B] = action.backtrack match {
+      case result: UnrecoverableResult[A] => result
+      case Recoverable => other
+    }
   }
 }
