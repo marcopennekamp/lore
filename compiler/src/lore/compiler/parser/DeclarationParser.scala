@@ -3,31 +3,49 @@ package lore.compiler.parser
 import lore.compiler.core.Position
 import lore.compiler.feedback.ParserFeedback
 import lore.compiler.syntax.DeclNode._
-import lore.compiler.syntax.Node.{IndexExtension, NamePathNode}
+import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
-import lore.compiler.syntax.{DeclNode, ExprNode, TypeExprNode}
+import lore.compiler.syntax._
 import lore.compiler.types.AliasSchema.AliasVariant
 import scalaz.Scalaz.ToOptionIdOps
+
+import scala.collection.mutable
+
+// TODO (syntax): We should probably move annotation checking to the `constraints` and `resolution` phases.
 
 trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterParser with TypeParser with BasicParsers =>
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def moduleDeclaration(indentation: Int): Option[ModuleNode] = {
-    val startIndex = offset
-
-    val atRoot = simpleAnnotation(word("root") &> Some("root"), indentation).backtrack.isDefined
-    if (!word("module") || !ws()) {
-      reporter.report(ParserFeedback.Declarations.ModuleExpected(offset.toPosition))
-      return None
+  private def moduleDeclaration(annotations: Vector[AnnotationNode]): Result[ModuleNode] = {
+    val moduleKeyword = consumeOnly[TkModule].getOrElse {
+      reporter.report(ParserFeedback.Declarations.DeclarationExpected("module".some, peek.position))
+      return Recoverable
     }
 
-    val moduleName = namePath().getOrElse(return None)
-    val (imports, members) = indent(indentation)
+    // TODO (syntax): "root" should be a constant somewhere. Maybe a sort of semantic registry of built-in annotations.
+    val atRoot = annotations.exists {
+      case SimpleAnnotationNode(name) => name.value == "root"
+      case _ => false
+    }
+    val areAnnotationsValid = checkAnnotationValidity(annotations) {
+      annotation => annotation.uniqueName == "root"
+    }
+    if (!areAnnotationsValid) {
+      return Failure // An error will already have been reported.
+    }
+
+    val moduleName = namePath().getOrElse {
+      // TODO (syntax): Report error: Module name required.
+      return Failure
+    }
+
+    val (imports, members) = indent()
       .flatMap(bodyIndentation => moduleDeclarationBody(bodyIndentation))
       .getOrElse((Vector.empty, Vector.empty))
 
-    ModuleNode(moduleName, atRoot, imports, members, createPositionFrom(startIndex)).some
+    val lastNode = members.lastOption.orElse(imports.lastOption).getOrElse(moduleName)
+    ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode.position)).success
   }
 
   def moduleDeclarationBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
@@ -62,49 +80,61 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     } else Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, createPositionFrom(startIndex))).some
   }
 
-  private def moduleMember(indentation: Int): Option[DeclNode] = {
-    // TODO (syntax): The peek optimization needs to be taken carefully. For example, an `@root` module will start
-    //                with `@`, not `m`. If any top-level declaration other than a module can start with the letter
-    //                `m`, this must be changed. (For example by falling back on the default case if any of the
-    //                optimistic cases fail.) Note that `proc` will suffer from this if we add a `private` keyword.
-    //                Another issue is that annotations will be parsed many times before the correct declaration to
-    //                parse is found. Perhaps we can pre-parse annotations (and any additional modifiers), and then
-    //                later reject annotations/modifiers in the specific declaration parser.
-    def default: Option[DeclNode] =
-      moduleDeclaration(indentation).backtrack |
-        aliasDeclaration(indentation).backtrack |
-        traitDeclaration(indentation).backtrack |
-        structDeclaration(indentation).backtrack |
-        objectDeclaration(indentation).backtrack |
-        globalVariableDeclaration(indentation).backtrack |
-        functionDeclaration(indentation).backtrack |
-        procedureDeclaration(indentation).backtrack |
-        specDeclaration(indentation)
+  private def moduleMember(): Result[DeclNode] = {
+    val memberAnnotations = annotations().getOrElse(return Failure)
 
+    def declarationExpected(expectation: Option[String], position: Position): Result[Nothing] = {
+      reporter.report(ParserFeedback.Declarations.DeclarationExpected(expectation, position))
+      Failure
+    }
+
+    // At this point, since annotations have been parsed, the next token must be the declaration keyword.
     peek match {
-      case 'm' => moduleDeclaration(indentation)
-      case 't' => peek(2) match {
-        case 'y' => aliasDeclaration(indentation)
-        case 'r' => traitDeclaration(indentation)
-        case _ => default
-      }
-      case 's' => peek(2) match {
-        case 't' => structDeclaration(indentation).backtrack | aliasDeclaration(indentation) // struct or struct alias
-        case 'p' => specDeclaration(indentation)
-        case _ => default
-      }
-      case 'o' => objectDeclaration(indentation).backtrack | aliasDeclaration(indentation) // object or object alias
-      case 'l' => globalVariableDeclaration(indentation)
-      case 'f' => functionDeclaration(indentation)
-      case 'p' => procedureDeclaration(indentation)
-      case _ => default
+      case TkModule(_) => moduleDeclaration(memberAnnotations)
+      case TkType(_) => aliasDeclaration(memberAnnotations)
+      case TkTrait(_) => traitDeclaration(memberAnnotations)
+
+      case token: TkStruct =>
+        structDeclaration(memberAnnotations) |
+          aliasDeclaration(memberAnnotations) |
+          declarationExpected("struct or struct alias".some, token.position)
+
+      case TkSpec(_) => specDeclaration(memberAnnotations)
+
+      case token: TkObject =>
+        objectDeclaration(memberAnnotations) |
+          aliasDeclaration(memberAnnotations) |
+          declarationExpected("object or object alias".some, token.position)
+
+      case TkLet(_) => globalVariableDeclaration(memberAnnotations)
+      case TkFunc(_) => functionDeclaration(memberAnnotations)
+      case TkProc(_) => procedureDeclaration(memberAnnotations)
+      case TkDomain(_) => domainDeclaration(memberAnnotations)
+
+      case token if memberAnnotations.nonEmpty =>
+        // If annotations have been parsed, there MUST be a declaration. If no annotations have been parsed, this might
+        // be the end of the module body instead of another declaration, and thus the parse run is recoverable.
+        if (memberAnnotations.nonEmpty) declarationExpected(None, token.position)
+        else Recoverable
     }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // User-defined types.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def aliasDeclaration(indentation: Int): Option[AliasNode] = {
+  private def aliasDeclaration(annotations: Vector[AnnotationNode]): Result[AliasNode] = {
+
+
+
+
+    // TODO (syntax): Only check annotations once it's been established that this is non-recoverable.
+    if (annotations.nonEmpty) {
+      reportAnnotationsNotAllowed(annotations, "type alias")
+      return Failure
+    }
+
+    return Recoverable
+
     val startIndex = offset
     val aliasVariant =
       if (word("type")) AliasVariant.Type
@@ -127,7 +157,14 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     AliasNode(aliasName, aliasVariant, typeParameters, aliasType, createPositionFrom(startIndex)).some
   }
 
-  private def traitDeclaration(indentation: Int): Option[TraitNode] = None
+  private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {
+    // ...
+
+    // TODO (syntax): Only check annotations once it's been established that this is non-recoverable.
+    if (annotations.nonEmpty) {
+      reportAnnotationsNotAllowed(annotations, "trait")
+      return Failure
+    }
 
   private def structDeclaration(indentation: Int): Option[StructNode] = None
 
@@ -136,7 +173,12 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Global variables.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def globalVariableDeclaration(indentation: Int): Option[GlobalVariableNode] = {
+  private def globalVariableDeclaration(annotations: Vector[AnnotationNode]): Result[GlobalVariableNode] = {
+    if (annotations.nonEmpty) {
+      reportAnnotationsNotAllowed(annotations, "global variable")
+      return Failure
+    }
+
     val startIndex = offset
     if (!word("let") || !ws()) return None
 
@@ -158,7 +200,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Functions and domains.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def functionDeclaration(indentation: Int): Option[FunctionNode] =
+  private def functionDeclaration(annotations: Vector[AnnotationNode]): Result[FunctionNode] =
     functionLikeDeclaration(
       keyword ="func",
       None,
@@ -166,7 +208,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       indentation,
     )
 
-  private def procedureDeclaration(indentation: Int): Option[FunctionNode] = {
+  private def procedureDeclaration(annotations: Vector[AnnotationNode]): Result[FunctionNode] = {
     val startIndex = offset
     functionLikeDeclaration(
       keyword = "proc",
@@ -211,11 +253,11 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   /**
     * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
     */
-  def domain(indentation: Int): Option[Vector[FunctionNode]] = {
+  def domainDeclaration(annotations: Vector[AnnotationNode]): Result[Vector[FunctionNode]] = {
     val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
 
     if (!word("domain") || !ws()) return None
-    val domainParameters = collectSepWlmi(character(','), indentation)(functionParameter(indentation))
+    val domainParameters = ??? //collectSepWlgi(character(','), indentation)(functionParameter(indentation))
     ws()
     val domainTypeParameters = maybeWhereAnnotation match {
       case Some(typeParameters) => typeParameters
@@ -227,16 +269,17 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       functionDeclaration(bodyIndentation).backtrack | procedureDeclaration(bodyIndentation)
     }
 
-    functions.map { function =>
-      FunctionNode(
-        function.nameNode,
-        domainParameters ++ function.parameters,
-        function.outputType,
-        domainTypeParameters ++ function.typeVariables,
-        function.body,
-        function.position,
-      )
-    }.some
+//    functions.map { function =>
+//      FunctionNode(
+//        function.nameNode,
+//        //domainParameters ++ function.parameters,
+//        function.outputType,
+//        domainTypeParameters ++ function.typeVariables,
+//        function.body,
+//        function.position,
+//      )
+//    }.some
+    ???
   }
 
   private def functionParameter(indentation: Int): Option[ParameterNode] = {
@@ -267,5 +310,42 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Specs.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def specDeclaration(indentation: Int): Option[SpecNode] = None
+  private def specDeclaration(annotations: Vector[AnnotationNode]): Result[SpecNode] = Recoverable
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helpers.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  private def reportAnnotationsNotAllowed(annotations: Vector[AnnotationNode]): Unit = {
+    annotations.foreach { annotation =>
+      reporter.report(ParserFeedback.Annotations.IllegalKind(annotation))
+    }
+  }
+
+  /**
+    * Checks `annotations` for their kind with `isKindAllowed` and reports duplicates. Returns whether all annotations
+    * are valid.
+    */
+  private def checkAnnotationValidity(
+    annotations: Vector[AnnotationNode],
+  )(isKindAllowed: AnnotationNode => Boolean): Boolean = {
+    var isValid = true
+    val uniqueNamesSeen = mutable.HashSet[String]()
+
+    annotations.foreach { annotation =>
+      if (!isKindAllowed(annotation)) {
+        isValid = false
+        reporter.report(ParserFeedback.Annotations.IllegalKind(annotation))
+      }
+
+      if (!annotation.areMultipleAllowed) {
+        if (uniqueNamesSeen.contains(annotation.uniqueName)) {
+          isValid = false
+          reporter.report(ParserFeedback.Annotations.IllegalDuplicate(annotation))
+        }
+        uniqueNamesSeen.add(annotation.uniqueName)
+      }
+    }
+
+    isValid
+  }
 }
