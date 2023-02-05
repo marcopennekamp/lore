@@ -38,7 +38,7 @@ trait NameParser { _: Parser =>
   def typeNamePath(): Option[NamePathNode] = genericNamePath(typeName())
 
   private def genericNamePath(name: => Option[NameNode]): Option[NamePathNode] = {
-    val names = collectSep(consumeIf[TkDot]) { name }
+    val names = collectSepBacktrack(consumeIf[TkDot]) { name }
     if (names.isEmpty) return None
     Some(NamePathNode(names))
   }

@@ -11,7 +11,7 @@ import lore.compiler.syntax._
   */
 trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with IndentationParser with ControlParser =>
   // TODO (syntax): Use named type arguments: https://dotty.epfl.ch/docs/reference/experimental/named-typeargs.html.
-  def annotations(): Result[Vector[AnnotationNode]] = collect[AnnotationNode, TkAnnotation](annotation)
+  def annotations(): Result[Vector[AnnotationNode]] = collectLookaheadIs[AnnotationNode, TkAnnotation](annotation)
 
   private def annotation(annotationHead: TkAnnotation): Result[AnnotationNode] = {
     val result = annotationHead.name match {
@@ -43,8 +43,12 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     */
   def whereAnnotation(annotationHead: TkAnnotation): Result[WhereAnnotationNode] = {
     annotationBodyWithOptionalIndentation { isIndented =>
-      // TODO (syntax): Use `collectSep` without backtracking `get`.
-      val typeParameters = collectSep(separatorNl(consumeIf[TkComma], allowNewline = isIndented), consumeIf[TkComma]) {
+      // TODO (syntax): Use `collectSep` without backtracking `get`. This will be a little tricky because `collectSep`
+      //                cannot have a different trailing separator (due to how `get` isn't backtracked), but I'm sure
+      //                this is parseable even with a trailing comma being allowed here. Crucially, there needs to be
+      //                some lookahead after the newline: `TkNewline` should only be consumed after a separating comma
+      //                if the token after it is NOT a dedent. Otherwise, the block is closed.
+      val typeParameters = collectSepBacktrack(separatorNl(consumeIf[TkComma], allowNewline = isIndented), consumeIf[TkComma]) {
         simpleTypeParameter()
       }
 

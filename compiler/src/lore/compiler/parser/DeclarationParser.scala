@@ -6,7 +6,6 @@ import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax._
-import lore.compiler.types.AliasSchema.AliasVariant
 import scalaz.Scalaz.ToOptionIdOps
 
 import scala.collection.mutable
@@ -35,31 +34,38 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       return Failure
     }
 
-    val (imports, members) = indent()
-      .flatMap(bodyIndentation => moduleDeclarationBody(bodyIndentation))
-      .getOrElse((Vector.empty, Vector.empty))
+    if (!consumeIf[TkNewline]) {
+      // TODO (syntax): Report error.
+      return Failure
+    }
+
+    val isIndented = openOptionalIndentation()
+    val (imports, members) = if (isIndented) {
+      val importsAndMembers = moduleDeclarationBody().getOrElse(return Failure)
+      closeIndentation().getOrElse(return Failure)
+      importsAndMembers
+    } else {
+      (Vector.empty, Vector.empty)
+    }
 
     val lastNode = members.lastOption.orElse(imports.lastOption).getOrElse(moduleName)
     ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode.position)).success
   }
 
-  def moduleDeclarationBody(indentation: Int): Option[(Vector[ImportNode], Vector[DeclNode])] = {
-    println(s"Module body indentation: $indentation")
+  def moduleDeclarationBody(): Result[(Vector[ImportNode], Vector[DeclNode])] = {
+    val imports = collectSepLookaheadIs[Vector[ImportNode], TkUse](consumeIf[TkNewline]) {
+      tkUse => moduleImport(tkUse)
+    }.getOrElse(return Failure)
 
-    val imports = collectSep(nli(indentation)) { moduleImport(indentation) }
+    // If the next token is a dedent, the module body is finished. Otherwise, there must be another module member.
+    val members = collectSepLookahead(!peekIs[TkDedent], consumeIf[TkNewline]) {
+      moduleMember()
+    }.getOrElse(return Failure)
 
-    // TODO (syntax): We need to check if the next token is NOT a dedent. If it is not, there MUST be at least one
-    //                member and we can use `collectSep` without backtracking. This will allow the proper error to be
-    //                reported.
-    val members = collectSep(nli(indentation)) { moduleMember(indentation) }
-    (imports.flatten, members).some
+    (imports.flatten, members).success
   }
 
-  private def moduleImport(indentation: Int): Option[Vector[ImportNode]] = {
-    val startIndex = offset
-
-    if (!word("use") || !ws()) return None
-
+  private def moduleImport(tkUse: TkUse): Result[Vector[ImportNode]] = {
     val prefixPath = namePath().getOrElse(return None)
     if (character('.')) {
       if (character('_')) {
@@ -295,7 +301,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     }
 
     val bodyIndentation = indent(indentation).getOrElse(return None)
-    val functions = collectSep(nli(bodyIndentation)) {
+    val functions = collectSepBacktrack(nli(bodyIndentation)) {
       functionDeclaration(bodyIndentation).backtrack | procedureDeclaration(bodyIndentation)
     }
 
@@ -337,7 +343,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     }
 
     // Because an inline where is supposed to be simple, we're disallowing trailing commas and newlines here.
-    collectSep(consumeIf[TkComma])(simpleTypeParameter()).success
+    collectSepBacktrack(consumeIf[TkComma])(simpleTypeParameter()).success
 
     // TODO (syntax): Throw a `Failure` if no type parameters have been parsed.
   }

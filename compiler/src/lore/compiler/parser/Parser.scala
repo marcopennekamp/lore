@@ -132,19 +132,26 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` as long as [[peek]] is a token of type `T`. `get` may lead to a [[Failure]], which is
-    * not backtracked by this function.
+    * Collects results from `get` as long as `hasNext` is `true`. `get` may lead to a [[Failure]], which is not
+    * backtracked by this function.
     */
-  def collect[A, T <: Token](get: T => Result[A])(implicit tag: ClassTag[T]): Result[Vector[A]] = {
+  def collectLookahead[A](hasNext: => Boolean)(get: => Result[A]): Result[Vector[A]] = {
     var results = Vector.empty[A]
-    while (peekIs[T]) {
-      get(consume().asInstanceOf[T]) match {
+    while (hasNext) {
+      get match {
         case Success(result) => results :+= result
         case Failure => return Failure
       }
     }
     results.success
   }
+
+  /**
+    * Collects results from `get` as long as [[peek]] is a token of type `T`. `get` may lead to a [[Failure]], which is
+    * not backtracked by this function.
+    */
+  def collectLookaheadIs[A, T <: Token](get: T => Result[A])(implicit tag: ClassTag[T]): Result[Vector[A]] =
+    collectLookahead(peekIs[T]) { get(consume().asInstanceOf[T]) }
 
   /**
     * Collects results from `get` as long as `get` is a success, backtracking `get` in the process.
@@ -163,15 +170,60 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` until it returns `None`, requiring a `separator` between each production. If a
-    * `trailingSeparator` is specified, [[collectSep]] attempts to consume `trailingSeparator` after the last element.
+    * Collects results from `get` as long as `hasNext` is `true`. `get` may lead to a [[Failure]], which is not
+    * backtracked by this function. After each `get`, a `separator` is parsed with backtracking. If `allowTrailing` is
+    * `false`, [[collectSepLookahead]] will report an error and return a failure if `hasNext` after any `separator` is
+    * `false`.
+    */
+  def collectSepLookahead[A](
+    hasNext: => Boolean,
+    separator: => Boolean,
+    allowTrailing: Boolean = true,
+  )(get: => Result[A]): Result[Vector[A]] = {
+    var results = Vector.empty[A]
+
+    var ended = false
+    while (!ended && hasNext) {
+      get match {
+        case Success(result) => results :+= result
+        case Failure => return Failure
+      }
+
+      if (separator.backtrack) {
+        if (!allowTrailing && !hasNext) {
+          // TODO (syntax): Report error (trailing separator not allowed).
+          return Failure
+        }
+      } else {
+        ended = true
+      }
+    }
+
+    results.success
+  }
+
+  /**
+    * Collects results from `get` as long as [[peek]] is a token of type `T`. `get` may lead to a [[Failure]], which is
+    * not backtracked by this function. After each `get`, a `separator` is parsed with backtracking. If `allowTrailing`
+    * is `false`, [[collectSepLookahead]] will report an error and return a failure if the token after `separator` is
+    * not of type `T`.
+    */
+  def collectSepLookaheadIs[A, T <: Token](
+    separator: => Boolean,
+    allowTrailing: Boolean = true,
+  )(get: T => Result[A])(implicit tag: ClassTag[T]): Result[Vector[A]] =
+    collectSepLookahead(peekIs[T], separator, allowTrailing) { get(consume().asInstanceOf[T]) }
+
+  /**
+    * Collects results from `get` as long as it is a success, requiring a `separator` between each production. If a
+    * `trailingSeparator` is specified, [[collectSepBacktrack]] attempts to consume `trailingSeparator` after the last
+    * element.
     *
-    * [[collectSep]] backtracks `get`, `separator`, and `trailingSeparator` automatically because they are inherently
-    * exploratory.
+    * [[collectSepBacktrack]] backtracks `get`, `separator`, and `trailingSeparator`.
     *
     * Backtracking `get` is for instance important when module declarations are collected. If `get` doesn't backtrack,
-    * an incomplete declaration `func ...` might lead to the `func` token being consumed, `get` returning `None`, and
-    * this incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as
+    * an incomplete declaration `func ...` might lead to the `func` token being consumed, `get` returning `Recoverable`,
+    * and this incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as
     * something else, for example:
     *
     * {{{
@@ -183,19 +235,22 @@ trait Parser {
     * If the parser doesn't backtrack, `use` might be skipped and `module Test` might still be parsed as a member of
     * module `Functions`. This is because module members are parsed sequentially after imports.
     *
-    * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
-    *                `get` is already state-conservative.
+    * TODO (syntax): Provide a variant without `get.backtrack` for better error support. (Only the separator will be
+    *                "exploratory", with errors reported in `get` going through to the parent parser.)
     */
   @StateConservative
-  def collectSep[A](separator: => Boolean, trailingSeparator: => Boolean = false)(get: => Option[A]): Vector[A] = {
+  def collectSepBacktrack[A](
+    separator: => Boolean,
+    trailingSeparator: => Boolean = false,
+  )(get: => Result[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
 
     def next(): Boolean = get.backtrack match {
-      case Some(result) =>
+      case Success(result) =>
         results :+= result
         true
-      case None => false
+      case Failure => false
     }
 
     // Consume the separator and then the element in one backtrack grouping. Otherwise, a trailing separator may be
@@ -210,8 +265,8 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` and `separator` until `get` returns `None`, requiring a `separator` between each
-    * production. `collectSep` backtracks `get` and `separator` automatically because both are inherently exploratory.
+    * Collects results from `get` and `separator` in an alternating order as long as either is a success.
+    * [[collectSepSemantic]] backtracks `get` and `separator` because both are inherently exploratory.
     *
     * TODO (syntax): Share implementation with `collectSep`?
     * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
@@ -219,24 +274,48 @@ trait Parser {
     */
   @StateConservative
   def collectSepSemantic[A, B](
-    separator: => Option[B],
-    allowTrailing: Boolean = false,
-  )(get: => Option[A]): (Vector[A], Vector[B]) = {
+    separator: => Result[B],
+    trailingSeparator: => Option[Result[B]] = None,
+  )(get: => Result[A]): (Vector[A], Vector[B]) = {
     // TODO (syntax): This needs to be updated similarly to `collectSep`.
     var elements = Vector.empty[A]
     var separators = Vector.empty[B]
     var ended = false
+
+    val nextElement: () => Boolean = () => get.backtrack match {
+      case Success(result) =>
+        elements :+= result
+        true
+      case Failure => false
+    }
+
+    val nextSeparator: (=> Result[B]) => Boolean = separator => separator.backtrack match {
+      case Success(result) =>
+        separators :+= result
+        true
+      case Failure => false
+    }
+
     while (!ended) {
       get.backtrack match {
-        case Some(result) =>
+        case Success(result) =>
           elements :+= result
           separator.backtrack match {
-            case Some(result) => separators :+= result
-            case None => ended = true
+            case Success(result) => separators :+= result
+            case Failure => ended = true
           }
-        case None => ended = true
+
+        case Failure => ended = true
       }
     }
+
+    trailingSeparator.foreach { trailingSeparator =>
+      trailingSeparator.backtrack match {
+        case Success(separator) => separators :+= result
+        case Failure => ???
+      }
+    }
+
     if (allowTrailing) {
       separator.backtrack match {
         case Some(result) => separators :+= result
@@ -346,8 +425,8 @@ trait Parser {
       * TODO (syntax): Should be inline (Scala 3).
       */
     def |[B >: A](other: => Result[B]): Result[B] = action.backtrack match {
-      case result: UnrecoverableResult[A] => result
-      case Recoverable => other
+      case result: Success[A] => result
+      case Failure => other
     }
   }
 }
