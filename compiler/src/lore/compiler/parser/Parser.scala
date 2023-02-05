@@ -51,6 +51,12 @@ trait Parser {
   }
 
   @StateConservative
+  def peekIs[T <: Token](implicit tag: ClassTag[T]): Boolean = peekIs[T](1)
+
+  @StateConservative
+  def peekIs[T <: Token](n: Int)(implicit tag: ClassTag[T]): Boolean = peek.isInstanceOf[T]
+
+  @StateConservative
   def consume(): Token = {
     val token = peek
     token match {
@@ -126,21 +132,34 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` as long as `get` is a success. `collect` backtracks `get` automatically because it's
-    * inherently exploratory.
+    * Collects results from `get` as long as [[peek]] is a token of type `T`. `get` may lead to a [[Failure]], which is
+    * not backtracked by this function.
+    */
+  def collect[A, T <: Token](get: T => Result[A])(implicit tag: ClassTag[T]): Result[Vector[A]] = {
+    var results = Vector.empty[A]
+    while (peekIs[T]) {
+      get(consume().asInstanceOf[T]) match {
+        case Success(result) => results :+= result
+        case Failure => return Failure
+      }
+    }
+    results.success
+  }
+
+  /**
+    * Collects results from `get` as long as `get` is a success, backtracking `get` in the process.
     */
   @StateConservative
-  def collect[A](get: => Result[A]): UnrecoverableResult[Vector[A]] = {
+  def collectBacktrack[A](get: => Result[A]): Vector[A] = {
     var results = Vector.empty[A]
     var ended = false
     while (!ended) {
       get.backtrack match {
         case Success(result) => results :+= result
-        case Recoverable => ended = true
-        case Failure => return Failure
+        case Failure => ended = true
       }
     }
-    results.success
+    results
   }
 
   /**

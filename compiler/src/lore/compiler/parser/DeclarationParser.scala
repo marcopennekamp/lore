@@ -1,7 +1,7 @@
 package lore.compiler.parser
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.ParserFeedback
+import lore.compiler.feedback.{Feedback, ParserFeedback}
 import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
@@ -20,7 +20,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   private def moduleDeclaration(annotations: Vector[AnnotationNode]): Result[ModuleNode] = {
     val moduleKeyword = consumeOnly[TkModule].getOrElse {
       reporter.report(ParserFeedback.Declarations.DeclarationExpected("module".some, peek.position))
-      return Recoverable
+      return Failure
     }
 
     // TODO (syntax): "root" should be a constant somewhere. Maybe a sort of semantic registry of built-in annotations.
@@ -28,12 +28,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       case SimpleAnnotationNode(name) => name.value == "root"
       case _ => false
     }
-    val areAnnotationsValid = checkAnnotationValidity(annotations) {
-      annotation => annotation.uniqueName == "root"
-    }
-    if (!areAnnotationsValid) {
-      return Failure // An error will already have been reported.
-    }
+    checkAnnotationValidity(annotations) { annotation => annotation.uniqueName == "root" }.getOrElse(return Failure)
 
     val moduleName = namePath().getOrElse {
       // TODO (syntax): Report error: Module name required.
@@ -52,6 +47,10 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     println(s"Module body indentation: $indentation")
 
     val imports = collectSep(nli(indentation)) { moduleImport(indentation) }
+
+    // TODO (syntax): We need to check if the next token is NOT a dedent. If it is not, there MUST be at least one
+    //                member and we can use `collectSep` without backtracking. This will allow the proper error to be
+    //                reported.
     val members = collectSep(nli(indentation)) { moduleMember(indentation) }
     (imports.flatten, members).some
   }
@@ -111,11 +110,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       case TkProc(_) => procedureDeclaration(memberAnnotations)
       case TkDomain(_) => domainDeclaration(memberAnnotations)
 
-      case token if memberAnnotations.nonEmpty =>
-        // If annotations have been parsed, there MUST be a declaration. If no annotations have been parsed, this might
-        // be the end of the module body instead of another declaration, and thus the parse run is recoverable.
-        if (memberAnnotations.nonEmpty) declarationExpected(None, token.position)
-        else Recoverable
+      case token => declarationExpected(None, token.position)
     }
   }
 
@@ -123,61 +118,91 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   // User-defined types.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def aliasDeclaration(annotations: Vector[AnnotationNode]): Result[AliasNode] = {
+    checkAnnotationsEmpty(annotations).getOrElse(return Failure)
+    Failure
 
-
-
-
-    // TODO (syntax): Only check annotations once it's been established that this is non-recoverable.
-    if (annotations.nonEmpty) {
-      reportAnnotationsNotAllowed(annotations, "type alias")
-      return Failure
-    }
-
-    return Recoverable
-
-    val startIndex = offset
-    val aliasVariant =
-      if (word("type")) AliasVariant.Type
-      else if (word("struct")) AliasVariant.Struct
-      else if (word("object")) AliasVariant.Object
-      else return None
-
-    if (!ws()) return None
-    val aliasName = typeName().getOrElse(return None)
-    ws()
-    val typeParameters =
-      enclosedInBracketsWlmi(indentation, minSize = 1)(simpleTypeParameter()).backtrack.getOrElse(Vector.empty)
-    ws()
-    if (!character('=')) return None
-
-    // The type expression may be defined in an indentation block, or otherwise on the same line.
-    val bodyIndentation = indentOrWs(indentation)
-    val aliasType = typeExpression(bodyIndentation).getOrElse(return None)
-
-    AliasNode(aliasName, aliasVariant, typeParameters, aliasType, createPositionFrom(startIndex)).some
+//    val startIndex = offset
+//    val aliasVariant =
+//      if (word("type")) AliasVariant.Type
+//      else if (word("struct")) AliasVariant.Struct
+//      else if (word("object")) AliasVariant.Object
+//      else return None
+//
+//    if (!ws()) return None
+//    val aliasName = typeName().getOrElse(return None)
+//    ws()
+//    val typeParameters =
+//      optionalEnclosedInBracketsWlmi(indentation, minSize = 1)(simpleTypeParameter()).getOrElse(return None)
+//    ws()
+//    if (!character('=')) return None
+//
+//    // The type expression may be defined in an indentation block, or otherwise on the same line.
+//    val bodyIndentation = indentOrWs(indentation)
+//    val aliasType = typeExpression(bodyIndentation).getOrElse(return None)
+//
+//    AliasNode(aliasName, aliasVariant, typeParameters, aliasType, createPositionFrom(startIndex)).some
   }
 
   private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {
     // ...
 
-    // TODO (syntax): Only check annotations once it's been established that this is non-recoverable.
-    if (annotations.nonEmpty) {
-      reportAnnotationsNotAllowed(annotations, "trait")
-      return Failure
-    }
+    checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
-  private def structDeclaration(indentation: Int): Option[StructNode] = None
+//    val startIndex = offset
+//    if (!word("trait") || !ws()) return None
+//
+//    val traitName = typeName().getOrElse(return None)
+//    ws()
+//    val typeParameters =
+//      optionalEnclosedInBracketsWlmi(indentation, minSize = 1)(traitTypeParameter()).getOrElse(return None)
+//    val extendedTypes = extendsClause(indentation).backtrack.getOrElse(Vector.empty)
+//
+//    TraitNode(traitName, typeParameters, extendedTypes, createPositionFrom(startIndex)).some
+    ???
+  }
 
-  private def objectDeclaration(indentation: Int): Option[StructNode] = None
+  private def structDeclaration(annotations: Vector[AnnotationNode]): Result[StructNode] = {
+    checkAnnotationsEmpty(annotations).getOrElse(return Failure)
+
+    Failure
+  }
+
+  private def objectDeclaration(annotations: Vector[AnnotationNode]): Result[StructNode] = {
+    checkAnnotationsEmpty(annotations).getOrElse(return Failure)
+
+    Failure
+  }
+
+//  private def extendsClause(): Option[Vector[TypeExprNode]] = {
+//    // `extends` must be preceded by whitespace (and on the same line as the preceding token).
+//    if (!ws() || !word("extends")) return None
+//
+//    // `extends` must either be followed by whitespace or a newline.
+//    if (!ws() && !peekNewline()) return None
+//
+//    // TODO (syntax): The `indentation` in `typeExpression` should be equal to each line's `wlgi`, but instead is only
+//    //                the minimum indentation of the extends clause. This could lead to syntax like this:
+//    //   ```
+//    //   module A
+//    //     trait B extends
+//    //         C[
+//    //     String,
+//    //     Int,
+//    //     ]
+//    //   ```
+//    //   `String`, `Int`, and `]` should be indented at least as far as `C[`.
+//    //   `wlmi` has the same problem as `wlgi`.
+//    //   We should definitely replace some uses of `wlgi` (and maybe `wlmi`) with proper `indent` sections.
+//    //   Alternatively, `wlgi` and `wlmi` could give the inner `indentation` as an argument to the `get` lambda.
+//    //collectSepWlgi(character(','), indentation)(typeExpression(indentation)).takeNonEmpty
+//    ???
+//  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Global variables.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def globalVariableDeclaration(annotations: Vector[AnnotationNode]): Result[GlobalVariableNode] = {
-    if (annotations.nonEmpty) {
-      reportAnnotationsNotAllowed(annotations, "global variable")
-      return Failure
-    }
+    checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
     val startIndex = offset
     if (!word("let") || !ws()) return None
@@ -254,14 +279,19 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
     */
   def domainDeclaration(annotations: Vector[AnnotationNode]): Result[Vector[FunctionNode]] = {
-    val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
+    checkAnnotationValidity(annotations) {
+      case _: WhereAnnotationNode => true
+      case _ => false
+    }.getOrElse(return Failure)
+
+    val maybeWhereAnnotation = annotations.find(_.isInstanceOf[WhereAnnotationNode])
 
     if (!word("domain") || !ws()) return None
     val domainParameters = ??? //collectSepWlgi(character(','), indentation)(functionParameter(indentation))
     ws()
     val domainTypeParameters = maybeWhereAnnotation match {
       case Some(typeParameters) => typeParameters
-      case None => (ws() &> inlineWhere()).backtrack.getOrElse(Vector.empty)
+      case None => inlineWhere().backtrack.getOrElse(Vector.empty)
     }
 
     val bodyIndentation = indent(indentation).getOrElse(return None)
@@ -300,52 +330,57 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] =
     enclosedInParenthesesWlmi(indentation) { functionParameter(indentation) }
 
-  private def inlineWhere(): Option[Vector[DeclNode.TypeVariableNode]] = {
-    if (!word("where") || !ws()) return None
+  private def inlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {
+    if (!consumeIf[TkWhere]) {
+      // TODO (syntax): Report error.
+      return Failure
+    }
 
     // Because an inline where is supposed to be simple, we're disallowing trailing commas and newlines here.
-    collectSep(ws() *> character(',') <* ws())(simpleTypeParameter()).some
+    collectSep(consumeIf[TkComma])(simpleTypeParameter()).success
+
+    // TODO (syntax): Throw a `Failure` if no type parameters have been parsed.
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Specs.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def specDeclaration(annotations: Vector[AnnotationNode]): Result[SpecNode] = Recoverable
+  private def specDeclaration(annotations: Vector[AnnotationNode]): Result[SpecNode] = Failure
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def reportAnnotationsNotAllowed(annotations: Vector[AnnotationNode]): Unit = {
-    annotations.foreach { annotation =>
-      reporter.report(ParserFeedback.Annotations.IllegalKind(annotation))
+  private def checkAnnotationsEmpty(annotations: Vector[AnnotationNode]): Result[Unit] = {
+    if (annotations.nonEmpty) {
+      reporter.report(annotations.map(ParserFeedback.Annotations.IllegalKind))
+      return Failure
     }
+    Success.empty
   }
 
   /**
-    * Checks `annotations` for their kind with `isKindAllowed` and reports duplicates. Returns whether all annotations
-    * are valid.
+    * Checks `annotations` for their kind with `isKindAllowed` and checks duplicates. Reports errors and returns
+    * [[Failure]] if any checks failed.
     */
   private def checkAnnotationValidity(
     annotations: Vector[AnnotationNode],
-  )(isKindAllowed: AnnotationNode => Boolean): Boolean = {
-    var isValid = true
+  )(isKindAllowed: AnnotationNode => Boolean): Result[Unit] = {
+    var errors = Vector.empty[Feedback]
     val uniqueNamesSeen = mutable.HashSet[String]()
 
     annotations.foreach { annotation =>
       if (!isKindAllowed(annotation)) {
-        isValid = false
-        reporter.report(ParserFeedback.Annotations.IllegalKind(annotation))
+        errors :+= ParserFeedback.Annotations.IllegalKind(annotation)
       }
 
       if (!annotation.areMultipleAllowed) {
         if (uniqueNamesSeen.contains(annotation.uniqueName)) {
-          isValid = false
-          reporter.report(ParserFeedback.Annotations.IllegalDuplicate(annotation))
+          errors :+= ParserFeedback.Annotations.IllegalDuplicate(annotation)
         }
         uniqueNamesSeen.add(annotation.uniqueName)
       }
     }
 
-    isValid
+    if (errors.isEmpty) Success.empty else Failure
   }
 }

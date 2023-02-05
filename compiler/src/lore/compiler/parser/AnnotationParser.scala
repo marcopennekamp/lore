@@ -10,16 +10,15 @@ import lore.compiler.syntax._
   * must usually be placed on the same line, except when the body is in an indentation section (for select annotations).
   */
 trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with IndentationParser with ControlParser =>
-  @StateConservative
-  def annotations(): UnrecoverableResult[Vector[AnnotationNode]] = collect(annotation())
+  // TODO (syntax): Use named type arguments: https://dotty.epfl.ch/docs/reference/experimental/named-typeargs.html.
+  def annotations(): Result[Vector[AnnotationNode]] = collect[AnnotationNode, TkAnnotation](annotation)
 
-  private def annotation(): Result[AnnotationNode] = {
-    val annotationHead = consumeOnly[TkAnnotation].getOrElse(return Recoverable)
-
+  private def annotation(annotationHead: TkAnnotation): Result[AnnotationNode] = {
     val result = annotationHead.name match {
       case "where" => whereAnnotation(annotationHead)
       case name => annotationBodyOnSingleLine { SimpleAnnotationNode(NameNode(name, annotationHead.position)).success }
     }
+    if (!result.isSuccess) return result
 
     // The newline terminator is checked by the specific annotation parsers, but we additionally have to make sure that
     // the next token (another annotation or the annotated element) has the same indentation.
@@ -42,8 +41,9 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     * func ...
     * }}}
     */
-  def whereAnnotation(annotationHead: TkAnnotation): UnrecoverableResult[WhereAnnotationNode] = {
+  def whereAnnotation(annotationHead: TkAnnotation): Result[WhereAnnotationNode] = {
     annotationBodyWithOptionalIndentation { isIndented =>
+      // TODO (syntax): Use `collectSep` without backtracking `get`.
       val typeParameters = collectSep(separatorNl(consumeIf[TkComma], allowNewline = isIndented), consumeIf[TkComma]) {
         simpleTypeParameter()
       }
@@ -60,16 +60,15 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
   /**
     * Parses a single-line annotation body and ensures that the annotation is terminated by a newline.
     */
-  private def annotationBodyOnSingleLine[A, R >: UnrecoverableResult[A] <: Result[A]](body: => R): R = {
-    val result = body
-    if (!result.isSuccess) return result
+  private def annotationBodyOnSingleLine[A](body: => Result[A]): Result[A] = {
+    val result = body.getOrElse(return Failure)
 
     if (!consumeIf[TkNewline]) {
       // TODO (syntax): Report error. (Newline expected at end of annotation.)
       return Failure
     }
 
-    result
+    result.success
   }
 
   /**
@@ -77,7 +76,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
     *
     * The boolean passed to `body` signifies whether an indentation section has been opened.
     */
-  private def annotationBodyWithOptionalIndentation[A, R >: UnrecoverableResult[A] <: Result[A]](body: Boolean => R): R = {
+  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Result[A]): Result[A] = {
     val isIndented = openOptionalIndentation()
     val result = body(isIndented)
 
@@ -86,8 +85,8 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with
       return Failure
     }
 
-    if (isIndented && !closeIndentation()) {
-      return Failure // An error was already reported.
+    if (isIndented) {
+      closeIndentation().getOrElse(return Failure)
     }
 
     result
