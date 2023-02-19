@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 // TODO (syntax): We should probably move annotation checking to the `constraints` and `resolution` phases.
 
-trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterParser with TypeParser with BasicParsers =>
+trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterParser with TypeParser with NameParser =>
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
