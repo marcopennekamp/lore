@@ -66,23 +66,45 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   }
 
   private def moduleImport(tkUse: TkUse): Result[Vector[ImportNode]] = {
-    val prefixPath = namePath().getOrElse(return None)
-    if (character('.')) {
-      if (character('_')) {
-        // Wildcard imports.
-        Vector(DeclNode.ImportNode(prefixPath, isWildcard = true, createPositionFrom(startIndex))).some
-      } else if (peek == '[') {
-        // List imports.
-        val namePaths = enclosedInBracketsWlmi(indentation, minSize = 1)(namePath()).getOrElse(return None)
-        val position = createPositionFrom(startIndex)
+    val prefixPath = namePath().getOrElse {
+      // TODO (syntax): Report error.
+      return Failure
+    }
+
+    val isSpecialImport = consumeIf[TkDot]
+    if (!isSpecialImport) {
+      val position = tkUse.position.to(prefixPath.position)
+      return Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, position)).success
+    }
+
+    consume() match {
+      case underscore@TkUnderscore(_) =>
+        val position = tkUse.position.to(underscore.position)
+        Vector(DeclNode.ImportNode(prefixPath, isWildcard = true, position)).success
+
+      case TkBracketLeft(_) =>
+        val isIndented = openOptionalIndentation()
+
+        val namePaths = collectSepLookahead(
+          !peekIs[TkBracketRight],
+          separatorNl(consumeIf[TkComma], allowNewline = isIndented),
+        )(namePath()).getOrElse(return Failure)
+
+        if (isIndented) closeIndentation().getOrElse(return Failure)
+        val closingBracket = closeBracket().getOrElse(return Failure)
+
+        val position = tkUse.position.to(closingBracket.position)
         namePaths.map { suffixPath =>
           // TODO (syntax): As noted in the TODO, this desugaring of list imports is wrong. Keep in mind that we will
           //                have to change the node here.
           val completeNamePath = NamePathNode(prefixPath.segments ++ suffixPath.segments)
           DeclNode.ImportNode(completeNamePath, isWildcard = false, position)
-        }.some
-      } else None
-    } else Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, createPositionFrom(startIndex))).some
+        }.success
+
+      case _ =>
+        // TODO (syntax): Report error: Expected list or wildcard import.
+        Failure
+    }
   }
 
   private def moduleMember(): Result[DeclNode] = {
