@@ -9,7 +9,7 @@ import lore.compiler.syntax.Node.Index
   * Implements the shunting-yard algorithm for arbitrary operators with arbitrary precedence. Supports both binary
   * operators and xary operators.
   */
-trait PrecedenceParser { _: Parser with IndentationParser with ControlParser =>
+trait PrecedenceParser { _: Parser with IndentationParser =>
   /**
     * Parses a complete sequence of operands and operations into a single "operand", for example a
     * [[lore.compiler.syntax.ExprNode]]. Also easily handles the case where no operators even exist and there is only a

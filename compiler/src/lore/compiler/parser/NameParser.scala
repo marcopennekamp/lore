@@ -16,7 +16,7 @@ trait NameParser { _: Parser =>
     * A type name might be composed of several connected [[TkIdentifier]] and [[TkPlus]] tokens.
     */
   def typeName(): Result[NameNode] = {
-    val connectedTokens = consumeConnectedTokens {
+    val connectedTokens = collectConnectedTokens {
       case _: TkIdentifier => true
       case _: TkPlus => true
       case _ => false

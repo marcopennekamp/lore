@@ -1,5 +1,5 @@
 package lore.compiler
 
 package object parser {
-  type BasicParsers = NameParser with IndentationParser with ControlParser
+  type BasicParsers = NameParser with IndentationParser
 }

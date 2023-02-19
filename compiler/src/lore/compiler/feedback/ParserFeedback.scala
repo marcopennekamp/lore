@@ -1,9 +1,18 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.Position
-import lore.compiler.syntax.AnnotationNode
+import lore.compiler.syntax.{AnnotationNode, Token}
+
+import scala.reflect.ClassTag
 
 object ParserFeedback {
+
+  case class TokenExpected[T <: Token](
+    override val position: Position,
+  )(implicit tag: ClassTag[T]) extends Feedback.Error(position) {
+    // TODO (syntax): Map token class name to token description.
+    override def message: String = s"Expected a ${tag.getClass.getSimpleName}."
+  }
 
   object Declarations {
     case class DeclarationExpected(

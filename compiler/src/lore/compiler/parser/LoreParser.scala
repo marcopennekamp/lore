@@ -55,7 +55,7 @@ object LoreParser {
   */
 private class LoreParser(override val input: String)(override implicit val fragment: Fragment)
   extends Parser with DeclarationParser with AnnotationParser with TypeParameterParser with TypeParser
-    with PrecedenceParser with NameParser with IndentationParser with ControlParser
+    with PrecedenceParser with NameParser with IndentationParser
 {
   def parse(): Option[ModuleNode] = {
     // TODO (syntax): The top module declaration needs some special handling, as a `module X` declaration is only a top

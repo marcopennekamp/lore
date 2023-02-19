@@ -2,7 +2,7 @@ package lore.compiler.parser
 
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-trait IndentationParser { _: Parser with ControlParser =>
+trait IndentationParser { _: Parser =>
   /**
     * Attempts to open a new indentation block on the next non-blank line. Returns the next line's indentation if it's
     * higher than `parentIndentation`. `indent` expects to be at the end of the line; if instead another token is

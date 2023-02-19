@@ -1,9 +1,9 @@
 package lore.compiler.parser
 
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.feedback.MemoReporter
+import lore.compiler.feedback.{Feedback, MemoReporter, ParserFeedback}
 import lore.compiler.syntax.Node.Index
-import lore.compiler.syntax.{TkEnd, Token}
+import lore.compiler.syntax.{TkBracketRight, TkDedent, TkEnd, TkIndent, TkNewline, Token}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
@@ -39,7 +39,7 @@ trait Parser {
   class StateConservative extends StaticAnnotation
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Input helpers.
+  // Single-token input helpers.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   @StateConservative
   def peek: Token = peek(1)
@@ -87,26 +87,37 @@ trait Parser {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Special token handling.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * Consumes tokens allowed by `isAllowed` as long as the current token and the next token are directly adjacent by
-    * index. [[consumeConnectedTokens]] is sensitive to whitespace in the sense that it compares raw indices. Its use
-    * should be limited to cases where the lexer should have created a single token, but wasn't able to due to missing
-    * context information.
+    * Opens an optional indentation section and returns whether an indentation was opened.
     */
   @StateConservative
-  def consumeConnectedTokens(isAllowed: Token => Boolean): Vector[Token] =
-    VectorExtension.unfoldOnPreviousElement { previousToken =>
-      peek match {
-        case candidate: Token if isAllowed(candidate) =>
-          previousToken match {
-            case Some(previousToken) if candidate.startIndex != previousToken.endIndex + 1 => None
-            case _ =>
-              consume()
-              candidate.some
-          }
-        case _ => None
-      }
-    }
+  def openOptionalIndentation(): Boolean = consumeIf[TkIndent]
+
+  /**
+    * Attempts to close an indentation section and reports an error and returns [[Failure]] if it wasn't closed.
+    */
+  def closeIndentation(): Result[TkDedent] = {
+    consumeExpect[TkDedent](ParserFeedback.TokenExpected(peek.position))
+  }
+
+  def closeBracket(): Result[TkBracketRight] =
+    consumeExpect[TkBracketRight](ParserFeedback.TokenExpected[TkBracketRight](peek.position))
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Separators and collectors.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * Parses the given separator and a following, optional [[TkNewline]] if `allowNewline` is enabled. Returns `true`
+    * if the separator was encountered.
+    */
+  def separatorNl(separator: => Boolean, allowNewline: Boolean = true): Boolean = {
+    val found = separator
+    if (allowNewline) consumeIf[TkNewline]
+    found
+  }
 
   /**
     * Repeats `action` until it returns `false`. Returns `true` if at least one action was successfully executed.
@@ -327,20 +338,51 @@ trait Parser {
   }
 
   /**
-    * Surrounds `action` with `left` and `right`, requiring that both `left` and `right` are present. `action` is not
-    * backtracked automatically.
+    * Collects tokens allowed by `isAllowed` as long as the current token and the next token are directly adjacent by
+    * index. [[collectConnectedTokens]] is sensitive to whitespace in the sense that it compares raw indices. Its use
+    * should be limited to cases where the lexer should have created a single token, but wasn't able to due to missing
+    * context information.
     */
-  def surround[A](left: => Boolean, right: => Boolean)(action: => Option[A]): Option[A] = {
-    if (left) action.filter(_ => right) else None
+  @StateConservative
+  def collectConnectedTokens(isAllowed: Token => Boolean): Vector[Token] =
+    VectorExtension.unfoldOnPreviousElement { previousToken =>
+      peek match {
+        case candidate: Token if isAllowed(candidate) =>
+          previousToken match {
+            case Some(previousToken) if candidate.startIndex != previousToken.endIndex + 1 => None
+            case _ =>
+              consume()
+              candidate.some
+          }
+        case _ => None
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Backtracking.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  implicit class BooleanActionExtension(action: => Boolean) {
+    def backtrack: Boolean = backtrackImpl(action, isSuccess => !isSuccess)
   }
 
-  // TODO (syntax): Should be inline (Scala 3).
-//  def withPosition[T <: PositionedToken](token: T): (T, Position) = {
-//    result.map((_, Position(fragment, startOffset, endOffset)))
-//  }
+  implicit class OptionActionExtension[A](action: => Option[A]) {
+    def backtrack: Option[A] = backtrackImpl(action, _.isEmpty)
+  }
 
-  // TODO (syntax): Should be inline (Scala 3).
-//  def createPositionFrom(startIndex: Int): Position = Position(fragment, startIndex, endIndex = offset)
+  implicit class ResultActionExtension[A](action: => Result[A]) {
+    def backtrack: Result[A] = backtrackImpl(action, _.isRecoverable)
+
+    /**
+      * Takes the result of `action` if it's a success or failure, or otherwise backtracks `action` and defers to
+      * `other`.
+      *
+      * TODO (syntax): Should be inline (Scala 3).
+      */
+    def |[B >: A](other: => Result[B]): Result[B] = action.backtrack match {
+      case result: Success[A] => result
+      case Failure => other
+    }
+  }
 
   // TODO (syntax): Should be inline (Scala 3).
   private def backtrackImpl[A](action: => A, shouldBacktrack: A => Boolean): A = {
@@ -354,8 +396,12 @@ trait Parser {
     result
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Extensions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   implicit class TokenExtension[T <: Token](token: T) {
     def position: Position = Position(fragment, token.startIndex, token.endIndex)
+
     def withPosition: (T, Position) = (token, position)
   }
 
@@ -391,10 +437,6 @@ trait Parser {
     def &>[A](option: => Option[A]): Option[A] = if (value) option else None
   }
 
-  implicit class BooleanActionExtension(action: => Boolean) {
-    def backtrack: Boolean = backtrackImpl(action, isSuccess => !isSuccess)
-  }
-
   implicit class OptionExtension[A](option: Option[A]) {
     /**
       * Maps to `option` if `condition` is true and `None` otherwise.
@@ -410,24 +452,5 @@ trait Parser {
       * TODO (syntax): Can't this backtrack the left-hand side by default?
       */
     def |[B >: A](other: => Option[B]): Option[B] = option orElse other
-  }
-
-  implicit class OptionActionExtension[A](action: => Option[A]) {
-    def backtrack: Option[A] = backtrackImpl(action, _.isEmpty)
-  }
-
-  implicit class ResultActionExtension[A](action: => Result[A]) {
-    def backtrack: Result[A] = backtrackImpl(action, _.isRecoverable)
-
-    /**
-      * Takes the result of `action` if it's a success or failure, or otherwise backtracks `action` and defers to
-      * `other`.
-      *
-      * TODO (syntax): Should be inline (Scala 3).
-      */
-    def |[B >: A](other: => Result[B]): Result[B] = action.backtrack match {
-      case result: Success[A] => result
-      case Failure => other
-    }
   }
 }
