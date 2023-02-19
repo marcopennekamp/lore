@@ -17,7 +17,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def moduleDeclaration(annotations: Vector[AnnotationNode]): Result[ModuleNode] = {
-    val moduleKeyword = consumeOnly[TkModule].getOrElse {
+    val moduleKeyword = consume[TkModule].getOrElse {
       reporter.report(ParserFeedback.Declarations.DeclarationExpected("module".some, peek.position))
       return Failure
     }

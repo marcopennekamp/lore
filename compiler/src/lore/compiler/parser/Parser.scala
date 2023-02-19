@@ -31,7 +31,7 @@ trait Parser {
 
   /**
     * A state-conservative parser does not need backtracking, as the parser will only affect the run's state if the run
-    * is successful or an unrecoverable failure.
+    * is successful.
     *
     * TODO (syntax): Use this annotation to warn that a `backtrack` call is superfluous. Can we do this in Scala or
     *                IntelliJ natively?
@@ -67,23 +67,24 @@ trait Parser {
   }
 
   @StateConservative
+  def consume[T <: Token](implicit tag: ClassTag[T]): Result[T] = consume() match {
+    case token: T => token.success
+    case _ => Failure
+  }
+
+  @StateConservative
   def consumeIf[T <: Token](implicit tag: ClassTag[T]): Boolean = consume() match {
     case _: T => true
     case _ => false
   }
 
-  @StateConservative
-  def consumeOnly[T <: Token](implicit tag: ClassTag[T]): Option[T] = consume() match {
-    case token: T => token.some
-    case _ => None
-  }
-
-  @StateConservative
-  def consumeOnly(token: Token): Boolean = {
-    if (peek == token) {
-      consume()
-      true
-    } else false
+  def consumeExpect[T <: Token](error: => Feedback)(implicit tag: ClassTag[T]): Result[T] = {
+    consume[T] match {
+      case success@Success(_) => success
+      case Failure =>
+        reporter.report(error)
+        Failure
+    }
   }
 
   /**

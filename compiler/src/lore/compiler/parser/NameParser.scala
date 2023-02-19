@@ -8,7 +8,7 @@ import scalaz.Scalaz.ToOptionIdOps
 import scala.collection.mutable
 
 trait NameParser { _: Parser =>
-  def name(): Option[NameNode] = consumeOnly[TkIdentifier].map(token => NameNode(token.value, token.position))
+  def name(): Result[NameNode] = consume[TkIdentifier].map(token => NameNode(token.value, token.position))
 
   /**
     * A type name might be composed of several connected [[TkIdentifier]] and [[TkPlus]] tokens.

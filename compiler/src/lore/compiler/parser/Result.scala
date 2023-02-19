@@ -23,6 +23,7 @@ sealed trait Result[+A] {
   def isRecoverable: Boolean
 
   def getOrElse[B >: A](alternative: => B): B
+  def map[B](f: A => B): Result[B]
 }
 
 case class Success[+A](value: A) extends Result[A] {
@@ -30,6 +31,7 @@ case class Success[+A](value: A) extends Result[A] {
   override def isRecoverable: Boolean = false
 
   override def getOrElse[B >: A](alternative: => B): B = value
+  override def map[B](f: A => B): Result[B] = Success(f(value))
 }
 
 object Success {
@@ -41,4 +43,5 @@ case object Failure extends Result[Nothing] {
   override def isRecoverable: Boolean = true
 
   override def getOrElse[B >: Nothing](alternative: => B): B = alternative
+  override def map[B](f: Nothing => B): Result[B] = Failure
 }
