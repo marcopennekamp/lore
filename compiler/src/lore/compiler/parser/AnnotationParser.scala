@@ -9,7 +9,7 @@ import lore.compiler.syntax._
   * Every annotation must be terminated by a newline, without any following indent or dedent. Hence, an annotation body
   * must usually be placed on the same line, except when the body is in an indentation section (for select annotations).
   */
-trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser with IndentationParser =>
+trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser =>
   // TODO (syntax): Use named type arguments: https://dotty.epfl.ch/docs/reference/experimental/named-typeargs.html.
   def annotations(): Result[Vector[AnnotationNode]] = collectLookaheadIs[AnnotationNode, TkAnnotation](annotation)
 
