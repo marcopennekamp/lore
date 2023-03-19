@@ -3,7 +3,7 @@ package lore.compiler.parser
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.{Feedback, MemoReporter, ParserFeedback}
 import lore.compiler.syntax.Node.Index
-import lore.compiler.syntax.{TkBracketRight, TkDedent, TkEnd, TkIndent, TkNewline, Token}
+import lore.compiler.syntax._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
@@ -57,15 +57,24 @@ trait Parser {
   def peekIs[T <: Token](n: Int)(implicit tag: ClassTag[T]): Boolean = peek.isInstanceOf[T]
 
   @StateConservative
+  def skip(): Unit = skip(1)
+
+  @StateConservative
+  def skip(n: Int): Unit = {
+    offset += n
+  }
+
+  @StateConservative
   def consume(): Token = {
     val token = peek
-    token match {
-      case _: TkEnd =>
-      case _ => offset += 1
-    }
+    skip()
     token
   }
 
+  // TODO (syntax): Check if `ClassTag` has an impact on parser performance. An alternative could be introducing a
+  //                "token type" enum. This would make writing certain utility functions easier. The token type could
+  //                have its token as a type argument, so that functions like `consume` still return the narrowest
+  //                possible type.
   @StateConservative
   def consume[T <: Token](implicit tag: ClassTag[T]): Result[T] = consume() match {
     case token: T => token.success
@@ -78,30 +87,47 @@ trait Parser {
     case _ => false
   }
 
-  def consumeExpect[T <: Token](error: => Feedback)(implicit tag: ClassTag[T]): Result[T] = {
+  def consumeExpect[T <: Token](error: => Feedback)(implicit tag: ClassTag[T]): Result[T] =
     consume[T] match {
       case success@Success(_) => success
       case Failure =>
         reporter.report(error)
         Failure
     }
-  }
+
+  def consumeExpect[T <: Token](implicit tag: ClassTag[T]): Result[T] =
+    consumeExpect[T](ParserFeedback.TokenExpected[T](peek.position))
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Special token handling.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * Opens an optional indentation section and returns whether an indentation was opened.
+    * Opens an optional indentation section and returns whether an indentation was opened. [[openOptionalIndentation]]
+    * skips a newline if present with indentation, but does not require it.
     */
   @StateConservative
-  def openOptionalIndentation(): Boolean = consumeIf[TkIndent]
+  def openOptionalIndentation(): Boolean = {
+    if (peekIs[TkNewline] && peekIs[TkIndent]) {
+      skip(2)
+      true
+    } else if (peekIs[TkIndent]) {
+      skip()
+      true
+    } else false
+  }
 
   /**
-    * Attempts to close an indentation section and reports an error and returns [[Failure]] if it wasn't closed.
+    * Attempts to close an indentation section. Reports an error and returns [[Failure]] if it wasn't closed.
+    *
+    * TODO (syntax): Should this consume a newline before the dedent if present like `openOptionalIndentation`?
     */
-  def closeIndentation(): Result[TkDedent] = {
-    consumeExpect[TkDedent](ParserFeedback.TokenExpected(peek.position))
-  }
+  def closeIndentation(): Result[TkDedent] = consumeExpect[TkDedent]
+
+  def peekIsWithPossibleIndent(isToken: Token => Boolean): Boolean =
+    isToken(peek) || peekIs[TkIndent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkIndent](2) && isToken(peek(3))
+
+  def peekIsWithPossibleDedent(isToken: Token => Boolean): Boolean =
+    isToken(peek) || peekIs[TkDedent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkDedent](2) && isToken(peek(3))
 
   def closeBracket(): Result[TkBracketRight] =
     consumeExpect[TkBracketRight](ParserFeedback.TokenExpected[TkBracketRight](peek.position))
@@ -137,7 +163,7 @@ trait Parser {
     var consumed = false
     while (action) {
       consumed = true
-      if (peek == separator) consume()
+      if (peek == separator) skip()
       else return true
     }
     consumed
@@ -351,7 +377,7 @@ trait Parser {
           previousToken match {
             case Some(previousToken) if candidate.startIndex != previousToken.endIndex + 1 => None
             case _ =>
-              consume()
+              skip()
               candidate.some
           }
         case _ => None
