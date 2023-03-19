@@ -176,8 +176,14 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
         case '*' => tokenizeCompositeEquals(TkMul(startIndex), TkMulEquals(startIndex))
         case '/' => tokenizeCompositeEquals(TkDiv(startIndex), TkDivEquals(startIndex))
 
-        case '<' => tokenizeCompositeEquals(TkLessThan(startIndex), TkLessThanEquals(startIndex))
-        case '>' => tokenizeCompositeEquals(TkGreaterThan(startIndex), TkGreaterThanEquals(startIndex))
+        case '<' => peek match {
+          case ':' => consume(); tokens += TkTypeLessThan(startIndex)
+          case _ => tokenizeCompositeEquals(TkLessThan(startIndex), TkLessThanEquals(startIndex))
+        }
+        case '>' => peek match {
+          case ':' => consume(); tokens += TkTypeGreaterThan(startIndex)
+          case _ => tokenizeCompositeEquals(TkGreaterThan(startIndex), TkGreaterThanEquals(startIndex))
+        }
 
         case '&' => tokens += TkTypeAnd(startIndex)
         case '|' => tokens += TkTypeOr(startIndex)
@@ -319,6 +325,7 @@ class Lexer(input: String)(implicit fragment: Fragment, reporter: Reporter) {
     "mut" -> TkMut,
     "not" -> TkNot,
     "object" -> TkObject,
+    "open" -> TkOpen,
     "or" -> TkOr,
     "proc" -> TkProc,
     "return" -> TkReturn,

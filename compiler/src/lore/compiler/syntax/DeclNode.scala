@@ -136,6 +136,7 @@ object DeclNode {
     position: Position,
   ) extends NamedNode
 
+  // TODO (syntax): Remove these secondary constructors. (Not needed for the new parser.)
   object TypeVariableNode {
     def variant(
       nameNode: NameNode,

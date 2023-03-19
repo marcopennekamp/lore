@@ -35,6 +35,8 @@ trait NameParser { _: Parser =>
     NameNode(stringBuilder.toString(), Position(fragment, startIndex, endIndex)).success
   }
 
+  def typeVariableName(): Result[NameNode] = name()
+
   def namePath(): Result[NamePathNode] = genericNamePath(name())
 
   def typeNamePath(): Result[NamePathNode] = genericNamePath(typeName())

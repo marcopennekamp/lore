@@ -1,41 +1,62 @@
 package lore.compiler.parser
 
+import lore.compiler.core.Position
 import lore.compiler.syntax.DeclNode.TypeVariableNode
+import lore.compiler.types.TypeVariable.Variance
+import lore.compiler.syntax._
+import scalaz.Scalaz.ToOptionIdOps
 
-trait TypeParameterParser { _: Parser =>
+trait TypeParameterParser { _: Parser with TypeParser with NameParser =>
+  def simpleTypeParameter(): Result[TypeVariableNode] =
+    parseTypeParameterGiven(Variance.Invariant, isOpen = false, startPosition = peek.position)
 
-  def simpleTypeParameter(): Result[TypeVariableNode] = ???
+  def traitTypeParameter(): Result[TypeVariableNode] = {
+    val startPosition = peek.position
+    val variance = optionalVariance()
+    parseTypeParameterGiven(variance, isOpen = false, startPosition)
+  }
 
-  def traitTypeParameter(): Result[TypeVariableNode] = ???
+  def structTypeParameter(): Result[TypeVariableNode] = {
+    val startPosition = peek.position
 
-//  def simpleParameter[_: P]: P[DeclNode.TypeVariableNode] = {
-//    P(Index ~~ typeVariableCommons ~~ Index)
-//      .map { case (index1, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, index2) }
-//      .map(withPosition(DeclNode.TypeVariableNode.simple _))
-//  }
-//
-//  def traitParameter[_: P]: P[DeclNode.TypeVariableNode] = {
-//    P(Index ~~ variance ~ typeVariableCommons ~~ Index)
-//      .map { case (index1, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, index2) }
-//      .map(withPosition(DeclNode.TypeVariableNode.variant _))
-//  }
-//
-//  def structParameter[_: P]: P[DeclNode.TypeVariableNode] = {
-//    // We could require covariance ("+") for open parameters here, but parser error messages aren't very useful. Hence,
-//    // it's better to explicitly check this in a later phase.
-//    P(Index ~~ "open".!.?.map(_.isDefined) ~ variance ~ typeVariableCommons ~~ Index)
-//      .map { case (index1, isOpen, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, isOpen, index2) }
-//      .map(withPosition(DeclNode.TypeVariableNode.apply _))
-//  }
-//
-//  private def typeVariableCommons[_: P]: P[(NameNode, Option[TypeExprNode], Option[TypeExprNode])] = {
-//    P(typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?)
-//  }
-//
-//  private def variance[_: P]: P[Variance] = P(("+".! | "-".!).?).map {
-//    case Some("+") => Variance.Covariant
-//    case Some("-") => Variance.Contravariant
-//    case None => Variance.Invariant
-//  }
+    // We could require covariance ("+") for open parameters here, but the parser shouldn't report this kind of semantic
+    // error. Hence, it's better to explicitly check this in a later phase.
+    val isOpen = consumeIf[TkOpen]
+    val variance = optionalVariance()
+    parseTypeParameterGiven(variance, isOpen, startPosition)
+  }
 
+  private def parseTypeParameterGiven(
+    variance: Variance,
+    isOpen: Boolean,
+    startPosition: Position,
+  ): Result[TypeVariableNode] = {
+    val name = typeVariableName().getOrElse {
+      // TODO (syntax): Report error: Type variable name expected.
+      return Failure
+    }
+
+    val lowerBound = if (consumeIf[TkTypeGreaterThan]) {
+      typeExpression().getOrElse(return Failure).some
+    } else None
+
+    val upperBound = if (consumeIf[TkTypeLessThan]) {
+      typeExpression().getOrElse(return Failure).some
+    } else None
+
+    val position = startPosition.to(upperBound.orElse(lowerBound).getOrElse(name).position)
+    TypeVariableNode(name, lowerBound, upperBound, variance, isOpen, position).success
+  }
+
+  private def optionalVariance(): Variance = peek match {
+    case _: TkPlus =>
+      skip()
+      Variance.Covariant
+
+    case _: TkMinus =>
+      skip()
+      Variance.Contravariant
+
+    case _ => Variance.Invariant
+  }
 }

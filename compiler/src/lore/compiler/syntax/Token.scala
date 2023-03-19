@@ -47,6 +47,8 @@ object Token {
     case TkDivEquals(startIndex) => startIndex + 2
     case TkLessThanEquals(startIndex) => startIndex + 2
     case TkGreaterThanEquals(startIndex) => startIndex + 2
+    case TkTypeLessThan(startIndex) => startIndex + 2
+    case TkTypeGreaterThan(startIndex) => startIndex + 2
     case TkArrow(startIndex) => startIndex + 2
     case _ => token.startIndex + 1
   }
@@ -82,6 +84,7 @@ case class TkIdentifier(value: String, startIndex: TokenIndex) extends Token
 
 sealed abstract class TkKeyword(val word: String) extends Token
 
+// TODO (syntax): Rename keyword classes to `TkKeyword*` or `TkKw*`.
 case class TkAnd(startIndex: TokenIndex) extends TkKeyword("and")
 case class TkCase(startIndex: TokenIndex) extends TkKeyword("case")
 case class TkCond(startIndex: TokenIndex) extends TkKeyword("cond")
@@ -100,6 +103,9 @@ case class TkModule(startIndex: TokenIndex) extends TkKeyword("module")
 case class TkMut(startIndex: TokenIndex) extends TkKeyword("mut")
 case class TkNot(startIndex: TokenIndex) extends TkKeyword("not")
 case class TkObject(startIndex: TokenIndex) extends TkKeyword("object")
+// TODO (syntax): `open` is a very awkward keyword. For example, `file.open`. Consider changing it or converting it to a
+//                soft keyword. (This should be quite possible for `open`, considering its current use cases.)
+case class TkOpen(startIndex: TokenIndex) extends TkKeyword("open")
 case class TkOr(startIndex: TokenIndex) extends TkKeyword("or")
 case class TkProc(startIndex: TokenIndex) extends TkKeyword("proc")
 case class TkReturn(startIndex: TokenIndex) extends TkKeyword("return")
@@ -199,5 +205,7 @@ case class TkGreaterThanEquals(startIndex: TokenIndex) extends Token
 
 case class TkTypeAnd(startIndex: TokenIndex) extends Token
 case class TkTypeOr(startIndex: TokenIndex) extends Token
+case class TkTypeLessThan(startIndex: TokenIndex) extends Token
+case class TkTypeGreaterThan(startIndex: TokenIndex) extends Token
 
 case class TkArrow(startIndex: TokenIndex) extends Token
