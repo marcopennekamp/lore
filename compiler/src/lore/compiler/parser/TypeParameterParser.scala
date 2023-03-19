@@ -4,8 +4,9 @@ import lore.compiler.syntax.DeclNode.TypeVariableNode
 
 trait TypeParameterParser { _: Parser =>
 
-  def simpleTypeParameter(): Option[TypeVariableNode] = ???
+  def simpleTypeParameter(): Result[TypeVariableNode] = ???
 
+  def traitTypeParameter(): Result[TypeVariableNode] = ???
 
 //  def simpleParameter[_: P]: P[DeclNode.TypeVariableNode] = {
 //    P(Index ~~ typeVariableCommons ~~ Index)
