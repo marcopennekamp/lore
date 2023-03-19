@@ -1,8 +1,9 @@
 package lore.compiler.parser
 
 import lore.compiler.core.{CompilationException, Fragment, Position}
+import lore.compiler.feedback.ParserFeedback
 import lore.compiler.parser.PrecedenceParser.{BinaryOperator, Operator, XaryOperator}
-import lore.compiler.syntax.Node
+import lore.compiler.syntax.{Node, TkDedent, TkIndent, TkNewline, Token}
 import lore.compiler.syntax.Node.Index
 
 /**
@@ -12,23 +13,26 @@ import lore.compiler.syntax.Node.Index
 trait PrecedenceParser { _: Parser =>
   /**
     * Parses a complete sequence of operands and operations into a single "operand", for example a
-    * [[lore.compiler.syntax.ExprNode]]. Also easily handles the case where no operators even exist and there is only a
-    * single operand.
+    * [[lore.compiler.syntax.ExprNode]], using lookahead on the operator. `operator` and `operand` should report proper
+    * errors on failure.
     *
-    * @param operator A parser that should return a [[Operator]] instance based on the operator that was parsed.
+    * The parser allows expressions to span multiple lines without altering precedence by handling newlines and
+    * indentation. Newlines are consumed before an operator (after establishing lookahead) or operand (except the first
+    * operand) and the current indentation is counted. A newline can only be consumed if the current indentation is
+    * greater than zero or if an indentation immediately follows the newline. Otherwise, a newline is interpreted as the
+    * end of the expression.
+    *
+    * The parser ensures that the expression is properly closed with an appropriate amount of dedents.
     */
   def parseOperationWithPrecedence[Operand <: Node](
-    indentation: Int,
-    operator: () => Option[Operator[Operand]],
-    operand: () => Option[Operand],
-  ): Option[Operand] = {
-    val (operands, operators) = collectSepSemantic(ws() *> operator() <* wlgi(indentation))(operand())
-    val firstOperand = operands.headOption match {
-      case option if operands.length <= 1 => return option
-      case Some(value) => value
-    }
+    isOperator: Token => Boolean,
+    operator: => Result[Operator[Operand]],
+    operand: => Result[Operand],
+  ): Result[Operand] = {
+    val (operands, operators) = collectOperandsAndOperators(isOperator, operator, operand).getOrElse(return Failure)
+    if (operands.length == 1) return operands.head.success
 
-    var operandStack = List[Operand](firstOperand)
+    var operandStack = List[Operand](operands.head)
     var operatorStack = List[Operator[Operand]]()
 
     def handleOperator(): Unit = operatorStack.head match {
@@ -104,7 +108,82 @@ trait PrecedenceParser { _: Parser =>
         s" operand: the full expression. Operand stack: $operandStack.")
     }
 
-    operandStack.headOption
+    operandStack.head.success
+  }
+
+  /**
+    * See remarks in [[parseOperationWithPrecedence]] for more information about the newline and indentation handling
+    * implemented by this function.
+    */
+  private def collectOperandsAndOperators[Operand <: Node](
+    isOperator: Token => Boolean,
+    operator: => Result[Operator[Operand]],
+    operand: => Result[Operand],
+  ): Result[(Vector[Operand], Vector[Operator[Operand]])] = {
+    val firstOperand = operand.getOrElse(return Failure)
+
+    var indentation = 0
+    var operands = Vector(firstOperand)
+    var operators = Vector.empty[Operator[Operand]]
+
+    def hasNextOperator: Boolean =
+      peekIsWithPossibleIndent(isOperator) ||
+        indentation > 0 && peekIs[TkNewline] && isOperator(peek(2))
+
+    def handleIndent(): Unit = {
+      val isIndented = openOptionalIndentation()
+      if (isIndented) indentation += 1
+    }
+
+    // Handling dedents at the end of each operator/operand allows complex expressions to fall back to lower indentation
+    // levels, for example:
+    //    1 +
+    //      2 + 3 +
+    //        4 * 5 +
+    //      6
+    def handleDedents(): Unit = {
+      if (indentation == 0) return
+      if (!peekIs[TkNewline] || !peekIs[TkDedent](2)) return
+
+      skip() // Newline
+      while (indentation > 0 && peekIs[TkDedent]) {
+        skip()
+        indentation -= 1
+      }
+    }
+
+    while (hasNextOperator) {
+      // Handle possible newline/indentation of the operator. `hasNextOperator` ensures that the newline is valid. Note
+      // that `handleIndent` cannot handle the newline in all cases because the newline might be valid without an
+      // indent.
+      consumeIf[TkNewline]
+      handleIndent()
+      operators :+= operator.getOrElse(return Failure)
+      handleDedents()
+
+      // Handle possible newline/indentation of the operand. We need to ensure that the newline doesn't terminate the
+      // expression. In the operator case, `hasNextOperator` covers it, but here we can report a nice error to the user.
+      if (peekIs[TkNewline]) {
+        if (indentation == 0 && !peekIs[TkIndent](2)) {
+          // TODO (syntax): Report error: Operand expected, but expression was terminated by a newline.
+          return Failure
+        }
+
+        // Note that, again, `handleIndent` cannot handle the newline in case it's not followed by an indent, so we
+        // need to skip it manually.
+        skip()
+        handleIndent()
+      }
+      operands :+= operand.getOrElse(return Failure)
+      handleDedents()
+    }
+
+    if (indentation > 0) {
+      reporter.report(ParserFeedback.TokenExpected[TkDedent](peek.position))
+      return Failure
+    }
+
+    (operands, operators).success
   }
 }
 

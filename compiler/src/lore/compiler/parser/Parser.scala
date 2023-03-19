@@ -303,67 +303,6 @@ trait Parser {
   }
 
   /**
-    * Collects results from `get` and `separator` in an alternating order as long as either is a success.
-    * [[collectSepSemantic]] backtracks `get` and `separator` because both are inherently exploratory.
-    *
-    * TODO (syntax): Share implementation with `collectSep`?
-    * TODO (syntax): Provide a variant without `get.backtrack` which will be useful for optimization in cases where
-    *                `get` is already state-conservative.
-    */
-  @StateConservative
-  def collectSepSemantic[A, B](
-    separator: => Result[B],
-    trailingSeparator: => Option[Result[B]] = None,
-  )(get: => Result[A]): (Vector[A], Vector[B]) = {
-    // TODO (syntax): This needs to be updated similarly to `collectSep`.
-    var elements = Vector.empty[A]
-    var separators = Vector.empty[B]
-    var ended = false
-
-    val nextElement: () => Boolean = () => get.backtrack match {
-      case Success(result) =>
-        elements :+= result
-        true
-      case Failure => false
-    }
-
-    val nextSeparator: (=> Result[B]) => Boolean = separator => separator.backtrack match {
-      case Success(result) =>
-        separators :+= result
-        true
-      case Failure => false
-    }
-
-    while (!ended) {
-      get.backtrack match {
-        case Success(result) =>
-          elements :+= result
-          separator.backtrack match {
-            case Success(result) => separators :+= result
-            case Failure => ended = true
-          }
-
-        case Failure => ended = true
-      }
-    }
-
-    trailingSeparator.foreach { trailingSeparator =>
-      trailingSeparator.backtrack match {
-        case Success(separator) => separators :+= result
-        case Failure => ???
-      }
-    }
-
-    if (allowTrailing) {
-      separator.backtrack match {
-        case Some(result) => separators :+= result
-        case None =>
-      }
-    }
-    (elements, separators)
-  }
-
-  /**
     * Collects `get` enclosed in the given opening and closing tokens with lookahead, separated by `separator`. An
     * optional indentation is allowed immediately after the opening token. Returns the collected elements and the
     * position from the opening to the closing token on success.
