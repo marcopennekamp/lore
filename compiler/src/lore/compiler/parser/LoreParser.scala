@@ -1,15 +1,27 @@
 package lore.compiler.parser
 
 import fastparse.ParserInput
-import lore.compiler.core.Fragment
+import lore.compiler.build.BuildApi
+import lore.compiler.core.{CompilerOptions, Fragment}
+import lore.compiler.feedback.{MemoReporter, Reporter}
+import lore.compiler.parser.lexer.Lexer
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.NamePathNode
+import lore.compiler.syntax.{TkEnd, Token}
 
 object LoreParser {
   /**
     * TODO (syntax): Document.
     */
-  def parse(input: String)(implicit fragment: Fragment): Option[ModuleNode] = new LoreParser(input).parse()
+  def parse(tokens: IndexedSeq[Token])(implicit fragment: Fragment, reporter: Reporter): Option[ModuleNode] = {
+    val parser = new LoreParser(tokens)
+    parser.parse() match {
+      case Success(result) => Some(result)
+      case Failure =>
+        reporter.report(parser.reporter.feedback)
+        None
+    }
+  }
 
   def main(args: Array[String]): Unit = {
     val source =
@@ -37,49 +49,52 @@ object LoreParser {
         |    module Holy
         |
         |""".stripMargin
-    parse(source)(Fragment("test_fragment", ParserInput.fromString(source)))
+
+    implicit val fragment: Fragment = Fragment("test_fragment", ParserInput.fromString(source))
+    implicit val reporter: MemoReporter = MemoReporter()
+    implicit val compilerOptions: CompilerOptions = CompilerOptions()
+
+    Lexer.tokenize(source).map(parse(_)) match {
+      case Some(result) => println(s"Result: $result")
+      case None => BuildApi.logCompilationFeedback(reporter, 0, 0)
+    }
   }
 }
-
-// TODO (syntax): Implement syntax error reporting with `reporter` and good error messages...
-//                However, we will need to collect errors in a result structure first (replacing `Option`) to support
-//                backtracking, which will require a minor or major parser rewrite because errors will have to be
-//                concatenated.
 
 /**
   * Implementation conventions:
   *   - Failed parsers may be stuck at an advanced [[Parser.offset]] and must be backtracked explicitly with
-  *     [[Parser.BooleanActionExtension.backtrack]] or [[Parser.OptionActionExtension.backtrack]]. Parsers that are
-  *     marked as [[Parser.StateConservative]] don't need to be backtracked even if they fail. This convention
-  *     improves performance by avoiding lots of saved offsets.
+  *     [[Parser.BooleanActionExtension.backtrack]] or [[Parser.ResultActionExtension.backtrack]]. Parsers that are
+  *     marked as [[Parser.StateConservative]] don't need to be backtracked even if they fail.
+  *   - A parser that returns a failure should usually report an error, unless otherwise stated (see for example
+  *     [[NameParser]]). Errors are backtracked together with the offset.
   */
-private class LoreParser(override val input: String)(override implicit val fragment: Fragment)
+private class LoreParser(override val tokens: IndexedSeq[Token])(override implicit val fragment: Fragment)
   extends Parser with DeclarationParser with AnnotationParser with TypeParameterParser with TypeParser
     with PrecedenceParser with NameParser
 {
-  def parse(): Option[ModuleNode] = {
+  def parse(): Result[ModuleNode] = {
     // TODO (syntax): The top module declaration needs some special handling, as a `module X` declaration is only a top
     //                module if it has no body. So we have to get a `module()`, check if it has a body, and if it has,
     //                it's actually not a top module but the first module member!
-    val startIndex = offset
-    blankLines()
-    println(s"Consumed whitespace and blank lines until offset $offset.")
-    val result = moduleDeclarationBody(0).map { case (imports, members) =>
-      ModuleNode(NamePathNode.empty, atRoot = false, imports, members, createPositionFrom(startIndex))
+    val startToken = peek
+    val result = moduleDeclarationBody().map { case (imports, members) =>
+      val position = startToken.position.to(
+        members.lastOption.map(_.position)
+          .orElse(imports.lastOption.map(_.position))
+          .getOrElse(startToken.position)
+      )
+      ModuleNode(NamePathNode.empty, atRoot = false, imports, members, position)
     }
-    println(s"End position: ${fragment.input.prettyIndex(offset)}")
-    println(s"Peek char: `$peek`")
-    println(s"Peek line: ${input.substring(offset).takeWhile(_ != '\n')}")
-
-    wl()
-
+    println(s"End position: ${peek.position}")
+    println(s"Peek token: `$peek`")
     println(s"Parser result: $result")
 
-    result.filter { _ =>
-      if (peek != EOF) {
-        println("ERROR: Parser did not read the whole file!")
-        false
-      } else true
+    if (!peekIs[TkEnd]) {
+      // TODO (syntax): Report error: Parser did not read whole file.
+      println("ERROR: Parser did not read the whole file!")
+      return Failure
     }
+    result
   }
 }
