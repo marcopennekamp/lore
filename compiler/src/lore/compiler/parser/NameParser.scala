@@ -2,7 +2,7 @@ package lore.compiler.parser
 
 import lore.compiler.core.Position
 import lore.compiler.syntax.Node.{NameNode, NamePathNode}
-import lore.compiler.syntax.{TkDot, TkIdentifier, TkPlus}
+import lore.compiler.syntax.{TkDot, TkIdentifier, TkPlus, Token}
 
 import scala.collection.mutable
 
@@ -16,11 +16,7 @@ trait NameParser { _: Parser =>
     * A type name might be composed of several connected [[TkIdentifier]] and [[TkPlus]] tokens.
     */
   def typeName(): Result[NameNode] = {
-    val connectedTokens = collectConnectedTokens {
-      case _: TkIdentifier => true
-      case _: TkPlus => true
-      case _ => false
-    }
+    val connectedTokens = collectConnectedTokens(isTypeNameStart)
     if (connectedTokens.isEmpty) return Failure
 
     val stringBuilder = new mutable.StringBuilder()
@@ -40,6 +36,11 @@ trait NameParser { _: Parser =>
   def namePath(): Result[NamePathNode] = genericNamePath(name())
 
   def typeNamePath(): Result[NamePathNode] = genericNamePath(typeName())
+
+  def isTypeNameStart(token: Token): Boolean = token match {
+    case _: TkIdentifier | _: TkPlus => true
+    case _ => false
+  }
 
   private def genericNamePath(name: => Result[NameNode]): Result[NamePathNode] = {
     val names = collectSepBacktrack(consumeIf[TkDot]) { name }

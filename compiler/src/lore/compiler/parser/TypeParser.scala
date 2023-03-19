@@ -37,7 +37,10 @@ trait TypeParser { _: Parser with PrecedenceParser with NameParser =>
     case _: TkParenLeft => tupleType()
     case _: TkBracketLeft => listType()
     case _: TkShapeStart => shapeType()
-    case _ => namedOrInstantiatedType()
+    case token if isTypeNameStart(token) => namedOrInstantiatedType()
+    case _ =>
+      // TODO (syntax): Report error: Type expected.
+      Failure
   }
 
   private def namedOrInstantiatedType(): Result[TypeExprNode] = {
