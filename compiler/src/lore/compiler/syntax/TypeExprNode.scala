@@ -8,7 +8,9 @@ import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNo
   */
 sealed trait TypeExprNode extends Node
 object TypeExprNode {
-  case class TypeNameNode(namePathNode: NamePathNode, position: Position) extends TypeExprNode with PathNamedNode
+  case class TypeNameNode(namePathNode: NamePathNode) extends TypeExprNode with PathNamedNode {
+    override def position: Position = namePathNode.position
+  }
   case class InstantiatedTypeNode(typeNameNode: TypeNameNode, arguments: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class SymbolTypeNode(name: String, position: Position) extends TypeExprNode
   case class SumTypeNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode

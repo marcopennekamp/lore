@@ -129,6 +129,12 @@ trait Parser {
   def peekIsWithPossibleDedent(isToken: Token => Boolean): Boolean =
     isToken(peek) || peekIs[TkDedent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkDedent](2) && isToken(peek(3))
 
+  def bracketEnclosure[A](get: => Result[A]): Result[(A, Position)] =
+    encloseWithOptionalIndentation[A, TkBracketLeft, TkBracketRight](_ => get)
+
+  def parenList[A](get: => Result[A]): Result[(Vector[A], Position)] =
+    collectSepEnclosedWithOptionalIndentation[A, TkParenLeft, TkParenRight](consumeIf[TkComma]) { get }
+
   def bracketList[A](get: => Result[A]): Result[(Vector[A], Position)] =
     collectSepEnclosedWithOptionalIndentation[A, TkBracketLeft, TkBracketRight](consumeIf[TkComma]) { get }
 

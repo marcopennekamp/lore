@@ -1,113 +1,94 @@
 package lore.compiler.parser
 
-import lore.compiler.syntax.TypeExprNode
-import lore.compiler.syntax.TypeExprNode.{InstantiatedTypeNode, ListTypeNode, ShapeTypeNode, ShapeTypePropertyNode, SymbolTypeNode, TupleTypeNode, TypeNameNode}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
-import scalaz.Scalaz.ToOptionIdOps
+import lore.compiler.core.Position
+import lore.compiler.parser.PrecedenceParser.XaryOperator
+import lore.compiler.syntax.TypeExprNode._
+import lore.compiler.syntax._
 
-trait TypeParser { _: Parser with PrecedenceParser with BasicParsers =>
-  def typing(indentation: Int): Option[TypeExprNode] = {
-    if (!character(':')) return None
-    ws()
-    typeExpression(indentation)
+trait TypeParser { _: Parser with PrecedenceParser with NameParser =>
+  def typing(): Result[TypeExprNode] = {
+    if (!consumeIf[TkColon]) {
+      // TODO (syntax): Report error: Typing colon expected.
+      return Failure
+    }
+    typeExpression()
   }
 
-  def typeExpression(indentation: Int): Option[TypeExprNode] = {
-    import PrecedenceParser._
-
-    def operator() = {
-      if (character('|')) XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode).some
-      else if (character('&')) XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode).some
-      else if (word("=>")) XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction).some
-      else None
+  def typeExpression(): Result[TypeExprNode] = {
+    def isOperator(token: Token) = token match {
+      case TkTypeOr(_) | TkTypeAnd(_) | TkArrow(_) => true
+      case _ => false
     }
 
-    parseOperationWithPrecedence(
-      indentation,
-      operator,
-      () => typeAtom(indentation),
-    )
-  }
-
-  def typeAtom(indentation: Int): Option[TypeExprNode] = peek match {
-    case '#' => symbolType()
-    case '(' => tupleType(indentation).backtrack | enclosedType(indentation)
-    case '[' => listType(indentation)
-    case '%' => shapeType(indentation)
-    case _ => instantiatedType(indentation).backtrack | namedType()
-  }
-
-  def symbolType(): Option[SymbolTypeNode] = {
-    withPosition(character('#') &> identifier()).map(SymbolTypeNode.tupled)
-  }
-
-  def namedType(): Option[TypeNameNode] = withPosition(typeNamePath()).map(TypeNameNode.tupled)
-
-  def instantiatedType(indentation: Int): Option[InstantiatedTypeNode] = {
-    val startOffset = offset
-
-    val typeName = namedType().getOrElse(return None)
-    ws()
-    val typeArgs = typeArguments(indentation).getOrElse(return None)
-
-    InstantiatedTypeNode(typeName, typeArgs, createPositionFrom(startOffset)).some
-  }
-
-  /**
-    * The parser for tuple types doesn't support 1-tuples with a syntax `(A)`, because this would clash with the
-    * `enclosedType` parser. However, we still want to be able to parse function types that work on single tuple
-    * arguments. The syntax `(Int, Int) => Int` would create a function type with two arguments, so we need a special
-    * syntax. The solution is to parse `((Int, Int))` as a *nested* tuple.
-    */
-  def tupleType(indentation: Int): Option[TupleTypeNode] = {
-    val startIndex = offset
-    if (!character('(')) return None
-
-    def nested() = {
-      (tupleType(indentation).map(Vector(_)) <* wlmi(indentation)) <& character(')')
-    }
-
-    def standard() = {
-      val elements = collectSepWlmi(character(','), indentation, allowTrailing = true) {
-        typeExpression(indentation)
+    def operator = {
+      consume() match {
+        case TkTypeOr(_) => XaryOperator[TypeExprNode](1, TypeExprNode.SumTypeNode).success
+        case TkTypeAnd(_) => XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionTypeNode).success
+        case TkArrow(_) => XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction).success
+        case _ => Failure
       }
-      elements.takeMinSize(2) <& character(')')
     }
 
-    ws()
-    val elements = if (character(')')) Some(Vector.empty) else nested().backtrack | standard()
-    elements.map(TupleTypeNode(_, createPositionFrom(startIndex)))
+    parseOperationWithPrecedence(isOperator, operator, typeAtom())
   }
 
-  def listType(indentation: Int): Option[ListTypeNode] =
-    withPosition {
-      surroundWlmi(character('['), character(']'), indentation) {
-        typeExpression(indentation)
-      }
-    }.map(ListTypeNode.tupled)
+  private def typeAtom(): Result[TypeExprNode] = peek match {
+    case _: TkSymbol => symbolType()
+    case _: TkParenLeft => tupleType()
+    case _: TkBracketLeft => listType()
+    case _: TkShapeStart => shapeType()
+    case _ => namedOrInstantiatedType()
+  }
 
-  def shapeType(indentation: Int): Option[ShapeTypeNode] = {
-    def property: Option[ShapeTypePropertyNode] = {
-      val startOffset = offset
-      val propertyName = name().getOrElse(return None)
-      ws()
-      val propertyType = typing(indentation).getOrElse(return None)
-      ShapeTypePropertyNode(propertyName, propertyType, createPositionFrom(startOffset)).some
+  private def namedOrInstantiatedType(): Result[TypeExprNode] = {
+    val typeName = typeNamePath().map(TypeNameNode).getOrElse {
+      // TODO (syntax): Report error: Type name expected.
+      return Failure
     }
 
-    withPosition {
-      enclosedWlmi(word("%{"), character('}'), character(','), indentation) { property }
-    }.map(ShapeTypeNode.tupled)
+    if (peekIs[TkBracketLeft]) {
+      val (typeArgs, typeArgsPosition) = bracketList(typeExpression()).getOrElse(return Failure)
+      val position = Position(fragment, typeName.position.startIndex, typeArgsPosition.endIndex)
+      InstantiatedTypeNode(typeName, typeArgs, position).success
+    } else typeName.success
   }
 
-  def enclosedType(indentation: Int): Option[TypeExprNode] =
-    surroundWlmi(character('('), character(')'), indentation) {
-      typeExpression(indentation)
+  private def symbolType(): Result[SymbolTypeNode] =
+    consume[TkSymbol].map {
+      token => SymbolTypeNode(token.name, token.position)
     }
 
   /**
-    * Parses a non-empty list of type arguments.
+    * The parser for tuple types doesn't parse enclosed types with a syntax `(A)` as tuples, because this would clash
+    * with the concept of an enclosed type. However, we still want to be able to parse function types that work on
+    * single tuple arguments. The syntax `(Int, Int) => Int` would create a function type with two arguments, so we need
+    * a special syntax. The solution is to parse `((Int, Int))` as a *nested* tuple.
     */
-  def typeArguments(indentation: Int): Option[Vector[TypeExprNode]] =
-    enclosedInBracketsWlmi(indentation, minSize = 1) { typeExpression(indentation) }
+  private def tupleType(): Result[TypeExprNode] =
+    parenList(typeExpression()).map {
+      case (Vector(elementType), _) if !elementType.isInstanceOf[TupleTypeNode] =>
+        // An enclosed type. The parentheses are not to create a tuple, but for syntactic convenience.
+        elementType
+
+      case (elementTypes, position) => TupleTypeNode(elementTypes, position)
+    }
+
+  private def listType(): Result[ListTypeNode] = bracketEnclosure(typeExpression()).map(ListTypeNode.tupled)
+
+  private def shapeType(): Result[ShapeTypeNode] =
+    collectSepEnclosedWithOptionalIndentation[
+      ShapeTypePropertyNode,
+      TkShapeStart,
+      TkBraceRight,
+    ](consumeIf[TkComma]) { shapeTypeProperty() }.map(ShapeTypeNode.tupled)
+
+  private def shapeTypeProperty(): Result[ShapeTypePropertyNode] = {
+    val propertyName = name().getOrElse {
+      // TODO (syntax): Report error: Shape type property name expected.
+      return Failure
+    }
+    val propertyType = typing().getOrElse(return Failure)
+    val position = propertyName.position.to(propertyType.position)
+    ShapeTypePropertyNode(propertyName, propertyType, position).success
+  }
 }
