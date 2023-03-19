@@ -129,8 +129,8 @@ trait Parser {
   def peekIsWithPossibleDedent(isToken: Token => Boolean): Boolean =
     isToken(peek) || peekIs[TkDedent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkDedent](2) && isToken(peek(3))
 
-  def closeBracket(): Result[TkBracketRight] =
-    consumeExpect[TkBracketRight](ParserFeedback.TokenExpected[TkBracketRight](peek.position))
+  def bracketList[A](get: => Result[A]): Result[(Vector[A], Position)] =
+    collectSepEnclosedWithOptionalIndentation[A, TkBracketLeft, TkBracketRight](consumeIf[TkComma]) { get }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Separators and collectors.
@@ -361,6 +361,41 @@ trait Parser {
       }
     }
     (elements, separators)
+  }
+
+  /**
+    * Collects `get` enclosed in the given opening and closing tokens with lookahead, separated by `separator`. An
+    * optional indentation is allowed immediately after the opening token. Returns the collected elements and the
+    * position from the opening to the closing token on success.
+    */
+  def collectSepEnclosedWithOptionalIndentation[
+    A,
+    OpeningToken <: Token,
+    ClosingToken <: Token,
+  ](
+    separator: => Boolean,
+  )(
+    get: => Result[A],
+  )(
+    implicit openingTag: ClassTag[OpeningToken],
+    closingTag: ClassTag[ClosingToken],
+  ): Result[(Vector[A], Position)] = {
+    val openingToken = consumeExpect[OpeningToken].getOrElse(return Failure)
+    val isIndented = openOptionalIndentation()
+
+    def hasNext =
+      if (isIndented) peekIsWithPossibleDedent(peekIs[ClosingToken])
+      else peekIs[ClosingToken]
+
+    val results = collectSepLookahead(
+      !hasNext,
+      separatorNl(separator, allowNewline = isIndented),
+    ) { get }.getOrElse(return Failure)
+
+    if (isIndented) closeIndentation().getOrElse(return Failure)
+    val closingToken = consumeExpect[ClosingToken].getOrElse(return Failure)
+
+    (results, openingToken.position.to(closingToken.position)).success
   }
 
   /**

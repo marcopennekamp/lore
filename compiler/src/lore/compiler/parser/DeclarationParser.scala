@@ -77,23 +77,15 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       return Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, position)).success
     }
 
-    consume() match {
+    peek match {
       case underscore@TkUnderscore(_) =>
+        skip()
         val position = tkUse.position.to(underscore.position)
         Vector(DeclNode.ImportNode(prefixPath, isWildcard = true, position)).success
 
       case TkBracketLeft(_) =>
-        val isIndented = openOptionalIndentation()
-
-        val namePaths = collectSepLookahead(
-          !peekIs[TkBracketRight],
-          separatorNl(consumeIf[TkComma], allowNewline = isIndented),
-        )(namePath()).getOrElse(return Failure)
-
-        if (isIndented) closeIndentation().getOrElse(return Failure)
-        val closingBracket = closeBracket().getOrElse(return Failure)
-
-        val position = tkUse.position.to(closingBracket.position)
+        val (namePaths, listPosition) = bracketList(namePath()).getOrElse(return Failure)
+        val position = tkUse.position.to(listPosition.position)
         namePaths.map { suffixPath =>
           // TODO (syntax): As noted in the TODO, this desugaring of list imports is wrong. Keep in mind that we will
           //                have to change the node here.
