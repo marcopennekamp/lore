@@ -303,41 +303,6 @@ trait Parser {
   }
 
   /**
-    * Collects `get` enclosed in the given opening and closing tokens with lookahead, separated by `separator`. An
-    * optional indentation is allowed immediately after the opening token. Returns the collected elements and the
-    * position from the opening to the closing token on success.
-    */
-  def collectSepEnclosedWithOptionalIndentation[
-    A,
-    OpeningToken <: Token,
-    ClosingToken <: Token,
-  ](
-    separator: => Boolean,
-  )(
-    get: => Result[A],
-  )(
-    implicit openingTag: ClassTag[OpeningToken],
-    closingTag: ClassTag[ClosingToken],
-  ): Result[(Vector[A], Position)] = {
-    val openingToken = consumeExpect[OpeningToken].getOrElse(return Failure)
-    val isIndented = openOptionalIndentation()
-
-    def hasNext =
-      if (isIndented) peekIsWithPossibleDedent(peekIs[ClosingToken])
-      else peekIs[ClosingToken]
-
-    val results = collectSepLookahead(
-      !hasNext,
-      separatorNl(separator, allowNewline = isIndented),
-    ) { get }.getOrElse(return Failure)
-
-    if (isIndented) closeIndentation().getOrElse(return Failure)
-    val closingToken = consumeExpect[ClosingToken].getOrElse(return Failure)
-
-    (results, openingToken.position.to(closingToken.position)).success
-  }
-
-  /**
     * Collects tokens allowed by `isAllowed` as long as the current token and the next token are directly adjacent by
     * index. [[collectConnectedTokens]] is sensitive to whitespace in the sense that it compares raw indices. Its use
     * should be limited to cases where the lexer should have created a single token, but wasn't able to due to missing
@@ -356,6 +321,64 @@ trait Parser {
           }
         case _ => None
       }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Enclosures.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * Encloses `get` in the given opening and closing tags. An optional indentation is allowed immediately after the
+    * opening token. On success, returns the result and the position from the opening to the closing token.
+    *
+    * @param get `Boolean` informs whether an indentation section has been opened for the enclosure.
+    */
+  def encloseWithOptionalIndentation[
+    A,
+    OpeningToken <: Token,
+    ClosingToken <: Token,
+  ](
+    get: Boolean => Result[A],
+  )(
+    implicit openingTag: ClassTag[OpeningToken],
+    closingTag: ClassTag[ClosingToken],
+  ): Result[(A, Position)] = {
+    val openingToken = consumeExpect[OpeningToken].getOrElse(return Failure)
+    val isIndented = openOptionalIndentation()
+
+    val result = get(isIndented).getOrElse(return Failure)
+
+    if (isIndented) closeIndentation().getOrElse(return Failure)
+    val closingToken = consumeExpect[ClosingToken].getOrElse(return Failure)
+
+    (result, openingToken.position.to(closingToken.position)).success
+  }
+
+  /**
+    * Collects `get` enclosed in the given opening and closing tokens with lookahead, separated by `separator`. An
+    * optional indentation is allowed immediately after the opening token. On success, returns the collected elements
+    * and the position from the opening to the closing token on success.
+    */
+  def collectSepEnclosedWithOptionalIndentation[
+    A,
+    OpeningToken <: Token,
+    ClosingToken <: Token,
+  ](
+    separator: => Boolean,
+  )(
+    get: => Result[A],
+  )(
+    implicit openingTag: ClassTag[OpeningToken],
+    closingTag: ClassTag[ClosingToken],
+  ): Result[(Vector[A], Position)] =
+    encloseWithOptionalIndentation[Vector[A], OpeningToken, ClosingToken] { isIndented =>
+      def hasNext =
+        if (isIndented) peekIsWithPossibleDedent(peekIs[ClosingToken])
+        else peekIs[ClosingToken]
+
+      collectSepLookahead(
+        !hasNext,
+        separatorNl(separator, allowNewline = isIndented),
+      )(get)
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
