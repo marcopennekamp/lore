@@ -62,7 +62,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       moduleMember()
     }.getOrElse(return Failure)
 
-    (imports.flatten, members).success
+    (imports.flatten, members.flatten).success
   }
 
   private def moduleImport(tkUse: TkUse): Result[Vector[ImportNode]] = {
@@ -99,39 +99,45 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     }
   }
 
-  private def moduleMember(): Result[DeclNode] = {
+  private def moduleMember(): Result[Vector[DeclNode]] = {
     val memberAnnotations = annotations().getOrElse(return Failure)
 
-    def declarationExpected(expectation: Option[String], position: Position): Result[Nothing] = {
-      reporter.report(ParserFeedback.Declarations.DeclarationExpected(expectation, position))
-      Failure
-    }
-
     // At this point, since annotations have been parsed, the next token must be the declaration keyword.
-    peek match {
-      case TkModule(_) => moduleDeclaration(memberAnnotations)
-      case TkType(_) => aliasDeclaration(memberAnnotations)
-      case TkTrait(_) => traitDeclaration(memberAnnotations)
+    moduleMemberSingle(memberAnnotations).backtrack.map(Vector(_)) | moduleMemberMulti(memberAnnotations)
+  }
 
-      case token: TkStruct =>
-        structDeclaration(memberAnnotations) |
-          aliasDeclaration(memberAnnotations) |
-          declarationExpected("struct or struct alias".some, token.position)
+  private def moduleMemberSingle(annotations: Vector[AnnotationNode]): Result[DeclNode] = peek match {
+    case TkModule(_) => moduleDeclaration(annotations)
+    case TkType(_) => aliasDeclaration(annotations)
+    case TkTrait(_) => traitDeclaration(annotations)
 
-      case TkSpec(_) => specDeclaration(memberAnnotations)
+    case token: TkStruct =>
+      structDeclaration(annotations) |
+        aliasDeclaration(annotations) |
+        failDeclarationExpected("struct or struct alias".some, token.position)
 
-      case token: TkObject =>
-        objectDeclaration(memberAnnotations) |
-          aliasDeclaration(memberAnnotations) |
-          declarationExpected("object or object alias".some, token.position)
+    case TkSpec(_) => specDeclaration(annotations)
 
-      case TkLet(_) => globalVariableDeclaration(memberAnnotations)
-      case TkFunc(_) => functionDeclaration(memberAnnotations)
-      case TkProc(_) => procedureDeclaration(memberAnnotations)
-      case TkDomain(_) => domainDeclaration(memberAnnotations)
+    case token: TkObject =>
+      objectDeclaration(annotations) |
+        aliasDeclaration(annotations) |
+        failDeclarationExpected("object or object alias".some, token.position)
 
-      case token => declarationExpected(None, token.position)
-    }
+    case TkLet(_) => globalVariableDeclaration(annotations)
+    case TkFunc(_) => functionDeclaration(annotations)
+    case TkProc(_) => procedureDeclaration(annotations)
+
+    case _ => Failure // This failure will be backtracked to try `moduleMemberMulti`.
+  }
+
+  private def moduleMemberMulti(annotations: Vector[AnnotationNode]): Result[Vector[DeclNode]] = peek match {
+    case TkDomain(_) => domainDeclaration(annotations)
+    case token => failDeclarationExpected(None, token.position)
+  }
+
+  private def failDeclarationExpected(expectation: Option[String], position: Position): Result[Nothing] = {
+    reporter.report(ParserFeedback.Declarations.DeclarationExpected(expectation, position))
+    Failure
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
