@@ -161,32 +161,26 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       // TODO (syntax): Report error: Alias name expected.
       return Failure
     }
-
-    val typeParameters = if (peekIs[TkBracketLeft]) {
-      bracketList(simpleTypeParameter()).havingMinSize(1).discardPosition.getOrElse(return Failure)
-    } else Vector.empty
-
+    val typeParameters = parseTypeParameters(simpleTypeParameter).discardPosition.getOrElse(return Failure)
     consumeExpect[TkEquals].getOrElse(return Failure)
+
     val bodyType = typeExpression().getOrElse(return Failure)
     AliasNode(name, variant, typeParameters, bodyType, startToken.position.to(bodyType)).success
   }
 
   private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {
-    // ...
-
     checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
-//    val startIndex = offset
-//    if (!word("trait") || !ws()) return None
-//
-//    val traitName = typeName().getOrElse(return None)
-//    ws()
-//    val typeParameters =
-//      optionalEnclosedInBracketsWlmi(indentation, minSize = 1)(traitTypeParameter()).getOrElse(return None)
-//    val extendedTypes = extendsClause(indentation).backtrack.getOrElse(Vector.empty)
-//
-//    TraitNode(traitName, typeParameters, extendedTypes, createPositionFrom(startIndex)).some
-    ???
+    val startToken = consumeExpect[TkTrait].getOrElse(return Failure)
+    val name = typeName().getOrElse {
+      // TODO (syntax): Report error: Trait name expected.
+      return Failure
+    }
+    val (typeParameters, typeParametersPosition) = parseTypeParameters(traitTypeParameter).getOrElse(return Failure)
+    val extendedTypes = parseExtends().getOrElse(return Failure)
+
+    val position = startToken.position.toEither(extendedTypes.lastOption, typeParametersPosition, name.position)
+    TraitNode(name, typeParameters, extendedTypes, position).success
   }
 
   private def structDeclaration(annotations: Vector[AnnotationNode]): Result[StructNode] = {
@@ -225,6 +219,17 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
 //    //collectSepWlgi(character(','), indentation)(typeExpression(indentation)).takeNonEmpty
 //    ???
 //  }
+
+  private def parseTypeParameters(
+    parseTypeParameter: () => Result[TypeVariableNode],
+  ): Result[(Vector[TypeVariableNode], Option[Position])] = {
+    if (!peekIs[TkBracketLeft]) return (Vector.empty, None).success
+    bracketList(parseTypeParameter()).havingMinSize(1).map {
+      case (elements, position) => (elements, position.some)
+    }
+  }
+
+  private def parseExtends(): Result[Vector[TypeExprNode]] = ???
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Global variables.

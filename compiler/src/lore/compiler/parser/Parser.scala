@@ -508,4 +508,8 @@ trait Parser {
   implicit class ResultWithPositionExtension[A](result: Result[(A, Position)]) {
     def discardPosition: Result[A] = result.map(_._1)
   }
+
+  implicit class ResultWithPositionOptionExtension[A](result: Result[(A, Option[Position])]) {
+    def discardPosition: Result[A] = result.map(_._1)
+  }
 }
