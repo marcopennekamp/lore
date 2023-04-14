@@ -22,6 +22,8 @@ object CollectionExtensions {
       case (result, value) => result :+ value
     }
 
+    def findType[T <: A](implicit tag: ClassTag[T]): Option[T] = vector.find(_.isInstanceOf[T]).asInstanceOf[Option[T]]
+
     def separateByType[T <: A](implicit tag: ClassTag[T]): (Vector[A], Vector[T]) = {
       var as = Vector.empty[A]
       var ts = Vector.empty[T]

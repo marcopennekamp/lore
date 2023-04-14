@@ -7,6 +7,7 @@ import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax._
 import lore.compiler.types.AliasSchema.AliasVariant
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Scalaz.ToOptionIdOps
 
 import scala.collection.mutable
@@ -253,52 +254,60 @@ trait DeclarationParser {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def functionDeclaration(annotations: Vector[AnnotationNode]): Result[FunctionNode] =
     functionLikeDeclaration(
-      keyword ="func",
+      parseKeyword = () => consumeExpect[TkFunc],
+      parseBodyMarker = () => consumeIf[TkEquals],
       None,
-      bodyMarker = "=",
-      indentation,
+      annotations,
     )
 
-  private def procedureDeclaration(annotations: Vector[AnnotationNode]): Result[FunctionNode] = {
-    val startIndex = offset
+  private def procedureDeclaration(annotations: Vector[AnnotationNode]): Result[FunctionNode] =
     functionLikeDeclaration(
-      keyword = "proc",
-      Some(TupleTypeNode(Vector.empty, createPositionFrom(startIndex))), // TODO (syntax): Not the most ideal position.
-      bodyMarker = "do",
-      indentation,
+      parseKeyword = () => consumeExpect[TkProc],
+      parseBodyMarker = () => consumeIf[TkDo],
+      Some(TupleTypeNode(Vector.empty, Position.internal)),
+      annotations,
     )
-  }
 
   private def functionLikeDeclaration(
-    keyword: String,
+    parseKeyword: () => Result[Token],
+    parseBodyMarker: () => Boolean,
     forcedReturnType: Option[TypeExprNode],
-    bodyMarker: String,
-    indentation: Int,
-  ): Option[FunctionNode] = {
-    val startIndex = offset
+    annotations: Vector[AnnotationNode],
+  ): Result[FunctionNode] = {
+    checkAnnotationValidity(annotations) {
+      case _: WhereAnnotationNode => true
+      case _ => false
+    }.getOrElse(return Failure)
 
-    val maybeWhereAnnotation = whereAnnotation(indentation).backtrack
+    val maybeWhereAnnotation = annotations.findType[WhereAnnotationNode]
 
-    if (!word(keyword) || !ws()) return None
-    val functionName = name().getOrElse(return None)
-    ws()
-    val parameters = functionParameterList(indentation).getOrElse(return None)
-    ws()
-    val returnType = forcedReturnType match {
-      case Some(node) => node
-      case None => typing(indentation).getOrElse(return None)
+    val startKeyword = parseKeyword().getOrElse(return Failure)
+    val functionName = name().getOrElse {
+      // TODO (syntax): Report error: Function name expected.
+      return Failure
     }
-    val typeParameters = maybeWhereAnnotation match {
-      case Some(typeParameters) => typeParameters
-      case None => (ws() &> inlineWhere()).backtrack.getOrElse(Vector.empty)
+    val (parameters, parametersPosition) = parenList(functionParameter()).getOrElse(return Failure)
+    val returnType = forcedReturnType.getOrElse {
+      typing().getOrElse(return Failure)
+    }
+    val typeParameters = maybeWhereAnnotation.map(_.typeParameters).getOrElse {
+      inlineWhere().backtrack.getOrElse(Vector.empty)
     }
 
-    ws()
-    if (!word(bodyMarker)) return None
-    ws()
-    if (!word("TODO")) return None
+    val hasBodyMarker = parseBodyMarker()
+    val body = if (hasBodyMarker) {
+      // TODO (syntax): We need to open a block right away for procs, but functions should be able to get away with an
+      //                expression on the same line...
+      parseExpression().getOrElse(return Failure).some
+    } else None
 
-    FunctionNode(functionName, parameters, returnType, typeParameters, None, createPositionFrom(startIndex)).some
+    val position = startKeyword.position.toEither(
+      body,
+      typeParameters.lastOption,
+      // We should only use the return type's position if it exists in the source code.
+      if (forcedReturnType.isEmpty) returnType else parametersPosition,
+    )
+    FunctionNode(functionName, parameters, returnType, typeParameters, body, position).success
   }
 
   /**
@@ -338,7 +347,7 @@ trait DeclarationParser {
     ???
   }
 
-  private def functionParameter(indentation: Int): Option[ParameterNode] = {
+  private def functionParameter(): Result[ParameterNode] = {
     val startIndex = offset
 
     def named(): Option[ParameterNode] = for {
@@ -352,9 +361,6 @@ trait DeclarationParser {
 
     named().backtrack orElse unnamed()
   }
-
-  private def functionParameterList(indentation: Int): Option[Vector[ParameterNode]] =
-    enclosedInParenthesesWlmi(indentation) { functionParameter(indentation) }
 
   private def inlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {
     if (!consumeIf[TkWhere]) {
