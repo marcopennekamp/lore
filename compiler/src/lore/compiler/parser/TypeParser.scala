@@ -91,7 +91,7 @@ trait TypeParser { _: Parser with PrecedenceParser with NameParser =>
       return Failure
     }
     val propertyType = typing().getOrElse(return Failure)
-    val position = propertyName.position.to(propertyType.position)
+    val position = propertyName.position.to(propertyType)
     ShapeTypePropertyNode(propertyName, propertyType, position).success
   }
 }

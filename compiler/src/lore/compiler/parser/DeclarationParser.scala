@@ -50,7 +50,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     }
 
     val lastNode = members.lastOption.orElse(imports.lastOption).getOrElse(moduleName)
-    ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode.position)).success
+    ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode)).success
   }
 
   def moduleDeclarationBody(): Result[(Vector[ImportNode], Vector[DeclNode])] = {
@@ -74,7 +74,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
 
     val isSpecialImport = consumeIf[TkDot]
     if (!isSpecialImport) {
-      val position = tkUse.position.to(prefixPath.position)
+      val position = tkUse.position.to(prefixPath)
       return Vector(DeclNode.ImportNode(prefixPath, isWildcard = false, position)).success
     }
 
@@ -86,7 +86,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
 
       case TkBracketLeft(_) =>
         val (namePaths, listPosition) = bracketList(namePath()).getOrElse(return Failure)
-        val position = tkUse.position.to(listPosition.position)
+        val position = tkUse.position.to(listPosition)
         namePaths.map { suffixPath =>
           // TODO (syntax): As noted in the TODO, this desugaring of list imports is wrong. Keep in mind that we will
           //                have to change the node here.
@@ -168,7 +168,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
 
     consumeExpect[TkEquals].getOrElse(return Failure)
     val bodyType = typeExpression().getOrElse(return Failure)
-    AliasNode(name, variant, typeParameters, bodyType, startToken.position.to(bodyType.position)).success
+    AliasNode(name, variant, typeParameters, bodyType, startToken.position.to(bodyType)).success
   }
 
   private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {

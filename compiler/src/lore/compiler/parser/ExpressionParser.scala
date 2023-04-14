@@ -28,7 +28,7 @@ trait ExpressionParser { _: Parser =>
         Failure
 
       case Vector(expression) => expression.success
-      case _ => ConcatenationNode(expressions, startPosition.to(expressions.last.position)).success
+      case _ => ConcatenationNode(expressions, startPosition.to(expressions.last)).success
     }
   }
 

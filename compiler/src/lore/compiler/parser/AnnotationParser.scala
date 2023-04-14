@@ -57,7 +57,7 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser =>
         return Failure
       }
 
-      WhereAnnotationNode(typeParameters, annotationHead.position.to(typeParameters.last.position)).success
+      WhereAnnotationNode(typeParameters, annotationHead.position.to(typeParameters.last)).success
     }
   }
 

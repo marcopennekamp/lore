@@ -79,11 +79,7 @@ private class LoreParser(override val tokens: IndexedSeq[Token])(override implic
     //                it's actually not a top module but the first module member!
     val startToken = peek
     val result = moduleDeclarationBody().map { case (imports, members) =>
-      val position = startToken.position.to(
-        members.lastOption.map(_.position)
-          .orElse(imports.lastOption.map(_.position))
-          .getOrElse(startToken.position)
-      )
+      val position = startToken.position.toEither(members.lastOption, imports.lastOption, startToken.position)
       ModuleNode(NamePathNode.empty, atRoot = false, imports, members, position)
     }
     println(s"End position: ${peek.position}")

@@ -40,13 +40,27 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) exte
   /**
     * Creates a new position that spans from the start index of this position to the end index of `end`.
     */
-  def to(end: Position): Position = {
-    if (this.fragment != end.fragment) {
+  def to(end: Positioned): Position = {
+    val endPosition = end.position
+    if (this.fragment != endPosition.fragment) {
       throw CompilationException(s"Cannot create a spanning position from $this to $end. The positions must be located" +
         s" in the same fragment!")
     }
-    Position(this.fragment, this.startIndex, end.endIndex)
+    Position(this.fragment, this.startIndex, endPosition.endIndex)
   }
+
+  /**
+    * Creates a new position that spans from the start index of this position to the end index of `end1`, or `end2` if
+    * the former doesn't exist.
+    */
+  def toEither(end1: Option[Positioned], end2: Positioned): Position = to(end1.getOrElse(end2).position)
+
+  /**
+    * Creates a new position that spans from the start index of this position to the end index of the first defined
+    * position out of `end1`, `end2`, or `end3`.
+    */
+  def toEither(end1: Option[Positioned], end2: Option[Positioned], end3: Positioned): Position =
+    to(end1.orElse(end2).getOrElse(end3).position)
 
   /**
     * Creates a new 0-length position that refers to the end of this position.

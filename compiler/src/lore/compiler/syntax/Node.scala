@@ -27,7 +27,7 @@ object Node {
     * The name path version of [[NameNode]].
     */
   case class NamePathNode(segments: Vector[NameNode]) extends Node {
-    val position: Position = if (segments.nonEmpty) segments.head.position.to(segments.last.position) else Position.unknown
+    val position: Position = if (segments.nonEmpty) segments.head.position.to(segments.last) else Position.unknown
     val simpleNameNode: NameNode = if (segments.nonEmpty) segments.last else NameNode("", position)
     val namePath: NamePath = NamePath(this)
   }

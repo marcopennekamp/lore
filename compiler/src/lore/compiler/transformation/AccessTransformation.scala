@@ -78,7 +78,7 @@ object AccessTransformation {
     lazy val simpleResult = Some((binding, fullPosition, remaining))
 
     def rec(binding: TermBinding) = {
-      resolveAccessInstanceBinding(binding, remaining.tail, nameNode.position, fullPosition.to(nameNode.position))
+      resolveAccessInstanceBinding(binding, remaining.tail, nameNode.position, fullPosition.to(nameNode))
     }
 
     def handleCompanionModule(binding: StructBinding) = {

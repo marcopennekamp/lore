@@ -44,7 +44,7 @@ trait TypeParameterParser { _: Parser with TypeParser with NameParser =>
       typeExpression().getOrElse(return Failure).some
     } else None
 
-    val position = startPosition.to(upperBound.orElse(lowerBound).getOrElse(name).position)
+    val position = startPosition.toEither(upperBound, lowerBound, name)
     TypeVariableNode(name, lowerBound, upperBound, variance, isOpen, position).success
   }
 
