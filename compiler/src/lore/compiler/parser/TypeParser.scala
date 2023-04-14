@@ -57,7 +57,7 @@ trait TypeParser { _: Parser with PrecedenceParser with NameParser =>
   }
 
   private def symbolType(): Result[SymbolTypeNode] =
-    consume[TkSymbol].map {
+    consumeExpect[TkSymbol].map {
       token => SymbolTypeNode(token.name, token.position)
     }
 
