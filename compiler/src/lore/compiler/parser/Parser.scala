@@ -482,4 +482,30 @@ trait Parser {
       */
     def |[B >: A](other: => Option[B]): Option[B] = option orElse other
   }
+
+  implicit class VectorResultExtension[A](result: Result[Vector[A]]) {
+    def havingMinSize(minSize: Int): Result[Vector[A]] = {
+      result.flatMap { elements =>
+        if (elements.size < minSize) {
+          // TODO (syntax): Report error: Expected at least `minSize` elements.
+          Failure
+        } else result
+      }
+    }
+  }
+
+  implicit class LeftVectorResultExtension[A, B](result: Result[(Vector[A], B)]) {
+    def havingMinSize(minSize: Int): Result[(Vector[A], B)] = {
+      result.flatMap { case (elements, _) =>
+        if (elements.size < minSize) {
+          // TODO (syntax): Report error: Expected at least `minSize` elements.
+          Failure
+        } else result
+      }
+    }
+  }
+
+  implicit class ResultWithPositionExtension[A](result: Result[(A, Position)]) {
+    def discardPosition: Result[A] = result.map(_._1)
+  }
 }

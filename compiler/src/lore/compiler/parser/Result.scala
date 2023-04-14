@@ -24,6 +24,7 @@ sealed trait Result[+A] {
 
   def getOrElse[B >: A](alternative: => B): B
   def map[B](f: A => B): Result[B]
+  def flatMap[B](f: A => Result[B]): Result[B]
 }
 
 case class Success[+A](value: A) extends Result[A] {
@@ -32,6 +33,7 @@ case class Success[+A](value: A) extends Result[A] {
 
   override def getOrElse[B >: A](alternative: => B): B = value
   override def map[B](f: A => B): Result[B] = Success(f(value))
+  override def flatMap[B](f: A => Result[B]): Result[B] = f(value)
 }
 
 object Success {
@@ -44,4 +46,5 @@ case object Failure extends Result[Nothing] {
 
   override def getOrElse[B >: Nothing](alternative: => B): B = alternative
   override def map[B](f: Nothing => B): Result[B] = Failure
+  override def flatMap[B](f: Nothing => Result[B]): Result[B] = Failure
 }
