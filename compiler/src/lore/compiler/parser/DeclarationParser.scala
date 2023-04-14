@@ -6,6 +6,7 @@ import lore.compiler.syntax.DeclNode._
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.TypeExprNode.TupleTypeNode
 import lore.compiler.syntax._
+import lore.compiler.types.AliasSchema.AliasVariant
 import scalaz.Scalaz.ToOptionIdOps
 
 import scala.collection.mutable
@@ -145,28 +146,29 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def aliasDeclaration(annotations: Vector[AnnotationNode]): Result[AliasNode] = {
     checkAnnotationsEmpty(annotations).getOrElse(return Failure)
-    Failure
 
-//    val startIndex = offset
-//    val aliasVariant =
-//      if (word("type")) AliasVariant.Type
-//      else if (word("struct")) AliasVariant.Struct
-//      else if (word("object")) AliasVariant.Object
-//      else return None
-//
-//    if (!ws()) return None
-//    val aliasName = typeName().getOrElse(return None)
-//    ws()
-//    val typeParameters =
-//      optionalEnclosedInBracketsWlmi(indentation, minSize = 1)(simpleTypeParameter()).getOrElse(return None)
-//    ws()
-//    if (!character('=')) return None
-//
-//    // The type expression may be defined in an indentation block, or otherwise on the same line.
-//    val bodyIndentation = indentOrWs(indentation)
-//    val aliasType = typeExpression(bodyIndentation).getOrElse(return None)
-//
-//    AliasNode(aliasName, aliasVariant, typeParameters, aliasType, createPositionFrom(startIndex)).some
+    val startToken = consume()
+    val variant = startToken match {
+      case TkType(_) => AliasVariant.Type
+      case TkStruct(_) => AliasVariant.Struct
+      case TkObject(_) => AliasVariant.Object
+      case _ =>
+        // TODO (syntax): Report error: Expected type, struct, or object keyword for alias declaration.
+        return Failure
+    }
+
+    val name = typeName().getOrElse {
+      // TODO (syntax): Report error: Alias name expected.
+      return Failure
+    }
+
+    val typeParameters = if (peekIs[TkBracketLeft]) {
+      bracketList(simpleTypeParameter()).havingMinSize(1).discardPosition.getOrElse(return Failure)
+    } else Vector.empty
+
+    consumeExpect[TkEquals].getOrElse(return Failure)
+    val bodyType = typeExpression().getOrElse(return Failure)
+    AliasNode(name, variant, typeParameters, bodyType, startToken.position.to(bodyType.position)).success
   }
 
   private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {
