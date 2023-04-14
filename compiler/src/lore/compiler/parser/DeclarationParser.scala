@@ -13,7 +13,8 @@ import scala.collection.mutable
 
 // TODO (syntax): We should probably move annotation checking to the `constraints` and `resolution` phases.
 
-trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterParser with TypeParser with NameParser =>
+trait DeclarationParser {
+  _: Parser with AnnotationParser with TypeParameterParser with TypeParser with ExpressionParser with NameParser =>
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,22 +234,18 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   private def globalVariableDeclaration(annotations: Vector[AnnotationNode]): Result[GlobalVariableNode] = {
     checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
-    val startIndex = offset
-    if (!word("let") || !ws()) return None
+    val letKeyword = consumeExpect[TkLet].getOrElse(return Failure)
+    val variableName = name().getOrElse {
+      // TODO (syntax): Report error: Global variable name expected.
+      return Failure
+    }
+    val variableType = typing().getOrElse(return Failure)
+    consumeExpect[TkEquals].getOrElse(return Failure)
 
-    val variableName = name().getOrElse(return None)
-    ws()
-    val variableType = typing(indentation).getOrElse(return None)
-    ws()
+    // TODO (syntax): We might have to open an optional block here in case there is an indentation...
+    val value = parseExpression().getOrElse(return Failure)
 
-    if (!character('=') <* ws() || !word("TODO")) return None
-
-    GlobalVariableNode(
-      variableName,
-      variableType,
-      ExprNode.TupleNode(Vector.empty, Position.unknown),
-      createPositionFrom(startIndex),
-    ).some
+    GlobalVariableNode(variableName, variableType, value, letKeyword.position.to(value)).success
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
