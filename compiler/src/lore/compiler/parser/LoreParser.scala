@@ -70,8 +70,8 @@ object LoreParser {
   *     [[NameParser]]). Errors are backtracked together with the offset.
   */
 private class LoreParser(override val tokens: IndexedSeq[Token])(override implicit val fragment: Fragment)
-  extends Parser with DeclarationParser with AnnotationParser with TypeParameterParser with TypeParser
-    with PrecedenceParser with NameParser
+  extends Parser with DeclarationParser with AnnotationParser with TypeParser with TypeParameterParser
+    with ExpressionParser with NameParser with PrecedenceParser
 {
   def parse(): Result[ModuleNode] = {
     // TODO (syntax): The top module declaration needs some special handling, as a `module X` declaration is only a top
