@@ -123,6 +123,13 @@ trait Parser {
     */
   def closeIndentation(): Result[TkDedent] = consumeExpect[TkDedent]
 
+  def withOptionalIndentation[A](f: Boolean => Result[A]): Result[A] = {
+    val isIndented = openOptionalIndentation()
+    val result = f(isIndented)
+    if (isIndented) closeIndentation().getOrElse(return Failure)
+    result
+  }
+
   def peekIsWithPossibleIndent(isToken: Token => Boolean): Boolean =
     isToken(peek) || peekIs[TkIndent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkIndent](2) && isToken(peek(3))
 

@@ -40,14 +40,10 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
       return Failure
     }
 
-    val isIndented = openOptionalIndentation()
-    val (imports, members) = if (isIndented) {
-      val importsAndMembers = moduleDeclarationBody().getOrElse(return Failure)
-      closeIndentation().getOrElse(return Failure)
-      importsAndMembers
-    } else {
-      (Vector.empty, Vector.empty)
-    }
+    val (imports, members) = withOptionalIndentation { isIndented =>
+      if (isIndented) moduleDeclarationBody()
+      else (Vector.empty, Vector.empty).success
+    }.getOrElse(return Failure)
 
     val lastNode = members.lastOption.orElse(imports.lastOption).getOrElse(moduleName)
     ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode)).success
@@ -147,8 +143,8 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
   private def aliasDeclaration(annotations: Vector[AnnotationNode]): Result[AliasNode] = {
     checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
-    val startToken = consume()
-    val variant = startToken match {
+    val startKeyword = consume()
+    val variant = startKeyword match {
       case TkType(_) => AliasVariant.Type
       case TkStruct(_) => AliasVariant.Struct
       case TkObject(_) => AliasVariant.Object
@@ -164,14 +160,14 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     val typeParameters = parseTypeParameters(simpleTypeParameter).discardPosition.getOrElse(return Failure)
     consumeExpect[TkEquals].getOrElse(return Failure)
 
-    val bodyType = typeExpression().getOrElse(return Failure)
-    AliasNode(name, variant, typeParameters, bodyType, startToken.position.to(bodyType)).success
+    val bodyType = withOptionalIndentation(_ => typeExpression()).getOrElse(return Failure)
+    AliasNode(name, variant, typeParameters, bodyType, startKeyword.position.to(bodyType)).success
   }
 
   private def traitDeclaration(annotations: Vector[AnnotationNode]): Result[TraitNode] = {
     checkAnnotationsEmpty(annotations).getOrElse(return Failure)
 
-    val startToken = consumeExpect[TkTrait].getOrElse(return Failure)
+    val traitKeyword = consumeExpect[TkTrait].getOrElse(return Failure)
     val name = typeName().getOrElse {
       // TODO (syntax): Report error: Trait name expected.
       return Failure
@@ -179,7 +175,7 @@ trait DeclarationParser { _: Parser with AnnotationParser with TypeParameterPars
     val (typeParameters, typeParametersPosition) = parseTypeParameters(traitTypeParameter).getOrElse(return Failure)
     val extendedTypes = parseExtends().getOrElse(return Failure)
 
-    val position = startToken.position.toEither(extendedTypes.lastOption, typeParametersPosition, name.position)
+    val position = traitKeyword.position.toEither(extendedTypes.lastOption, typeParametersPosition, name.position)
     TraitNode(name, typeParameters, extendedTypes, position).success
   }
 

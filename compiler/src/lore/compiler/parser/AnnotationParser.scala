@@ -80,19 +80,13 @@ trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser =>
     *
     * The boolean passed to `body` signifies whether an indentation section has been opened.
     */
-  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Result[A]): Result[A] = {
-    val isIndented = openOptionalIndentation()
-    val result = body(isIndented)
-
-    if (!consumeIf[TkNewline]) {
-      // TODO (syntax): Report error. (Newline expected at end of annotation.)
-      return Failure
+  private def annotationBodyWithOptionalIndentation[A](body: Boolean => Result[A]): Result[A] =
+    withOptionalIndentation { isIndented =>
+      val result = body(isIndented)
+      if (!consumeIf[TkNewline]) {
+        // TODO (syntax): Report error. (Newline expected at end of annotation.)
+        return Failure
+      }
+      result
     }
-
-    if (isIndented) {
-      closeIndentation().getOrElse(return Failure)
-    }
-
-    result
-  }
 }
