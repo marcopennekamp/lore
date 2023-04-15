@@ -384,18 +384,18 @@ trait DeclarationParser {
   }
 
   private def functionParameter(): Result[ParameterNode] = {
-    val startIndex = offset
-
-    def named(): Option[ParameterNode] = for {
-      parameterName <- name()
-      parameterType <- typing(indentation)
-    } yield ParameterNode(parameterName.some, parameterType, createPositionFrom(startIndex))
-
-    def unnamed(): Option[ParameterNode] = typing(indentation).map {
-      parameterType => ParameterNode(None, parameterType, createPositionFrom(startIndex))
+    // We need to peek at the second token because a `TkIdentifier` might also be or be part of a type expression. If
+    // there is a colon, it's clearly a typing of a parameter name. This then proves the first token to be a parameter
+    // name.
+    val hasParameterName = peekIs[TkIdentifier] && peekIs[TkColon](2)
+    if (hasParameterName) {
+      val parameterName = name().getOrElse(return Failure)
+      val parameterType = typing().getOrElse(return Failure)
+      ParameterNode(parameterName.some, parameterType, parameterName.position.to(parameterType)).success
+    } else {
+      val parameterType = typeExpression().getOrElse(return Failure)
+      ParameterNode(None, parameterType, parameterType.position).success
     }
-
-    named().backtrack orElse unnamed()
   }
 
   private def optionalInlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {

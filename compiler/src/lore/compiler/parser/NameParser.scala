@@ -10,6 +10,7 @@ import scala.collection.mutable
   * Callees are expected to report an error if a name parser fails.
   */
 trait NameParser { _: Parser =>
+  @StateConservative
   def name(): Result[NameNode] = consume[TkIdentifier].map(token => NameNode(token.value, token.position))
 
   /**
