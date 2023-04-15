@@ -11,7 +11,7 @@ import lore.compiler.syntax._
   */
 trait AnnotationParser { _: Parser with TypeParameterParser with TypeParser =>
   // TODO (syntax): Use named type arguments: https://dotty.epfl.ch/docs/reference/experimental/named-typeargs.html.
-  def annotations(): Result[Vector[AnnotationNode]] = collectLookaheadIs[AnnotationNode, TkAnnotation](annotation)
+  def parseAnnotations(): Result[Vector[AnnotationNode]] = collectLookaheadIs[AnnotationNode, TkAnnotation](annotation)
 
   private def annotation(annotationHead: TkAnnotation): Result[AnnotationNode] = {
     val result = annotationHead.name match {

@@ -14,6 +14,12 @@ import scala.collection.mutable
 
 // TODO (syntax): We should probably move annotation checking to the `constraints` and `resolution` phases.
 
+/**
+  * Convention: Module members need to take care of their own terminating newlines. Sometimes this is automatic, for
+  * example when a function's block body is terminated with a newline and leaves the next module member's starting token
+  * or the module declaration body's closing dedent in the token stream. But very often, the module member parser needs
+  * to handle this manually.
+  */
 trait DeclarationParser {
   _: Parser with AnnotationParser with TypeParameterParser with TypeParser with ExpressionParser with NameParser =>
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,10 +48,10 @@ trait DeclarationParser {
       return Failure
     }
 
-    val (imports, members) = withOptionalIndentation { isIndented =>
-      if (isIndented) moduleDeclarationBody()
-      else (Vector.empty, Vector.empty).success
-    }.getOrElse(return Failure)
+    val (imports, members) = whenIndented(
+      moduleDeclarationBody(),
+      (Vector.empty, Vector.empty),
+    ).getOrElse(return Failure)
 
     val lastNode = members.lastOption.orElse(imports.lastOption).getOrElse(moduleName)
     ModuleNode(moduleName, atRoot, imports, members, moduleKeyword.position.to(lastNode)).success
@@ -56,8 +62,11 @@ trait DeclarationParser {
       tkUse => moduleImport(tkUse)
     }.getOrElse(return Failure)
 
-    // If the next token is a dedent, the module body is finished. Otherwise, there must be another module member.
-    val members = collectSepLookahead(!peekIs[TkDedent], consumeIf[TkNewline]) {
+    // If the next token is a dedent, the module body is finished. Otherwise, there must be another module member. We
+    // cannot use `TkNewline` as a separator here, because some module members might already consume the newlines during
+    // parsing. For example, a function block body will terminate upon a newline and leave no `TkNewline` to consume for
+    // the separator.
+    val members = collectLookahead(!peekIs[TkDedent]) {
       moduleMember()
     }.getOrElse(return Failure)
 
@@ -99,10 +108,10 @@ trait DeclarationParser {
   }
 
   private def moduleMember(): Result[Vector[DeclNode]] = {
-    val memberAnnotations = annotations().getOrElse(return Failure)
+    val annotations = parseAnnotations().getOrElse(return Failure)
 
     // At this point, since annotations have been parsed, the next token must be the declaration keyword.
-    moduleMemberSingle(memberAnnotations).backtrack.map(Vector(_)) | moduleMemberMulti(memberAnnotations)
+    moduleMemberSingle(annotations).backtrack.map(Vector(_)) | moduleMemberMulti(annotations)
   }
 
   private def moduleMemberSingle(annotations: Vector[AnnotationNode]): Result[DeclNode] = peek match {
@@ -162,7 +171,16 @@ trait DeclarationParser {
     val typeParameters = parseTypeParameters(simpleTypeParameter).discardPosition.getOrElse(return Failure)
     consumeExpect[TkEquals].getOrElse(return Failure)
 
-    val bodyType = withOptionalIndentation(_ => typeExpression()).getOrElse(return Failure)
+    val bodyType = withOptionalIndentation { _ =>
+      val result = typeExpression()
+
+      // Regardless of indentation, the alias declaration must be terminated by a newline, and `typeExpression` is not
+      // going to consume the newline.
+      consumeExpect[TkNewline].getOrElse(return Failure)
+
+      result
+    }.getOrElse(return Failure)
+
     AliasNode(name, variant, typeParameters, bodyType, startKeyword.position.to(bodyType)).success
   }
 
@@ -176,6 +194,9 @@ trait DeclarationParser {
     }
     val (typeParameters, typeParametersPosition) = parseTypeParameters(traitTypeParameter).getOrElse(return Failure)
     val extendedTypes = parseExtends().getOrElse(return Failure)
+
+    // The trait declaration must be terminated with a newline.
+    consumeExpect[TkNewline].getOrElse(return Failure)
 
     val position = traitKeyword.position.toEither(extendedTypes.lastOption, typeParametersPosition, name.position)
     TraitNode(name, typeParameters, extendedTypes, position).success
@@ -243,7 +264,10 @@ trait DeclarationParser {
     val variableType = typing().getOrElse(return Failure)
     consumeExpect[TkEquals].getOrElse(return Failure)
 
-    // TODO (syntax): We might have to open an optional block here in case there is an indentation...
+    // TODO (syntax): We might have to open an optional block here in case there is an indentation... Also, if there is
+    //                no indentation, we probably need to consume the newline after the expression manually. Probably we
+    //                should encapsulate this in some function in `ExpressionParser`, like
+    //                `parseBlockOrExpressionWithNewline`, or some more concise name...
     val value = parseExpression().getOrElse(return Failure)
 
     GlobalVariableNode(variableName, variableType, value, letKeyword.position.to(value)).success
@@ -297,9 +321,15 @@ trait DeclarationParser {
     val hasBodyMarker = parseBodyMarker()
     val body = if (hasBodyMarker) {
       // TODO (syntax): We need to open a block right away for procs, but functions should be able to get away with an
-      //                expression on the same line...
+      //                expression on the same line... Same problem as in `globalVariableDeclaration`.
       parseExpression().getOrElse(return Failure).some
-    } else None
+    } else {
+      if (!consumeIf[TkNewline]) {
+        // TODO (syntax): Report error: An abstract function must be terminated by a newline.
+        return Failure
+      }
+      None
+    }
 
     val position = startKeyword.position.toEither(
       body,

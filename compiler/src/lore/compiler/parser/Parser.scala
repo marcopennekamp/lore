@@ -130,6 +130,14 @@ trait Parser {
     result
   }
 
+  def whenIndented[A](f: => Result[A], default: => A): Result[A] = {
+    val isIndented = openOptionalIndentation()
+    if (!isIndented) return default.success
+    val result = f
+    closeIndentation().getOrElse(return Failure)
+    result
+  }
+
   def peekIsWithPossibleIndent(isToken: Token => Boolean): Boolean =
     isToken(peek) || peekIs[TkIndent] && isToken(peek(2)) || peekIs[TkNewline] && peekIs[TkIndent](2) && isToken(peek(3))
 
@@ -268,26 +276,9 @@ trait Parser {
   /**
     * Collects results from `get` as long as it is a success, requiring a `separator` between each production. If a
     * `trailingSeparator` is specified, [[collectSepBacktrack]] attempts to consume `trailingSeparator` after the last
-    * element.
+    * element. [[collectSepBacktrack]] can be used if a lookahead is not feasible (see [[collectSepLookahead]]).
     *
     * [[collectSepBacktrack]] backtracks `get`, `separator`, and `trailingSeparator`.
-    *
-    * Backtracking `get` is for instance important when module declarations are collected. If `get` doesn't backtrack,
-    * an incomplete declaration `func ...` might lead to the `func` token being consumed, `get` returning `Recoverable`,
-    * and this incomplete declaration just being skipped. An invalid declaration might also be accidentally parsed as
-    * something else, for example:
-    *
-    * {{{
-    * module Functions
-    *   use module Test
-    *     func hello(): String = 'hello'
-    * }}}
-    *
-    * If the parser doesn't backtrack, `use` might be skipped and `module Test` might still be parsed as a member of
-    * module `Functions`. This is because module members are parsed sequentially after imports.
-    *
-    * TODO (syntax): Provide a variant without `get.backtrack` for better error support. (Only the separator will be
-    *                "exploratory", with errors reported in `get` going through to the parent parser.)
     */
   @StateConservative
   def collectSepBacktrack[A](
@@ -384,12 +375,12 @@ trait Parser {
     closingTag: ClassTag[ClosingToken],
   ): Result[(Vector[A], Position)] =
     encloseWithOptionalIndentation[Vector[A], OpeningToken, ClosingToken] { isIndented =>
-      def hasNext =
+      def isClosingTokenNext =
         if (isIndented) peekIsWithPossibleDedent(peekIs[ClosingToken])
         else peekIs[ClosingToken]
 
       collectSepLookahead(
-        !hasNext,
+        !isClosingTokenNext,
         separatorNl(separator, allowNewline = isIndented),
       )(get)
     }
