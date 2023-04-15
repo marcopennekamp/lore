@@ -298,12 +298,7 @@ trait DeclarationParser {
     forcedReturnType: Option[TypeExprNode],
     annotations: Vector[AnnotationNode],
   ): Result[FunctionNode] = {
-    checkAnnotationValidity(annotations) {
-      case _: WhereAnnotationNode => true
-      case _ => false
-    }.getOrElse(return Failure)
-
-    val maybeWhereAnnotation = annotations.findType[WhereAnnotationNode]
+    val maybeWhereAnnotation = checkAndExtractWhereAnnotation(annotations).getOrElse(return Failure)
 
     val startKeyword = parseKeyword().getOrElse(return Failure)
     val functionName = name().getOrElse {
@@ -315,7 +310,7 @@ trait DeclarationParser {
       typing().getOrElse(return Failure)
     }
     val typeParameters = maybeWhereAnnotation.map(_.typeParameters).getOrElse {
-      inlineWhere().backtrack.getOrElse(Vector.empty)
+      optionalInlineWhere().getOrElse(return Failure)
     }
 
     val hasBodyMarker = parseBodyMarker()
@@ -333,7 +328,8 @@ trait DeclarationParser {
 
     val position = startKeyword.position.toEither(
       body,
-      typeParameters.lastOption,
+      // We should only use the last type parameter if it comes from an inline where.
+      typeParameters.lastOption.filter(_ => maybeWhereAnnotation.isEmpty),
       // We should only use the return type's position if it exists in the source code.
       if (forcedReturnType.isEmpty) returnType else parametersPosition,
     )
@@ -343,38 +339,48 @@ trait DeclarationParser {
   /**
     * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
     */
-  def domainDeclaration(annotations: Vector[AnnotationNode]): Result[Vector[FunctionNode]] = {
-    checkAnnotationValidity(annotations) {
-      case _: WhereAnnotationNode => true
-      case _ => false
+  private def domainDeclaration(annotations: Vector[AnnotationNode]): Result[Vector[FunctionNode]] = {
+    val maybeWhereAnnotation = checkAndExtractWhereAnnotation(annotations).getOrElse(return Failure)
+
+    consumeExpect[TkDomain].getOrElse(return Failure)
+
+    val domainParameters = collectSepLookahead(!peekIs[TkWhere] && !peekIs[TkNewline], consumeIf[TkComma]) {
+      functionParameter()
     }.getOrElse(return Failure)
 
-    val maybeWhereAnnotation = annotations.find(_.isInstanceOf[WhereAnnotationNode])
-
-    if (!word("domain") || !ws()) return None
-    val domainParameters = ??? //collectSepWlgi(character(','), indentation)(functionParameter(indentation))
-    ws()
-    val domainTypeParameters = maybeWhereAnnotation match {
-      case Some(typeParameters) => typeParameters
-      case None => inlineWhere().backtrack.getOrElse(Vector.empty)
+    val domainTypeParameters = maybeWhereAnnotation.map(_.typeParameters).getOrElse {
+      optionalInlineWhere().getOrElse(return Failure)
     }
 
-    val bodyIndentation = indent(indentation).getOrElse(return None)
-    val functions = collectSepBacktrack(nli(bodyIndentation)) {
-      functionDeclaration(bodyIndentation).backtrack | procedureDeclaration(bodyIndentation)
+    if (!consumeIf[TkNewline]) {
+      // TODO (syntax): Report error: The domain's header should be terminated by a newline.
+      return Failure
     }
 
-//    functions.map { function =>
-//      FunctionNode(
-//        function.nameNode,
-//        //domainParameters ++ function.parameters,
-//        function.outputType,
-//        domainTypeParameters ++ function.typeVariables,
-//        function.body,
-//        function.position,
-//      )
-//    }.some
-    ???
+    val functions = whenIndented(
+      // Like in `moduleDeclarationBody`, we cannot rely on `TkNewline` as a separator, because function block bodies
+      // may already consume these.
+      collectLookahead(!peekIs[TkDedent]) {
+        val annotations = parseAnnotations().getOrElse(return Failure)
+        peek match {
+          case TkFunc(_) => functionDeclaration(annotations)
+          case TkProc(_) => procedureDeclaration(annotations)
+          case token => failDeclarationExpected(Some("function or procedure"), token.position)
+        }
+      },
+      Vector.empty,
+    ).getOrElse(return Failure)
+
+    functions.map { function =>
+      FunctionNode(
+        function.nameNode,
+        domainParameters ++ function.parameters,
+        function.outputType,
+        domainTypeParameters ++ function.typeVariables,
+        function.body,
+        function.position,
+      )
+    }.success
   }
 
   private def functionParameter(): Result[ParameterNode] = {
@@ -392,7 +398,9 @@ trait DeclarationParser {
     named().backtrack orElse unnamed()
   }
 
-  private def inlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {
+  private def optionalInlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {
+    val whereKeyword = consume[TkWhere].getOrElse(return Vector.empty.success)
+
     if (!consumeIf[TkWhere]) {
       // TODO (syntax): Report error.
       return Failure
@@ -444,5 +452,16 @@ trait DeclarationParser {
     }
 
     if (errors.isEmpty) Success.empty else Failure
+  }
+
+  private def checkAndExtractWhereAnnotation(
+    annotations: Vector[AnnotationNode],
+  ): Result[Option[WhereAnnotationNode]] = {
+    checkAnnotationValidity(annotations) {
+      case _: WhereAnnotationNode => true
+      case _ => false
+    }.getOrElse(return Failure)
+
+    annotations.findType[WhereAnnotationNode].success
   }
 }
