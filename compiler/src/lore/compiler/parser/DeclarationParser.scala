@@ -399,11 +399,8 @@ trait DeclarationParser {
   }
 
   private def optionalInlineWhere(): Result[Vector[DeclNode.TypeVariableNode]] = {
-    val whereKeyword = consume[TkWhere].getOrElse(return Vector.empty.success)
-
     if (!consumeIf[TkWhere]) {
-      // TODO (syntax): Report error.
-      return Failure
+      return Vector.empty.success
     }
 
     // Because an inline where is supposed to be simple, we're disallowing trailing commas and newlines here.
