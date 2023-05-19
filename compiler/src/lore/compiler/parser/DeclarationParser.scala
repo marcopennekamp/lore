@@ -407,9 +407,14 @@ trait DeclarationParser {
     }
 
     // Because an inline where is supposed to be simple, we're disallowing trailing commas and newlines here.
-    collectSepBacktrack(consumeIf[TkComma])(simpleTypeParameter()).success
+    val typeParameters = collectSepBacktrack(consumeIf[TkComma])(simpleTypeParameter())
 
-    // TODO (syntax): Throw a `Failure` if no type parameters have been parsed.
+    if (typeParameters.isEmpty) {
+      // TODO (syntax): Report error (see `AnnotationParser.whereAnnotation`).
+      return Failure
+    }
+
+    typeParameters.success
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
