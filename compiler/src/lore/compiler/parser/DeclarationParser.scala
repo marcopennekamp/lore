@@ -389,7 +389,7 @@ trait DeclarationParser {
     // name.
     val hasParameterName = peekIs[TkIdentifier] && peekIs[TkColon](2)
     if (hasParameterName) {
-      val parameterName = name().getOrElse(return Failure)
+      val parameterName = name().getOrElse(throw new IllegalStateException("The next token should be a `TkIdentifier`."))
       val parameterType = typing().getOrElse(return Failure)
       ParameterNode(parameterName.some, parameterType, parameterName.position.to(parameterType)).success
     } else {
